@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package laas.router.v1;
+
+option go_package = "git.xdea.xyz/Turing/router/api/laas/v1;v1";
+
+message GenerationConfig {
+  float temperature = 1;
+  float top_p = 2;
+  int32 top_k = 3;
+  string template = 4;
+  string grammar = 5;
+}
+
+message Statistics {
+  message Usage {
+    int32 prompt_tokens = 1;
+    int32 completion_tokens = 2;
+  }
+
+  Usage usage = 1;
+}
+
+// Multi-modality content
+message Content {
+  oneof content {
+    string text = 1;
+    string image_url = 2;
+  }
+}

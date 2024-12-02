@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package laas.router.v1;
+
+import "errors/errors.proto";
+
+option go_package = "git.xdea.xyz/Turing/router/api/laas/v1;v1";
+
+enum ErrorReason {
+  option (errors.default_code) = 500;
+
+  NO_UPSTREAM = 0;
+}

@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package laas.router.v1;
+
+option go_package = "git.xdea.xyz/Turing/router/internal/conf;conf";
+
+message Upstream {
+  repeated UpstreamConfig configs = 1;
+}
+
+message UpstreamConfig {
+  string name = 1;
+  repeated Model models = 2;
+  oneof config {
+    LaaSConfig laas = 100;
+    OpenAIConfig openai = 101;
+    GoogleConfig google = 102;
+  }
+}
+
+message Model {
+  string name = 1;
+  string upstream_id = 2;
+}
+
+message LaaSConfig {
+  string endpoint = 1;
+}
+
+message OpenAIConfig {
+  string api_key = 1;
+  string base_url = 2;
+}
+
+message GoogleConfig {
+  string api_key = 1;
+}
