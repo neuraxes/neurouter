@@ -78,6 +78,15 @@ func (r *OpenAIChatCompletionRepo) Chat(
 			},
 		},
 	}
+
+	if res.Usage.PromptTokens != 0 || res.Usage.CompletionTokens != 0 {
+		resp.Statistics = &v1.Statistics{
+			Usage: &v1.Statistics_Usage{
+				PromptTokens:     int32(res.Usage.PromptTokens),
+				CompletionTokens: int32(res.Usage.CompletionTokens),
+			},
+		}
+	}
 	return
 }
 
@@ -93,6 +102,7 @@ func (c openaiChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 		err = io.EOF
 		return
 	}
+
 	chunk := c.upstream.Current()
 	resp = &biz.ChatResp{
 		Message: &v1.Message{
@@ -105,6 +115,15 @@ func (c openaiChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 				},
 			},
 		},
+	}
+
+	if chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0 {
+		resp.Statistics = &v1.Statistics{
+			Usage: &v1.Statistics_Usage{
+				PromptTokens:     int32(chunk.Usage.PromptTokens),
+				CompletionTokens: int32(chunk.Usage.CompletionTokens),
+			},
+		}
 	}
 	return
 }

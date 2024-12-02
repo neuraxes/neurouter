@@ -16,8 +16,13 @@ type ChatUseCase interface {
 	ChatStream(ctx context.Context, req *ChatReq, stream ChatStreamServer) error
 }
 
+type upstream struct {
+	models []*conf.Model
+	repo   ChatCompletionRepo
+}
+
 type chatUseCase struct {
-	upstreams map[string]ChatCompletionRepo
+	upstreams []*upstream
 	log       *log.Helper
 }
 
@@ -26,18 +31,22 @@ func NewChatUseCase(
 	openAIChatCompletionRepoFactory OpenAIChatCompletionRepoFactory,
 	logger log.Logger,
 ) ChatUseCase {
-	upstreams := map[string]ChatCompletionRepo{}
+	var upstreams []*upstream
 
 	if c != nil {
 		for _, config := range c.Configs {
+			var repo ChatCompletionRepo
+
 			switch config.GetConfig().(type) {
 			case *conf.UpstreamConfig_Laas:
 				panic("unimplemented")
 			case *conf.UpstreamConfig_Openai:
-				upstreams[config.GetName()] = openAIChatCompletionRepoFactory(config.GetOpenai())
+				repo = openAIChatCompletionRepoFactory(config.GetOpenai())
 			case *conf.UpstreamConfig_Google:
 				panic("unimplemented")
 			}
+
+			upstreams = append(upstreams, &upstream{models: config.Models, repo: repo})
 		}
 	}
 
@@ -47,10 +56,12 @@ func NewChatUseCase(
 	}
 }
 
-func (uc *chatUseCase) selectUpstream(req *ChatReq) (repo ChatCompletionRepo, err error) {
-	for _, upstream := range uc.upstreams {
+// choose select the upstream and model by req
+func (uc *chatUseCase) choose(req *ChatReq) (up *upstream, model *conf.Model, err error) {
+	for _, u := range uc.upstreams {
 		// TODO: select upstream by req
-		repo = upstream
+		up = u
+		model = u.models[0]
 		return
 	}
 	err = v1.ErrorNoUpstream("no upstream found")
@@ -58,15 +69,16 @@ func (uc *chatUseCase) selectUpstream(req *ChatReq) (repo ChatCompletionRepo, er
 }
 
 func (uc *chatUseCase) Chat(ctx context.Context, req *ChatReq) (resp *ChatResp, err error) {
-	repo, err := uc.selectUpstream(req)
+	u, m, err := uc.choose(req)
 	if err != nil {
 		return
 	}
-	return repo.Chat(ctx, req)
+	req.Model = m.Id
+	return u.repo.Chat(ctx, req)
 }
 
-func (uc *chatUseCase) ChatStream(ctx context.Context, req *ChatReq, stream ChatStreamServer) error {
-	repo, err := uc.selectUpstream(req)
+func (uc *chatUseCase) ChatStream(ctx context.Context, req *ChatReq, server ChatStreamServer) error {
+	u, m, err := uc.choose(req)
 	if err != nil {
 		return err
 	}
@@ -80,13 +92,14 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *ChatReq, stream Chat
 	}
 	req.Messages = messages
 
-	upstream, err := repo.ChatStream(ctx, req)
+	req.Model = m.Id
+	client, err := u.repo.ChatStream(ctx, req)
 	if err != nil {
 		return err
 	}
-	
+
 	for {
-		resp, err := upstream.Recv()
+		resp, err := client.Recv()
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
@@ -98,7 +111,7 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *ChatReq, stream Chat
 			return nil
 		}
 
-		err = stream.Send(resp)
+		err = server.Send(resp)
 		if err != nil {
 			return err
 		}

@@ -19,8 +19,9 @@ message UpstreamConfig {
 }
 
 message Model {
-  string name = 1;
-  string upstream_id = 2;
+  string id = 1;
+  string name = 2;
+  string provider = 3;
 }
 
 message LaaSConfig {
