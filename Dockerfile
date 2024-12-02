@@ -4,7 +4,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/re
     && apk add --no-cache ca-certificates
 
 ADD bin/router /bin/router
-ADD configs /configs/
+ADD configs/config.yaml /configs/config.yaml
 
 EXPOSE 8000
 EXPOSE 9000
