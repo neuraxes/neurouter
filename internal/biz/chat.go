@@ -83,15 +83,6 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *ChatReq, server Chat
 		return err
 	}
 
-	var messages []*v1.Message
-	for _, msg := range req.Messages {
-		if msg.Role == v1.Role_SYSTEM {
-			continue
-		}
-		messages = append(messages, msg)
-	}
-	req.Messages = messages
-
 	req.Model = m.Id
 	client, err := u.repo.ChatStream(ctx, req)
 	if err != nil {

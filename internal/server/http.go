@@ -2,6 +2,7 @@ package server
 
 import (
 	"git.xdea.xyz/Turing/router/internal/conf"
+	"git.xdea.xyz/Turing/router/internal/server/openai"
 	"git.xdea.xyz/Turing/router/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -25,5 +26,6 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
+	openai.RegisterOpenAIHTTPServer(srv, svc)
 	return srv
 }

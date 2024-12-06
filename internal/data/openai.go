@@ -39,21 +39,42 @@ func NewOpenAIChatCompletionRepo(apiKey, baseUrl string) biz.ChatCompletionRepo 
 	}
 }
 
-func (r *OpenAIChatCompletionRepo) Chat(
-	ctx context.Context,
-	req *biz.ChatReq,
-) (resp *biz.ChatResp, err error) {
+// convertMessageToOpenAI converts a internal message to a message that can be sent to the OpenAI API.
+func (r *OpenAIChatCompletionRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatCompletionMessageParamUnion {
+	if message.Role == v1.Role_SYSTEM {
+		return openai.SystemMessage(message.Contents[0].GetText())
+	} else if message.Role == v1.Role_USER {
+		var parts []openai.ChatCompletionContentPartUnionParam
+		for _, content := range message.Contents {
+			switch c := content.GetContent().(type) {
+			case *v1.Content_Text:
+				parts = append(parts, openai.TextPart(c.Text))
+			case *v1.Content_ImageUrl:
+				parts = append(parts, openai.ImagePart(c.ImageUrl))
+			}
+		}
+		return openai.UserMessageParts(parts...)
+	} else {
+		return openai.AssistantMessage(message.Contents[0].GetText())
+	}
+}
+
+// convertRequestToOpenAI converts a internal request to a request that can be sent to the OpenAI API.
+func (r *OpenAIChatCompletionRepo) convertRequestToOpenAI(req *biz.ChatReq) openai.ChatCompletionNewParams {
 	var messages []openai.ChatCompletionMessageParamUnion
 	for _, message := range req.Messages {
 		messages = append(messages, r.convertMessageToOpenAI(message))
 	}
+	return openai.ChatCompletionNewParams{
+		Model:    openai.F(req.Model),
+		Messages: openai.F(messages),
+	}
+}
 
+func (r *OpenAIChatCompletionRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
 	res, err := r.client.Chat.Completions.New(
 		ctx,
-		openai.ChatCompletionNewParams{
-			Model:    openai.F(req.Model),
-			Messages: openai.F(messages),
-		},
+		r.convertRequestToOpenAI(req),
 	)
 	if err != nil {
 		return
@@ -65,6 +86,7 @@ func (r *OpenAIChatCompletionRepo) Chat(
 	}
 
 	resp = &biz.ChatResp{
+		Id: req.Id,
 		Message: &v1.Message{
 			Id:   id.String(),
 			Role: v1.Role_MODEL,
@@ -91,6 +113,8 @@ func (r *OpenAIChatCompletionRepo) Chat(
 }
 
 type openaiChatStreamClient struct {
+	id       string
+	req      *biz.ChatReq
 	upstream *ssestream.Stream[openai.ChatCompletionChunk]
 }
 
@@ -105,7 +129,9 @@ func (c openaiChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 
 	chunk := c.upstream.Current()
 	resp = &biz.ChatResp{
+		Id: c.req.Id,
 		Message: &v1.Message{
+			Id:   c.id,
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -128,42 +154,21 @@ func (c openaiChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 	return
 }
 
-func (r *OpenAIChatCompletionRepo) ChatStream(
-	ctx context.Context,
-	req *biz.ChatReq,
-) (client biz.ChatStreamClient, err error) {
-	var messages []openai.ChatCompletionMessageParamUnion
-	for _, message := range req.Messages {
-		messages = append(messages, r.convertMessageToOpenAI(message))
-	}
-
+func (r *OpenAIChatCompletionRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
 	stream := r.client.Chat.Completions.NewStreaming(
 		ctx,
-		openai.ChatCompletionNewParams{
-			Model:    openai.F(req.Model),
-			Messages: openai.F(messages),
-		},
+		r.convertRequestToOpenAI(req),
 	)
 
+	id, err := uuid.NewUUID()
+	if err != nil {
+		return
+	}
+
 	client = &openaiChatStreamClient{
+		id:       id.String(),
+		req:      req,
 		upstream: stream,
 	}
 	return
-}
-
-func (r *OpenAIChatCompletionRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatCompletionMessageParamUnion {
-	if message.Role == v1.Role_SYSTEM {
-		return openai.SystemMessage(message.Contents[0].GetText())
-	} else if message.Role == v1.Role_USER {
-		var parts []openai.ChatCompletionContentPartUnionParam
-		for _, content := range message.Contents {
-			switch c := content.GetContent().(type) {
-			case *v1.Content_Text:
-				parts = append(parts, openai.TextPart(c.Text))
-			}
-		}
-		return openai.UserMessageParts(parts...)
-	} else {
-		return openai.AssistantMessage(message.Contents[0].GetText())
-	}
 }
