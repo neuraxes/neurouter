@@ -59,11 +59,21 @@ func NewChatUseCase(
 // choose select the upstream and model by req
 func (uc *chatUseCase) choose(req *ChatReq) (up *upstream, model *conf.Model, err error) {
 	for _, u := range uc.upstreams {
-		// TODO: select upstream by req
+		for _, m := range u.models {
+			if m.Name == req.Model {
+				up = u
+				model = m
+				return
+			}
+		}
+	}
+
+	for _, u := range uc.upstreams {
 		up = u
 		model = u.models[0]
 		return
 	}
+
 	err = v1.ErrorNoUpstream("no upstream found")
 	return
 }
