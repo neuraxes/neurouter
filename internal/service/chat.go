@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	"google.golang.org/protobuf/proto"
+
 	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
 	"git.xdea.xyz/Turing/router/internal/biz"
 )
@@ -19,7 +21,8 @@ func NewRouterService(chat biz.ChatUseCase) *RouterService {
 }
 
 func (s *RouterService) Chat(ctx context.Context, req *v1.ChatReq) (resp *v1.ChatResp, err error) {
-	r, err := s.chat.Chat(ctx, (*biz.ChatReq)(req))
+	chatReq := proto.Clone(req).(*v1.ChatReq)
+	r, err := s.chat.Chat(ctx, (*biz.ChatReq)(chatReq))
 	if err != nil {
 		return
 	}
@@ -37,5 +40,6 @@ func (w *wrappedChatStreamServer) Send(resp *biz.ChatResp) error {
 }
 
 func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer) error {
-	return s.chat.ChatStream(srv.Context(), (*biz.ChatReq)(req), &wrappedChatStreamServer{srv})
+	chatReq := proto.Clone(req).(*v1.ChatReq)
+	return s.chat.ChatStream(srv.Context(), (*biz.ChatReq)(chatReq), &wrappedChatStreamServer{srv})
 }

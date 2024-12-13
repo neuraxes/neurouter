@@ -7,7 +7,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0
 	github.com/openai/openai-go v0.1.0-alpha.38
-	github.com/tidwall/gjson v1.14.4
 	go.uber.org/automaxprocs v1.5.1
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.1
@@ -23,6 +22,7 @@ require (
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/sashabaranov/go-openai v1.36.0
+	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
