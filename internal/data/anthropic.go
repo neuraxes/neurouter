@@ -15,43 +15,60 @@ import (
 )
 
 type AnthropicChatRepo struct {
+	config *conf.AnthropicConfig
 	client *anthropic.Client
 }
 
 func NewAnthropicChatRepoFactory() biz.AnthropicChatRepoFactory {
 	return func(config *conf.AnthropicConfig) biz.ChatRepo {
-		return NewAnthropicChatRepo(config.ApiKey, config.BaseUrl)
+		return NewAnthropicChatRepo(config)
 	}
 }
 
-func NewAnthropicChatRepo(apiKey, baseUrl string) biz.ChatRepo {
+func NewAnthropicChatRepo(config *conf.AnthropicConfig) biz.ChatRepo {
 	options := []option.RequestOption{
-		option.WithAPIKey(apiKey),
+		option.WithAPIKey(config.ApiKey),
 	}
 
-	if baseUrl != "" {
-		options = append(options, option.WithBaseURL(baseUrl))
+	if config.BaseUrl != "" {
+		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
 
 	return &AnthropicChatRepo{
+		config: config,
 		client: anthropic.NewClient(options...),
 	}
 }
 
-// convertMessageToAnthropic converts an internal message to a message that can be sent to the Anthropic API.
-func (r *AnthropicChatRepo) convertMessageToAnthropic(message *v1.Message) anthropic.MessageParam {
-	if message.Role == v1.Role_SYSTEM {
-		return anthropic.NewUserMessage(anthropic.NewTextBlock(message.Contents[0].GetText()))
-	} else if message.Role == v1.Role_USER {
-		var parts []anthropic.ContentBlockParamUnion
+// convertSystemToAnthropic converts system messages to a format that can be sent to the Anthropic API.
+func (r *AnthropicChatRepo) convertSystemToAnthropic(messages []*v1.Message) []anthropic.TextBlockParam {
+	var parts []anthropic.TextBlockParam
+	for _, message := range messages {
+		if message.Role != v1.Role_SYSTEM {
+			continue
+		}
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
 			case *v1.Content_Text:
 				parts = append(parts, anthropic.NewTextBlock(c.Text))
-			case *v1.Content_ImageUrl:
-				//parts = append(parts, anthropic.NewImageBlockBase64(c.ImageUrl))
 			}
 		}
+	}
+	return parts
+}
+
+// convertMessageToAnthropic converts an internal message to a message that can be sent to the Anthropic API.
+func (r *AnthropicChatRepo) convertMessageToAnthropic(message *v1.Message) anthropic.MessageParam {
+	var parts []anthropic.ContentBlockParamUnion
+	for _, content := range message.Contents {
+		switch c := content.GetContent().(type) {
+		case *v1.Content_Text:
+			parts = append(parts, anthropic.NewTextBlock(c.Text))
+		case *v1.Content_ImageUrl:
+			// TODO: Implement image support
+		}
+	}
+	if message.Role == v1.Role_USER || message.Role == v1.Role_SYSTEM {
 		return anthropic.NewUserMessage(parts...)
 	} else {
 		return anthropic.NewAssistantMessage(anthropic.NewTextBlock(message.Contents[0].GetText()))
@@ -60,14 +77,24 @@ func (r *AnthropicChatRepo) convertMessageToAnthropic(message *v1.Message) anthr
 
 // convertRequestToAnthropic converts an internal request to a request that can be sent to the Anthropic API.
 func (r *AnthropicChatRepo) convertRequestToAnthropic(req *biz.ChatReq) anthropic.MessageNewParams {
+	params := anthropic.MessageNewParams{
+		Model: anthropic.F(req.Model),
+	}
+
+	if !r.config.MergeSystem {
+		params.System = anthropic.F(r.convertSystemToAnthropic(req.Messages))
+	}
+
 	var messages []anthropic.MessageParam
 	for _, message := range req.Messages {
+		if !r.config.MergeSystem && message.Role == v1.Role_SYSTEM {
+			continue
+		}
 		messages = append(messages, r.convertMessageToAnthropic(message))
 	}
-	return anthropic.MessageNewParams{
-		Model:    anthropic.F(req.Model),
-		Messages: anthropic.F(messages),
-	}
+	params.Messages = anthropic.F(messages)
+
+	return params
 }
 
 func (r *AnthropicChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
@@ -117,6 +144,7 @@ type anthropicChatStreamClient struct {
 }
 
 func (c anthropicChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
+next:
 	if !c.upstream.Next() {
 		if err = c.upstream.Err(); err != nil {
 			return
@@ -126,6 +154,10 @@ func (c anthropicChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 	}
 
 	chunk := c.upstream.Current()
+	if chunk.Type != anthropic.MessageStreamEventTypeContentBlockDelta {
+		goto next
+	}
+
 	resp = &biz.ChatResp{
 		Id: c.req.Id,
 		Message: &v1.Message{
@@ -134,7 +166,7 @@ func (c anthropicChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 			Contents: []*v1.Content{
 				{
 					Content: &v1.Content_Text{
-						Text: chunk.Delta.(anthropic.TextDelta).Text,
+						Text: chunk.Delta.(anthropic.ContentBlockDeltaEventDelta).Text,
 					},
 				},
 			},

@@ -32,6 +32,8 @@ message LaaSConfig {
 message OpenAIConfig {
   string api_key = 1;
   string base_url = 2;
+  // Whether to merge contents into a single part
+  bool merge_content = 3;
 }
 
 message GoogleConfig {
@@ -41,4 +43,6 @@ message GoogleConfig {
 message AnthropicConfig {
   string api_key = 1;
   string base_url = 2;
+  // Whether to merge the system prompt into messages
+  bool merge_system = 3;
 }
