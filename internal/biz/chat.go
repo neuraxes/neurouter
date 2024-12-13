@@ -63,6 +63,7 @@ func (uc *chatUseCase) choose(req *ChatReq) (up *upstream, model *conf.Model, er
 			if m.Name == req.Model {
 				up = u
 				model = m
+				uc.log.Infof("using model: %s", m.Name)
 				return
 			}
 		}
@@ -71,6 +72,7 @@ func (uc *chatUseCase) choose(req *ChatReq) (up *upstream, model *conf.Model, er
 	for _, u := range uc.upstreams {
 		up = u
 		model = u.models[0]
+		uc.log.Infof("fallback to model: %s", model.Name)
 		return
 	}
 
