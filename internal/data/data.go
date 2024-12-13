@@ -7,7 +7,7 @@ import (
 	"github.com/google/wire"
 )
 
-var ProviderSet = wire.NewSet(NewData, NewOpenAIChatCompletionRepoFactory)
+var ProviderSet = wire.NewSet(NewData, NewOpenAIChatRepoFactory, NewAnthropicChatRepoFactory)
 
 type Data struct {
 }

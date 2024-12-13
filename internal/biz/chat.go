@@ -18,7 +18,7 @@ type ChatUseCase interface {
 
 type upstream struct {
 	models []*conf.Model
-	repo   ChatCompletionRepo
+	repo   ChatRepo
 }
 
 type chatUseCase struct {
@@ -28,22 +28,25 @@ type chatUseCase struct {
 
 func NewChatUseCase(
 	c *conf.Upstream,
-	openAIChatCompletionRepoFactory OpenAIChatCompletionRepoFactory,
+	openAIChatRepoFactory OpenAIChatRepoFactory,
+	anthropicChatRepoFactory AnthropicChatRepoFactory,
 	logger log.Logger,
 ) ChatUseCase {
 	var upstreams []*upstream
 
 	if c != nil {
 		for _, config := range c.Configs {
-			var repo ChatCompletionRepo
+			var repo ChatRepo
 
 			switch config.GetConfig().(type) {
 			case *conf.UpstreamConfig_Laas:
 				panic("unimplemented")
 			case *conf.UpstreamConfig_Openai:
-				repo = openAIChatCompletionRepoFactory(config.GetOpenai())
+				repo = openAIChatRepoFactory(config.GetOpenai())
 			case *conf.UpstreamConfig_Google:
 				panic("unimplemented")
+			case *conf.UpstreamConfig_Anthropic:
+				repo = anthropicChatRepoFactory(config.GetAnthropic())
 			}
 
 			upstreams = append(upstreams, &upstream{models: config.Models, repo: repo})

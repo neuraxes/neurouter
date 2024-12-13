@@ -15,6 +15,7 @@ message UpstreamConfig {
     LaaSConfig laas = 100;
     OpenAIConfig openai = 101;
     GoogleConfig google = 102;
+    AnthropicConfig anthropic = 103;
   }
 }
 
@@ -35,4 +36,9 @@ message OpenAIConfig {
 
 message GoogleConfig {
   string api_key = 1;
+}
+
+message AnthropicConfig {
+  string api_key = 1;
+  string base_url = 2;
 }

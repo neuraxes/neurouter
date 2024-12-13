@@ -15,17 +15,17 @@ import (
 	"git.xdea.xyz/Turing/router/internal/conf"
 )
 
-type OpenAIChatCompletionRepo struct {
+type OpenAIChatRepo struct {
 	client *openai.Client
 }
 
-func NewOpenAIChatCompletionRepoFactory() biz.OpenAIChatCompletionRepoFactory {
-	return func(config *conf.OpenAIConfig) biz.ChatCompletionRepo {
-		return NewOpenAIChatCompletionRepo(config.ApiKey, config.BaseUrl)
+func NewOpenAIChatRepoFactory() biz.OpenAIChatRepoFactory {
+	return func(config *conf.OpenAIConfig) biz.ChatRepo {
+		return NewOpenAIChatRepo(config.ApiKey, config.BaseUrl)
 	}
 }
 
-func NewOpenAIChatCompletionRepo(apiKey, baseUrl string) biz.ChatCompletionRepo {
+func NewOpenAIChatRepo(apiKey, baseUrl string) biz.ChatRepo {
 	options := []option.RequestOption{
 		option.WithAPIKey(apiKey),
 	}
@@ -34,13 +34,13 @@ func NewOpenAIChatCompletionRepo(apiKey, baseUrl string) biz.ChatCompletionRepo 
 		options = append(options, option.WithBaseURL(baseUrl))
 	}
 
-	return &OpenAIChatCompletionRepo{
+	return &OpenAIChatRepo{
 		client: openai.NewClient(options...),
 	}
 }
 
-// convertMessageToOpenAI converts a internal message to a message that can be sent to the OpenAI API.
-func (r *OpenAIChatCompletionRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatCompletionMessageParamUnion {
+// convertMessageToOpenAI converts an internal message to a message that can be sent to the OpenAI API.
+func (r *OpenAIChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatCompletionMessageParamUnion {
 	if message.Role == v1.Role_SYSTEM {
 		return openai.SystemMessage(message.Contents[0].GetText())
 	} else if message.Role == v1.Role_USER {
@@ -59,8 +59,8 @@ func (r *OpenAIChatCompletionRepo) convertMessageToOpenAI(message *v1.Message) o
 	}
 }
 
-// convertRequestToOpenAI converts a internal request to a request that can be sent to the OpenAI API.
-func (r *OpenAIChatCompletionRepo) convertRequestToOpenAI(req *biz.ChatReq) openai.ChatCompletionNewParams {
+// convertRequestToOpenAI converts an internal request to a request that can be sent to the OpenAI API.
+func (r *OpenAIChatRepo) convertRequestToOpenAI(req *biz.ChatReq) openai.ChatCompletionNewParams {
 	var messages []openai.ChatCompletionMessageParamUnion
 	for _, message := range req.Messages {
 		messages = append(messages, r.convertMessageToOpenAI(message))
@@ -71,7 +71,7 @@ func (r *OpenAIChatCompletionRepo) convertRequestToOpenAI(req *biz.ChatReq) open
 	}
 }
 
-func (r *OpenAIChatCompletionRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
+func (r *OpenAIChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
 	res, err := r.client.Chat.Completions.New(
 		ctx,
 		r.convertRequestToOpenAI(req),
@@ -154,7 +154,7 @@ func (c openaiChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 	return
 }
 
-func (r *OpenAIChatCompletionRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
+func (r *OpenAIChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
 	stream := r.client.Chat.Completions.NewStreaming(
 		ctx,
 		r.convertRequestToOpenAI(req),

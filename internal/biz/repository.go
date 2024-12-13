@@ -17,7 +17,7 @@ type ChatStreamClient interface {
 	Recv() (*ChatResp, error)
 }
 
-type ChatCompletionRepo interface {
+type ChatRepo interface {
 	Chat(context.Context, *ChatReq) (*ChatResp, error)
 	ChatStream(context.Context, *ChatReq) (ChatStreamClient, error)
 }

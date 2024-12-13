@@ -24,8 +24,9 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, upstream *conf.Upstream, logger log.Logger) (*kratos.App, func(), error) {
-	openAIChatCompletionRepoFactory := data.NewOpenAIChatCompletionRepoFactory()
-	chatUseCase := biz.NewChatUseCase(upstream, openAIChatCompletionRepoFactory, logger)
+	openAIChatRepoFactory := data.NewOpenAIChatRepoFactory()
+	anthropicChatRepoFactory := data.NewAnthropicChatRepoFactory()
+	chatUseCase := biz.NewChatUseCase(upstream, openAIChatRepoFactory, anthropicChatRepoFactory, logger)
 	routerService := service.NewRouterService(chatUseCase)
 	grpcServer := server.NewGRPCServer(confServer, routerService, logger)
 	httpServer := server.NewHTTPServer(confServer, routerService, logger)
