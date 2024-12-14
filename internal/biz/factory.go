@@ -1,8 +1,12 @@
 package biz
 
-import "git.xdea.xyz/Turing/router/internal/conf"
+import (
+	"github.com/go-kratos/kratos/v2/log"
 
-type LaaSChatRepoFactory func(config *conf.LaaSConfig) ChatRepo
-type OpenAIChatRepoFactory func(config *conf.OpenAIConfig) ChatRepo
-type GoogleChatRepoFactory func(config *conf.GoogleConfig) ChatRepo
-type AnthropicChatRepoFactory func(config *conf.AnthropicConfig) ChatRepo
+	"git.xdea.xyz/Turing/router/internal/conf"
+)
+
+type LaaSChatRepoFactory func(config *conf.LaaSConfig, logger log.Logger) ChatRepo
+type OpenAIChatRepoFactory func(config *conf.OpenAIConfig, logger log.Logger) ChatRepo
+type GoogleChatRepoFactory func(config *conf.GoogleConfig, logger log.Logger) ChatRepo
+type AnthropicChatRepoFactory func(config *conf.AnthropicConfig, logger log.Logger) ChatRepo

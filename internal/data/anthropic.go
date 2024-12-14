@@ -7,6 +7,7 @@ import (
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/anthropics/anthropic-sdk-go/packages/ssestream"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
 
 	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
@@ -20,7 +21,7 @@ type AnthropicChatRepo struct {
 }
 
 func NewAnthropicChatRepoFactory() biz.AnthropicChatRepoFactory {
-	return func(config *conf.AnthropicConfig) biz.ChatRepo {
+	return func(config *conf.AnthropicConfig, logger log.Logger) biz.ChatRepo {
 		return NewAnthropicChatRepo(config)
 	}
 }

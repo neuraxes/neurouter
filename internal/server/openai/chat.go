@@ -6,9 +6,10 @@ import (
 	"io"
 	nethttp "net/http"
 
-	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/sashabaranov/go-openai"
+
+	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
 )
 
 // convertChatCompletionRequestFromOpenAI converts a chat completion request from OpenAI API to Router API
@@ -34,7 +35,7 @@ func convertChatCompletionRequestFromOpenAI(req *openai.ChatCompletionRequest) *
 				},
 			})
 		} else {
-			// Multi-part message
+			// Multipart message
 			for _, content := range message.MultiContent {
 				switch content.Type {
 				case openai.ChatMessagePartTypeText:

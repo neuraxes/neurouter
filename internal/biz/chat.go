@@ -42,11 +42,11 @@ func NewChatUseCase(
 			case *conf.UpstreamConfig_Laas:
 				panic("unimplemented")
 			case *conf.UpstreamConfig_Openai:
-				repo = openAIChatRepoFactory(config.GetOpenai())
+				repo = openAIChatRepoFactory(config.GetOpenai(), logger)
 			case *conf.UpstreamConfig_Google:
 				panic("unimplemented")
 			case *conf.UpstreamConfig_Anthropic:
-				repo = anthropicChatRepoFactory(config.GetAnthropic())
+				repo = anthropicChatRepoFactory(config.GetAnthropic(), logger)
 			}
 
 			upstreams = append(upstreams, &upstream{models: config.Models, repo: repo})

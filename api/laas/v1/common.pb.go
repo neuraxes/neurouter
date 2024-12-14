@@ -222,6 +222,71 @@ func (*Content_Text) isContent_Content() {}
 
 func (*Content_ImageUrl) isContent_Content() {}
 
+type Tool struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to Tool:
+	//
+	//	*Tool_Function_
+	Tool isTool_Tool `protobuf_oneof:"tool"`
+}
+
+func (x *Tool) Reset() {
+	*x = Tool{}
+	mi := &file_laas_v1_common_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Tool) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Tool) ProtoMessage() {}
+
+func (x *Tool) ProtoReflect() protoreflect.Message {
+	mi := &file_laas_v1_common_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Tool.ProtoReflect.Descriptor instead.
+func (*Tool) Descriptor() ([]byte, []int) {
+	return file_laas_v1_common_proto_rawDescGZIP(), []int{3}
+}
+
+func (m *Tool) GetTool() isTool_Tool {
+	if m != nil {
+		return m.Tool
+	}
+	return nil
+}
+
+func (x *Tool) GetFunction() *Tool_Function {
+	if x, ok := x.GetTool().(*Tool_Function_); ok {
+		return x.Function
+	}
+	return nil
+}
+
+type isTool_Tool interface {
+	isTool_Tool()
+}
+
+type Tool_Function_ struct {
+	Function *Tool_Function `protobuf:"bytes,1,opt,name=function,proto3,oneof"`
+}
+
+func (*Tool_Function_) isTool_Tool() {}
+
 type Statistics_Usage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -233,7 +298,7 @@ type Statistics_Usage struct {
 
 func (x *Statistics_Usage) Reset() {
 	*x = Statistics_Usage{}
-	mi := &file_laas_v1_common_proto_msgTypes[3]
+	mi := &file_laas_v1_common_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -245,7 +310,7 @@ func (x *Statistics_Usage) String() string {
 func (*Statistics_Usage) ProtoMessage() {}
 
 func (x *Statistics_Usage) ProtoReflect() protoreflect.Message {
-	mi := &file_laas_v1_common_proto_msgTypes[3]
+	mi := &file_laas_v1_common_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -273,6 +338,181 @@ func (x *Statistics_Usage) GetCompletionTokens() int32 {
 		return x.CompletionTokens
 	}
 	return 0
+}
+
+type Tool_Function struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name        string                    `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description string                    `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Parameters  *Tool_Function_Parameters `protobuf:"bytes,3,opt,name=parameters,proto3" json:"parameters,omitempty"`
+}
+
+func (x *Tool_Function) Reset() {
+	*x = Tool_Function{}
+	mi := &file_laas_v1_common_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Tool_Function) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Tool_Function) ProtoMessage() {}
+
+func (x *Tool_Function) ProtoReflect() protoreflect.Message {
+	mi := &file_laas_v1_common_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Tool_Function.ProtoReflect.Descriptor instead.
+func (*Tool_Function) Descriptor() ([]byte, []int) {
+	return file_laas_v1_common_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *Tool_Function) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Tool_Function) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Tool_Function) GetParameters() *Tool_Function_Parameters {
+	if x != nil {
+		return x.Parameters
+	}
+	return nil
+}
+
+type Tool_Function_Parameters struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Type       string                                        `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Properties map[string]*Tool_Function_Parameters_Property `protobuf:"bytes,2,rep,name=properties,proto3" json:"properties,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Required   []string                                      `protobuf:"bytes,3,rep,name=required,proto3" json:"required,omitempty"`
+}
+
+func (x *Tool_Function_Parameters) Reset() {
+	*x = Tool_Function_Parameters{}
+	mi := &file_laas_v1_common_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Tool_Function_Parameters) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Tool_Function_Parameters) ProtoMessage() {}
+
+func (x *Tool_Function_Parameters) ProtoReflect() protoreflect.Message {
+	mi := &file_laas_v1_common_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Tool_Function_Parameters.ProtoReflect.Descriptor instead.
+func (*Tool_Function_Parameters) Descriptor() ([]byte, []int) {
+	return file_laas_v1_common_proto_rawDescGZIP(), []int{3, 0, 0}
+}
+
+func (x *Tool_Function_Parameters) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *Tool_Function_Parameters) GetProperties() map[string]*Tool_Function_Parameters_Property {
+	if x != nil {
+		return x.Properties
+	}
+	return nil
+}
+
+func (x *Tool_Function_Parameters) GetRequired() []string {
+	if x != nil {
+		return x.Required
+	}
+	return nil
+}
+
+type Tool_Function_Parameters_Property struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Type        string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+}
+
+func (x *Tool_Function_Parameters_Property) Reset() {
+	*x = Tool_Function_Parameters_Property{}
+	mi := &file_laas_v1_common_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Tool_Function_Parameters_Property) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Tool_Function_Parameters_Property) ProtoMessage() {}
+
+func (x *Tool_Function_Parameters_Property) ProtoReflect() protoreflect.Message {
+	mi := &file_laas_v1_common_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Tool_Function_Parameters_Property.ProtoReflect.Descriptor instead.
+func (*Tool_Function_Parameters_Property) Descriptor() ([]byte, []int) {
+	return file_laas_v1_common_proto_rawDescGZIP(), []int{3, 0, 0, 0}
+}
+
+func (x *Tool_Function_Parameters_Property) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *Tool_Function_Parameters_Property) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
 }
 
 var File_laas_v1_common_proto protoreflect.FileDescriptor
@@ -304,10 +544,45 @@ var file_laas_v1_common_proto_rawDesc = []byte{
 	0x78, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x04, 0x74, 0x65, 0x78, 0x74,
 	0x12, 0x1d, 0x0a, 0x09, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x5f, 0x75, 0x72, 0x6c, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x08, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x55, 0x72, 0x6c, 0x42,
-	0x09, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x42, 0x2b, 0x5a, 0x29, 0x67, 0x69,
-	0x74, 0x2e, 0x78, 0x64, 0x65, 0x61, 0x2e, 0x78, 0x79, 0x7a, 0x2f, 0x54, 0x75, 0x72, 0x69, 0x6e,
-	0x67, 0x2f, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6c, 0x61, 0x61,
-	0x73, 0x2f, 0x76, 0x31, 0x3b, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x09, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22, 0xa5, 0x04, 0x0a, 0x04, 0x54,
+	0x6f, 0x6f, 0x6c, 0x12, 0x3b, 0x0a, 0x08, 0x66, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x6c, 0x61, 0x61, 0x73, 0x2e, 0x72, 0x6f, 0x75,
+	0x74, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f, 0x6f, 0x6c, 0x2e, 0x46, 0x75, 0x6e, 0x63,
+	0x74, 0x69, 0x6f, 0x6e, 0x48, 0x00, 0x52, 0x08, 0x66, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e,
+	0x1a, 0xd7, 0x03, 0x0a, 0x08, 0x46, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a,
+	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d,
+	0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x48, 0x0a, 0x0a, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72,
+	0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x6c, 0x61, 0x61, 0x73, 0x2e, 0x72,
+	0x6f, 0x75, 0x74, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f, 0x6f, 0x6c, 0x2e, 0x46, 0x75,
+	0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72,
+	0x73, 0x52, 0x0a, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x1a, 0xca, 0x02,
+	0x0a, 0x0a, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x12, 0x12, 0x0a, 0x04,
+	0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65,
+	0x12, 0x58, 0x0a, 0x0a, 0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x18, 0x02,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x38, 0x2e, 0x6c, 0x61, 0x61, 0x73, 0x2e, 0x72, 0x6f, 0x75, 0x74,
+	0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f, 0x6f, 0x6c, 0x2e, 0x46, 0x75, 0x6e, 0x63, 0x74,
+	0x69, 0x6f, 0x6e, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x2e, 0x50,
+	0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x0a,
+	0x70, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65,
+	0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52, 0x08, 0x72, 0x65,
+	0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x1a, 0x40, 0x0a, 0x08, 0x50, 0x72, 0x6f, 0x70, 0x65, 0x72,
+	0x74, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69,
+	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73,
+	0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x70, 0x0a, 0x0f, 0x50, 0x72, 0x6f, 0x70,
+	0x65, 0x72, 0x74, 0x69, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b,
+	0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x47, 0x0a,
+	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x31, 0x2e, 0x6c,
+	0x61, 0x61, 0x73, 0x2e, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f,
+	0x6f, 0x6c, 0x2e, 0x46, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x50, 0x61, 0x72, 0x61,
+	0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x79, 0x52,
+	0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x42, 0x06, 0x0a, 0x04, 0x74, 0x6f,
+	0x6f, 0x6c, 0x42, 0x2b, 0x5a, 0x29, 0x67, 0x69, 0x74, 0x2e, 0x78, 0x64, 0x65, 0x61, 0x2e, 0x78,
+	0x79, 0x7a, 0x2f, 0x54, 0x75, 0x72, 0x69, 0x6e, 0x67, 0x2f, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x72,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6c, 0x61, 0x61, 0x73, 0x2f, 0x76, 0x31, 0x3b, 0x76, 0x31, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -322,20 +597,29 @@ func file_laas_v1_common_proto_rawDescGZIP() []byte {
 	return file_laas_v1_common_proto_rawDescData
 }
 
-var file_laas_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_laas_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_laas_v1_common_proto_goTypes = []any{
-	(*GenerationConfig)(nil), // 0: laas.router.v1.GenerationConfig
-	(*Statistics)(nil),       // 1: laas.router.v1.Statistics
-	(*Content)(nil),          // 2: laas.router.v1.Content
-	(*Statistics_Usage)(nil), // 3: laas.router.v1.Statistics.Usage
+	(*GenerationConfig)(nil),                  // 0: laas.router.v1.GenerationConfig
+	(*Statistics)(nil),                        // 1: laas.router.v1.Statistics
+	(*Content)(nil),                           // 2: laas.router.v1.Content
+	(*Tool)(nil),                              // 3: laas.router.v1.Tool
+	(*Statistics_Usage)(nil),                  // 4: laas.router.v1.Statistics.Usage
+	(*Tool_Function)(nil),                     // 5: laas.router.v1.Tool.Function
+	(*Tool_Function_Parameters)(nil),          // 6: laas.router.v1.Tool.Function.Parameters
+	(*Tool_Function_Parameters_Property)(nil), // 7: laas.router.v1.Tool.Function.Parameters.Property
+	nil, // 8: laas.router.v1.Tool.Function.Parameters.PropertiesEntry
 }
 var file_laas_v1_common_proto_depIdxs = []int32{
-	3, // 0: laas.router.v1.Statistics.usage:type_name -> laas.router.v1.Statistics.Usage
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 0: laas.router.v1.Statistics.usage:type_name -> laas.router.v1.Statistics.Usage
+	5, // 1: laas.router.v1.Tool.function:type_name -> laas.router.v1.Tool.Function
+	6, // 2: laas.router.v1.Tool.Function.parameters:type_name -> laas.router.v1.Tool.Function.Parameters
+	8, // 3: laas.router.v1.Tool.Function.Parameters.properties:type_name -> laas.router.v1.Tool.Function.Parameters.PropertiesEntry
+	7, // 4: laas.router.v1.Tool.Function.Parameters.PropertiesEntry.value:type_name -> laas.router.v1.Tool.Function.Parameters.Property
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_laas_v1_common_proto_init() }
@@ -347,13 +631,16 @@ func file_laas_v1_common_proto_init() {
 		(*Content_Text)(nil),
 		(*Content_ImageUrl)(nil),
 	}
+	file_laas_v1_common_proto_msgTypes[3].OneofWrappers = []any{
+		(*Tool_Function_)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_laas_v1_common_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

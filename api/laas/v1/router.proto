@@ -15,12 +15,30 @@ enum Role {
   SYSTEM = 0;
   USER = 1;
   MODEL = 2;
+  TOOL = 3;
+}
+
+message ToolCall {
+  message Function {
+    string name = 1;
+    string arguments = 2;
+  }
+
+  string id = 1;
+  oneof tool {
+    Function function = 2;
+  }
 }
 
 message Message {
   string id = 1;
   Role role = 2;
+  // The multi-modality content
   repeated Content contents = 3;
+  // A set of tool calls raised by the message
+  repeated ToolCall tool_calls = 4;
+  // Indicate the message is a response to a tool call
+  string tool_call_id = 5;
 }
 
 message ChatReq {
@@ -28,6 +46,7 @@ message ChatReq {
   string model = 2;
   GenerationConfig config = 3;
   repeated Message messages = 4;
+  repeated Tool tools = 5;
 }
 
 message ChatResp {

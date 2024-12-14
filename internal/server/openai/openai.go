@@ -1,8 +1,9 @@
 package openai
 
 import (
-	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
 	"github.com/go-kratos/kratos/v2/transport/http"
+
+	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
 )
 
 func RegisterOpenAIHTTPServer(s *http.Server, svc v1.ChatServer) {
