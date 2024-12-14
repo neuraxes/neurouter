@@ -16,22 +16,23 @@ import (
 )
 
 type OpenAIChatRepo struct {
+	config *conf.OpenAIConfig
 	client *openai.Client
 }
 
 func NewOpenAIChatRepoFactory() biz.OpenAIChatRepoFactory {
 	return func(config *conf.OpenAIConfig) biz.ChatRepo {
-		return NewOpenAIChatRepo(config.ApiKey, config.BaseUrl)
+		return NewOpenAIChatRepo(config)
 	}
 }
 
-func NewOpenAIChatRepo(apiKey, baseUrl string) biz.ChatRepo {
+func NewOpenAIChatRepo(config *conf.OpenAIConfig) biz.ChatRepo {
 	options := []option.RequestOption{
-		option.WithAPIKey(apiKey),
+		option.WithAPIKey(config.ApiKey),
 	}
 
-	if baseUrl != "" {
-		options = append(options, option.WithBaseURL(baseUrl))
+	if config.BaseUrl != "" {
+		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
 
 	return &OpenAIChatRepo{
@@ -41,9 +42,35 @@ func NewOpenAIChatRepo(apiKey, baseUrl string) biz.ChatRepo {
 
 // convertMessageToOpenAI converts an internal message to a message that can be sent to the OpenAI API.
 func (r *OpenAIChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatCompletionMessageParamUnion {
-	if message.Role == v1.Role_SYSTEM {
-		return openai.SystemMessage(message.Contents[0].GetText())
+	if message.Role == v1.Role_SYSTEM || message.Role == v1.Role_MODEL {
+		var combinedText strings.Builder
+		for _, content := range message.Contents {
+			if textContent, ok := content.GetContent().(*v1.Content_Text); ok {
+				combinedText.WriteString(textContent.Text)
+			}
+		}
+		if message.Role == v1.Role_SYSTEM {
+			return openai.SystemMessage(combinedText.String())
+		} else {
+			return openai.AssistantMessage(combinedText.String())
+		}
 	} else if message.Role == v1.Role_USER {
+		if r.config.MergeContent {
+			allText := true
+			var combinedText strings.Builder
+			for _, content := range message.Contents {
+				if textContent, ok := content.GetContent().(*v1.Content_Text); ok {
+					combinedText.WriteString(textContent.Text)
+				} else {
+					allText = false
+					break
+				}
+			}
+			if allText {
+				return openai.UserMessage(combinedText.String())
+			}
+		}
+
 		var parts []openai.ChatCompletionContentPartUnionParam
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
@@ -54,9 +81,8 @@ func (r *OpenAIChatRepo) convertMessageToOpenAI(message *v1.Message) openai.Chat
 			}
 		}
 		return openai.UserMessageParts(parts...)
-	} else {
-		return openai.AssistantMessage(message.Contents[0].GetText())
 	}
+	return nil
 }
 
 // convertRequestToOpenAI converts an internal request to a request that can be sent to the OpenAI API.
