@@ -23,9 +23,13 @@ message Statistics {
 
 // Multi-modality content
 message Content {
+  message Image {
+    string url = 1;
+  }
+
   oneof content {
     string text = 1;
-    string image_url = 2;
+    Image image = 2;
   }
 }
 

@@ -10,6 +10,7 @@ import (
 	"git.xdea.xyz/Turing/router/internal/biz"
 	"git.xdea.xyz/Turing/router/internal/conf"
 	"git.xdea.xyz/Turing/router/internal/data"
+	"git.xdea.xyz/Turing/router/internal/data/openai"
 	"git.xdea.xyz/Turing/router/internal/server"
 	"git.xdea.xyz/Turing/router/internal/service"
 	"github.com/go-kratos/kratos/v2"
@@ -24,7 +25,7 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, confData *conf.Data, upstream *conf.Upstream, logger log.Logger) (*kratos.App, func(), error) {
-	openAIChatRepoFactory := data.NewOpenAIChatRepoFactory()
+	openAIChatRepoFactory := openai.NewOpenAIChatRepoFactory()
 	anthropicChatRepoFactory := data.NewAnthropicChatRepoFactory()
 	chatUseCase := biz.NewChatUseCase(upstream, openAIChatRepoFactory, anthropicChatRepoFactory, logger)
 	routerService := service.NewRouterService(chatUseCase)

@@ -65,7 +65,7 @@ func (r *AnthropicChatRepo) convertMessageToAnthropic(message *v1.Message) anthr
 		switch c := content.GetContent().(type) {
 		case *v1.Content_Text:
 			parts = append(parts, anthropic.NewTextBlock(c.Text))
-		case *v1.Content_ImageUrl:
+		case *v1.Content_Image_:
 			// TODO: Implement image support
 		}
 	}
@@ -182,6 +182,10 @@ next:
 		}
 	}
 	return
+}
+
+func (c anthropicChatStreamClient) Close() error {
+	return c.upstream.Close()
 }
 
 func (r *AnthropicChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {

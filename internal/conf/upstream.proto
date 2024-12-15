@@ -13,7 +13,7 @@ message UpstreamConfig {
   repeated Model models = 2;
   oneof config {
     LaaSConfig laas = 100;
-    OpenAIConfig openai = 101;
+    OpenAIConfig open_ai = 101;
     GoogleConfig google = 102;
     AnthropicConfig anthropic = 103;
   }
@@ -32,8 +32,11 @@ message LaaSConfig {
 message OpenAIConfig {
   string api_key = 1;
   string base_url = 2;
-  // Whether to merge contents into a single part
-  bool merge_content = 3;
+  bool prefer_string_content_for_system = 3;
+  bool prefer_string_content_for_user = 4;
+  bool prefer_string_content_for_assistant = 5;
+  bool prefer_string_content_for_tool = 6;
+  bool prefer_single_part_content = 7;
 }
 
 message GoogleConfig {

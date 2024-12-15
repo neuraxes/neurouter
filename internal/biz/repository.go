@@ -15,6 +15,7 @@ type ChatStreamServer interface {
 
 type ChatStreamClient interface {
 	Recv() (*ChatResp, error)
+	Close() error
 }
 
 type ChatRepo interface {

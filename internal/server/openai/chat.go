@@ -46,8 +46,10 @@ func convertChatCompletionRequestFromOpenAI(req *openai.ChatCompletionRequest) *
 					})
 				case openai.ChatMessagePartTypeImageURL:
 					contents = append(contents, &v1.Content{
-						Content: &v1.Content_ImageUrl{
-							ImageUrl: content.ImageURL.URL,
+						Content: &v1.Content_Image_{
+							Image: &v1.Content_Image{
+								Url: content.ImageURL.URL,
+							},
 						},
 					})
 				}

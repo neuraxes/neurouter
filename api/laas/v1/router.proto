@@ -19,14 +19,14 @@ enum Role {
 }
 
 message ToolCall {
-  message Function {
+  message FunctionCall {
     string name = 1;
     string arguments = 2;
   }
 
   string id = 1;
   oneof tool {
-    Function function = 2;
+    FunctionCall function = 2;
   }
 }
 

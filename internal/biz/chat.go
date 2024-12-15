@@ -41,8 +41,8 @@ func NewChatUseCase(
 			switch config.GetConfig().(type) {
 			case *conf.UpstreamConfig_Laas:
 				panic("unimplemented")
-			case *conf.UpstreamConfig_Openai:
-				repo = openAIChatRepoFactory(config.GetOpenai(), logger)
+			case *conf.UpstreamConfig_OpenAi:
+				repo = openAIChatRepoFactory(config.GetOpenAi(), logger)
 			case *conf.UpstreamConfig_Google:
 				panic("unimplemented")
 			case *conf.UpstreamConfig_Anthropic:
