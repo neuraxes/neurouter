@@ -143,10 +143,31 @@ func (r *ChatRepo) convertRequestToOpenAI(req *biz.ChatReq) openai.ChatCompletio
 			messages = append(messages, m)
 		}
 	}
+
 	openAIReq := openai.ChatCompletionNewParams{
 		Model:    openai.F(req.Model),
 		Messages: openai.F(messages),
 	}
+
+	if c := req.Config; c != nil {
+		if c.MaxTokens != 0 {
+			openAIReq.MaxCompletionTokens = openai.F(c.MaxTokens)
+		}
+		openAIReq.Temperature = openai.F(float64(c.Temperature))
+		if c.TopP != 0 {
+			openAIReq.TopP = openai.F(float64(c.TopP))
+		}
+		openAIReq.FrequencyPenalty = openai.F(float64(c.FrequencyPenalty))
+		openAIReq.PresencePenalty = openai.F(float64(c.PresencePenalty))
+		if c.GetPresetGrammar() == "json_object" {
+			openAIReq.ResponseFormat = openai.F[openai.ChatCompletionNewParamsResponseFormatUnion](
+				openai.ResponseFormatJSONObjectParam{
+					Type: openai.F(openai.ResponseFormatJSONObjectTypeJSONObject),
+				},
+			)
+		}
+	}
+
 	if req.Tools != nil {
 		var tools []openai.ChatCompletionToolParam
 		for _, tool := range req.Tools {
@@ -166,6 +187,7 @@ func (r *ChatRepo) convertRequestToOpenAI(req *biz.ChatReq) openai.ChatCompletio
 		}
 		openAIReq.Tools = openai.F(tools)
 	}
+
 	return openAIReq
 }
 
@@ -184,7 +206,7 @@ func (r *ChatRepo) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 		message.Contents = []*v1.Content{
 			{
 				Content: &v1.Content_Text{
-					// The result contains a leading space, so we need to trim it
+					// The result may contain a leading space, so we need to trim it
 					Text: strings.TrimSpace(openAIMessage.Content),
 				},
 			},

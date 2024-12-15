@@ -12,66 +12,6 @@ import (
 	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
 )
 
-// convertChatCompletionRequestFromOpenAI converts a chat completion request from OpenAI API to Router API
-func convertChatCompletionRequestFromOpenAI(req *openai.ChatCompletionRequest) *v1.ChatReq {
-	var messages []*v1.Message
-	for _, message := range req.Messages {
-		var role v1.Role
-		switch message.Role {
-		case openai.ChatMessageRoleSystem:
-			role = v1.Role_SYSTEM
-		case openai.ChatMessageRoleUser:
-			role = v1.Role_USER
-		case openai.ChatMessageRoleAssistant:
-			role = v1.Role_MODEL
-		}
-
-		var contents []*v1.Content
-		if message.Content != "" {
-			// Single text message
-			contents = append(contents, &v1.Content{
-				Content: &v1.Content_Text{
-					Text: message.Content,
-				},
-			})
-		} else {
-			// Multipart message
-			for _, content := range message.MultiContent {
-				switch content.Type {
-				case openai.ChatMessagePartTypeText:
-					contents = append(contents, &v1.Content{
-						Content: &v1.Content_Text{
-							Text: content.Text,
-						},
-					})
-				case openai.ChatMessagePartTypeImageURL:
-					contents = append(contents, &v1.Content{
-						Content: &v1.Content_Image_{
-							Image: &v1.Content_Image{
-								Url: content.ImageURL.URL,
-							},
-						},
-					})
-				}
-			}
-		}
-
-		messages = append(messages, &v1.Message{
-			Role:     role,
-			Contents: contents,
-		})
-	}
-
-	return &v1.ChatReq{
-		Model: req.Model,
-		Config: &v1.GenerationConfig{
-			Temperature: req.Temperature,
-			TopP:        req.TopP,
-		},
-		Messages: messages,
-	}
-}
-
 type chatStreamServer struct {
 	v1.Chat_ChatStreamServer
 	ctx http.Context

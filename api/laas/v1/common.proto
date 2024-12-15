@@ -5,11 +5,22 @@ package laas.router.v1;
 option go_package = "git.xdea.xyz/Turing/router/api/laas/v1;v1";
 
 message GenerationConfig {
-  float temperature = 1;
-  float top_p = 2;
-  int32 top_k = 3;
-  string template = 4;
-  string grammar = 5;
+  int64 max_tokens = 1;
+  float temperature = 2;
+  float top_p = 3;
+  int64 top_k = 4;
+  float frequency_penalty = 5;
+  float presence_penalty = 6;
+
+  oneof template {
+    string preset_template = 50;
+  }
+
+  oneof grammar {
+    string preset_grammar = 60;
+    string gbnf_grammar = 61;
+    string json_schema = 62;
+  }
 }
 
 message Statistics {

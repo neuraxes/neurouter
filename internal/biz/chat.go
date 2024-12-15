@@ -103,6 +103,7 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *ChatReq, server Chat
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 
 	for {
 		resp, err := client.Recv()
@@ -113,7 +114,6 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *ChatReq, server Chat
 		}
 
 		if errors.Is(ctx.Err(), context.Canceled) {
-			// TODO: Close upstream
 			return nil
 		}
 
