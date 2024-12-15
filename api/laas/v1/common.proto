@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package laas.router.v1;
+package laas.v1;
 
 option go_package = "git.xdea.xyz/Turing/router/api/laas/v1;v1";
 

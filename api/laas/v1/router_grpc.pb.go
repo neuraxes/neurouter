@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Chat_Chat_FullMethodName       = "/laas.router.v1.Chat/Chat"
-	Chat_ChatStream_FullMethodName = "/laas.router.v1.Chat/ChatStream"
+	Chat_Chat_FullMethodName       = "/laas.v1.Chat/Chat"
+	Chat_ChatStream_FullMethodName = "/laas.v1.Chat/ChatStream"
 )
 
 // ChatClient is the client API for Chat service.
@@ -144,7 +144,7 @@ type Chat_ChatStreamServer = grpc.ServerStreamingServer[ChatResp]
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Chat_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "laas.router.v1.Chat",
+	ServiceName: "laas.v1.Chat",
 	HandlerType: (*ChatServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

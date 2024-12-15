@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package laas.router.v1;
+package laas.v1;
 
 import "laas/v1/common.proto";
 
