@@ -7,6 +7,8 @@ Test:
   image: golang:1.23
   only:
     - main
+  before_script:
+    - go env -w GOPROXY=https://goproxy.cn,direct
   script:
     - go test ./... -v
 
@@ -17,6 +19,8 @@ BuildBinary:
     - main
   needs:
     - job: Test
+  before_script:
+    - go env -w GOPROXY=https://goproxy.cn,direct
   script:
     - make build
   artifacts:

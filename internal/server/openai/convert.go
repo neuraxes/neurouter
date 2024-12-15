@@ -85,6 +85,14 @@ func convertChatCompletionRequestFromOpenAI(req *openai.ChatCompletionRequest) *
 	} else if req.MaxTokens != 0 {
 		config.MaxTokens = int64(req.MaxTokens)
 	}
+	if req.ResponseFormat != nil {
+		switch req.ResponseFormat.Type {
+		case openai.ChatCompletionResponseFormatTypeJSONObject:
+			config.Grammar = &v1.GenerationConfig_PresetGrammar{
+				PresetGrammar: "json_object",
+			}
+		}
+	}
 
 	var messages []*v1.Message
 	for _, message := range req.Messages {
