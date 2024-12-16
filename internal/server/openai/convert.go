@@ -68,6 +68,7 @@ func convertChatCompletionMessageFromOpenAI(message *openai.ChatCompletionMessag
 
 	return &v1.Message{
 		Role:       role,
+		Name:       message.Name,
 		Contents:   contents,
 		ToolCalls:  toolCalls,
 		ToolCallId: message.ToolCallID,

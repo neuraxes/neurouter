@@ -33,6 +33,9 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 		m := openai.ChatCompletionSystemMessageParam{
 			Role: openai.F(openai.ChatCompletionSystemMessageParamRoleSystem),
 		}
+		if message.Name != "" {
+			m.Name = openai.F(message.Name)
+		}
 		var parts []openai.ChatCompletionContentPartTextParam
 		if isPlainText && (r.config.PreferStringContentForSystem || r.config.PreferSinglePartContent) {
 			parts = append(parts, openai.TextPart(plainText))
@@ -64,10 +67,18 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 				}
 			}
 		}
-		return openai.UserMessageParts(parts...)
+		m := openai.UserMessageParts(parts...)
+		if message.Name != "" {
+			m.Name = openai.F(message.Name)
+		}
+		return m
 	case v1.Role_MODEL:
 		m := openai.ChatCompletionAssistantMessageParam{
 			Role: openai.F(openai.ChatCompletionAssistantMessageParamRoleAssistant),
+		}
+
+		if message.Name != "" {
+			m.Name = openai.F(message.Name)
 		}
 
 		if message.Contents != nil {
