@@ -8,7 +8,7 @@ import (
 	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
 )
 
-func convertChatCompletionMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Message {
+func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Message {
 	var role v1.Role
 	switch message.Role {
 	case openai.ChatMessageRoleSystem:
@@ -75,8 +75,8 @@ func convertChatCompletionMessageFromOpenAI(message *openai.ChatCompletionMessag
 	}
 }
 
-// convertChatCompletionRequestFromOpenAI converts a chat completion request from OpenAI API to Router API
-func convertChatCompletionRequestFromOpenAI(req *openai.ChatCompletionRequest) *v1.ChatReq {
+// convertChatReqFromOpenAI converts a chat completion request from OpenAI API to Router API
+func convertChatReqFromOpenAI(req *openai.ChatCompletionRequest) *v1.ChatReq {
 	config := &v1.GenerationConfig{
 		Temperature: req.Temperature,
 		TopP:        req.TopP,
@@ -97,7 +97,7 @@ func convertChatCompletionRequestFromOpenAI(req *openai.ChatCompletionRequest) *
 
 	var messages []*v1.Message
 	for _, message := range req.Messages {
-		messages = append(messages, convertChatCompletionMessageFromOpenAI(&message))
+		messages = append(messages, convertChatMessageFromOpenAI(&message))
 	}
 
 	var tools []*v1.Tool
@@ -128,4 +128,29 @@ func convertChatCompletionRequestFromOpenAI(req *openai.ChatCompletionRequest) *
 		Messages: messages,
 		Tools:    tools,
 	}
+}
+
+// convertChatRespToOpenAI converts a chat completion response from Router API to OpenAI API
+func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
+	openAIResp := &openai.ChatCompletionResponse{
+		ID: resp.Message.Id,
+	}
+
+	if resp.Message != nil && len(resp.Message.Contents) > 0 {
+		openAIResp.Choices = []openai.ChatCompletionChoice{
+			{
+				Message: openai.ChatCompletionMessage{
+					Role:    openai.ChatMessageRoleAssistant,
+					Content: resp.Message.Contents[0].GetText(),
+				},
+			},
+		}
+	}
+
+	if resp.Statistics != nil {
+		openAIResp.Usage.PromptTokens = int(resp.Statistics.Usage.PromptTokens)
+		openAIResp.Usage.CompletionTokens = int(resp.Statistics.Usage.CompletionTokens)
+	}
+
+	return openAIResp
 }

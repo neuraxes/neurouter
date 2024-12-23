@@ -28,7 +28,7 @@ func wireApp(confServer *conf.Server, confData *conf.Data, upstream *conf.Upstre
 	openAIChatRepoFactory := openai.NewOpenAIChatRepoFactory()
 	anthropicChatRepoFactory := data.NewAnthropicChatRepoFactory()
 	chatUseCase := biz.NewChatUseCase(upstream, openAIChatRepoFactory, anthropicChatRepoFactory, logger)
-	routerService := service.NewRouterService(chatUseCase)
+	routerService := service.NewRouterService(chatUseCase, logger)
 	grpcServer := server.NewGRPCServer(confServer, routerService, logger)
 	httpServer := server.NewHTTPServer(confServer, routerService, logger)
 	app := newApp(logger, grpcServer, httpServer)

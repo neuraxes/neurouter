@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	nethttp "net/http"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/sashabaranov/go-openai"
@@ -23,19 +22,24 @@ func (c *chatStreamServer) Context() context.Context {
 
 func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 	chunk := &openai.ChatCompletionStreamResponse{
-		ID: resp.Message.Id,
-		Choices: []openai.ChatCompletionStreamChoice{
-			{
-				Delta: openai.ChatCompletionStreamChoiceDelta{
-					Role:    openai.ChatMessageRoleAssistant,
-					Content: resp.Message.Contents[0].GetText(),
-				},
-			},
-		},
+		Choices: []openai.ChatCompletionStreamChoice{},
 	}
+
+	if resp.Message != nil && len(resp.Message.Contents) > 0 {
+		chunk.ID = resp.Message.Id
+		chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
+			Delta: openai.ChatCompletionStreamChoiceDelta{
+				Role:    openai.ChatMessageRoleAssistant,
+				Content: resp.Message.Contents[0].GetText(),
+			},
+		})
+	}
+
 	if resp.Statistics != nil {
-		chunk.Usage.PromptTokens = int(resp.Statistics.Usage.PromptTokens)
-		chunk.Usage.CompletionTokens = int(resp.Statistics.Usage.CompletionTokens)
+		chunk.Usage = &openai.Usage{
+			PromptTokens:     int(resp.Statistics.Usage.PromptTokens),
+			CompletionTokens: int(resp.Statistics.Usage.CompletionTokens),
+		}
 	}
 
 	chunkJson, err := json.Marshal(chunk)
@@ -62,40 +66,21 @@ func handleChatCompletion(ctx http.Context, svc v1.ChatServer) error {
 		return err
 	}
 
-	req := convertChatCompletionRequestFromOpenAI(&openAIReq)
+	req := convertChatReqFromOpenAI(&openAIReq)
 
 	if openAIReq.Stream {
 		err = svc.ChatStream(req, &chatStreamServer{ctx: ctx})
 	} else {
-		resp, err := svc.Chat(ctx, req)
+		m := ctx.Middleware(func(ctx context.Context, req any) (any, error) {
+			return svc.Chat(ctx, req.(*v1.ChatReq))
+		})
+		resp, err := m(ctx, req)
 		if err != nil {
 			return err
 		}
 
-		openAIResp := &openai.ChatCompletionResponse{
-			ID: resp.Message.Id,
-			Choices: []openai.ChatCompletionChoice{
-				{
-					Message: openai.ChatCompletionMessage{
-						Role:    openai.ChatMessageRoleAssistant,
-						Content: resp.Message.Contents[0].GetText(),
-					},
-				},
-			},
-		}
-		if resp.Statistics != nil {
-			openAIResp.Usage.PromptTokens = int(resp.Statistics.Usage.PromptTokens)
-			openAIResp.Usage.CompletionTokens = int(resp.Statistics.Usage.CompletionTokens)
-		}
-
-		openAiRespJson, err := json.Marshal(openAIResp)
-		if err != nil {
-			return err
-		}
-
-		ctx.Response().Header().Set("Content-Type", "application/json")
-		ctx.Response().WriteHeader(nethttp.StatusOK)
-		_, err = ctx.Response().Write(openAiRespJson)
+		openAIResp := convertChatRespToOpenAI(resp.(*v1.ChatResp))
+		err = ctx.Result(200, openAIResp)
 		if err != nil {
 			return err
 		}

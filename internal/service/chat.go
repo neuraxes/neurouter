@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware"
+	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"google.golang.org/protobuf/proto"
 
 	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
@@ -11,12 +14,14 @@ import (
 
 type RouterService struct {
 	v1.UnimplementedChatServer
-	chat biz.ChatUseCase
+	chat          biz.ChatUseCase
+	chatStreamLog middleware.Middleware
 }
 
-func NewRouterService(chat biz.ChatUseCase) *RouterService {
+func NewRouterService(chat biz.ChatUseCase, logger log.Logger) *RouterService {
 	return &RouterService{
-		chat: chat,
+		chat:          chat,
+		chatStreamLog: logging.Server(logger),
 	}
 }
 
@@ -40,6 +45,11 @@ func (w *wrappedChatStreamServer) Send(resp *biz.ChatResp) error {
 }
 
 func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer) error {
-	chatReq := proto.Clone(req).(*v1.ChatReq)
-	return s.chat.ChatStream(srv.Context(), (*biz.ChatReq)(chatReq), &wrappedChatStreamServer{srv})
+	m := s.chatStreamLog(func(ctx context.Context, req any) (_ any, err error) {
+		chatReq := proto.Clone(req.(proto.Message)).(*v1.ChatReq)
+		err = s.chat.ChatStream(ctx, (*biz.ChatReq)(chatReq), &wrappedChatStreamServer{srv})
+		return
+	})
+	_, err := m(srv.Context(), req)
+	return err
 }

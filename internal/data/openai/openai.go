@@ -93,7 +93,10 @@ func (c openAIChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 	chunk := c.upstream.Current()
 	resp = &biz.ChatResp{
 		Id: c.req.Id,
-		Message: &v1.Message{
+	}
+
+	if len(chunk.Choices) > 0 {
+		resp.Message = &v1.Message{
 			Id:   c.id,
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
@@ -103,7 +106,7 @@ func (c openAIChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 					},
 				},
 			},
-		},
+		}
 	}
 
 	if chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0 {

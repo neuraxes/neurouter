@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/go-kratos/kratos/v2/middleware/logging"
+
 	"git.xdea.xyz/Turing/router/internal/conf"
 	"git.xdea.xyz/Turing/router/internal/server/openai"
 	"git.xdea.xyz/Turing/router/internal/service"
@@ -14,6 +16,7 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
+			logging.Server(logger),
 		),
 	}
 	if c.Http.Network != "" {
