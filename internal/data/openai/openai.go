@@ -125,9 +125,13 @@ func (c openAIChatStreamClient) Close() error {
 }
 
 func (r *ChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
+	openAIReq := r.convertRequestToOpenAI(req)
+	openAIReq.StreamOptions = openai.F(openai.ChatCompletionStreamOptionsParam{
+		IncludeUsage: openai.F(true),
+	})
 	stream := r.client.Chat.Completions.NewStreaming(
 		ctx,
-		r.convertRequestToOpenAI(req),
+		openAIReq,
 	)
 
 	id, err := uuid.NewUUID()

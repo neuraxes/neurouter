@@ -158,9 +158,6 @@ func (r *ChatRepo) convertRequestToOpenAI(req *biz.ChatReq) openai.ChatCompletio
 	openAIReq := openai.ChatCompletionNewParams{
 		Model:    openai.F(req.Model),
 		Messages: openai.F(messages),
-		StreamOptions: openai.F(openai.ChatCompletionStreamOptionsParam{
-			IncludeUsage: openai.F(true),
-		}),
 	}
 
 	if c := req.Config; c != nil {
