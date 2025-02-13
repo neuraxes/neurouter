@@ -2,17 +2,12 @@ package data
 
 import (
 	"git.xdea.xyz/Turing/router/internal/conf"
-	"git.xdea.xyz/Turing/router/internal/data/openai"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 )
 
-var ProviderSet = wire.NewSet(
-	NewData,
-	openai.NewOpenAIChatRepoFactory,
-	NewAnthropicChatRepoFactory,
-)
+var ProviderSet = wire.NewSet(NewData)
 
 type Data struct {
 }

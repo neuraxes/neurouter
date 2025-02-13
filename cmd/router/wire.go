@@ -8,9 +8,9 @@ package main
 import (
 	"git.xdea.xyz/Turing/router/internal/biz"
 	"git.xdea.xyz/Turing/router/internal/conf"
-	"git.xdea.xyz/Turing/router/internal/data"
 	"git.xdea.xyz/Turing/router/internal/server"
 	"git.xdea.xyz/Turing/router/internal/service"
+	"git.xdea.xyz/Turing/router/internal/upstream"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
@@ -19,5 +19,5 @@ import (
 
 // wireApp init kratos application.
 func wireApp(*conf.Server, *conf.Data, *conf.Upstream, log.Logger) (*kratos.App, func(), error) {
-	panic(wire.Build(server.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, newApp))
+	panic(wire.Build(server.ProviderSet /*, data.ProviderSet*/, upstream.ProviderSet, biz.ProviderSet, service.ProviderSet, newApp))
 }

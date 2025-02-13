@@ -9,10 +9,10 @@ package main
 import (
 	"git.xdea.xyz/Turing/router/internal/biz"
 	"git.xdea.xyz/Turing/router/internal/conf"
-	"git.xdea.xyz/Turing/router/internal/data"
-	"git.xdea.xyz/Turing/router/internal/data/openai"
 	"git.xdea.xyz/Turing/router/internal/server"
 	"git.xdea.xyz/Turing/router/internal/service"
+	"git.xdea.xyz/Turing/router/internal/upstream"
+	"git.xdea.xyz/Turing/router/internal/upstream/openai"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 )
@@ -24,10 +24,10 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, confData *conf.Data, upstream *conf.Upstream, logger log.Logger) (*kratos.App, func(), error) {
+func wireApp(confServer *conf.Server, data *conf.Data, confUpstream *conf.Upstream, logger log.Logger) (*kratos.App, func(), error) {
 	openAIChatRepoFactory := openai.NewOpenAIChatRepoFactory()
-	anthropicChatRepoFactory := data.NewAnthropicChatRepoFactory()
-	chatUseCase := biz.NewChatUseCase(upstream, openAIChatRepoFactory, anthropicChatRepoFactory, logger)
+	anthropicChatRepoFactory := upstream.NewAnthropicChatRepoFactory()
+	chatUseCase := biz.NewChatUseCase(confUpstream, openAIChatRepoFactory, anthropicChatRepoFactory, logger)
 	routerService := service.NewRouterService(chatUseCase, logger)
 	grpcServer := server.NewGRPCServer(confServer, routerService, logger)
 	httpServer := server.NewHTTPServer(confServer, routerService, logger)
