@@ -40,6 +40,8 @@ message Message {
   repeated ToolCall tool_calls = 5;
   // Indicate the message is a response to a tool call
   string tool_call_id = 6;
+  // The reasoning content before final response
+  string reasoning_content = 7;
 }
 
 message ChatReq {
