@@ -7,12 +7,12 @@
 package main
 
 import (
-	"git.xdea.xyz/Turing/router/internal/biz"
-	"git.xdea.xyz/Turing/router/internal/conf"
-	"git.xdea.xyz/Turing/router/internal/server"
-	"git.xdea.xyz/Turing/router/internal/service"
-	"git.xdea.xyz/Turing/router/internal/upstream"
-	"git.xdea.xyz/Turing/router/internal/upstream/openai"
+	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	"git.xdea.xyz/Turing/neurouter/internal/server"
+	"git.xdea.xyz/Turing/neurouter/internal/service"
+	"git.xdea.xyz/Turing/neurouter/internal/upstream"
+	"git.xdea.xyz/Turing/neurouter/internal/upstream/openai"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 )

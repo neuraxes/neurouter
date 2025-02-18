@@ -10,9 +10,9 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
 
-	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
-	"git.xdea.xyz/Turing/router/internal/biz"
-	"git.xdea.xyz/Turing/router/internal/conf"
+	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/conf"
 )
 
 type AnthropicChatRepo struct {

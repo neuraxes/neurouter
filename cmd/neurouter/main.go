@@ -4,7 +4,7 @@ import (
 	"flag"
 	"os"
 
-	"git.xdea.xyz/Turing/router/internal/conf"
+	"git.xdea.xyz/Turing/neurouter/internal/conf"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
@@ -20,7 +20,7 @@ import (
 // go build -ldflags "-X main.Version=x.y.z"
 var (
 	// Name is the name of the compiled software.
-	Name = "laas.router.v1"
+	Name = "neurouter.v1"
 	// Version is the version of the compiled software.
 	Version string
 	// flagconf is the config flag.

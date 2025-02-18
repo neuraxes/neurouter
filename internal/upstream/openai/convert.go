@@ -7,8 +7,8 @@ import (
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/shared"
 
-	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
-	"git.xdea.xyz/Turing/router/internal/biz"
+	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	"git.xdea.xyz/Turing/neurouter/internal/biz"
 )
 
 // convertMessageToOpenAI converts an internal message to a message that can be sent to the OpenAI API.

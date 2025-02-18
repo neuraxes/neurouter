@@ -8,8 +8,8 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"google.golang.org/protobuf/proto"
 
-	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
-	"git.xdea.xyz/Turing/router/internal/biz"
+	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	"git.xdea.xyz/Turing/neurouter/internal/biz"
 )
 
 type RouterService struct {

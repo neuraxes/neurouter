@@ -26,7 +26,7 @@ BuildBinary:
   artifacts:
     expire_in: 1 day
     paths:
-      - ./bin/router
+      - ./bin/neurouter
 
 BuildImage:
   stage: Build
@@ -42,4 +42,4 @@ BuildImage:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "ctrysbita/router:${CI_PIPELINE_IID}"
+      --destination "ctrysbita/neurouter:${CI_PIPELINE_IID}"

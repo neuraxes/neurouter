@@ -3,7 +3,7 @@ package biz
 import (
 	"context"
 
-	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
+	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
 )
 
 type ChatReq v1.ChatReq

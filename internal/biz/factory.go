@@ -3,7 +3,7 @@ package biz
 import (
 	"github.com/go-kratos/kratos/v2/log"
 
-	"git.xdea.xyz/Turing/router/internal/conf"
+	"git.xdea.xyz/Turing/neurouter/internal/conf"
 )
 
 type LaaSChatRepoFactory func(config *conf.LaaSConfig, logger log.Logger) ChatRepo

@@ -1,4 +1,4 @@
-module git.xdea.xyz/Turing/router
+module git.xdea.xyz/Turing/neurouter
 
 go 1.23
 

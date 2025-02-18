@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 
-	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
-	"git.xdea.xyz/Turing/router/internal/conf"
+	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	"git.xdea.xyz/Turing/neurouter/internal/conf"
 )
 
 type ChatUseCase interface {

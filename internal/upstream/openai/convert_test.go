@@ -7,8 +7,8 @@ import (
 	"github.com/openai/openai-go"
 	. "github.com/smartystreets/goconvey/convey"
 
-	v1 "git.xdea.xyz/Turing/router/api/laas/v1"
-	"git.xdea.xyz/Turing/router/internal/conf"
+	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	"git.xdea.xyz/Turing/neurouter/internal/conf"
 )
 
 func TestConvertMessageToOpenAI(t *testing.T) {

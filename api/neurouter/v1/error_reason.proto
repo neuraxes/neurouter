@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package laas.v1;
+package neurouter.v1;
 
 import "errors/errors.proto";
 
-option go_package = "git.xdea.xyz/Turing/router/api/laas/v1;v1";
+option go_package = "git.xdea.xyz/Turing/neurouter/api/neurouter/v1;v1";
 
 enum ErrorReason {
   option (errors.default_code) = 500;

@@ -1,7 +1,7 @@
 package data
 
 import (
-	"git.xdea.xyz/Turing/router/internal/conf"
+	"git.xdea.xyz/Turing/neurouter/internal/conf"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"

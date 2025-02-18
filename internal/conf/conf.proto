@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package laas.router.v1;
+package neurouter.v1;
 
 import "conf/upstream.proto";
 import "google/protobuf/duration.proto";
 
-option go_package = "git.xdea.xyz/Turing/router/internal/conf;conf";
+option go_package = "git.xdea.xyz/Turing/neurouter/internal/conf;conf";
 
 message Bootstrap {
   Server server = 1;

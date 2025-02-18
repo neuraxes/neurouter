@@ -3,9 +3,9 @@ package server
 import (
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 
-	"git.xdea.xyz/Turing/router/internal/conf"
-	"git.xdea.xyz/Turing/router/internal/server/openai"
-	"git.xdea.xyz/Turing/router/internal/service"
+	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	"git.xdea.xyz/Turing/neurouter/internal/server/openai"
+	"git.xdea.xyz/Turing/neurouter/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
