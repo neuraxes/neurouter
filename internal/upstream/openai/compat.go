@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
-	"github.com/sashabaranov/go-openai"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -30,10 +30,10 @@ func (r *ChatRepo) preferStringContent(req *http.Request, next option.Middleware
 
 	for i, msg := range gjson.GetBytes(body, "messages").Array() {
 		role := msg.Get("role").String()
-		if (role == openai.ChatMessageRoleSystem && !r.config.PreferStringContentForSystem) ||
-			(role == openai.ChatMessageRoleUser && !r.config.PreferStringContentForUser) ||
-			(role == openai.ChatMessageRoleAssistant && !r.config.PreferStringContentForAssistant) ||
-			(role == openai.ChatMessageRoleTool && !r.config.PreferStringContentForTool) {
+		if (role == string(openai.ChatCompletionSystemMessageParamRoleSystem) && !r.config.PreferStringContentForSystem) ||
+			(role == string(openai.ChatCompletionMessageParamRoleUser) && !r.config.PreferStringContentForUser) ||
+			(role == string(openai.ChatCompletionMessageParamRoleAssistant) && !r.config.PreferStringContentForAssistant) ||
+			(role == string(openai.ChatCompletionMessageParamRoleTool) && !r.config.PreferStringContentForTool) {
 			continue
 		}
 		content := msg.Get("content")
