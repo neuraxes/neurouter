@@ -1,13 +1,12 @@
-package openai
+package deepseek
 
 import (
 	"context"
 	"io"
+	"strings"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/packages/ssestream"
 
 	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
@@ -16,44 +15,30 @@ import (
 )
 
 type ChatRepo struct {
-	config *conf.OpenAIConfig
-	client *openai.Client
+	config *conf.DeepSeekConfig
 	log    *log.Helper
 }
 
-func NewOpenAIChatRepoFactory() biz.OpenAIChatRepoFactory {
-	return func(config *conf.OpenAIConfig, logger log.Logger) biz.ChatRepo {
-		return NewOpenAIChatRepo(config, logger)
+func NewDeepSeekChatRepoFactory() biz.DeepSeekChatRepoFactory {
+	return func(config *conf.DeepSeekConfig, logger log.Logger) biz.ChatRepo {
+		return NewDeepSeekChatRepo(config, logger)
 	}
 }
 
-func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) biz.ChatRepo {
-	repo := &ChatRepo{
+func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) biz.ChatRepo {
+	// Trim the trailing slash from the base URL to avoid double slashes
+	config.BaseUrl = strings.TrimSuffix(config.BaseUrl, "/")
+
+	return &ChatRepo{
 		config: config,
 		log:    log.NewHelper(logger),
 	}
-
-	options := []option.RequestOption{
-		option.WithAPIKey(config.ApiKey),
-	}
-	if config.BaseUrl != "" {
-		options = append(options, option.WithBaseURL(config.BaseUrl))
-	}
-	if config.PreferStringContentForSystem ||
-		config.PreferStringContentForUser ||
-		config.PreferStringContentForAssistant ||
-		config.PreferStringContentForTool {
-		options = append(options, option.WithMiddleware(repo.preferStringContent))
-	}
-	repo.client = openai.NewClient(options...)
-
-	return repo
 }
 
 func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
-	res, err := r.client.Chat.Completions.New(
+	res, err := r.CreateChatCompletion(
 		ctx,
-		r.convertRequestToOpenAI(req),
+		r.convertRequestToDeepSeek(req),
 	)
 	if err != nil {
 		return
@@ -61,7 +46,7 @@ func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatRe
 
 	resp = &biz.ChatResp{
 		Id:      res.ID,
-		Message: r.convertMessageFromOpenAI(&res.Choices[0].Message),
+		Message: r.convertMessageFromDeepSeek(res.Choices[0].Message),
 	}
 
 	if res.Usage.PromptTokens != 0 || res.Usage.CompletionTokens != 0 {
@@ -75,13 +60,13 @@ func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatRe
 	return
 }
 
-type openAIChatStreamClient struct {
+type deepSeekChatStreamClient struct {
 	id       string
 	req      *biz.ChatReq
-	upstream *ssestream.Stream[openai.ChatCompletionChunk]
+	upstream *ssestream.Stream[ChatStreamResponse] // Reuse SSE Stream from OpenAI
 }
 
-func (c openAIChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
+func (c *deepSeekChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 	if !c.upstream.Next() {
 		if err = c.upstream.Err(); err != nil {
 			return
@@ -106,10 +91,11 @@ func (c openAIChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 					},
 				},
 			},
+			ReasoningContent: chunk.Choices[0].Delta.ReasoningContent,
 		}
 	}
 
-	if chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0 {
+	if chunk.Usage != nil && (chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0) {
 		resp.Statistics = &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
 				PromptTokens:     int32(chunk.Usage.PromptTokens),
@@ -120,29 +106,32 @@ func (c openAIChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 	return
 }
 
-func (c openAIChatStreamClient) Close() error {
+func (c *deepSeekChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 
 func (r *ChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
-	openAIReq := r.convertRequestToOpenAI(req)
-	openAIReq.StreamOptions = openai.F(openai.ChatCompletionStreamOptionsParam{
-		IncludeUsage: openai.F(true),
-	})
-	stream := r.client.Chat.Completions.NewStreaming(
-		ctx,
-		openAIReq,
-	)
+	deepSeekReq := r.convertRequestToDeepSeek(req)
+	deepSeekReq.Stream = true
+	deepSeekReq.StreamOptions = &StreamOptions{
+		IncludeUsage: true,
+	}
 
-	id, err := uuid.NewUUID()
+	resp, err := r.CreateChatCompletionStream(ctx, deepSeekReq)
 	if err != nil {
 		return
 	}
 
-	client = &openAIChatStreamClient{
+	id, err := uuid.NewUUID()
+	if err != nil {
+		_ = resp.Body.Close()
+		return
+	}
+
+	client = &deepSeekChatStreamClient{
 		id:       id.String(),
 		req:      req,
-		upstream: stream,
+		upstream: ssestream.NewStream[ChatStreamResponse](ssestream.NewDecoder(resp), err),
 	}
 	return
 }

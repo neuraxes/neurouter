@@ -202,6 +202,14 @@ func (r *ChatRepo) convertRequestToOpenAI(req *biz.ChatReq) openai.ChatCompletio
 	return openAIReq
 }
 
+func toolFunctionParametersToOpenAI(parameters *v1.Tool_Function_Parameters) openai.FunctionParameters {
+	return map[string]any{
+		"type":       parameters.Type,
+		"properties": parameters.Properties,
+		"required":   parameters.Required,
+	}
+}
+
 func (r *ChatRepo) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
 	id, err := uuid.NewUUID()
 	if err != nil {

@@ -30,6 +30,7 @@ func NewChatUseCase(
 	c *conf.Upstream,
 	openAIChatRepoFactory OpenAIChatRepoFactory,
 	anthropicChatRepoFactory AnthropicChatRepoFactory,
+	deepSeekChatRepoFactory DeepSeekChatRepoFactory,
 	logger log.Logger,
 ) ChatUseCase {
 	var upstreams []*upstream
@@ -47,6 +48,8 @@ func NewChatUseCase(
 				panic("unimplemented")
 			case *conf.UpstreamConfig_Anthropic:
 				repo = anthropicChatRepoFactory(config.GetAnthropic(), logger)
+			case *conf.UpstreamConfig_DeepSeek:
+				repo = deepSeekChatRepoFactory(config.GetDeepSeek(), logger)
 			}
 
 			upstreams = append(upstreams, &upstream{models: config.Models, repo: repo})

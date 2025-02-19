@@ -16,6 +16,7 @@ message UpstreamConfig {
     OpenAIConfig open_ai = 101;
     GoogleConfig google = 102;
     AnthropicConfig anthropic = 103;
+    DeepSeekConfig deep_seek = 104;
   }
 }
 
@@ -48,4 +49,9 @@ message AnthropicConfig {
   string base_url = 2;
   // Whether to merge the system prompt into messages
   bool merge_system = 3;
+}
+
+message DeepSeekConfig {
+  string api_key = 1;
+  string base_url = 2;
 }

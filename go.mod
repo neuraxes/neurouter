@@ -1,6 +1,8 @@
 module git.xdea.xyz/Turing/neurouter
 
-go 1.23
+go 1.23.4
+
+toolchain go1.24.0
 
 require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.10
