@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.12
-// source: neurouter/v1/router.proto
+// source: neurouter/v1/chat.proto
 
 package v1
 
@@ -159,5 +159,5 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "neurouter/v1/router.proto",
+	Metadata: "neurouter/v1/chat.proto",
 }
