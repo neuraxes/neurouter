@@ -1,4 +1,4 @@
-package upstream
+package anthropic
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
 )
 
-type AnthropicChatRepo struct {
+type ChatRepo struct {
 	config *conf.AnthropicConfig
 	client *anthropic.Client
 }
@@ -35,70 +35,13 @@ func NewAnthropicChatRepo(config *conf.AnthropicConfig) biz.ChatRepo {
 		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
 
-	return &AnthropicChatRepo{
+	return &ChatRepo{
 		config: config,
 		client: anthropic.NewClient(options...),
 	}
 }
 
-// convertSystemToAnthropic converts system messages to a format that can be sent to the Anthropic API.
-func (r *AnthropicChatRepo) convertSystemToAnthropic(messages []*v1.Message) []anthropic.TextBlockParam {
-	var parts []anthropic.TextBlockParam
-	for _, message := range messages {
-		if message.Role != v1.Role_SYSTEM {
-			continue
-		}
-		for _, content := range message.Contents {
-			switch c := content.GetContent().(type) {
-			case *v1.Content_Text:
-				parts = append(parts, anthropic.NewTextBlock(c.Text))
-			}
-		}
-	}
-	return parts
-}
-
-// convertMessageToAnthropic converts an internal message to a message that can be sent to the Anthropic API.
-func (r *AnthropicChatRepo) convertMessageToAnthropic(message *v1.Message) anthropic.MessageParam {
-	var parts []anthropic.ContentBlockParamUnion
-	for _, content := range message.Contents {
-		switch c := content.GetContent().(type) {
-		case *v1.Content_Text:
-			parts = append(parts, anthropic.NewTextBlock(c.Text))
-		case *v1.Content_Image_:
-			// TODO: Implement image support
-		}
-	}
-	if message.Role == v1.Role_USER || message.Role == v1.Role_SYSTEM {
-		return anthropic.NewUserMessage(parts...)
-	} else {
-		return anthropic.NewAssistantMessage(anthropic.NewTextBlock(message.Contents[0].GetText()))
-	}
-}
-
-// convertRequestToAnthropic converts an internal request to a request that can be sent to the Anthropic API.
-func (r *AnthropicChatRepo) convertRequestToAnthropic(req *biz.ChatReq) anthropic.MessageNewParams {
-	params := anthropic.MessageNewParams{
-		Model: anthropic.F(req.Model),
-	}
-
-	if !r.config.MergeSystem {
-		params.System = anthropic.F(r.convertSystemToAnthropic(req.Messages))
-	}
-
-	var messages []anthropic.MessageParam
-	for _, message := range req.Messages {
-		if !r.config.MergeSystem && message.Role == v1.Role_SYSTEM {
-			continue
-		}
-		messages = append(messages, r.convertMessageToAnthropic(message))
-	}
-	params.Messages = anthropic.F(messages)
-
-	return params
-}
-
-func (r *AnthropicChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
+func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
 	res, err := r.client.Messages.New(
 		ctx,
 		r.convertRequestToAnthropic(req),
@@ -188,7 +131,7 @@ func (c anthropicChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 
-func (r *AnthropicChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
+func (r *ChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
 	stream := r.client.Messages.NewStreaming(
 		ctx,
 		r.convertRequestToAnthropic(req),

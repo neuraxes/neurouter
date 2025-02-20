@@ -11,7 +11,7 @@ import (
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
 	"git.xdea.xyz/Turing/neurouter/internal/server"
 	"git.xdea.xyz/Turing/neurouter/internal/service"
-	"git.xdea.xyz/Turing/neurouter/internal/upstream"
+	"git.xdea.xyz/Turing/neurouter/internal/upstream/anthropic"
 	"git.xdea.xyz/Turing/neurouter/internal/upstream/deepseek"
 	"git.xdea.xyz/Turing/neurouter/internal/upstream/openai"
 	"github.com/go-kratos/kratos/v2"
@@ -27,7 +27,7 @@ import (
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, data *conf.Data, confUpstream *conf.Upstream, logger log.Logger) (*kratos.App, func(), error) {
 	openAIChatRepoFactory := openai.NewOpenAIChatRepoFactory()
-	anthropicChatRepoFactory := upstream.NewAnthropicChatRepoFactory()
+	anthropicChatRepoFactory := anthropic.NewAnthropicChatRepoFactory()
 	deepSeekChatRepoFactory := deepseek.NewDeepSeekChatRepoFactory()
 	chatUseCase := biz.NewChatUseCase(confUpstream, openAIChatRepoFactory, anthropicChatRepoFactory, deepSeekChatRepoFactory, logger)
 	routerService := service.NewRouterService(chatUseCase, logger)
