@@ -28,6 +28,7 @@ type chatUseCase struct {
 
 func NewChatUseCase(
 	c *conf.Upstream,
+	neurouterChatRepoFactory NeurouterChatRepoFactory,
 	openAIChatRepoFactory OpenAIChatRepoFactory,
 	anthropicChatRepoFactory AnthropicChatRepoFactory,
 	deepSeekChatRepoFactory DeepSeekChatRepoFactory,
@@ -40,8 +41,8 @@ func NewChatUseCase(
 			var repo ChatRepo
 
 			switch config.GetConfig().(type) {
-			case *conf.UpstreamConfig_Laas:
-				panic("unimplemented")
+			case *conf.UpstreamConfig_Neurouter:
+				repo = neurouterChatRepoFactory(config.GetNeurouter(), logger)
 			case *conf.UpstreamConfig_OpenAi:
 				repo = openAIChatRepoFactory(config.GetOpenAi(), logger)
 			case *conf.UpstreamConfig_Google:

@@ -5,11 +5,13 @@ import (
 
 	"git.xdea.xyz/Turing/neurouter/internal/upstream/anthropic"
 	"git.xdea.xyz/Turing/neurouter/internal/upstream/deepseek"
+	"git.xdea.xyz/Turing/neurouter/internal/upstream/neurouter"
 	"git.xdea.xyz/Turing/neurouter/internal/upstream/openai"
 )
 
 var ProviderSet = wire.NewSet(
-	deepseek.NewDeepSeekChatRepoFactory,
+	neurouter.NewNeurouterChatRepoFactory,
 	openai.NewOpenAIChatRepoFactory,
 	anthropic.NewAnthropicChatRepoFactory,
+	deepseek.NewDeepSeekChatRepoFactory,
 )

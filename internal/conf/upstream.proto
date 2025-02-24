@@ -12,7 +12,7 @@ message UpstreamConfig {
   string name = 1;
   repeated Model models = 2;
   oneof config {
-    LaaSConfig laas = 100;
+    NeurouterConfig neurouter = 100;
     OpenAIConfig open_ai = 101;
     GoogleConfig google = 102;
     AnthropicConfig anthropic = 103;
@@ -26,7 +26,7 @@ message Model {
   string provider = 3;
 }
 
-message LaaSConfig {
+message NeurouterConfig {
   string endpoint = 1;
 }
 
