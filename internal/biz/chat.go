@@ -34,23 +34,32 @@ func NewChatUseCase(
 	deepSeekChatRepoFactory DeepSeekChatRepoFactory,
 	logger log.Logger,
 ) ChatUseCase {
+	logHelper := log.NewHelper(logger)
 	var upstreams []*upstream
 
 	if c != nil {
 		for _, config := range c.Configs {
-			var repo ChatRepo
+			var (
+				repo ChatRepo
+				err  error
+			)
 
 			switch config.GetConfig().(type) {
 			case *conf.UpstreamConfig_Neurouter:
-				repo = neurouterChatRepoFactory(config.GetNeurouter(), logger)
+				repo, err = neurouterChatRepoFactory(config.GetNeurouter(), logger)
 			case *conf.UpstreamConfig_OpenAi:
-				repo = openAIChatRepoFactory(config.GetOpenAi(), logger)
+				repo, err = openAIChatRepoFactory(config.GetOpenAi(), logger)
 			case *conf.UpstreamConfig_Google:
 				panic("unimplemented")
 			case *conf.UpstreamConfig_Anthropic:
-				repo = anthropicChatRepoFactory(config.GetAnthropic(), logger)
+				repo, err = anthropicChatRepoFactory(config.GetAnthropic(), logger)
 			case *conf.UpstreamConfig_DeepSeek:
-				repo = deepSeekChatRepoFactory(config.GetDeepSeek(), logger)
+				repo, err = deepSeekChatRepoFactory(config.GetDeepSeek(), logger)
+			}
+
+			if err != nil {
+				logHelper.Errorf("failed to create chat repo: %v", err)
+				continue
 			}
 
 			upstreams = append(upstreams, &upstream{models: config.Models, repo: repo})
@@ -59,7 +68,7 @@ func NewChatUseCase(
 
 	return &chatUseCase{
 		upstreams: upstreams,
-		log:       log.NewHelper(logger),
+		log:       logHelper,
 	}
 }
 

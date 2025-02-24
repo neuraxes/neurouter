@@ -21,20 +21,19 @@ func NewNeurouterChatRepoFactory() biz.NeurouterChatRepoFactory {
 	return NewNeurouterChatRepo
 }
 
-func NewNeurouterChatRepo(config *conf.NeurouterConfig, logger log.Logger) biz.ChatRepo {
+func NewNeurouterChatRepo(config *conf.NeurouterConfig, logger log.Logger) (biz.ChatRepo, error) {
 	conn, err := grpc.DialInsecure(context.Background(),
 		grpc.WithEndpoint(config.Endpoint),
 	)
 	if err != nil {
-		log.NewHelper(logger).Errorf("failed to connect to neurouter: %v", err)
-		return nil
+		return nil, err
 	}
 
 	return &ChatRepo{
 		config: config,
 		client: v1.NewChatClient(conn),
 		log:    log.NewHelper(logger),
-	}
+	}, nil
 }
 
 func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (*biz.ChatResp, error) {

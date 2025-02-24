@@ -22,12 +22,10 @@ type ChatRepo struct {
 }
 
 func NewOpenAIChatRepoFactory() biz.OpenAIChatRepoFactory {
-	return func(config *conf.OpenAIConfig, logger log.Logger) biz.ChatRepo {
-		return NewOpenAIChatRepo(config, logger)
-	}
+	return NewOpenAIChatRepo
 }
 
-func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) biz.ChatRepo {
+func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) (biz.ChatRepo, error) {
 	repo := &ChatRepo{
 		config: config,
 		log:    log.NewHelper(logger),
@@ -47,7 +45,7 @@ func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) biz.ChatRep
 	}
 	repo.client = openai.NewClient(options...)
 
-	return repo
+	return repo, nil
 }
 
 func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {

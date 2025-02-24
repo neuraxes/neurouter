@@ -21,12 +21,10 @@ type ChatRepo struct {
 }
 
 func NewAnthropicChatRepoFactory() biz.AnthropicChatRepoFactory {
-	return func(config *conf.AnthropicConfig, logger log.Logger) biz.ChatRepo {
-		return NewAnthropicChatRepo(config)
-	}
+	return NewAnthropicChatRepo
 }
 
-func NewAnthropicChatRepo(config *conf.AnthropicConfig) biz.ChatRepo {
+func NewAnthropicChatRepo(config *conf.AnthropicConfig, logger log.Logger) (biz.ChatRepo, error) {
 	options := []option.RequestOption{
 		option.WithAPIKey(config.ApiKey),
 	}
@@ -38,7 +36,7 @@ func NewAnthropicChatRepo(config *conf.AnthropicConfig) biz.ChatRepo {
 	return &ChatRepo{
 		config: config,
 		client: anthropic.NewClient(options...),
-	}
+	}, nil
 }
 
 func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {

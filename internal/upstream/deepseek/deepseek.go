@@ -20,19 +20,17 @@ type ChatRepo struct {
 }
 
 func NewDeepSeekChatRepoFactory() biz.DeepSeekChatRepoFactory {
-	return func(config *conf.DeepSeekConfig, logger log.Logger) biz.ChatRepo {
-		return NewDeepSeekChatRepo(config, logger)
-	}
+	return NewDeepSeekChatRepo
 }
 
-func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) biz.ChatRepo {
+func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) (biz.ChatRepo, error) {
 	// Trim the trailing slash from the base URL to avoid double slashes
 	config.BaseUrl = strings.TrimSuffix(config.BaseUrl, "/")
 
 	return &ChatRepo{
 		config: config,
 		log:    log.NewHelper(logger),
-	}
+	}, nil
 }
 
 func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
