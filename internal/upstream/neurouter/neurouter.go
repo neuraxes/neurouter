@@ -22,7 +22,8 @@ func NewNeurouterChatRepoFactory() biz.NeurouterChatRepoFactory {
 }
 
 func NewNeurouterChatRepo(config *conf.NeurouterConfig, logger log.Logger) (biz.ChatRepo, error) {
-	conn, err := grpc.DialInsecure(context.Background(),
+	conn, err := grpc.DialInsecure(
+		context.Background(),
 		grpc.WithEndpoint(config.Endpoint),
 	)
 	if err != nil {

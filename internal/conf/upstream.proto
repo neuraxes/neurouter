@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package neurouter.v1;
+package neurouter.config.v1;
 
 option go_package = "git.xdea.xyz/Turing/neurouter/internal/conf;conf";
 

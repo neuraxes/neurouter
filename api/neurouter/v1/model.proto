@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package neurouter.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "git.xdea.xyz/Turing/neurouter/api/neurouter/v1;v1";
+
+service Model {
+  rpc ListModel(ListModelReq) returns (ListModelResp) {
+    option (google.api.http) = {
+      get: "/v1/models"
+    };
+  }
+}
+
+message ModelSpec {
+  string id = 1;
+  string name = 2;
+  string provider = 3;
+}
+
+message ListModelReq {
+}
+
+message ListModelResp {
+  repeated ModelSpec models = 1;
+}

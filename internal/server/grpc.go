@@ -28,6 +28,7 @@ func NewGRPCServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 		opts = append(opts, grpc.Timeout(c.Grpc.Timeout.AsDuration()))
 	}
 	srv := grpc.NewServer(opts...)
+	v1.RegisterModelServer(srv, svc)
 	v1.RegisterChatServer(srv, svc)
 	return srv
 }

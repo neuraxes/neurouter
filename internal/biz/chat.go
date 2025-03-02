@@ -14,6 +14,7 @@ import (
 type ChatUseCase interface {
 	Chat(ctx context.Context, req *ChatReq) (*ChatResp, error)
 	ChatStream(ctx context.Context, req *ChatReq, stream ChatStreamServer) error
+	ListAvailableModels(ctx context.Context) ([]*ModelSpec, error)
 }
 
 type upstream struct {
@@ -135,4 +136,20 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *ChatReq, server Chat
 			return err
 		}
 	}
+}
+
+func (uc *chatUseCase) ListAvailableModels(ctx context.Context) ([]*ModelSpec, error) {
+	var models []*ModelSpec
+
+	for _, u := range uc.upstreams {
+		for _, m := range u.models {
+			models = append(models, &ModelSpec{
+				Id:       m.Id,
+				Name:     m.Name,
+				Provider: m.Provider,
+			})
+		}
+	}
+
+	return models, nil
 }

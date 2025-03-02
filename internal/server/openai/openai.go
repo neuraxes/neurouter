@@ -8,10 +8,10 @@ import (
 
 func RegisterOpenAIHTTPServer(s *http.Server, svc v1.ChatServer) {
 	r := s.Route("/")
-	r.POST("/chat/completions", func(ctx http.Context) error {
+	r.POST("/openai/chat/completions", func(ctx http.Context) error {
 		return handleChatCompletion(ctx, svc)
 	})
-	r.POST("/v1/chat/completions", func(ctx http.Context) error {
+	r.POST("/openai/v1/chat/completions", func(ctx http.Context) error {
 		return handleChatCompletion(ctx, svc)
 	})
 }

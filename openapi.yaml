@@ -5,6 +5,178 @@ openapi: 3.0.3
 info:
     title: ""
     version: 0.0.1
-paths: {}
+paths:
+    /v1/chat/completion:
+        get:
+            tags:
+                - Chat
+            operationId: Chat_Chat
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+                - name: model
+                  in: query
+                  schema:
+                    type: string
+                - name: config.maxTokens
+                  in: query
+                  schema:
+                    type: string
+                - name: config.temperature
+                  in: query
+                  schema:
+                    type: number
+                    format: float
+                - name: config.topP
+                  in: query
+                  schema:
+                    type: number
+                    format: float
+                - name: config.topK
+                  in: query
+                  schema:
+                    type: string
+                - name: config.frequencyPenalty
+                  in: query
+                  schema:
+                    type: number
+                    format: float
+                - name: config.presencePenalty
+                  in: query
+                  schema:
+                    type: number
+                    format: float
+                - name: config.presetTemplate
+                  in: query
+                  schema:
+                    type: string
+                - name: config.presetGrammar
+                  in: query
+                  schema:
+                    type: string
+                - name: config.gbnfGrammar
+                  in: query
+                  schema:
+                    type: string
+                - name: config.jsonSchema
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/neurouter.v1.ChatResp'
+    /v1/models:
+        get:
+            tags:
+                - Model
+            operationId: Model_ListModel
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/neurouter.v1.ListModelResp'
 components:
-    schemas: {}
+    schemas:
+        neurouter.v1.ChatResp:
+            type: object
+            properties:
+                id:
+                    type: string
+                message:
+                    $ref: '#/components/schemas/neurouter.v1.Message'
+                statistics:
+                    $ref: '#/components/schemas/neurouter.v1.Statistics'
+        neurouter.v1.Content:
+            type: object
+            properties:
+                text:
+                    type: string
+                image:
+                    $ref: '#/components/schemas/neurouter.v1.Content_Image'
+            description: Multi-modality content
+        neurouter.v1.Content_Image:
+            type: object
+            properties:
+                url:
+                    type: string
+        neurouter.v1.ListModelResp:
+            type: object
+            properties:
+                models:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.ModelSpec'
+        neurouter.v1.Message:
+            type: object
+            properties:
+                id:
+                    type: string
+                role:
+                    type: integer
+                    format: enum
+                name:
+                    type: string
+                contents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.Content'
+                    description: The multi-modality content
+                toolCalls:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.ToolCall'
+                    description: A set of tool calls raised by the message
+                toolCallId:
+                    type: string
+                    description: Indicate the message is a response to a tool call
+                reasoningContent:
+                    type: string
+                    description: The reasoning content before final response
+        neurouter.v1.ModelSpec:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                provider:
+                    type: string
+        neurouter.v1.Statistics:
+            type: object
+            properties:
+                usage:
+                    $ref: '#/components/schemas/neurouter.v1.Statistics_Usage'
+        neurouter.v1.Statistics_Usage:
+            type: object
+            properties:
+                promptTokens:
+                    type: integer
+                    format: int32
+                completionTokens:
+                    type: integer
+                    format: int32
+        neurouter.v1.ToolCall:
+            type: object
+            properties:
+                id:
+                    type: string
+                function:
+                    $ref: '#/components/schemas/neurouter.v1.ToolCall_FunctionCall'
+        neurouter.v1.ToolCall_FunctionCall:
+            type: object
+            properties:
+                name:
+                    type: string
+                arguments:
+                    type: string
+tags:
+    - name: Chat
+    - name: Model

@@ -8,6 +8,7 @@ import (
 
 type ChatReq v1.ChatReq
 type ChatResp v1.ChatResp
+type ModelSpec v1.ModelSpec
 
 type ChatStreamServer interface {
 	Send(*ChatResp) error

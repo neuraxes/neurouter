@@ -1,6 +1,7 @@
 package server
 
 import (
+	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
@@ -29,6 +30,8 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 		opts = append(opts, http.Timeout(c.Http.Timeout.AsDuration()))
 	}
 	srv := http.NewServer(opts...)
+	v1.RegisterModelHTTPServer(srv, svc)
+	v1.RegisterChatHTTPServer(srv, svc)
 	openai.RegisterOpenAIHTTPServer(srv, svc)
 	return srv
 }

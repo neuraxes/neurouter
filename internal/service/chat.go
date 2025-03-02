@@ -3,27 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"google.golang.org/protobuf/proto"
 
 	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
 	"git.xdea.xyz/Turing/neurouter/internal/biz"
 )
-
-type RouterService struct {
-	v1.UnimplementedChatServer
-	chat          biz.ChatUseCase
-	chatStreamLog middleware.Middleware
-}
-
-func NewRouterService(chat biz.ChatUseCase, logger log.Logger) *RouterService {
-	return &RouterService{
-		chat:          chat,
-		chatStreamLog: logging.Server(logger),
-	}
-}
 
 func (s *RouterService) Chat(ctx context.Context, req *v1.ChatReq) (resp *v1.ChatResp, err error) {
 	chatReq := proto.Clone(req).(*v1.ChatReq)

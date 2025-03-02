@@ -2,12 +2,17 @@ syntax = "proto3";
 
 package neurouter.v1;
 
+import "google/api/annotations.proto";
 import "neurouter/v1/common.proto";
 
 option go_package = "git.xdea.xyz/Turing/neurouter/api/neurouter/v1;v1";
 
 service Chat {
-  rpc Chat(ChatReq) returns (ChatResp) {}
+  rpc Chat(ChatReq) returns (ChatResp) {
+    option (google.api.http) = {
+      get: "/v1/chat/completion"
+    };
+  }
   rpc ChatStream(ChatReq) returns (stream ChatResp) {}
 }
 
