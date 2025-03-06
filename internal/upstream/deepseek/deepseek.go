@@ -101,6 +101,9 @@ func (c *deepSeekChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 			},
 		}
 	}
+
+	// Clear due to the reuse of the same message struct
+	chunk.Choices[0].Delta = nil
 	return
 }
 
