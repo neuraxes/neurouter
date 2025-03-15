@@ -9,12 +9,12 @@ package main
 import (
 	"git.xdea.xyz/Turing/neurouter/internal/biz"
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/anthropic"
+	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/deepseek"
+	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/neurouter"
+	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/openai"
 	"git.xdea.xyz/Turing/neurouter/internal/server"
 	"git.xdea.xyz/Turing/neurouter/internal/service"
-	"git.xdea.xyz/Turing/neurouter/internal/upstream/anthropic"
-	"git.xdea.xyz/Turing/neurouter/internal/upstream/deepseek"
-	"git.xdea.xyz/Turing/neurouter/internal/upstream/neurouter"
-	"git.xdea.xyz/Turing/neurouter/internal/upstream/openai"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 )

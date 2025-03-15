@@ -2,12 +2,13 @@ package data
 
 import (
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	"git.xdea.xyz/Turing/neurouter/internal/data/upstream"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 )
 
-var ProviderSet = wire.NewSet(NewData)
+var ProviderSet = wire.NewSet(NewData, upstream.ProviderSet)
 
 type Data struct {
 }
