@@ -11,7 +11,8 @@ import (
 	"github.com/google/uuid"
 
 	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/repository"
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
 )
 
@@ -20,11 +21,11 @@ type ChatRepo struct {
 	client *anthropic.Client
 }
 
-func NewAnthropicChatRepoFactory() biz.AnthropicChatRepoFactory {
+func NewAnthropicChatRepoFactory() repository.ChatRepoFactory[conf.AnthropicConfig] {
 	return NewAnthropicChatRepo
 }
 
-func NewAnthropicChatRepo(config *conf.AnthropicConfig, logger log.Logger) (biz.ChatRepo, error) {
+func NewAnthropicChatRepo(config *conf.AnthropicConfig, logger log.Logger) (repository.ChatRepo, error) {
 	options := []option.RequestOption{
 		option.WithAPIKey(config.ApiKey),
 	}
@@ -39,7 +40,7 @@ func NewAnthropicChatRepo(config *conf.AnthropicConfig, logger log.Logger) (biz.
 	}, nil
 }
 
-func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
+func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	res, err := r.client.Messages.New(
 		ctx,
 		r.convertRequestToAnthropic(req),
@@ -53,7 +54,7 @@ func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatRe
 		return
 	}
 
-	resp = &biz.ChatResp{
+	resp = &entity.ChatResp{
 		Id: req.Id,
 		Message: &v1.Message{
 			Id:   id.String(),
@@ -81,11 +82,11 @@ func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatRe
 
 type anthropicChatStreamClient struct {
 	id       string
-	req      *biz.ChatReq
+	req      *entity.ChatReq
 	upstream *ssestream.Stream[anthropic.MessageStreamEvent]
 }
 
-func (c anthropicChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
+func (c anthropicChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 next:
 	if !c.upstream.Next() {
 		if err = c.upstream.Err(); err != nil {
@@ -100,7 +101,7 @@ next:
 		goto next
 	}
 
-	resp = &biz.ChatResp{
+	resp = &entity.ChatResp{
 		Id: c.req.Id,
 		Message: &v1.Message{
 			Id:   c.id,
@@ -129,7 +130,7 @@ func (c anthropicChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 
-func (r *ChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
+func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
 	stream := r.client.Messages.NewStreaming(
 		ctx,
 		r.convertRequestToAnthropic(req),

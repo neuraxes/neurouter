@@ -7,7 +7,8 @@
 package main
 
 import (
-	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/chat"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/model"
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
 	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/anthropic"
 	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/deepseek"
@@ -27,12 +28,13 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, data *conf.Data, upstream *conf.Upstream, logger log.Logger) (*kratos.App, func(), error) {
-	neurouterChatRepoFactory := neurouter.NewNeurouterChatRepoFactory()
-	openAIChatRepoFactory := openai.NewOpenAIChatRepoFactory()
-	anthropicChatRepoFactory := anthropic.NewAnthropicChatRepoFactory()
-	deepSeekChatRepoFactory := deepseek.NewDeepSeekChatRepoFactory()
-	chatUseCase := biz.NewChatUseCase(upstream, neurouterChatRepoFactory, openAIChatRepoFactory, anthropicChatRepoFactory, deepSeekChatRepoFactory, logger)
-	routerService := service.NewRouterService(chatUseCase, logger)
+	chatRepoFactory := neurouter.NewNeurouterChatRepoFactory()
+	repositoryChatRepoFactory := openai.NewOpenAIChatRepoFactory()
+	chatRepoFactory2 := anthropic.NewAnthropicChatRepoFactory()
+	chatRepoFactory3 := deepseek.NewDeepSeekChatRepoFactory()
+	useCaseImpl := model.NewModelUseCase(upstream, chatRepoFactory, repositoryChatRepoFactory, chatRepoFactory2, chatRepoFactory3, logger)
+	useCase := chat.NewChatUseCase(useCaseImpl, logger)
+	routerService := service.NewRouterService(useCase, useCaseImpl, logger)
 	grpcServer := server.NewGRPCServer(confServer, routerService, logger)
 	httpServer := server.NewHTTPServer(confServer, routerService, logger)
 	app := newApp(logger, grpcServer, httpServer)

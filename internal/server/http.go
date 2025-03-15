@@ -1,8 +1,9 @@
 package server
 
 import (
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
+
+	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
 
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
 	"git.xdea.xyz/Turing/neurouter/internal/server/openai"

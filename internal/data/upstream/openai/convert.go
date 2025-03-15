@@ -8,7 +8,7 @@ import (
 	"github.com/openai/openai-go/shared"
 
 	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
 )
 
 // convertMessageToOpenAI converts an internal message to a message that can be sent to the OpenAI API.
@@ -146,7 +146,7 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 }
 
 // convertRequestToOpenAI converts an internal request to a request that can be sent to the OpenAI API.
-func (r *ChatRepo) convertRequestToOpenAI(req *biz.ChatReq) openai.ChatCompletionNewParams {
+func (r *ChatRepo) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatCompletionNewParams {
 	var messages []openai.ChatCompletionMessageParamUnion
 	for _, message := range req.Messages {
 		m := r.convertMessageToOpenAI(message)

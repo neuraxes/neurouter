@@ -11,7 +11,8 @@ import (
 	"github.com/openai/openai-go/packages/ssestream"
 
 	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/repository"
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
 )
 
@@ -21,11 +22,11 @@ type ChatRepo struct {
 	log    *log.Helper
 }
 
-func NewOpenAIChatRepoFactory() biz.OpenAIChatRepoFactory {
+func NewOpenAIChatRepoFactory() repository.ChatRepoFactory[conf.OpenAIConfig] {
 	return NewOpenAIChatRepo
 }
 
-func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) (biz.ChatRepo, error) {
+func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) (repository.ChatRepo, error) {
 	repo := &ChatRepo{
 		config: config,
 		log:    log.NewHelper(logger),
@@ -48,7 +49,7 @@ func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) (biz.ChatRe
 	return repo, nil
 }
 
-func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
+func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	res, err := r.client.Chat.Completions.New(
 		ctx,
 		r.convertRequestToOpenAI(req),
@@ -57,7 +58,7 @@ func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatRe
 		return
 	}
 
-	resp = &biz.ChatResp{
+	resp = &entity.ChatResp{
 		Id:      res.ID,
 		Message: r.convertMessageFromOpenAI(&res.Choices[0].Message),
 	}
@@ -75,11 +76,11 @@ func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatRe
 
 type openAIChatStreamClient struct {
 	id       string
-	req      *biz.ChatReq
+	req      *entity.ChatReq
 	upstream *ssestream.Stream[openai.ChatCompletionChunk]
 }
 
-func (c openAIChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
+func (c openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 	if !c.upstream.Next() {
 		if err = c.upstream.Err(); err != nil {
 			return
@@ -89,7 +90,7 @@ func (c openAIChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 	}
 
 	chunk := c.upstream.Current()
-	resp = &biz.ChatResp{
+	resp = &entity.ChatResp{
 		Id: c.req.Id,
 	}
 
@@ -122,7 +123,7 @@ func (c openAIChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 
-func (r *ChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
+func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
 	openAIReq := r.convertRequestToOpenAI(req)
 	openAIReq.StreamOptions = openai.F(openai.ChatCompletionStreamOptionsParam{
 		IncludeUsage: openai.F(true),

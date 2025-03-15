@@ -4,7 +4,7 @@ import (
 	"github.com/anthropics/anthropic-sdk-go"
 
 	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
 )
 
 // convertSystemToAnthropic converts system messages to a format that can be sent to the Anthropic API.
@@ -43,7 +43,7 @@ func (r *ChatRepo) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 }
 
 // convertRequestToAnthropic converts an internal request to a request that can be sent to the Anthropic API.
-func (r *ChatRepo) convertRequestToAnthropic(req *biz.ChatReq) anthropic.MessageNewParams {
+func (r *ChatRepo) convertRequestToAnthropic(req *entity.ChatReq) anthropic.MessageNewParams {
 	params := anthropic.MessageNewParams{
 		Model: anthropic.F(req.Model),
 	}

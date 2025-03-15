@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
 )
 
 // convertMessageToDeepSeek converts an internal message to a message that can be sent to the DeepSeek API.
@@ -67,7 +67,7 @@ func (r *ChatRepo) convertMessageToDeepSeek(message *v1.Message) *Message {
 }
 
 // convertRequestToDeepSeek converts an internal request to a request that can be sent to the DeepSeek API.
-func (r *ChatRepo) convertRequestToDeepSeek(req *biz.ChatReq) *ChatRequest {
+func (r *ChatRepo) convertRequestToDeepSeek(req *entity.ChatReq) *ChatRequest {
 	var messages []*Message
 	for _, message := range req.Messages {
 		m := r.convertMessageToDeepSeek(message)

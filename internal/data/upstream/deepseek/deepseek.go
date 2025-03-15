@@ -10,7 +10,8 @@ import (
 	"github.com/openai/openai-go/packages/ssestream"
 
 	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
+	"git.xdea.xyz/Turing/neurouter/internal/biz/repository"
 	"git.xdea.xyz/Turing/neurouter/internal/conf"
 )
 
@@ -19,11 +20,11 @@ type ChatRepo struct {
 	log    *log.Helper
 }
 
-func NewDeepSeekChatRepoFactory() biz.DeepSeekChatRepoFactory {
+func NewDeepSeekChatRepoFactory() repository.ChatRepoFactory[conf.DeepSeekConfig] {
 	return NewDeepSeekChatRepo
 }
 
-func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) (biz.ChatRepo, error) {
+func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) (repository.ChatRepo, error) {
 	// Trim the trailing slash from the base URL to avoid double slashes
 	config.BaseUrl = strings.TrimSuffix(config.BaseUrl, "/")
 
@@ -33,7 +34,7 @@ func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) (biz.Ch
 	}, nil
 }
 
-func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatResp, err error) {
+func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	res, err := r.CreateChatCompletion(
 		ctx,
 		r.convertRequestToDeepSeek(req),
@@ -42,7 +43,7 @@ func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatRe
 		return
 	}
 
-	resp = &biz.ChatResp{
+	resp = &entity.ChatResp{
 		Id:      res.ID,
 		Message: r.convertMessageFromDeepSeek(res.Choices[0].Message),
 	}
@@ -60,11 +61,11 @@ func (r *ChatRepo) Chat(ctx context.Context, req *biz.ChatReq) (resp *biz.ChatRe
 
 type deepSeekChatStreamClient struct {
 	id       string
-	req      *biz.ChatReq
+	req      *entity.ChatReq
 	upstream *ssestream.Stream[ChatStreamResponse] // Reuse SSE Stream from OpenAI
 }
 
-func (c *deepSeekChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
+func (c *deepSeekChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 	if !c.upstream.Next() {
 		if err = c.upstream.Err(); err != nil {
 			return
@@ -74,7 +75,7 @@ func (c *deepSeekChatStreamClient) Recv() (resp *biz.ChatResp, err error) {
 	}
 
 	chunk := c.upstream.Current()
-	resp = &biz.ChatResp{
+	resp = &entity.ChatResp{
 		Id: c.req.Id,
 	}
 
@@ -111,7 +112,7 @@ func (c *deepSeekChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 
-func (r *ChatRepo) ChatStream(ctx context.Context, req *biz.ChatReq) (client biz.ChatStreamClient, err error) {
+func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
 	deepSeekReq := r.convertRequestToDeepSeek(req)
 	deepSeekReq.Stream = true
 	deepSeekReq.StreamOptions = &StreamOptions{

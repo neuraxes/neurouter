@@ -7,7 +7,7 @@ import (
 )
 
 func (s *RouterService) ListModel(ctx context.Context, req *v1.ListModelReq) (resp *v1.ListModelResp, err error) {
-	models, err := s.chat.ListAvailableModels(ctx)
+	models, err := s.model.ListAvailableModels(ctx)
 	if err != nil {
 		return
 	}
