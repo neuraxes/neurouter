@@ -23,7 +23,8 @@ type chatUseCase struct {
 
 func NewChatUseCase(elector Elector, logger log.Logger) UseCase {
 	return &chatUseCase{
-		log: log.NewHelper(logger),
+		elector: elector,
+		log:     log.NewHelper(logger),
 	}
 }
 

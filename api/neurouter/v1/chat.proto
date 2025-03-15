@@ -36,6 +36,7 @@ message ToolCall {
 }
 
 message Message {
+  // The unique identifier of the message
   string id = 1;
   Role role = 2;
   string name = 3;

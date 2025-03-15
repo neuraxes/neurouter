@@ -211,13 +211,8 @@ func toolFunctionParametersToOpenAI(parameters *v1.Tool_Function_Parameters) ope
 }
 
 func (r *ChatRepo) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
-	id, err := uuid.NewUUID()
-	if err != nil {
-		r.log.Fatalf("failed to generate UUID: %v", err)
-	}
-
 	message := &v1.Message{
-		Id:   id.String(),
+		Id:   uuid.NewString(),
 		Role: v1.Role_MODEL,
 	}
 

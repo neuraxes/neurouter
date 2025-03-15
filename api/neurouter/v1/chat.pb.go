@@ -151,6 +151,7 @@ type Message struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The unique identifier of the message
 	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Role Role   `protobuf:"varint,2,opt,name=role,proto3,enum=neurouter.v1.Role" json:"role,omitempty"`
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`

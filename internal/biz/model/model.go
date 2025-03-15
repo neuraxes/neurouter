@@ -27,10 +27,11 @@ type UseCaseImpl struct {
 
 func NewModelUseCase(
 	c *conf.Upstream,
-	neurouterChatRepoFactory repository.ChatRepoFactory[conf.NeurouterConfig],
-	openAIChatRepoFactory repository.ChatRepoFactory[conf.OpenAIConfig],
 	anthropicChatRepoFactory repository.ChatRepoFactory[conf.AnthropicConfig],
 	deepSeekChatRepoFactory repository.ChatRepoFactory[conf.DeepSeekConfig],
+	googleChatRepoFactory repository.ChatRepoFactory[conf.GoogleConfig],
+	neurouterChatRepoFactory repository.ChatRepoFactory[conf.NeurouterConfig],
+	openAIChatRepoFactory repository.ChatRepoFactory[conf.OpenAIConfig],
 	logger log.Logger,
 ) *UseCaseImpl {
 	logHelper := log.NewHelper(logger)
@@ -49,7 +50,7 @@ func NewModelUseCase(
 			case *conf.UpstreamConfig_OpenAi:
 				repo, err = openAIChatRepoFactory(config.GetOpenAi(), logger)
 			case *conf.UpstreamConfig_Google:
-				panic("unimplemented")
+				repo, err = googleChatRepoFactory(config.GetGoogle(), logger)
 			case *conf.UpstreamConfig_Anthropic:
 				repo, err = anthropicChatRepoFactory(config.GetAnthropic(), logger)
 			case *conf.UpstreamConfig_DeepSeek:

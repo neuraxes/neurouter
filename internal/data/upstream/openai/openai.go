@@ -133,13 +133,8 @@ func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client 
 		openAIReq,
 	)
 
-	id, err := uuid.NewUUID()
-	if err != nil {
-		return
-	}
-
 	client = &openAIChatStreamClient{
-		id:       id.String(),
+		id:       uuid.NewString(),
 		req:      req,
 		upstream: stream,
 	}
