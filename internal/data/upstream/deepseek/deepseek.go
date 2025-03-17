@@ -58,9 +58,10 @@ func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	}
 
 	resp = &entity.ChatResp{
-		Id:      res.ID,
+		Id:      req.Id,
 		Message: r.convertMessageFromDeepSeek(res.Choices[0].Message),
 	}
+	resp.Message.Id = res.ID
 
 	if res.Usage.PromptTokens != 0 || res.Usage.CompletionTokens != 0 {
 		resp.Statistics = &v1.Statistics{
@@ -138,14 +139,8 @@ func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client 
 		return
 	}
 
-	id, err := uuid.NewUUID()
-	if err != nil {
-		_ = resp.Body.Close()
-		return
-	}
-
 	client = &deepSeekChatStreamClient{
-		id:       id.String(),
+		id:       uuid.NewString(),
 		req:      req,
 		upstream: ssestream.NewStream[ChatStreamResponse](ssestream.NewDecoder(resp), err),
 	}

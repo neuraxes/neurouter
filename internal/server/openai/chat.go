@@ -27,7 +27,8 @@ import (
 
 type chatStreamServer struct {
 	v1.Chat_ChatStreamServer
-	ctx http.Context
+	ctx     context.Context
+	httpCtx http.Context
 }
 
 func (c *chatStreamServer) Context() context.Context {
@@ -61,17 +62,17 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 		return err
 	}
 
-	c.ctx.Response().Write([]byte("data: "))
-	c.ctx.Response().Write(chunkJson)
-	c.ctx.Response().Write([]byte("\n\n"))
-	c.ctx.Response().(http.Flusher).Flush()
+	c.httpCtx.Response().Write([]byte("data: "))
+	c.httpCtx.Response().Write(chunkJson)
+	c.httpCtx.Response().Write([]byte("\n\n"))
+	c.httpCtx.Response().(http.Flusher).Flush()
 	return nil
 }
 
-func handleChatCompletion(ctx http.Context, svc v1.ChatServer) error {
-	requestBody, err := io.ReadAll(ctx.Request().Body)
+func handleChatCompletion(httpCtx http.Context, svc v1.ChatServer) (err error) {
+	requestBody, err := io.ReadAll(httpCtx.Request().Body)
 	if err != nil {
-		return err
+		return
 	}
 
 	openAIReq := openai.ChatCompletionRequest{}
@@ -83,22 +84,28 @@ func handleChatCompletion(ctx http.Context, svc v1.ChatServer) error {
 	req := convertChatReqFromOpenAI(&openAIReq)
 
 	if openAIReq.Stream {
-		err = svc.ChatStream(req, &chatStreamServer{ctx: ctx})
+		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
+			return nil, svc.ChatStream(req.(*v1.ChatReq), &chatStreamServer{
+				ctx:     ctx,
+				httpCtx: httpCtx,
+			})
+		})
+		_, err = m(httpCtx, req)
 	} else {
-		m := ctx.Middleware(func(ctx context.Context, req any) (any, error) {
+		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 			return svc.Chat(ctx, req.(*v1.ChatReq))
 		})
-		resp, err := m(ctx, req)
+		resp, err := m(httpCtx, req)
 		if err != nil {
 			return err
 		}
 
 		openAIResp := convertChatRespToOpenAI(resp.(*v1.ChatResp))
-		err = ctx.Result(200, openAIResp)
+		err = httpCtx.Result(200, openAIResp)
 		if err != nil {
 			return err
 		}
 	}
 
-	return err
+	return
 }

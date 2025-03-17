@@ -20,22 +20,20 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/model"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/middleware/logging"
 )
 
 type RouterService struct {
 	v1.UnimplementedModelServer
 	v1.UnimplementedChatServer
-	chat          chat.UseCase
-	model         model.UseCase
-	chatStreamLog middleware.Middleware
+	chat  chat.UseCase
+	model model.UseCase
+	log   *log.Helper
 }
 
 func NewRouterService(chat chat.UseCase, model model.UseCase, logger log.Logger) *RouterService {
 	return &RouterService{
-		chat:          chat,
-		model:         model,
-		chatStreamLog: logging.Server(logger),
+		chat:  chat,
+		model: model,
+		log:   log.NewHelper(logger),
 	}
 }

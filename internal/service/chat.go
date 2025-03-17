@@ -19,11 +19,17 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
 func (s *RouterService) Chat(ctx context.Context, req *v1.ChatReq) (resp *v1.ChatResp, err error) {
+	if claims, ok := jwt.FromContext(ctx); ok {
+		sub, _ := claims.GetSubject()
+		s.log.Infof("jwt authenticated for: %s", sub)
+	}
+
 	chatReq := proto.Clone(req).(*v1.ChatReq)
 	r, err := s.chat.Chat(ctx, (*entity.ChatReq)(chatReq))
 	if err != nil {
@@ -43,11 +49,12 @@ func (w *wrappedChatStreamServer) Send(resp *entity.ChatResp) error {
 }
 
 func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer) error {
-	m := s.chatStreamLog(func(ctx context.Context, req any) (_ any, err error) {
-		chatReq := proto.Clone(req.(proto.Message)).(*v1.ChatReq)
-		err = s.chat.ChatStream(ctx, (*entity.ChatReq)(chatReq), &wrappedChatStreamServer{srv})
-		return
-	})
-	_, err := m(srv.Context(), req)
+	if claims, ok := jwt.FromContext(srv.Context()); ok {
+		sub, _ := claims.GetSubject()
+		s.log.Infof("jwt authenticated for: %s", sub)
+	}
+
+	chatReq := proto.Clone(req).(*v1.ChatReq)
+	err := s.chat.ChatStream(srv.Context(), (*entity.ChatReq)(chatReq), &wrappedChatStreamServer{srv})
 	return err
 }

@@ -48,5 +48,10 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	v1.RegisterModelHTTPServer(srv, svc)
 	v1.RegisterChatHTTPServer(srv, svc)
 	openai.RegisterOpenAIHTTPServer(srv, svc)
+
+	if j := jwtAuth(); j != nil {
+		srv.Use("/*", j)
+	}
+
 	return srv
 }

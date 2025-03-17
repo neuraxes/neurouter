@@ -7,6 +7,7 @@ toolchain go1.24.0
 require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-alpha.10
 	github.com/go-kratos/kratos/v2 v2.8.3
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0
 	github.com/openai/openai-go v0.1.0-alpha.59

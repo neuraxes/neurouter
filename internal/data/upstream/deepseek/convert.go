@@ -145,10 +145,6 @@ func toolFunctionParametersToDeepSeek(params *v1.Tool_Function_Parameters) map[s
 
 // convertMessageFromDeepSeek converts a message from the DeepSeek API to an internal message.
 func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Message {
-	id, err := uuid.NewUUID()
-	if err != nil {
-		r.log.Fatalf("failed to generate UUID: %v", err)
-	}
 
 	// Convert role
 	var role v1.Role
@@ -167,7 +163,7 @@ func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Mess
 	}
 
 	message := &v1.Message{
-		Id:               id.String(),
+		Id:               uuid.NewString(),
 		Role:             role,
 		Name:             deepSeekMessage.Name,
 		ToolCallId:       deepSeekMessage.ToolCallID,
