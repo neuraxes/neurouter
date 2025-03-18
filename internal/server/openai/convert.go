@@ -19,7 +19,7 @@ import (
 
 	"github.com/sashabaranov/go-openai"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
 func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Message {

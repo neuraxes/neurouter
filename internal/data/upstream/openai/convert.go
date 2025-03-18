@@ -21,8 +21,8 @@ import (
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/shared"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
 // convertMessageToOpenAI converts an internal message to a message that can be sent to the OpenAI API.

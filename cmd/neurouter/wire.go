@@ -24,11 +24,11 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 
-	"git.xdea.xyz/Turing/neurouter/internal/biz"
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
-	"git.xdea.xyz/Turing/neurouter/internal/data"
-	"git.xdea.xyz/Turing/neurouter/internal/server"
-	"git.xdea.xyz/Turing/neurouter/internal/service"
+	"github.com/neuraxes/neurouter/internal/biz"
+	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data"
+	"github.com/neuraxes/neurouter/internal/server"
+	"github.com/neuraxes/neurouter/internal/service"
 )
 
 // wireApp init kratos application.

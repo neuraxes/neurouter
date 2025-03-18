@@ -17,7 +17,7 @@ package repository
 import (
 	"context"
 
-	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
 // ChatStreamServer defines the server-side interface for sending chat responses.

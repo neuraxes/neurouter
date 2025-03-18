@@ -17,7 +17,7 @@ package repository
 import (
 	"github.com/go-kratos/kratos/v2/log"
 
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/conf"
 )
 
 // ChatUpstreamConfig is a type constraint for LLM provider configurations.

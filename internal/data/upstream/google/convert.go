@@ -18,7 +18,7 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"github.com/google/uuid"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
 func convertContentToGoogle(content *v1.Content) genai.Part {

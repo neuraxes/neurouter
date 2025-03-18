@@ -17,11 +17,11 @@ package upstream
 import (
 	"github.com/google/wire"
 
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/anthropic"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/deepseek"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/google"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/neurouter"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/openai"
+	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic"
+	"github.com/neuraxes/neurouter/internal/data/upstream/deepseek"
+	"github.com/neuraxes/neurouter/internal/data/upstream/google"
+	"github.com/neuraxes/neurouter/internal/data/upstream/neurouter"
+	"github.com/neuraxes/neurouter/internal/data/upstream/openai"
 )
 
 var ProviderSet = wire.NewSet(

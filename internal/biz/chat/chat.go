@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 
-	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/repository"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
+	"github.com/neuraxes/neurouter/internal/biz/repository"
 )
 
 type UseCase interface {

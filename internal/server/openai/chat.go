@@ -22,7 +22,7 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/sashabaranov/go-openai"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
 type chatStreamServer struct {

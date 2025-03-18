@@ -19,8 +19,8 @@ import (
 
 	"github.com/google/uuid"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
 // convertMessageToDeepSeek converts an internal message to a message that can be sent to the DeepSeek API.

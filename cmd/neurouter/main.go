@@ -18,7 +18,7 @@ import (
 	"flag"
 	"os"
 
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/conf"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"

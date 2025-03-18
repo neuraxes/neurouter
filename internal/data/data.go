@@ -15,8 +15,8 @@
 package data
 
 import (
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream"
+	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data/upstream"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"

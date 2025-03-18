@@ -14,7 +14,7 @@
 
 package entity
 
-import v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+import v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 
 // ChatReq represents a chat request, aliased from the API proto definition.
 type ChatReq v1.ChatReq

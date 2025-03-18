@@ -19,7 +19,7 @@ package neurouter.config.v1;
 import "conf/upstream.proto";
 import "google/protobuf/duration.proto";
 
-option go_package = "git.xdea.xyz/Turing/neurouter/internal/conf;conf";
+option go_package = "github.com/neuraxes/neurouter/internal/conf;conf";
 
 message Bootstrap {
   Server server = 1;

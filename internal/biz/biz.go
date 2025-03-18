@@ -17,8 +17,8 @@ package biz
 import (
 	"github.com/google/wire"
 
-	"git.xdea.xyz/Turing/neurouter/internal/biz/chat"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/model"
+	"github.com/neuraxes/neurouter/internal/biz/chat"
+	"github.com/neuraxes/neurouter/internal/biz/model"
 )
 
 var ProviderSet = wire.NewSet(

@@ -17,8 +17,8 @@ package anthropic
 import (
 	"github.com/anthropics/anthropic-sdk-go"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
 // convertSystemToAnthropic converts system messages to a format that can be sent to the Anthropic API.

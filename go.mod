@@ -1,4 +1,4 @@
-module git.xdea.xyz/Turing/neurouter
+module github.com/neuraxes/neurouter
 
 go 1.24
 

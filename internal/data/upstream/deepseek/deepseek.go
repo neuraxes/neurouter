@@ -23,10 +23,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/openai/openai-go/packages/ssestream"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/repository"
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
+	"github.com/neuraxes/neurouter/internal/biz/repository"
+	"github.com/neuraxes/neurouter/internal/conf"
 )
 
 type ChatRepo struct {
@@ -106,6 +106,8 @@ func (c *deepSeekChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 			},
 			ReasoningContent: chunk.Choices[0].Delta.ReasoningContent,
 		}
+		// Clear due to the reuse of the same message struct
+		chunk.Choices[0].Delta = nil
 	}
 
 	if chunk.Usage != nil && (chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0) {
@@ -117,8 +119,6 @@ func (c *deepSeekChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 		}
 	}
 
-	// Clear due to the reuse of the same message struct
-	chunk.Choices[0].Delta = nil
 	return
 }
 

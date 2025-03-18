@@ -7,16 +7,16 @@
 package main
 
 import (
-	"git.xdea.xyz/Turing/neurouter/internal/biz/chat"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/model"
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/anthropic"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/deepseek"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/google"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/neurouter"
-	"git.xdea.xyz/Turing/neurouter/internal/data/upstream/openai"
-	"git.xdea.xyz/Turing/neurouter/internal/server"
-	"git.xdea.xyz/Turing/neurouter/internal/service"
+	"github.com/neuraxes/neurouter/internal/biz/chat"
+	"github.com/neuraxes/neurouter/internal/biz/model"
+	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic"
+	"github.com/neuraxes/neurouter/internal/data/upstream/deepseek"
+	"github.com/neuraxes/neurouter/internal/data/upstream/google"
+	"github.com/neuraxes/neurouter/internal/data/upstream/neurouter"
+	"github.com/neuraxes/neurouter/internal/data/upstream/openai"
+	"github.com/neuraxes/neurouter/internal/server"
+	"github.com/neuraxes/neurouter/internal/service"
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
 )

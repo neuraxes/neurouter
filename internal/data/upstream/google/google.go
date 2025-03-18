@@ -26,10 +26,10 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/entity"
-	"git.xdea.xyz/Turing/neurouter/internal/biz/repository"
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
+	"github.com/neuraxes/neurouter/internal/biz/repository"
+	"github.com/neuraxes/neurouter/internal/conf"
 )
 
 type ChatRepo struct {

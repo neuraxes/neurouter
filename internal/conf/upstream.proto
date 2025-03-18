@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package neurouter.config.v1;
 
-option go_package = "git.xdea.xyz/Turing/neurouter/internal/conf;conf";
+option go_package = "github.com/neuraxes/neurouter/internal/conf;conf";
 
 message Upstream {
   repeated UpstreamConfig configs = 1;

@@ -21,8 +21,8 @@ import (
 	"github.com/openai/openai-go"
 	. "github.com/smartystreets/goconvey/convey"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/conf"
 )
 
 func TestConvertMessageToOpenAI(t *testing.T) {

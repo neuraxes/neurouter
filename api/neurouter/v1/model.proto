@@ -18,7 +18,7 @@ package neurouter.v1;
 
 import "google/api/annotations.proto";
 
-option go_package = "git.xdea.xyz/Turing/neurouter/api/neurouter/v1;v1";
+option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
 service Model {
   rpc ListModel(ListModelReq) returns (ListModelResp) {

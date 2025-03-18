@@ -17,7 +17,7 @@ package service
 import (
 	"context"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
 func (s *RouterService) ListModel(ctx context.Context, req *v1.ListModelReq) (resp *v1.ListModelResp, err error) {

@@ -15,8 +15,8 @@
 package chat
 
 import (
-	"git.xdea.xyz/Turing/neurouter/internal/biz/repository"
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/biz/repository"
+	"github.com/neuraxes/neurouter/internal/conf"
 )
 
 type Elector interface {

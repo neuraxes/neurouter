@@ -20,9 +20,9 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
-	"git.xdea.xyz/Turing/neurouter/internal/service"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/service"
 )
 
 func NewGRPCServer(c *conf.Server, svc *service.RouterService, logger log.Logger) *grpc.Server {

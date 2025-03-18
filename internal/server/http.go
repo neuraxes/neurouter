@@ -17,11 +17,11 @@ package server
 import (
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 
-	"git.xdea.xyz/Turing/neurouter/internal/conf"
-	"git.xdea.xyz/Turing/neurouter/internal/server/openai"
-	"git.xdea.xyz/Turing/neurouter/internal/service"
+	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/server/openai"
+	"github.com/neuraxes/neurouter/internal/service"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"

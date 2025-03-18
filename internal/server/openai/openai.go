@@ -17,7 +17,7 @@ package openai
 import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 
-	v1 "git.xdea.xyz/Turing/neurouter/api/neurouter/v1"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
 func RegisterOpenAIHTTPServer(s *http.Server, svc v1.ChatServer) {
