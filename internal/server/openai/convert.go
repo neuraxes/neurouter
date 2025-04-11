@@ -150,13 +150,62 @@ func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
 		ID: resp.Message.Id,
 	}
 
-	if resp.Message != nil && len(resp.Message.Contents) > 0 {
+	if resp.Message != nil {
+		message := openai.ChatCompletionMessage{
+			Role: openai.ChatMessageRoleAssistant,
+		}
+
+		// Handle contents
+		if len(resp.Message.Contents) > 0 {
+			if len(resp.Message.Contents) == 1 && resp.Message.Contents[0].GetText() != "" {
+				// Single text message
+				message.Content = resp.Message.Contents[0].GetText()
+			} else {
+				// Multipart message
+				var multiContent []openai.ChatMessagePart
+				for _, content := range resp.Message.Contents {
+					switch c := content.Content.(type) {
+					case *v1.Content_Text:
+						multiContent = append(multiContent, openai.ChatMessagePart{
+							Type: openai.ChatMessagePartTypeText,
+							Text: c.Text,
+						})
+					case *v1.Content_Image_:
+						multiContent = append(multiContent, openai.ChatMessagePart{
+							Type: openai.ChatMessagePartTypeImageURL,
+							ImageURL: &openai.ChatMessageImageURL{
+								URL: c.Image.Url,
+							},
+						})
+					}
+				}
+				message.MultiContent = multiContent
+			}
+		}
+
+		// Handle tool calls
+		if len(resp.Message.ToolCalls) > 0 {
+			var toolCalls []openai.ToolCall
+			for _, toolCall := range resp.Message.ToolCalls {
+				t := openai.ToolCall{
+					ID:   toolCall.Id,
+					Type: openai.ToolTypeFunction,
+				}
+				if f := toolCall.GetFunction(); f != nil {
+					t.Function = openai.FunctionCall{
+						Name:      f.Name,
+						Arguments: f.Arguments,
+					}
+				}
+				toolCalls = append(toolCalls, t)
+			}
+			message.ToolCalls = toolCalls
+		}
+
+		message.ToolCallID = resp.Message.ToolCallId
 		openAIResp.Choices = []openai.ChatCompletionChoice{
 			{
-				Message: openai.ChatCompletionMessage{
-					Role:    openai.ChatMessageRoleAssistant,
-					Content: resp.Message.Contents[0].GetText(),
-				},
+				Message: message,
 			},
 		}
 	}
