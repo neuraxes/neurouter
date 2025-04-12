@@ -24,7 +24,6 @@ import (
 	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/packages/ssestream"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -71,21 +70,9 @@ func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	if err != nil {
 		return
 	}
-
-	resp = &entity.ChatResp{
-		Id:      res.ID,
-		Message: r.convertMessageFromOpenAI(&res.Choices[0].Message),
-	}
-
-	if res.Usage.PromptTokens != 0 || res.Usage.CompletionTokens != 0 {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:     int32(res.Usage.PromptTokens),
-				CompletionTokens: int32(res.Usage.CompletionTokens),
-			},
-		}
-	}
+	resp = r.convertResponseFromOpenAI(res)
 	return
+
 }
 
 type openAIChatStreamClient struct {
@@ -102,34 +89,8 @@ func (c openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 		err = io.EOF
 		return
 	}
-
 	chunk := c.upstream.Current()
-	resp = &entity.ChatResp{
-		Id: c.req.Id,
-	}
-
-	if len(chunk.Choices) > 0 {
-		resp.Message = &v1.Message{
-			Id:   c.id,
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Content: &v1.Content_Text{
-						Text: chunk.Choices[0].Delta.Content,
-					},
-				},
-			},
-		}
-	}
-
-	if chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0 {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:     int32(chunk.Usage.PromptTokens),
-				CompletionTokens: int32(chunk.Usage.CompletionTokens),
-			},
-		}
-	}
+	resp = convertChunkFromOpenAI(&chunk, c.req.Id, c.id)
 	return
 }
 

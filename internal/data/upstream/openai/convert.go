@@ -275,3 +275,54 @@ func (r *ChatRepo) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 
 	return message
 }
+
+// convertResponseFromOpenAI converts an OpenAI chat completion to an internal response.
+func (r *ChatRepo) convertResponseFromOpenAI(res *openai.ChatCompletion) *entity.ChatResp {
+	resp := &entity.ChatResp{
+		Id:      res.ID,
+		Message: r.convertMessageFromOpenAI(&res.Choices[0].Message),
+	}
+
+	if res.Usage.PromptTokens != 0 || res.Usage.CompletionTokens != 0 {
+		resp.Statistics = &v1.Statistics{
+			Usage: &v1.Statistics_Usage{
+				PromptTokens:     int32(res.Usage.PromptTokens),
+				CompletionTokens: int32(res.Usage.CompletionTokens),
+			},
+		}
+	}
+
+	return resp
+}
+
+// convertChunkFromOpenAI converts an OpenAI chat completion chunk to an internal response.
+func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk, requestID string, messageID string) *entity.ChatResp {
+	resp := &entity.ChatResp{
+		Id: requestID,
+	}
+
+	if len(chunk.Choices) > 0 {
+		resp.Message = &v1.Message{
+			Id:   messageID,
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{
+				{
+					Content: &v1.Content_Text{
+						Text: chunk.Choices[0].Delta.Content,
+					},
+				},
+			},
+		}
+	}
+
+	if chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0 {
+		resp.Statistics = &v1.Statistics{
+			Usage: &v1.Statistics_Usage{
+				PromptTokens:     int32(chunk.Usage.PromptTokens),
+				CompletionTokens: int32(chunk.Usage.CompletionTokens),
+			},
+		}
+	}
+
+	return resp
+}
