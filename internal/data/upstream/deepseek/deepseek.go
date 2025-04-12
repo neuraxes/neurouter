@@ -105,7 +105,13 @@ func (c *deepSeekChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 					},
 				},
 			},
-			ReasoningContent: chunk.Choices[0].Delta.ReasoningContent,
+			ReasoningContents: []*v1.Content{
+				{
+					Content: &v1.Content_Text{
+						Text: chunk.Choices[0].Delta.ReasoningContent,
+					},
+				},
+			},
 		}
 		// Clear due to the reuse of the same message struct
 		chunk.Choices[0].Delta = nil

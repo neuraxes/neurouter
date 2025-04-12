@@ -47,9 +47,11 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 		m := openai.ChatCompletionSystemMessageParam{
 			Role: openai.F(openai.ChatCompletionSystemMessageParamRoleSystem),
 		}
+
 		if message.Name != "" {
 			m.Name = openai.F(message.Name)
 		}
+
 		var parts []openai.ChatCompletionContentPartTextParam
 		if isPlainText && (r.config.PreferStringContentForSystem || r.config.PreferSinglePartContent) {
 			parts = append(parts, openai.TextPart(plainText))
@@ -64,8 +66,17 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 			}
 		}
 		m.Content = openai.F(parts)
+
 		return m
 	case v1.Role_USER:
+		m := openai.ChatCompletionUserMessageParam{
+			Role: openai.F(openai.ChatCompletionUserMessageParamRoleUser),
+		}
+
+		if message.Name != "" {
+			m.Name = openai.F(message.Name)
+		}
+
 		var parts []openai.ChatCompletionContentPartUnionParam
 		if isPlainText && (r.config.PreferStringContentForUser || r.config.PreferSinglePartContent) {
 			parts = append(parts, openai.TextPart(plainText))
@@ -81,10 +92,8 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 				}
 			}
 		}
-		m := openai.UserMessageParts(parts...)
-		if message.Name != "" {
-			m.Name = openai.F(message.Name)
-		}
+		m.Content = openai.F(parts)
+
 		return m
 	case v1.Role_MODEL:
 		m := openai.ChatCompletionAssistantMessageParam{
@@ -138,6 +147,7 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 			Role:       openai.F(openai.ChatCompletionToolMessageParamRoleTool),
 			ToolCallID: openai.F(message.ToolCallId),
 		}
+
 		var parts []openai.ChatCompletionContentPartTextParam
 		if isPlainText && (r.config.PreferStringContentForTool || r.config.PreferSinglePartContent) {
 			parts = append(parts, openai.TextPart(plainText))
@@ -147,11 +157,12 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 				case *v1.Content_Text:
 					parts = append(parts, openai.TextPart(c.Text))
 				default:
-					r.log.Errorf("unsupported content for system: %v", c)
+					r.log.Errorf("unsupported content for tool: %v", c)
 				}
 			}
 		}
 		m.Content = openai.F(parts)
+
 		return m
 	default:
 		r.log.Errorf("unsupported role: %v", message.Role)
@@ -161,6 +172,10 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 
 // convertRequestToOpenAI converts an internal request to a request that can be sent to the OpenAI API.
 func (r *ChatRepo) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatCompletionNewParams {
+	openAIReq := openai.ChatCompletionNewParams{
+		Model: openai.F(req.Model),
+	}
+
 	var messages []openai.ChatCompletionMessageParamUnion
 	for _, message := range req.Messages {
 		m := r.convertMessageToOpenAI(message)
@@ -168,11 +183,7 @@ func (r *ChatRepo) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 			messages = append(messages, m)
 		}
 	}
-
-	openAIReq := openai.ChatCompletionNewParams{
-		Model:    openai.F(req.Model),
-		Messages: openai.F(messages),
-	}
+	openAIReq.Messages = openai.F(messages)
 
 	if c := req.Config; c != nil {
 		if c.MaxTokens != 0 {

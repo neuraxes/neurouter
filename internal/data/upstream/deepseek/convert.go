@@ -38,6 +38,15 @@ func (r *ChatRepo) convertMessageToDeepSeek(message *v1.Message) *Message {
 		role = "tool"
 	}
 
+	var reasoningContent strings.Builder
+	for _, c := range message.ReasoningContents {
+		if textContent, ok := c.GetContent().(*v1.Content_Text); ok {
+			reasoningContent.WriteString(textContent.Text)
+		} else {
+			r.log.Errorf("unsupported content type: %v", c)
+		}
+	}
+
 	// Concatenate text contents
 	var content strings.Builder
 	for _, c := range message.Contents {
@@ -50,11 +59,17 @@ func (r *ChatRepo) convertMessageToDeepSeek(message *v1.Message) *Message {
 
 	// Build DeepSeek message
 	deepseekMsg := &Message{
-		Role:             role,
-		Content:          content.String(),
-		Name:             message.Name,
-		ReasoningContent: message.ReasoningContent,
-		ToolCallID:       message.ToolCallId,
+		Role:       role,
+		Name:       message.Name,
+		ToolCallID: message.ToolCallId,
+	}
+
+	if s := reasoningContent.String(); s != "" {
+		deepseekMsg.ReasoningContent = s
+	}
+
+	if s := content.String(); s != "" {
+		deepseekMsg.Content = s
 	}
 
 	if message.ToolCalls != nil {
@@ -163,11 +178,20 @@ func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Mess
 	}
 
 	message := &v1.Message{
-		Id:               uuid.NewString(),
-		Role:             role,
-		Name:             deepSeekMessage.Name,
-		ToolCallId:       deepSeekMessage.ToolCallID,
-		ReasoningContent: deepSeekMessage.ReasoningContent,
+		Id:         uuid.NewString(),
+		Role:       role,
+		Name:       deepSeekMessage.Name,
+		ToolCallId: deepSeekMessage.ToolCallID,
+	}
+
+	if deepSeekMessage.ReasoningContent != "" {
+		message.ReasoningContents = []*v1.Content{
+			{
+				Content: &v1.Content_Text{
+					Text: strings.TrimSpace(deepSeekMessage.ReasoningContent),
+				},
+			},
+		}
 	}
 
 	if deepSeekMessage.Content != "" {

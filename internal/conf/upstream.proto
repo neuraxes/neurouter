@@ -34,10 +34,38 @@ message UpstreamConfig {
   }
 }
 
+// Modality defines the types of input/output the model can handle.
+enum Modality {
+  MODALITY_UNSPECIFIED = 0;
+  MODALITY_TEXT = 1;
+  MODALITY_IMAGE = 2;
+  MODALITY_AUDIO = 3;
+  MODALITY_VIDEO = 4;
+}
+
+// Capability defines what the model can do.
+enum Capability {
+  CAPABILITY_UNSPECIFIED = 0;
+  CAPABILITY_CHAT = 1;
+  CAPABILITY_COMPLETION = 2;
+  CAPABILITY_EMBEDDING = 3;
+}
+
 message Model {
+  // The unique identifier of the model.
   string id = 1;
-  string name = 2;
-  string provider = 3;
+  // The unique identifier of the model in the upstream.
+  string upstream_id = 2;
+  // The display name of the model.
+  string name = 3;
+  // The entity that owns the model.
+  string from = 4;
+  // The model service provider.
+  string provider = 5;
+  // The modalities supported by the model.
+  repeated Modality modalities = 6;
+  // The capabilities of the model.
+  repeated Capability capabilities = 7;
 }
 
 message NeurouterConfig {

@@ -6,7 +6,7 @@ info:
     title: ""
     version: 0.0.1
 paths:
-    /v1/chat/completion:
+    /v1/chat:
         get:
             tags:
                 - Chat
@@ -71,6 +71,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/neurouter.v1.ChatResp'
+    /v1/embed:
+        post:
+            tags:
+                - Embedding
+            operationId: Embedding_Embed
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/neurouter.v1.EmbedReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/neurouter.v1.EmbedResp'
     /v1/models:
         get:
             tags:
@@ -107,6 +125,21 @@ components:
             properties:
                 url:
                     type: string
+        neurouter.v1.EmbedReq:
+            type: object
+            properties:
+                contents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.Content'
+        neurouter.v1.EmbedResp:
+            type: object
+            properties:
+                embedding:
+                    type: array
+                    items:
+                        type: number
+                        format: float
         neurouter.v1.ListModelResp:
             type: object
             properties:
@@ -130,26 +163,46 @@ components:
                     items:
                         $ref: '#/components/schemas/neurouter.v1.Content'
                     description: The multi-modality content
+                reasoningContents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.Content'
+                    description: The reasoning content before formal response
+                toolCallId:
+                    type: string
+                    description: Indicate the message is a response to a tool call
                 toolCalls:
                     type: array
                     items:
                         $ref: '#/components/schemas/neurouter.v1.ToolCall'
                     description: A set of tool calls raised by the message
-                toolCallId:
-                    type: string
-                    description: Indicate the message is a response to a tool call
-                reasoningContent:
-                    type: string
-                    description: The reasoning content before final response
         neurouter.v1.ModelSpec:
             type: object
             properties:
                 id:
                     type: string
+                    description: The unique identifier of the model.
                 name:
                     type: string
+                    description: The display name of the model.
+                from:
+                    type: string
+                    description: The entity that owns the model.
                 provider:
                     type: string
+                    description: The model service provider.
+                modalities:
+                    type: array
+                    items:
+                        type: integer
+                        format: enum
+                    description: The modalities supported by the model.
+                capabilities:
+                    type: array
+                    items:
+                        type: integer
+                        format: enum
+                    description: The capabilities of the model.
         neurouter.v1.Statistics:
             type: object
             properties:
@@ -180,4 +233,5 @@ components:
                     type: string
 tags:
     - name: Chat
+    - name: Embedding
     - name: Model

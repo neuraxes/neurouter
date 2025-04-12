@@ -34,6 +34,115 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Modality defines the types of input/output the model can handle.
+type Modality int32
+
+const (
+	Modality_MODALITY_UNSPECIFIED Modality = 0
+	Modality_MODALITY_TEXT        Modality = 1
+	Modality_MODALITY_IMAGE       Modality = 2
+	Modality_MODALITY_AUDIO       Modality = 3
+	Modality_MODALITY_VIDEO       Modality = 4
+)
+
+// Enum value maps for Modality.
+var (
+	Modality_name = map[int32]string{
+		0: "MODALITY_UNSPECIFIED",
+		1: "MODALITY_TEXT",
+		2: "MODALITY_IMAGE",
+		3: "MODALITY_AUDIO",
+		4: "MODALITY_VIDEO",
+	}
+	Modality_value = map[string]int32{
+		"MODALITY_UNSPECIFIED": 0,
+		"MODALITY_TEXT":        1,
+		"MODALITY_IMAGE":       2,
+		"MODALITY_AUDIO":       3,
+		"MODALITY_VIDEO":       4,
+	}
+)
+
+func (x Modality) Enum() *Modality {
+	p := new(Modality)
+	*p = x
+	return p
+}
+
+func (x Modality) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Modality) Descriptor() protoreflect.EnumDescriptor {
+	return file_neurouter_v1_common_proto_enumTypes[0].Descriptor()
+}
+
+func (Modality) Type() protoreflect.EnumType {
+	return &file_neurouter_v1_common_proto_enumTypes[0]
+}
+
+func (x Modality) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Modality.Descriptor instead.
+func (Modality) EnumDescriptor() ([]byte, []int) {
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{0}
+}
+
+// Capability defines what the model can do.
+type Capability int32
+
+const (
+	Capability_CAPABILITY_UNSPECIFIED Capability = 0
+	Capability_CAPABILITY_CHAT        Capability = 1
+	Capability_CAPABILITY_COMPLETION  Capability = 2
+	Capability_CAPABILITY_EMBEDDING   Capability = 3
+)
+
+// Enum value maps for Capability.
+var (
+	Capability_name = map[int32]string{
+		0: "CAPABILITY_UNSPECIFIED",
+		1: "CAPABILITY_CHAT",
+		2: "CAPABILITY_COMPLETION",
+		3: "CAPABILITY_EMBEDDING",
+	}
+	Capability_value = map[string]int32{
+		"CAPABILITY_UNSPECIFIED": 0,
+		"CAPABILITY_CHAT":        1,
+		"CAPABILITY_COMPLETION":  2,
+		"CAPABILITY_EMBEDDING":   3,
+	}
+)
+
+func (x Capability) Enum() *Capability {
+	p := new(Capability)
+	*p = x
+	return p
+}
+
+func (x Capability) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Capability) Descriptor() protoreflect.EnumDescriptor {
+	return file_neurouter_v1_common_proto_enumTypes[1].Descriptor()
+}
+
+func (Capability) Type() protoreflect.EnumType {
+	return &file_neurouter_v1_common_proto_enumTypes[1]
+}
+
+func (x Capability) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Capability.Descriptor instead.
+func (Capability) EnumDescriptor() ([]byte, []int) {
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{1}
+}
+
 type GenerationConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -748,10 +857,25 @@ var file_neurouter_v1_common_proto_rawDesc = []byte{
 	0x2e, 0x46, 0x75, 0x6e, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65,
 	0x74, 0x65, 0x72, 0x73, 0x2e, 0x50, 0x72, 0x6f, 0x70, 0x65, 0x72, 0x74, 0x79, 0x52, 0x05, 0x76,
 	0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x42, 0x06, 0x0a, 0x04, 0x74, 0x6f, 0x6f, 0x6c,
-	0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x2e, 0x78, 0x64, 0x65, 0x61, 0x2e, 0x78, 0x79, 0x7a,
-	0x2f, 0x54, 0x75, 0x72, 0x69, 0x6e, 0x67, 0x2f, 0x6e, 0x65, 0x75, 0x72, 0x6f, 0x75, 0x74, 0x65,
-	0x72, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e, 0x65, 0x75, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x2f,
-	0x76, 0x31, 0x3b, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2a, 0x73, 0x0a, 0x08, 0x4d, 0x6f, 0x64, 0x61, 0x6c, 0x69, 0x74, 0x79, 0x12, 0x18, 0x0a, 0x14,
+	0x4d, 0x4f, 0x44, 0x41, 0x4c, 0x49, 0x54, 0x59, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49,
+	0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x11, 0x0a, 0x0d, 0x4d, 0x4f, 0x44, 0x41, 0x4c, 0x49,
+	0x54, 0x59, 0x5f, 0x54, 0x45, 0x58, 0x54, 0x10, 0x01, 0x12, 0x12, 0x0a, 0x0e, 0x4d, 0x4f, 0x44,
+	0x41, 0x4c, 0x49, 0x54, 0x59, 0x5f, 0x49, 0x4d, 0x41, 0x47, 0x45, 0x10, 0x02, 0x12, 0x12, 0x0a,
+	0x0e, 0x4d, 0x4f, 0x44, 0x41, 0x4c, 0x49, 0x54, 0x59, 0x5f, 0x41, 0x55, 0x44, 0x49, 0x4f, 0x10,
+	0x03, 0x12, 0x12, 0x0a, 0x0e, 0x4d, 0x4f, 0x44, 0x41, 0x4c, 0x49, 0x54, 0x59, 0x5f, 0x56, 0x49,
+	0x44, 0x45, 0x4f, 0x10, 0x04, 0x2a, 0x72, 0x0a, 0x0a, 0x43, 0x61, 0x70, 0x61, 0x62, 0x69, 0x6c,
+	0x69, 0x74, 0x79, 0x12, 0x1a, 0x0a, 0x16, 0x43, 0x41, 0x50, 0x41, 0x42, 0x49, 0x4c, 0x49, 0x54,
+	0x59, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12,
+	0x13, 0x0a, 0x0f, 0x43, 0x41, 0x50, 0x41, 0x42, 0x49, 0x4c, 0x49, 0x54, 0x59, 0x5f, 0x43, 0x48,
+	0x41, 0x54, 0x10, 0x01, 0x12, 0x19, 0x0a, 0x15, 0x43, 0x41, 0x50, 0x41, 0x42, 0x49, 0x4c, 0x49,
+	0x54, 0x59, 0x5f, 0x43, 0x4f, 0x4d, 0x50, 0x4c, 0x45, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x02, 0x12,
+	0x18, 0x0a, 0x14, 0x43, 0x41, 0x50, 0x41, 0x42, 0x49, 0x4c, 0x49, 0x54, 0x59, 0x5f, 0x45, 0x4d,
+	0x42, 0x45, 0x44, 0x44, 0x49, 0x4e, 0x47, 0x10, 0x03, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74,
+	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e, 0x65, 0x75, 0x72, 0x61, 0x78, 0x65, 0x73,
+	0x2f, 0x6e, 0x65, 0x75, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x6e,
+	0x65, 0x75, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x3b, 0x76, 0x31, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -766,31 +890,34 @@ func file_neurouter_v1_common_proto_rawDescGZIP() []byte {
 	return file_neurouter_v1_common_proto_rawDescData
 }
 
+var file_neurouter_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_neurouter_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_neurouter_v1_common_proto_goTypes = []any{
-	(*GenerationConfig)(nil),                  // 0: neurouter.v1.GenerationConfig
-	(*Statistics)(nil),                        // 1: neurouter.v1.Statistics
-	(*Content)(nil),                           // 2: neurouter.v1.Content
-	(*Tool)(nil),                              // 3: neurouter.v1.Tool
-	(*Statistics_Usage)(nil),                  // 4: neurouter.v1.Statistics.Usage
-	(*Content_Image)(nil),                     // 5: neurouter.v1.Content.Image
-	(*Tool_Function)(nil),                     // 6: neurouter.v1.Tool.Function
-	(*Tool_Function_Parameters)(nil),          // 7: neurouter.v1.Tool.Function.Parameters
-	(*Tool_Function_Parameters_Property)(nil), // 8: neurouter.v1.Tool.Function.Parameters.Property
-	nil, // 9: neurouter.v1.Tool.Function.Parameters.PropertiesEntry
+	(Modality)(0),                             // 0: neurouter.v1.Modality
+	(Capability)(0),                           // 1: neurouter.v1.Capability
+	(*GenerationConfig)(nil),                  // 2: neurouter.v1.GenerationConfig
+	(*Statistics)(nil),                        // 3: neurouter.v1.Statistics
+	(*Content)(nil),                           // 4: neurouter.v1.Content
+	(*Tool)(nil),                              // 5: neurouter.v1.Tool
+	(*Statistics_Usage)(nil),                  // 6: neurouter.v1.Statistics.Usage
+	(*Content_Image)(nil),                     // 7: neurouter.v1.Content.Image
+	(*Tool_Function)(nil),                     // 8: neurouter.v1.Tool.Function
+	(*Tool_Function_Parameters)(nil),          // 9: neurouter.v1.Tool.Function.Parameters
+	(*Tool_Function_Parameters_Property)(nil), // 10: neurouter.v1.Tool.Function.Parameters.Property
+	nil, // 11: neurouter.v1.Tool.Function.Parameters.PropertiesEntry
 }
 var file_neurouter_v1_common_proto_depIdxs = []int32{
-	4, // 0: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
-	5, // 1: neurouter.v1.Content.image:type_name -> neurouter.v1.Content.Image
-	6, // 2: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
-	7, // 3: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Tool.Function.Parameters
-	9, // 4: neurouter.v1.Tool.Function.Parameters.properties:type_name -> neurouter.v1.Tool.Function.Parameters.PropertiesEntry
-	8, // 5: neurouter.v1.Tool.Function.Parameters.PropertiesEntry.value:type_name -> neurouter.v1.Tool.Function.Parameters.Property
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	6,  // 0: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
+	7,  // 1: neurouter.v1.Content.image:type_name -> neurouter.v1.Content.Image
+	8,  // 2: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
+	9,  // 3: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Tool.Function.Parameters
+	11, // 4: neurouter.v1.Tool.Function.Parameters.properties:type_name -> neurouter.v1.Tool.Function.Parameters.PropertiesEntry
+	10, // 5: neurouter.v1.Tool.Function.Parameters.PropertiesEntry.value:type_name -> neurouter.v1.Tool.Function.Parameters.Property
+	6,  // [6:6] is the sub-list for method output_type
+	6,  // [6:6] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_common_proto_init() }
@@ -816,13 +943,14 @@ func file_neurouter_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_neurouter_v1_common_proto_rawDesc,
-			NumEnums:      0,
+			NumEnums:      2,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_neurouter_v1_common_proto_goTypes,
 		DependencyIndexes: file_neurouter_v1_common_proto_depIdxs,
+		EnumInfos:         file_neurouter_v1_common_proto_enumTypes,
 		MessageInfos:      file_neurouter_v1_common_proto_msgTypes,
 	}.Build()
 	File_neurouter_v1_common_proto = out.File

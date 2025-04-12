@@ -93,7 +93,7 @@ func NewModelUseCase(
 
 func (uc *UseCaseImpl) ElectForChat(uri string) (repo repository.ChatRepo, model *conf.Model, err error) {
 	for _, m := range uc.models {
-		if m.config.Name == uri {
+		if m.config.Id == uri {
 			repo = m.repo
 			model = m.config
 			uc.log.Infof("using model: %s", m.config.Name)

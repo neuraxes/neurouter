@@ -46,6 +46,23 @@ message Statistics {
   Usage usage = 1;
 }
 
+// Modality defines the types of input/output the model can handle.
+enum Modality {
+  MODALITY_UNSPECIFIED = 0;
+  MODALITY_TEXT = 1;
+  MODALITY_IMAGE = 2;
+  MODALITY_AUDIO = 3;
+  MODALITY_VIDEO = 4;
+}
+
+// Capability defines what the model can do.
+enum Capability {
+  CAPABILITY_UNSPECIFIED = 0;
+  CAPABILITY_CHAT = 1;
+  CAPABILITY_COMPLETION = 2;
+  CAPABILITY_EMBEDDING = 3;
+}
+
 // Multi-modality content
 message Content {
   message Image {

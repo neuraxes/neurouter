@@ -27,7 +27,7 @@ type ChatHTTPServer interface {
 
 func RegisterChatHTTPServer(s *http.Server, srv ChatHTTPServer) {
 	r := s.Route("/")
-	r.GET("/v1/chat/completion", _Chat_Chat0_HTTP_Handler(srv))
+	r.GET("/v1/chat", _Chat_Chat0_HTTP_Handler(srv))
 }
 
 func _Chat_Chat0_HTTP_Handler(srv ChatHTTPServer) func(ctx http.Context) error {
@@ -63,7 +63,7 @@ func NewChatHTTPClient(client *http.Client) ChatHTTPClient {
 
 func (c *ChatHTTPClientImpl) Chat(ctx context.Context, in *ChatReq, opts ...http.CallOption) (*ChatResp, error) {
 	var out ChatResp
-	pattern := "/v1/chat/completion"
+	pattern := "/v1/chat"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationChatChat))
 	opts = append(opts, http.PathTemplate(pattern))
