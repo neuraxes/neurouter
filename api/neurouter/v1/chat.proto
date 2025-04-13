@@ -56,12 +56,10 @@ message Message {
   string name = 3;
   // The multi-modality content
   repeated Content contents = 4;
-    // The reasoning content before formal response
-  repeated Content reasoning_contents = 5;
   // Indicate the message is a response to a tool call
-  string tool_call_id = 6;
+  string tool_call_id = 5;
   // A set of tool calls raised by the message
-  repeated ToolCall tool_calls = 7;
+  repeated ToolCall tool_calls = 6;
 }
 
 message ChatReq {

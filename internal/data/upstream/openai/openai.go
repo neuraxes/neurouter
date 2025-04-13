@@ -29,21 +29,17 @@ import (
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
-type ChatRepo struct {
+type upstream struct {
 	config *conf.OpenAIConfig
 	client *openai.Client
 	log    *log.Helper
 }
 
-func NewOpenAIChatRepoFactory() repository.UpstreamFactory[conf.OpenAIConfig] {
-	return NewOpenAIChatRepo
+func NewOpenAIFactory() repository.UpstreamFactory[conf.OpenAIConfig] {
+	return newOpenAIUpstream
 }
 
-func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) (repository.ChatRepo, error) {
-	repo := &ChatRepo{
-		config: config,
-		log:    log.NewHelper(logger),
-	}
+func newOpenAIUpstream(config *conf.OpenAIConfig, logger log.Logger) (repo repository.ChatRepo, err error) {
 
 	options := []option.RequestOption{
 		option.WithAPIKey(config.ApiKey),
@@ -51,18 +47,17 @@ func NewOpenAIChatRepo(config *conf.OpenAIConfig, logger log.Logger) (repository
 	if config.BaseUrl != "" {
 		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
-	if config.PreferStringContentForSystem ||
-		config.PreferStringContentForUser ||
-		config.PreferStringContentForAssistant ||
-		config.PreferStringContentForTool {
-		options = append(options, option.WithMiddleware(repo.preferStringContent))
-	}
-	repo.client = openai.NewClient(options...)
+	client := openai.NewClient(options...)
 
+	repo = &upstream{
+		config: config,
+		client: &client,
+		log:    log.NewHelper(logger),
+	}
 	return repo, nil
 }
 
-func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	res, err := r.client.Chat.Completions.New(
 		ctx,
 		r.convertRequestToOpenAI(req),
@@ -98,15 +93,10 @@ func (c openAIChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 
-func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
 	openAIReq := r.convertRequestToOpenAI(req)
-	openAIReq.StreamOptions = openai.F(openai.ChatCompletionStreamOptionsParam{
-		IncludeUsage: openai.F(true),
-	})
-	stream := r.client.Chat.Completions.NewStreaming(
-		ctx,
-		openAIReq,
-	)
+	openAIReq.StreamOptions.IncludeUsage = openai.Opt(true)
+	stream := r.client.Chat.Completions.NewStreaming(ctx, openAIReq)
 
 	client = &openAIChatStreamClient{
 		id:       uuid.NewString(),

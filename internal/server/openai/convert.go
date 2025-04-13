@@ -57,7 +57,9 @@ func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Mes
 				contents = append(contents, &v1.Content{
 					Content: &v1.Content_Image_{
 						Image: &v1.Content_Image{
-							Url: content.ImageURL.URL,
+							Source: &v1.Content_Image_Url{
+								Url: content.ImageURL.URL,
+							},
 						},
 					},
 				})
@@ -174,7 +176,7 @@ func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
 						multiContent = append(multiContent, openai.ChatMessagePart{
 							Type: openai.ChatMessagePartTypeImageURL,
 							ImageURL: &openai.ChatMessageImageURL{
-								URL: c.Image.Url,
+								URL: c.Image.GetUrl(),
 							},
 						})
 					}

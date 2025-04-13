@@ -34,7 +34,7 @@ func wireApp(confServer *conf.Server, data *conf.Data, upstream *conf.Upstream, 
 	repositoryUpstreamFactory := deepseek.NewDeepSeekChatRepoFactory()
 	upstreamFactory2 := google.NewGoogleFactory()
 	upstreamFactory3 := neurouter.NewNeurouterFactory()
-	upstreamFactory4 := openai.NewOpenAIChatRepoFactory()
+	upstreamFactory4 := openai.NewOpenAIFactory()
 	useCaseImpl := model.NewModelUseCase(upstream, upstreamFactory, repositoryUpstreamFactory, upstreamFactory2, upstreamFactory3, upstreamFactory4, logger)
 	useCase := chat.NewChatUseCase(useCaseImpl, logger)
 	embeddingUseCase := embedding.NewUseCase(useCaseImpl, logger)

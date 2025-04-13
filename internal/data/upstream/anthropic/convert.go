@@ -31,7 +31,9 @@ func (r *ChatRepo) convertSystemToAnthropic(messages []*v1.Message) []anthropic.
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
 			case *v1.Content_Text:
-				parts = append(parts, anthropic.NewTextBlock(c.Text))
+				parts = append(parts, anthropic.TextBlockParam{Text: c.Text})
+			default:
+				r.log.Errorf("unsupported content: %v", c)
 			}
 		}
 	}
@@ -46,34 +48,40 @@ func (r *ChatRepo) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 		case *v1.Content_Text:
 			parts = append(parts, anthropic.NewTextBlock(c.Text))
 		case *v1.Content_Image_:
-			// TODO: Implement image support
+			parts = append(parts, anthropic.ContentBlockParamUnion{
+				OfRequestImageBlock: &anthropic.ImageBlockParam{
+					Source: anthropic.ImageBlockParamSourceUnion{
+						OfURLImageSource: &anthropic.URLImageSourceParam{
+							URL: c.Image.GetUrl(),
+						},
+					},
+				},
+			})
 		}
 	}
 	if message.Role == v1.Role_USER || message.Role == v1.Role_SYSTEM {
 		return anthropic.NewUserMessage(parts...)
 	} else {
-		return anthropic.NewAssistantMessage(anthropic.NewTextBlock(message.Contents[0].GetText()))
+		return anthropic.NewAssistantMessage(parts...)
 	}
 }
 
 // convertRequestToAnthropic converts an internal request to a request that can be sent to the Anthropic API.
 func (r *ChatRepo) convertRequestToAnthropic(req *entity.ChatReq) anthropic.MessageNewParams {
 	params := anthropic.MessageNewParams{
-		Model: anthropic.F(req.Model),
+		Model: anthropic.Model(req.Model),
 	}
 
 	if !r.config.MergeSystem {
-		params.System = anthropic.F(r.convertSystemToAnthropic(req.Messages))
+		params.System = r.convertSystemToAnthropic(req.Messages)
 	}
 
-	var messages []anthropic.MessageParam
 	for _, message := range req.Messages {
 		if !r.config.MergeSystem && message.Role == v1.Role_SYSTEM {
 			continue
 		}
-		messages = append(messages, r.convertMessageToAnthropic(message))
+		params.Messages = append(params.Messages, r.convertMessageToAnthropic(message))
 	}
-	params.Messages = anthropic.F(messages)
 
 	return params
 }

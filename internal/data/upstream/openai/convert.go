@@ -26,7 +26,7 @@ import (
 )
 
 // convertMessageToOpenAI converts an internal message to a message that can be sent to the OpenAI API.
-func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatCompletionMessageParamUnion {
+func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompletionMessageParamUnion {
 	plainText := ""
 	isPlainText := true
 
@@ -44,126 +44,151 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 
 	switch message.Role {
 	case v1.Role_SYSTEM:
-		m := openai.ChatCompletionSystemMessageParam{
-			Role: openai.F(openai.ChatCompletionSystemMessageParamRoleSystem),
-		}
+		m := &openai.ChatCompletionSystemMessageParam{}
 
 		if message.Name != "" {
-			m.Name = openai.F(message.Name)
+			m.Name = openai.Opt(message.Name)
 		}
 
-		var parts []openai.ChatCompletionContentPartTextParam
-		if isPlainText && (r.config.PreferStringContentForSystem || r.config.PreferSinglePartContent) {
-			parts = append(parts, openai.TextPart(plainText))
+		if isPlainText && r.config.PreferStringContentForSystem {
+			m.Content.OfString = openai.Opt(plainText)
+		} else if isPlainText && r.config.PreferSinglePartContent {
+			m.Content.OfArrayOfContentParts = append(
+				m.Content.OfArrayOfContentParts,
+				openai.ChatCompletionContentPartTextParam{Text: plainText},
+			)
 		} else {
 			for _, content := range message.Contents {
 				switch c := content.GetContent().(type) {
 				case *v1.Content_Text:
-					parts = append(parts, openai.TextPart(c.Text))
+					m.Content.OfArrayOfContentParts = append(
+						m.Content.OfArrayOfContentParts,
+						openai.ChatCompletionContentPartTextParam{Text: c.Text},
+					)
 				default:
 					r.log.Errorf("unsupported content for system: %v", c)
 				}
 			}
 		}
-		m.Content = openai.F(parts)
 
-		return m
+		return &openai.ChatCompletionMessageParamUnion{OfSystem: m}
 	case v1.Role_USER:
-		m := openai.ChatCompletionUserMessageParam{
-			Role: openai.F(openai.ChatCompletionUserMessageParamRoleUser),
-		}
+		m := &openai.ChatCompletionUserMessageParam{}
 
 		if message.Name != "" {
-			m.Name = openai.F(message.Name)
+			m.Name = openai.Opt(message.Name)
 		}
 
-		var parts []openai.ChatCompletionContentPartUnionParam
-		if isPlainText && (r.config.PreferStringContentForUser || r.config.PreferSinglePartContent) {
-			parts = append(parts, openai.TextPart(plainText))
+		if isPlainText && r.config.PreferStringContentForUser {
+			m.Content.OfString = openai.Opt(plainText)
+		} else if isPlainText && r.config.PreferSinglePartContent {
+			m.Content.OfArrayOfContentParts = append(
+				m.Content.OfArrayOfContentParts,
+				openai.TextContentPart(plainText),
+			)
 		} else {
 			for _, content := range message.Contents {
 				switch c := content.GetContent().(type) {
 				case *v1.Content_Text:
-					parts = append(parts, openai.TextPart(c.Text))
+					m.Content.OfArrayOfContentParts = append(
+						m.Content.OfArrayOfContentParts,
+						openai.TextContentPart(c.Text),
+					)
 				case *v1.Content_Image_:
-					parts = append(parts, openai.ImagePart(c.Image.Url))
+					m.Content.OfArrayOfContentParts = append(
+						m.Content.OfArrayOfContentParts,
+						openai.ImageContentPart(
+							openai.ChatCompletionContentPartImageImageURLParam{
+								URL: c.Image.GetUrl(),
+							},
+						),
+					)
 				default:
 					r.log.Errorf("unsupported content for user: %v", c)
 				}
 			}
 		}
-		m.Content = openai.F(parts)
 
-		return m
+		return &openai.ChatCompletionMessageParamUnion{OfUser: m}
 	case v1.Role_MODEL:
-		m := openai.ChatCompletionAssistantMessageParam{
-			Role: openai.F(openai.ChatCompletionAssistantMessageParamRoleAssistant),
-		}
+		m := &openai.ChatCompletionAssistantMessageParam{}
 
 		if message.Name != "" {
-			m.Name = openai.F(message.Name)
+			m.Name = openai.Opt(message.Name)
 		}
 
-		if message.Contents != nil {
-			var parts []openai.ChatCompletionAssistantMessageParamContentUnion
-			if isPlainText && (r.config.PreferStringContentForAssistant || r.config.PreferSinglePartContent) {
-				parts = append(parts, openai.TextPart(plainText))
-			} else {
-				for _, content := range message.Contents {
-					switch c := content.GetContent().(type) {
-					case *v1.Content_Text:
-						parts = append(parts, openai.TextPart(c.Text))
-					default:
-						r.log.Errorf("unsupported content for assistant: %v", c)
-					}
-				}
-			}
-			m.Content = openai.F(parts)
-		}
-
-		if message.ToolCalls != nil {
-			var toolCalls []openai.ChatCompletionMessageToolCallParam
-			for _, toolCall := range message.ToolCalls {
-				switch t := toolCall.Tool.(type) {
-				case *v1.ToolCall_Function:
-					toolCalls = append(toolCalls, openai.ChatCompletionMessageToolCallParam{
-						ID:   openai.F(toolCall.Id),
-						Type: openai.F(openai.ChatCompletionMessageToolCallTypeFunction),
-						Function: openai.F(openai.ChatCompletionMessageToolCallFunctionParam{
-							Name:      openai.F(t.Function.Name),
-							Arguments: openai.F(t.Function.Arguments),
-						}),
-					})
-				default:
-					r.log.Errorf("unsupported tool call: %v", t)
-				}
-			}
-			m.ToolCalls = openai.F(toolCalls)
-		}
-
-		return m
-	case v1.Role_TOOL:
-		m := openai.ChatCompletionToolMessageParam{
-			Role:       openai.F(openai.ChatCompletionToolMessageParamRoleTool),
-			ToolCallID: openai.F(message.ToolCallId),
-		}
-
-		var parts []openai.ChatCompletionContentPartTextParam
-		if isPlainText && (r.config.PreferStringContentForTool || r.config.PreferSinglePartContent) {
-			parts = append(parts, openai.TextPart(plainText))
+		if isPlainText && r.config.PreferStringContentForAssistant {
+			m.Content.OfString = openai.Opt(plainText)
+		} else if isPlainText && r.config.PreferSinglePartContent {
+			m.Content.OfArrayOfContentParts = append(
+				m.Content.OfArrayOfContentParts,
+				openai.ChatCompletionAssistantMessageParamContentArrayOfContentPartUnion{
+					OfText: &openai.ChatCompletionContentPartTextParam{
+						Text: plainText,
+					},
+				},
+			)
 		} else {
 			for _, content := range message.Contents {
 				switch c := content.GetContent().(type) {
 				case *v1.Content_Text:
-					parts = append(parts, openai.TextPart(c.Text))
+					m.Content.OfArrayOfContentParts = append(
+						m.Content.OfArrayOfContentParts,
+						openai.ChatCompletionAssistantMessageParamContentArrayOfContentPartUnion{
+							OfText: &openai.ChatCompletionContentPartTextParam{
+								Text: c.Text,
+							},
+						},
+					)
+				default:
+					r.log.Errorf("unsupported content for assistant: %v", c)
+				}
+			}
+		}
+
+		for _, toolCall := range message.ToolCalls {
+			switch t := toolCall.Tool.(type) {
+			case *v1.ToolCall_Function:
+				m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallParam{
+					ID: toolCall.Id,
+					Function: openai.ChatCompletionMessageToolCallFunctionParam{
+						Name:      t.Function.Name,
+						Arguments: t.Function.Arguments,
+					},
+				})
+			default:
+				r.log.Errorf("unsupported tool call: %v", t)
+			}
+		}
+
+		return &openai.ChatCompletionMessageParamUnion{OfAssistant: m}
+	case v1.Role_TOOL:
+		m := &openai.ChatCompletionToolMessageParam{
+			ToolCallID: message.ToolCallId,
+		}
+
+		if isPlainText && r.config.PreferStringContentForTool {
+			m.Content.OfString = openai.Opt(plainText)
+		} else if isPlainText && r.config.PreferSinglePartContent {
+			m.Content.OfArrayOfContentParts = append(
+				m.Content.OfArrayOfContentParts,
+				openai.ChatCompletionContentPartTextParam{Text: plainText},
+			)
+		} else {
+			for _, content := range message.Contents {
+				switch c := content.GetContent().(type) {
+				case *v1.Content_Text:
+					m.Content.OfArrayOfContentParts = append(
+						m.Content.OfArrayOfContentParts,
+						openai.ChatCompletionContentPartTextParam{Text: c.Text},
+					)
 				default:
 					r.log.Errorf("unsupported content for tool: %v", c)
 				}
 			}
 		}
-		m.Content = openai.F(parts)
 
-		return m
+		return &openai.ChatCompletionMessageParamUnion{OfTool: m}
 	default:
 		r.log.Errorf("unsupported role: %v", message.Role)
 		return nil
@@ -171,15 +196,15 @@ func (r *ChatRepo) convertMessageToOpenAI(message *v1.Message) openai.ChatComple
 }
 
 // convertRequestToOpenAI converts an internal request to a request that can be sent to the OpenAI API.
-func (r *ChatRepo) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatCompletionNewParams {
+func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatCompletionNewParams {
 	openAIReq := openai.ChatCompletionNewParams{
-		Model: openai.F(req.Model),
+		Model: req.Model,
 	}
 
 	for _, message := range req.Messages {
 		m := r.convertMessageToOpenAI(message)
 		if m != nil {
-			openAIReq.Messages = append(openAIReq.Messages, m)
+			openAIReq.Messages = append(openAIReq.Messages, *m)
 		}
 	}
 
@@ -231,7 +256,7 @@ func toolFunctionParametersToOpenAI(parameters *v1.Tool_Function_Parameters) ope
 	}
 }
 
-func (r *ChatRepo) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
+func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
 	message := &v1.Message{
 		Id:   uuid.NewString(),
 		Role: v1.Role_MODEL,
@@ -269,7 +294,7 @@ func (r *ChatRepo) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 }
 
 // convertResponseFromOpenAI converts an OpenAI chat completion to an internal response.
-func (r *ChatRepo) convertResponseFromOpenAI(res *openai.ChatCompletion) *entity.ChatResp {
+func (r *upstream) convertResponseFromOpenAI(res *openai.ChatCompletion) *entity.ChatResp {
 	resp := &entity.ChatResp{
 		Id:      res.ID,
 		Message: r.convertMessageFromOpenAI(&res.Choices[0].Message),

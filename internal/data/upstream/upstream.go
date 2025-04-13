@@ -29,5 +29,5 @@ var ProviderSet = wire.NewSet(
 	deepseek.NewDeepSeekChatRepoFactory,
 	google.NewGoogleFactory,
 	neurouter.NewNeurouterFactory,
-	openai.NewOpenAIChatRepoFactory,
+	openai.NewOpenAIFactory,
 )

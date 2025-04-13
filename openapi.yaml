@@ -119,12 +119,17 @@ components:
                     type: string
                 image:
                     $ref: '#/components/schemas/neurouter.v1.Content_Image'
+                thinking:
+                    type: string
             description: Multi-modality content
         neurouter.v1.Content_Image:
             type: object
             properties:
                 url:
                     type: string
+                data:
+                    type: string
+                    format: bytes
         neurouter.v1.EmbedReq:
             type: object
             properties:
@@ -169,11 +174,6 @@ components:
                     items:
                         $ref: '#/components/schemas/neurouter.v1.Content'
                     description: The multi-modality content
-                reasoningContents:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/neurouter.v1.Content'
-                    description: The reasoning content before formal response
                 toolCallId:
                     type: string
                     description: Indicate the message is a response to a tool call

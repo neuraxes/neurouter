@@ -33,25 +33,28 @@ import (
 type ChatRepo struct {
 	config *conf.AnthropicConfig
 	client *anthropic.Client
+	log    *log.Helper
 }
 
 func NewAnthropicChatRepoFactory() repository.UpstreamFactory[conf.AnthropicConfig] {
 	return NewAnthropicChatRepo
 }
 
-func NewAnthropicChatRepo(config *conf.AnthropicConfig, logger log.Logger) (repository.ChatRepo, error) {
+func NewAnthropicChatRepo(config *conf.AnthropicConfig, logger log.Logger) (repo repository.ChatRepo, err error) {
 	options := []option.RequestOption{
 		option.WithAPIKey(config.ApiKey),
 	}
-
 	if config.BaseUrl != "" {
 		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
+	client := anthropic.NewClient(options...)
 
-	return &ChatRepo{
+	repo = &ChatRepo{
 		config: config,
-		client: anthropic.NewClient(options...),
-	}, nil
+		client: &client,
+		log:    log.NewHelper(logger),
+	}
+	return
 }
 
 func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
@@ -97,7 +100,7 @@ func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 type anthropicChatStreamClient struct {
 	id       string
 	req      *entity.ChatReq
-	upstream *ssestream.Stream[anthropic.MessageStreamEvent]
+	upstream *ssestream.Stream[anthropic.MessageStreamEventUnion]
 }
 
 func (c anthropicChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
@@ -111,7 +114,7 @@ next:
 	}
 
 	chunk := c.upstream.Current()
-	if chunk.Type != anthropic.MessageStreamEventTypeContentBlockDelta {
+	if chunk.Type != "content_block_delta" {
 		goto next
 	}
 
@@ -123,7 +126,7 @@ next:
 			Contents: []*v1.Content{
 				{
 					Content: &v1.Content_Text{
-						Text: chunk.Delta.(anthropic.ContentBlockDeltaEventDelta).Text,
+						Text: chunk.Delta.Text,
 					},
 				},
 			},

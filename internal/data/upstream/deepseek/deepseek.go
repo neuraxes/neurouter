@@ -95,24 +95,30 @@ func (c *deepSeekChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 	}
 
 	if len(chunk.Choices) > 0 {
-		resp.Message = &v1.Message{
-			Id:   c.id,
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Content: &v1.Content_Text{
-						Text: chunk.Choices[0].Delta.Content,
+		var contents []*v1.Content
+		for _, choice := range chunk.Choices {
+			if choice.Delta.ReasoningContent != "" {
+				contents = append(contents, &v1.Content{
+					Content: &v1.Content_Thinking{
+						Thinking: choice.Delta.ReasoningContent,
 					},
-				},
-			},
-			ReasoningContents: []*v1.Content{
-				{
+				})
+			}
+			if choice.Delta.Content != "" {
+				contents = append(contents, &v1.Content{
 					Content: &v1.Content_Text{
-						Text: chunk.Choices[0].Delta.ReasoningContent,
+						Text: choice.Delta.Content,
 					},
-				},
-			},
+				})
+			}
 		}
+
+		resp.Message = &v1.Message{
+			Id:       c.id,
+			Role:     v1.Role_MODEL,
+			Contents: contents,
+		}
+
 		// Clear due to the reuse of the same message struct
 		chunk.Choices[0].Delta = nil
 	}

@@ -66,12 +66,16 @@ enum Capability {
 // Multi-modality content
 message Content {
   message Image {
-    string url = 1;
+    oneof source {
+      string url = 1;
+      bytes data = 2;
+    }
   }
 
   oneof content {
     string text = 1;
     Image image = 2;
+    string thinking = 3;
   }
 }
 
