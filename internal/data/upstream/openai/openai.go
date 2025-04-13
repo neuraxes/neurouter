@@ -35,7 +35,7 @@ type ChatRepo struct {
 	log    *log.Helper
 }
 
-func NewOpenAIChatRepoFactory() repository.ChatRepoFactory[conf.OpenAIConfig] {
+func NewOpenAIChatRepoFactory() repository.UpstreamFactory[conf.OpenAIConfig] {
 	return NewOpenAIChatRepo
 }
 

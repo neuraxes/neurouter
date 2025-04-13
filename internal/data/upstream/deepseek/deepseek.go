@@ -34,7 +34,7 @@ type ChatRepo struct {
 	log    *log.Helper
 }
 
-func NewDeepSeekChatRepoFactory() repository.ChatRepoFactory[conf.DeepSeekConfig] {
+func NewDeepSeekChatRepoFactory() repository.UpstreamFactory[conf.DeepSeekConfig] {
 	return NewDeepSeekChatRepo
 }
 

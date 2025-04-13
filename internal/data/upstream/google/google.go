@@ -32,23 +32,23 @@ import (
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
-type ChatRepo struct {
+type upstream struct {
 	config *conf.GoogleConfig
 	client *genai.Client
 	log    *log.Helper
 }
 
-func NewGoogleChatRepoFactory() repository.ChatRepoFactory[conf.GoogleConfig] {
-	return NewGoogleChatRepo
+func NewGoogleFactory() repository.UpstreamFactory[conf.GoogleConfig] {
+	return newGoogleUpstream
 }
 
-func NewGoogleChatRepo(config *conf.GoogleConfig, logger log.Logger) (repo repository.ChatRepo, err error) {
+func newGoogleUpstream(config *conf.GoogleConfig, logger log.Logger) (repo repository.ChatRepo, err error) {
 	client, err := genai.NewClient(context.Background(), option.WithAPIKey(config.ApiKey))
 	if err != nil {
 		return
 	}
 
-	repo = &ChatRepo{
+	repo = &upstream{
 		config: config,
 		client: client,
 		log:    log.NewHelper(logger),
@@ -56,7 +56,7 @@ func NewGoogleChatRepo(config *conf.GoogleConfig, logger log.Logger) (repo repos
 	return
 }
 
-func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	messageLen := len(req.Messages)
 	if messageLen == 0 {
 		return nil, fmt.Errorf("no messages")
@@ -137,7 +137,7 @@ func (c *googleChatStreamClient) Close() error {
 	return nil
 }
 
-func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
 	messageLen := len(req.Messages)
 	if messageLen == 0 {
 		return nil, io.EOF
@@ -160,4 +160,26 @@ func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 		req:      req,
 		upstream: iter,
 	}, nil
+}
+
+func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entity.EmbedResp, err error) {
+	model := r.client.EmbeddingModel(req.Model)
+
+	var parts []genai.Part
+	for _, content := range req.Contents {
+		if part := convertContentToGoogle(content); part != nil {
+			parts = append(parts, part)
+		}
+	}
+
+	res, err := model.EmbedContent(ctx, parts...)
+	if err != nil {
+		return
+	}
+
+	resp = &entity.EmbedResp{
+		Id:        req.Id,
+		Embedding: res.Embedding.Values,
+	}
+	return
 }

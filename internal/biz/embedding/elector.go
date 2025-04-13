@@ -12,21 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package biz
+package embedding
 
 import (
-	"github.com/google/wire"
-
-	"github.com/neuraxes/neurouter/internal/biz/chat"
-	"github.com/neuraxes/neurouter/internal/biz/embedding"
-	"github.com/neuraxes/neurouter/internal/biz/model"
+	"github.com/neuraxes/neurouter/internal/biz/repository"
+	"github.com/neuraxes/neurouter/internal/conf"
 )
 
-var ProviderSet = wire.NewSet(
-	chat.NewChatUseCase,
-	model.NewModelUseCase,
-	embedding.NewUseCase,
-	wire.Bind(new(model.UseCase), new(*model.UseCaseImpl)),
-	wire.Bind(new(chat.Elector), new(*model.UseCaseImpl)),
-	wire.Bind(new(embedding.Elector), new(*model.UseCaseImpl)),
-)
+type Elector interface {
+	ElectForEmbedding(uri string) (repo repository.EmbeddingRepo, model *conf.Model, err error)
+}

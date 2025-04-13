@@ -82,14 +82,24 @@ server:
 
 ### Provider Configuration (`configs/upstream.yaml`)
 
+The upstream configuration defines available models and their properties:
+
 ```yaml
 upstream:
   configs:
     - name: "provider-name"
       models:
-        - id: "model-id"
-          name: "model-name"
-          provider: "provider-type"
+        - id: "model-id"          # Unique identifier for the model
+          upstream_id: "model-id"  # Model ID in the upstream service
+          name: "Model Name"       # Display name
+          from: "provider"         # The owner of model
+          provider: "provider"     # The model service provider
+          modalities:             # Supported modalities
+            - "MODALITY_TEXT"
+            - "MODALITY_IMAGE"
+          capabilities:           # Model capabilities
+            - "CAPABILITY_CHAT"
+            - "CAPABILITY_COMPLETION"
       providerSpecific:
         ...
 ```
@@ -124,13 +134,19 @@ Neurouter supports multiple LLM providers through a unified configuration system
    name: "openai-config"
    models:
      - id: "gpt-4"
-       name: "gpt-4"
+       upstream_id: "gpt-4"
+       name: "GPT-4"
+       from: "openai"
        provider: "openai"
+       modalities: ["MODALITY_TEXT"]
+       capabilities: ["CAPABILITY_CHAT", "CAPABILITY_COMPLETION"]
    open_ai:
      api_key: "your-api-key"
      base_url: "https://api.openai.com/v1"  # Optional
      prefer_string_content_for_system: false # Optional
      prefer_string_content_for_user: false   # Optional
+     prefer_string_content_for_assistant: false # Optional
+     prefer_string_content_for_tool: false   # Optional
      prefer_single_part_content: false       # Optional
    ```
 
@@ -139,12 +155,16 @@ Neurouter supports multiple LLM providers through a unified configuration system
    name: "anthropic-config"
    models:
      - id: "claude-3"
-       name: "claude-3"
+       upstream_id: "claude-3-sonnet"
+       name: "Claude 3 Sonnet"
+       from: "anthropic"
        provider: "anthropic"
+       modalities: ["MODALITY_TEXT"]
+       capabilities: ["CAPABILITY_CHAT"]
    anthropic:
      api_key: "your-api-key"
      base_url: "https://api.anthropic.com"  # Optional
-     merge_system: false                    # Whether to put system prompts into messages (as user)
+     merge_system: false                    # Whether to put system prompts into messages
    ```
 
 3. **Google (Gemini)**
@@ -152,8 +172,12 @@ Neurouter supports multiple LLM providers through a unified configuration system
    name: "google-config"
    models:
      - id: "gemini-pro"
-       name: "gemini-pro"
+       upstream_id: "gemini-pro"
+       name: "Gemini Pro"
+       from: "google"
        provider: "google"
+       modalities: ["MODALITY_TEXT"]
+       capabilities: ["CAPABILITY_CHAT"]
    google:
      api_key: "your-api-key"
    ```
@@ -162,9 +186,13 @@ Neurouter supports multiple LLM providers through a unified configuration system
    ```yaml
    name: "deepseek-config"
    models:
-     - id: "deepseek-chat"
-       name: "deepseek-chat"
+     - id: "deepseek-v3"
+       upstream_id: "deepseek-chat"
+       name: "DeepSeek Chat"
+       from: "deepseek"
        provider: "deepseek"
+       modalities: ["MODALITY_TEXT"]
+       capabilities: ["CAPABILITY_CHAT"]
    deep_seek:
      api_key: "your-api-key"
      base_url: "https://api.deepseek.com"
@@ -175,8 +203,12 @@ Neurouter supports multiple LLM providers through a unified configuration system
    name: "neurouter-config"
    models:
      - id: "remote-model"
-       name: "remote-model"
+       upstream_id: "remote-model"
+       name: "Remote Model"
+       from: "neurouter"
        provider: "neurouter"
+       modalities: ["MODALITY_TEXT"]
+       capabilities: ["CAPABILITY_CHAT"]
    neurouter:
      endpoint: "another-neurouter-instance:9000"
    ```

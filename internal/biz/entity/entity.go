@@ -24,3 +24,9 @@ type ChatResp v1.ChatResp
 
 // ModelSpec represents a model specification, aliased from the API proto definition.
 type ModelSpec v1.ModelSpec
+
+// EmbedReq represents an embedding request, aliased from the API proto definition.
+type EmbedReq v1.EmbedReq
+
+// EmbedResp represents an embedding response, aliased from the API proto definition.
+type EmbedResp v1.EmbedResp

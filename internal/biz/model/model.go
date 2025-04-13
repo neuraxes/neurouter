@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"slices"
 
 	"github.com/go-kratos/kratos/v2/log"
 
@@ -41,11 +42,11 @@ type UseCaseImpl struct {
 
 func NewModelUseCase(
 	c *conf.Upstream,
-	anthropicChatRepoFactory repository.ChatRepoFactory[conf.AnthropicConfig],
-	deepSeekChatRepoFactory repository.ChatRepoFactory[conf.DeepSeekConfig],
-	googleChatRepoFactory repository.ChatRepoFactory[conf.GoogleConfig],
-	neurouterChatRepoFactory repository.ChatRepoFactory[conf.NeurouterConfig],
-	openAIChatRepoFactory repository.ChatRepoFactory[conf.OpenAIConfig],
+	anthropicFactory repository.UpstreamFactory[conf.AnthropicConfig],
+	deepSeekFactory repository.UpstreamFactory[conf.DeepSeekConfig],
+	googleFactory repository.UpstreamFactory[conf.GoogleConfig],
+	neurouterFactory repository.UpstreamFactory[conf.NeurouterConfig],
+	openAIFactory repository.UpstreamFactory[conf.OpenAIConfig],
 	logger log.Logger,
 ) *UseCaseImpl {
 	logHelper := log.NewHelper(logger)
@@ -60,15 +61,15 @@ func NewModelUseCase(
 
 			switch config.GetConfig().(type) {
 			case *conf.UpstreamConfig_Neurouter:
-				repo, err = neurouterChatRepoFactory(config.GetNeurouter(), logger)
+				repo, err = neurouterFactory(config.GetNeurouter(), logger)
 			case *conf.UpstreamConfig_OpenAi:
-				repo, err = openAIChatRepoFactory(config.GetOpenAi(), logger)
+				repo, err = openAIFactory(config.GetOpenAi(), logger)
 			case *conf.UpstreamConfig_Google:
-				repo, err = googleChatRepoFactory(config.GetGoogle(), logger)
+				repo, err = googleFactory(config.GetGoogle(), logger)
 			case *conf.UpstreamConfig_Anthropic:
-				repo, err = anthropicChatRepoFactory(config.GetAnthropic(), logger)
+				repo, err = anthropicFactory(config.GetAnthropic(), logger)
 			case *conf.UpstreamConfig_DeepSeek:
-				repo, err = deepSeekChatRepoFactory(config.GetDeepSeek(), logger)
+				repo, err = deepSeekFactory(config.GetDeepSeek(), logger)
 			}
 
 			if err != nil {
@@ -93,18 +94,43 @@ func NewModelUseCase(
 
 func (uc *UseCaseImpl) ElectForChat(uri string) (repo repository.ChatRepo, model *conf.Model, err error) {
 	for _, m := range uc.models {
+		if !slices.Contains(m.config.Capabilities, conf.Capability_CAPABILITY_CHAT) {
+			continue
+		}
+		repo = m.repo
+		model = m.config
 		if m.config.Id == uri {
-			repo = m.repo
+			uc.log.Infof("using model: %s", m.config.Id)
+			return
+		}
+	}
+
+	if model != nil {
+		uc.log.Infof("fallback to model: %s", model.Id)
+		return
+	}
+
+	err = v1.ErrorNoUpstream("no upstream found")
+	return
+}
+
+func (uc *UseCaseImpl) ElectForEmbedding(uri string) (repo repository.EmbeddingRepo, model *conf.Model, err error) {
+	for _, m := range uc.models {
+		if !slices.Contains(m.config.Capabilities, conf.Capability_CAPABILITY_EMBEDDING) {
+			continue
+		}
+		if r, ok := m.repo.(repository.EmbeddingRepo); ok {
+			repo = r
 			model = m.config
+		}
+		if m.config.Id == uri {
 			uc.log.Infof("using model: %s", m.config.Name)
 			return
 		}
 	}
 
-	for _, m := range uc.models {
-		repo = m.repo
-		model = m.config
-		uc.log.Infof("fallback to model: %s", m.config.Name)
+	if model != nil {
+		uc.log.Infof("fallback to model: %s", model.Name)
 		return
 	}
 
@@ -116,10 +142,23 @@ func (uc *UseCaseImpl) ListAvailableModels(ctx context.Context) ([]*entity.Model
 	var models []*entity.ModelSpec
 
 	for _, m := range uc.models {
+		modalities := make([]v1.Modality, 0, len(m.config.Modalities))
+		for _, modality := range m.config.Modalities {
+			modalities = append(modalities, v1.Modality(modality))
+		}
+
+		capabilities := make([]v1.Capability, 0, len(m.config.Capabilities))
+		for _, capability := range m.config.Capabilities {
+			capabilities = append(capabilities, v1.Capability(capability))
+		}
+
 		models = append(models, &entity.ModelSpec{
-			Id:       m.config.Id,
-			Name:     m.config.Name,
-			Provider: m.config.Provider,
+			Id:           m.config.Id,
+			Name:         m.config.Name,
+			From:         m.config.From,
+			Provider:     m.config.Provider,
+			Modalities:   modalities,
+			Capabilities: capabilities,
 		})
 	}
 

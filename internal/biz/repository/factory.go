@@ -20,11 +20,11 @@ import (
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
-// ChatUpstreamConfig is a type constraint for LLM provider configurations.
+// UpstreamConfig is a type constraint for LLM provider configurations.
 // It allows for configuration of different upstream LLM providers like OpenAI, Google, Anthropic, etc.
-type ChatUpstreamConfig interface {
+type UpstreamConfig interface {
 	conf.NeurouterConfig | conf.OpenAIConfig | conf.GoogleConfig | conf.AnthropicConfig | conf.DeepSeekConfig
 }
 
-// ChatRepoFactory is a generic factory function type for creating ChatRepo instances.
-type ChatRepoFactory[T ChatUpstreamConfig] func(config *T, logger log.Logger) (ChatRepo, error)
+// UpstreamFactory is a generic factory function type for creating ChatRepo instances.
+type UpstreamFactory[T UpstreamConfig] func(config *T, logger log.Logger) (ChatRepo, error)

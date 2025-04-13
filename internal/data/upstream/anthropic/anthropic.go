@@ -35,7 +35,7 @@ type ChatRepo struct {
 	client *anthropic.Client
 }
 
-func NewAnthropicChatRepoFactory() repository.ChatRepoFactory[conf.AnthropicConfig] {
+func NewAnthropicChatRepoFactory() repository.UpstreamFactory[conf.AnthropicConfig] {
 	return NewAnthropicChatRepo
 }
 

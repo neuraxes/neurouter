@@ -176,31 +176,27 @@ func (r *ChatRepo) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 		Model: openai.F(req.Model),
 	}
 
-	var messages []openai.ChatCompletionMessageParamUnion
 	for _, message := range req.Messages {
 		m := r.convertMessageToOpenAI(message)
 		if m != nil {
-			messages = append(messages, m)
+			openAIReq.Messages = append(openAIReq.Messages, m)
 		}
 	}
-	openAIReq.Messages = openai.F(messages)
 
 	if c := req.Config; c != nil {
 		if c.MaxTokens != 0 {
-			openAIReq.MaxCompletionTokens = openai.F(c.MaxTokens)
+			openAIReq.MaxCompletionTokens = openai.Opt(c.MaxTokens)
 		}
-		openAIReq.Temperature = openai.F(float64(c.Temperature))
+		openAIReq.Temperature = openai.Opt(float64(c.Temperature))
 		if c.TopP != 0 {
-			openAIReq.TopP = openai.F(float64(c.TopP))
+			openAIReq.TopP = openai.Opt(float64(c.TopP))
 		}
-		openAIReq.FrequencyPenalty = openai.F(float64(c.FrequencyPenalty))
-		openAIReq.PresencePenalty = openai.F(float64(c.PresencePenalty))
+		openAIReq.FrequencyPenalty = openai.Opt(float64(c.FrequencyPenalty))
+		openAIReq.PresencePenalty = openai.Opt(float64(c.PresencePenalty))
 		if c.GetPresetGrammar() == "json_object" {
-			openAIReq.ResponseFormat = openai.F[openai.ChatCompletionNewParamsResponseFormatUnion](
-				openai.ResponseFormatJSONObjectParam{
-					Type: openai.F(openai.ResponseFormatJSONObjectTypeJSONObject),
-				},
-			)
+			openAIReq.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+				OfJSONObject: &openai.ResponseFormatJSONObjectParam{},
+			}
 		}
 	}
 
@@ -209,19 +205,19 @@ func (r *ChatRepo) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 		for _, tool := range req.Tools {
 			switch t := tool.Tool.(type) {
 			case *v1.Tool_Function_:
+				// Currently only function tool calls are supported by OpenAI
 				tools = append(tools, openai.ChatCompletionToolParam{
-					Type: openai.F(openai.ChatCompletionToolTypeFunction),
-					Function: openai.F(shared.FunctionDefinitionParam{
-						Name:        openai.F(t.Function.Name),
-						Description: openai.F(t.Function.Description),
-						Parameters:  openai.F(toolFunctionParametersToOpenAI(t.Function.Parameters)),
-					}),
+					Function: shared.FunctionDefinitionParam{
+						Name:        t.Function.Name,
+						Description: openai.Opt(t.Function.Description),
+						Parameters:  toolFunctionParametersToOpenAI(t.Function.Parameters),
+					},
 				})
 			default:
 				r.log.Errorf("unsupported tool: %v", t)
 			}
 		}
-		openAIReq.Tools = openai.F(tools)
+		openAIReq.Tools = tools
 	}
 
 	return openAIReq
@@ -255,20 +251,16 @@ func (r *ChatRepo) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 	if openAIMessage.ToolCalls != nil {
 		var toolCalls []*v1.ToolCall
 		for _, toolCall := range openAIMessage.ToolCalls {
-			switch toolCall.Type {
-			case openai.ChatCompletionMessageToolCallTypeFunction:
-				toolCalls = append(toolCalls, &v1.ToolCall{
-					Id: toolCall.ID,
-					Tool: &v1.ToolCall_Function{
-						Function: &v1.ToolCall_FunctionCall{
-							Name:      toolCall.Function.Name,
-							Arguments: toolCall.Function.Arguments,
-						},
+			// Currently only function tool calls are supported by OpenAI
+			toolCalls = append(toolCalls, &v1.ToolCall{
+				Id: toolCall.ID,
+				Tool: &v1.ToolCall_Function{
+					Function: &v1.ToolCall_FunctionCall{
+						Name:      toolCall.Function.Name,
+						Arguments: toolCall.Function.Arguments,
 					},
-				})
-			default:
-				r.log.Errorf("unsupported tool call: %v", toolCall)
-			}
+				},
+			})
 		}
 		message.ToolCalls = toolCalls
 	}

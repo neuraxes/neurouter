@@ -47,7 +47,13 @@ func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatReq) (resp *ent
 	if err != nil {
 		return
 	}
-	req.Model = m.Id
+
+	if m.UpstreamId != "" {
+		req.Model = m.UpstreamId
+	} else {
+		req.Model = m.Id
+	}
+
 	return repo.Chat(ctx, req)
 }
 
@@ -57,7 +63,12 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, serv
 		return err
 	}
 
-	req.Model = m.Id
+	if m.UpstreamId != "" {
+		req.Model = m.UpstreamId
+	} else {
+		req.Model = m.Id
+	}
+
 	client, err := repo.ChatStream(ctx, req)
 	if err != nil {
 		return err

@@ -47,6 +47,7 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	srv := http.NewServer(opts...)
 	v1.RegisterModelHTTPServer(srv, svc)
 	v1.RegisterChatHTTPServer(srv, svc)
+	v1.RegisterEmbeddingHTTPServer(srv, svc)
 	openai.RegisterOpenAIHTTPServer(srv, svc)
 
 	if j := jwtAuth(); j != nil {

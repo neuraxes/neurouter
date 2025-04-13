@@ -45,6 +45,7 @@ func NewGRPCServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	srv := grpc.NewServer(opts...)
 	v1.RegisterModelServer(srv, svc)
 	v1.RegisterChatServer(srv, svc)
+	v1.RegisterEmbeddingServer(srv, svc)
 
 	if j := jwtAuth(); j != nil {
 		srv.Use("/neurouter.v1.*", j)

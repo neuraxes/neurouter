@@ -39,3 +39,9 @@ type ChatRepo interface {
 	// ChatStream initiates a streaming chat interaction.
 	ChatStream(context.Context, *entity.ChatReq) (ChatStreamClient, error)
 }
+
+// EmbeddingRepo defines the interface for embedding operations.
+type EmbeddingRepo interface {
+	// Embed performs a synchronous embedding operation.
+	Embed(context.Context, *entity.EmbedReq) (*entity.EmbedResp, error)
+}

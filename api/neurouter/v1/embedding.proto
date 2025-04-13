@@ -31,9 +31,12 @@ service Embedding {
 }
 
 message EmbedReq {
-  repeated Content contents = 1;
+  string id = 1;
+  string model = 2;
+  repeated Content contents = 3;
 }
 
 message EmbedResp {
-  repeated float embedding = 1;
+  string id = 1;
+  repeated float embedding = 2;
 }

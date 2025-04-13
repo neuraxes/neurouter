@@ -26,17 +26,18 @@ import (
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
-type ChatRepo struct {
-	config *conf.NeurouterConfig
-	client v1.ChatClient
-	log    *log.Helper
+type upstream struct {
+	config          *conf.NeurouterConfig
+	chatClient      v1.ChatClient
+	embeddingClient v1.EmbeddingClient
+	log             *log.Helper
 }
 
-func NewNeurouterChatRepoFactory() repository.ChatRepoFactory[conf.NeurouterConfig] {
-	return NewNeurouterChatRepo
+func NewNeurouterFactory() repository.UpstreamFactory[conf.NeurouterConfig] {
+	return newNeurouterUpstream
 }
 
-func NewNeurouterChatRepo(config *conf.NeurouterConfig, logger log.Logger) (repository.ChatRepo, error) {
+func newNeurouterUpstream(config *conf.NeurouterConfig, logger log.Logger) (repository.ChatRepo, error) {
 	conn, err := grpc.DialInsecure(
 		context.Background(),
 		grpc.WithEndpoint(config.Endpoint),
@@ -45,15 +46,16 @@ func NewNeurouterChatRepo(config *conf.NeurouterConfig, logger log.Logger) (repo
 		return nil, err
 	}
 
-	return &ChatRepo{
-		config: config,
-		client: v1.NewChatClient(conn),
-		log:    log.NewHelper(logger),
+	return &upstream{
+		config:          config,
+		chatClient:      v1.NewChatClient(conn),
+		embeddingClient: v1.NewEmbeddingClient(conn),
+		log:             log.NewHelper(logger),
 	}, nil
 }
 
-func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (*entity.ChatResp, error) {
-	resp, err := r.client.Chat(ctx, (*v1.ChatReq)(req))
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (*entity.ChatResp, error) {
+	resp, err := r.chatClient.Chat(ctx, (*v1.ChatReq)(req))
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +78,8 @@ func (c *neurouterChatStreamClient) Close() error {
 	return nil
 }
 
-func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
-	stream, err := r.client.ChatStream(ctx, (*v1.ChatReq)(req))
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
+	stream, err := r.chatClient.ChatStream(ctx, (*v1.ChatReq)(req))
 	if err != nil {
 		return nil, err
 	}
@@ -85,4 +87,12 @@ func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 	return &neurouterChatStreamClient{
 		stream: stream,
 	}, nil
+}
+
+func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (*entity.EmbedResp, error) {
+	resp, err := r.embeddingClient.Embed(ctx, (*v1.EmbedReq)(req))
+	if err != nil {
+		return nil, err
+	}
+	return (*entity.EmbedResp)(resp), nil
 }

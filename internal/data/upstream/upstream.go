@@ -27,7 +27,7 @@ import (
 var ProviderSet = wire.NewSet(
 	anthropic.NewAnthropicChatRepoFactory,
 	deepseek.NewDeepSeekChatRepoFactory,
-	google.NewGoogleChatRepoFactory,
-	neurouter.NewNeurouterChatRepoFactory,
+	google.NewGoogleFactory,
+	neurouter.NewNeurouterFactory,
 	openai.NewOpenAIChatRepoFactory,
 )

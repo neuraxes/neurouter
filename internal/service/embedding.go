@@ -17,29 +17,29 @@ package service
 import (
 	"context"
 
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
-
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-func (s *RouterService) ListModel(ctx context.Context, req *v1.ListModelReq) (resp *v1.ListModelResp, err error) {
-	if claims, ok := jwt.FromContext(ctx); ok {
-		sub, _ := claims.GetSubject()
-		s.log.Infof("jwt authenticated for: %s", sub)
+// Embed creates embeddings for the given contents using the specified model.
+func (s *RouterService) Embed(ctx context.Context, req *v1.EmbedReq) (resp *v1.EmbedResp, err error) {
+	// Convert API request to entity
+	embedReq := &entity.EmbedReq{
+		Id:       req.Id,
+		Model:    req.Model,
+		Contents: req.Contents,
 	}
 
-	models, err := s.model.ListAvailableModels(ctx)
+	// Call use case
+	r, err := s.embedding.Embed(ctx, embedReq)
 	if err != nil {
 		return
 	}
 
-	respModels := make([]*v1.ModelSpec, len(models))
-	for i, m := range models {
-		respModels[i] = (*v1.ModelSpec)(m)
-	}
-
-	resp = &v1.ListModelResp{
-		Models: respModels,
+	// Convert entity response to API response
+	resp = &v1.EmbedResp{
+		Id:        r.Id,
+		Embedding: r.Embedding,
 	}
 	return
 }

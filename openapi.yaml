@@ -128,6 +128,10 @@ components:
         neurouter.v1.EmbedReq:
             type: object
             properties:
+                id:
+                    type: string
+                model:
+                    type: string
                 contents:
                     type: array
                     items:
@@ -135,6 +139,8 @@ components:
         neurouter.v1.EmbedResp:
             type: object
             properties:
+                id:
+                    type: string
                 embedding:
                     type: array
                     items:

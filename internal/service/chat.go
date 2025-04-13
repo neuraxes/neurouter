@@ -17,9 +17,9 @@ package service
 import (
 	"context"
 
+	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )

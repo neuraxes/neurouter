@@ -7,7 +7,10 @@
 package main
 
 import (
+	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/neuraxes/neurouter/internal/biz/chat"
+	"github.com/neuraxes/neurouter/internal/biz/embedding"
 	"github.com/neuraxes/neurouter/internal/biz/model"
 	"github.com/neuraxes/neurouter/internal/conf"
 	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic"
@@ -17,8 +20,6 @@ import (
 	"github.com/neuraxes/neurouter/internal/data/upstream/openai"
 	"github.com/neuraxes/neurouter/internal/server"
 	"github.com/neuraxes/neurouter/internal/service"
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 import (
@@ -29,14 +30,15 @@ import (
 
 // wireApp init kratos application.
 func wireApp(confServer *conf.Server, data *conf.Data, upstream *conf.Upstream, logger log.Logger) (*kratos.App, func(), error) {
-	chatRepoFactory := anthropic.NewAnthropicChatRepoFactory()
-	repositoryChatRepoFactory := deepseek.NewDeepSeekChatRepoFactory()
-	chatRepoFactory2 := google.NewGoogleChatRepoFactory()
-	chatRepoFactory3 := neurouter.NewNeurouterChatRepoFactory()
-	chatRepoFactory4 := openai.NewOpenAIChatRepoFactory()
-	useCaseImpl := model.NewModelUseCase(upstream, chatRepoFactory, repositoryChatRepoFactory, chatRepoFactory2, chatRepoFactory3, chatRepoFactory4, logger)
+	upstreamFactory := anthropic.NewAnthropicChatRepoFactory()
+	repositoryUpstreamFactory := deepseek.NewDeepSeekChatRepoFactory()
+	upstreamFactory2 := google.NewGoogleFactory()
+	upstreamFactory3 := neurouter.NewNeurouterFactory()
+	upstreamFactory4 := openai.NewOpenAIChatRepoFactory()
+	useCaseImpl := model.NewModelUseCase(upstream, upstreamFactory, repositoryUpstreamFactory, upstreamFactory2, upstreamFactory3, upstreamFactory4, logger)
 	useCase := chat.NewChatUseCase(useCaseImpl, logger)
-	routerService := service.NewRouterService(useCase, useCaseImpl, logger)
+	embeddingUseCase := embedding.NewUseCase(useCaseImpl, logger)
+	routerService := service.NewRouterService(useCase, useCaseImpl, embeddingUseCase, logger)
 	grpcServer := server.NewGRPCServer(confServer, routerService, logger)
 	httpServer := server.NewHTTPServer(confServer, routerService, logger)
 	app := newApp(logger, grpcServer, httpServer)

@@ -17,6 +17,7 @@ package service
 import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/chat"
+	"github.com/neuraxes/neurouter/internal/biz/embedding"
 	"github.com/neuraxes/neurouter/internal/biz/model"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -25,15 +26,23 @@ import (
 type RouterService struct {
 	v1.UnimplementedModelServer
 	v1.UnimplementedChatServer
-	chat  chat.UseCase
-	model model.UseCase
-	log   *log.Helper
+	v1.UnimplementedEmbeddingServer
+	chat      chat.UseCase
+	model     model.UseCase
+	embedding embedding.UseCase
+	log       *log.Helper
 }
 
-func NewRouterService(chat chat.UseCase, model model.UseCase, logger log.Logger) *RouterService {
+func NewRouterService(
+	chat chat.UseCase,
+	model model.UseCase,
+	embedding embedding.UseCase,
+	logger log.Logger,
+) *RouterService {
 	return &RouterService{
-		chat:  chat,
-		model: model,
-		log:   log.NewHelper(logger),
+		chat:      chat,
+		model:     model,
+		embedding: embedding,
+		log:       log.NewHelper(logger),
 	}
 }
