@@ -15,23 +15,38 @@
 package openai
 
 import (
+	"context"
+	"encoding/json"
+	"io"
+
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/sashabaranov/go-openai"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func RegisterOpenAIHTTPServer(s *http.Server, chatSvc v1.ChatServer, embedSvc v1.EmbeddingServer) {
-	r := s.Route("/")
-	r.POST("/chat/completions", func(ctx http.Context) error {
-		return handleChatCompletion(ctx, chatSvc)
+func handleEmbedding(httpCtx http.Context, svc v1.EmbeddingServer) error {
+	requestBody, err := io.ReadAll(httpCtx.Request().Body)
+	if err != nil {
+		return err
+	}
+
+	openAIReq := openai.EmbeddingRequest{}
+	err = json.Unmarshal(requestBody, &openAIReq)
+	if err != nil {
+		return err
+	}
+
+	req := convertEmbeddingReqFromOpenAI(&openAIReq)
+
+	m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
+		return svc.Embed(ctx, req.(*v1.EmbedReq))
 	})
-	r.POST("/v1/chat/completions", func(ctx http.Context) error {
-		return handleChatCompletion(ctx, chatSvc)
-	})
-	r.POST("/embeddings", func(ctx http.Context) error {
-		return handleEmbedding(ctx, embedSvc)
-	})
-	r.POST("/v1/embeddings", func(ctx http.Context) error {
-		return handleEmbedding(ctx, embedSvc)
-	})
+	resp, err := m(httpCtx, req)
+	if err != nil {
+		return err
+	}
+
+	openAIResp := convertEmbeddingRespToOpenAI(resp.(*v1.EmbedResp))
+	return httpCtx.Result(200, openAIResp)
 }

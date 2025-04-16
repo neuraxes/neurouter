@@ -113,7 +113,7 @@ See: [Upstream Providers](#upstream-providers) for detailed provider-specific co
 Access the OpenAI-compatible REST API:
 
 ```bash
-curl -X POST http://localhost:8000/openai/v1/chat/completions \
+curl -X POST http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-4",

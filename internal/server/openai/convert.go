@@ -219,3 +219,42 @@ func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
 
 	return openAIResp
 }
+
+// convertEmbeddingReqFromOpenAI converts an embedding request from OpenAI API to Router API
+func convertEmbeddingReqFromOpenAI(req *openai.EmbeddingRequest) *v1.EmbedReq {
+	var contents []*v1.Content
+
+	switch input := req.Input.(type) {
+	case string:
+		contents = append(contents, &v1.Content{
+			Content: &v1.Content_Text{
+				Text: input,
+			},
+		})
+	case []string:
+		contents = append(contents, &v1.Content{
+			Content: &v1.Content_Text{
+				Text: input[0],
+			},
+		})
+	}
+
+	return &v1.EmbedReq{
+		Model:    string(req.Model),
+		Contents: contents,
+	}
+}
+
+// convertEmbeddingRespToOpenAI converts an embedding response from Router API to OpenAI API
+func convertEmbeddingRespToOpenAI(resp *v1.EmbedResp) *openai.EmbeddingResponse {
+	return &openai.EmbeddingResponse{
+		Object: "list",
+		Data: []openai.Embedding{
+			{
+				Index:     0,
+				Object:    "embedding",
+				Embedding: resp.Embedding,
+			},
+		},
+	}
+}
