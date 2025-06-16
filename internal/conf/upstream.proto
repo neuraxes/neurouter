@@ -49,6 +49,7 @@ enum Capability {
   CAPABILITY_CHAT = 1;
   CAPABILITY_COMPLETION = 2;
   CAPABILITY_EMBEDDING = 3;
+  CAPABILITY_TOOL_USE = 4;
 }
 
 message Model {

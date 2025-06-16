@@ -15,17 +15,16 @@
 package server
 
 import (
-	"github.com/go-kratos/kratos/v2/middleware/logging"
-
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
-
-	"github.com/neuraxes/neurouter/internal/conf"
-	"github.com/neuraxes/neurouter/internal/server/openai"
-	"github.com/neuraxes/neurouter/internal/service"
-
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/http"
+
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/server/ollama"
+	"github.com/neuraxes/neurouter/internal/server/openai"
+	"github.com/neuraxes/neurouter/internal/service"
 )
 
 func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger) *http.Server {
@@ -49,6 +48,7 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	v1.RegisterChatHTTPServer(srv, svc)
 	v1.RegisterEmbeddingHTTPServer(srv, svc)
 	openai.RegisterOpenAIHTTPServer(srv, svc, svc)
+	ollama.RegisterOllamaHTTPServer(srv, svc, svc)
 
 	if j := jwtAuth(); j != nil {
 		srv.Use("/*", j)
