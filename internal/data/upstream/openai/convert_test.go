@@ -714,5 +714,35 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 			So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 5)
 			So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 10)
 		})
+
+		Convey("with function tool call", func() {
+			chunk := &openai.ChatCompletionChunk{
+				Choices: []openai.ChatCompletionChunkChoice{
+					{
+						Delta: openai.ChatCompletionChunkChoiceDelta{
+							ToolCalls: []openai.ChatCompletionChunkChoiceDeltaToolCall{
+								{
+									ID:   "tool-1",
+									Type: "function",
+									Function: openai.ChatCompletionChunkChoiceDeltaToolCallFunction{
+										Name:      "my_func",
+										Arguments: "{\"foo\":1}",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			resp := convertChunkFromOpenAI(chunk, "req-1", "msg-1")
+			So(resp.Id, ShouldEqual, "req-1")
+			So(resp.Message.Id, ShouldEqual, "msg-1")
+			So(resp.Message.Contents, ShouldHaveLength, 1)
+			toolCall := resp.Message.Contents[0].GetToolCall()
+			So(toolCall.GetId(), ShouldEqual, "tool-1")
+			So(toolCall.GetFunction().Name, ShouldEqual, "my_func")
+			So(toolCall.GetFunction().Arguments, ShouldEqual, "{\"foo\":1}")
+		})
 	})
 }

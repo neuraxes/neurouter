@@ -118,18 +118,12 @@ components:
                 text:
                     type: string
                 image:
-                    $ref: '#/components/schemas/neurouter.v1.Content_Image'
+                    $ref: '#/components/schemas/neurouter.v1.Image'
                 thinking:
                     type: string
+                toolCall:
+                    $ref: '#/components/schemas/neurouter.v1.ToolCall'
             description: Multi-modality content
-        neurouter.v1.Content_Image:
-            type: object
-            properties:
-                url:
-                    type: string
-                data:
-                    type: string
-                    format: bytes
         neurouter.v1.EmbedReq:
             type: object
             properties:
@@ -151,6 +145,15 @@ components:
                     items:
                         type: number
                         format: float
+        neurouter.v1.Image:
+            type: object
+            properties:
+                url:
+                    type: string
+                data:
+                    type: string
+                    format: bytes
+            description: Represent a image content
         neurouter.v1.ListModelResp:
             type: object
             properties:
@@ -177,11 +180,6 @@ components:
                 toolCallId:
                     type: string
                     description: Indicate the message is a response to a tool call
-                toolCalls:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/neurouter.v1.ToolCall'
-                    description: A set of tool calls raised by the message
         neurouter.v1.ModelSpec:
             type: object
             properties:
@@ -230,6 +228,7 @@ components:
                     type: string
                 function:
                     $ref: '#/components/schemas/neurouter.v1.ToolCall_FunctionCall'
+            description: Represent a tool call content
         neurouter.v1.ToolCall_FunctionCall:
             type: object
             properties:

@@ -252,6 +252,7 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 	return openAIReq
 }
 
+// toolFunctionParametersToOpenAI converts tool function parameters to OpenAI function parameters.
 func toolFunctionParametersToOpenAI(parameters *v1.Tool_Function_Parameters) openai.FunctionParameters {
 	return map[string]any{
 		"type":       parameters.Type,
@@ -260,6 +261,7 @@ func toolFunctionParametersToOpenAI(parameters *v1.Tool_Function_Parameters) ope
 	}
 }
 
+// convertMessageFromOpenAI converts an OpenAI chat completion message to an internal message.
 func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
 	message := &v1.Message{
 		Id:   uuid.NewString(),
@@ -322,16 +324,38 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk, requestID string,
 	}
 
 	if len(chunk.Choices) > 0 {
+		c := chunk.Choices[0]
 		resp.Message = &v1.Message{
 			Id:   messageID,
 			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Content: &v1.Content_Text{
-						Text: chunk.Choices[0].Delta.Content,
-					},
+		}
+		if c.Delta.Content != "" {
+			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+				Content: &v1.Content_Text{
+					Text: c.Delta.Content,
 				},
-			},
+			})
+		}
+		if c.Delta.ToolCalls != nil {
+			for _, toolCall := range c.Delta.ToolCalls {
+				switch toolCall.Type {
+				case "function":
+					// Only function tool calls are supported by OpenAI
+					resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+						Content: &v1.Content_ToolCall{
+							ToolCall: &v1.ToolCall{
+								Id: toolCall.ID,
+								Tool: &v1.ToolCall_Function{
+									Function: &v1.ToolCall_FunctionCall{
+										Name:      toolCall.Function.Name,
+										Arguments: toolCall.Function.Arguments,
+									},
+								},
+							},
+						},
+					})
+				}
+			}
 		}
 	}
 

@@ -49,9 +49,9 @@ func (r *ChatRepo) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 			parts = append(parts, anthropic.NewTextBlock(c.Text))
 		case *v1.Content_Image:
 			parts = append(parts, anthropic.ContentBlockParamUnion{
-				OfRequestImageBlock: &anthropic.ImageBlockParam{
+				OfImage: &anthropic.ImageBlockParam{
 					Source: anthropic.ImageBlockParamSourceUnion{
-						OfURLImageSource: &anthropic.URLImageSourceParam{
+						OfURL: &anthropic.URLImageSourceParam{
 							URL: c.Image.GetUrl(),
 						},
 					},

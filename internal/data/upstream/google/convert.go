@@ -23,7 +23,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-// convertFunctionParamTypeToGoogle maps string type to genai.Type
+// convertFunctionParamTypeToGoogle maps string type to [genai.Type]
 func convertFunctionParamTypeToGoogle(t string) genai.Type {
 	switch t {
 	case "string":
@@ -43,7 +43,7 @@ func convertFunctionParamTypeToGoogle(t string) genai.Type {
 	}
 }
 
-// convertFunctionParametersToGoogle converts v1.Tool_Function_Parameters to *genai.Schema
+// convertFunctionParametersToGoogle converts [v1.Tool_Function_Parameters] to [*genai.Schema]
 func convertFunctionParametersToGoogle(params *v1.Tool_Function_Parameters) *genai.Schema {
 	if params == nil {
 		return nil
@@ -62,7 +62,7 @@ func convertFunctionParametersToGoogle(params *v1.Tool_Function_Parameters) *gen
 	return schema
 }
 
-// convertToolsToGoogle converts a slice of v1.Tool to a slice of genai.Tool.
+// convertToolsToGoogle converts a slice of [v1.Tool] to a slice of [genai.Tool]
 func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	if len(tools) == 0 {
 		return nil
@@ -82,13 +82,51 @@ func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	return []*genai.Tool{{FunctionDeclarations: functionDecls}}
 }
 
+// inferImageType infers the image type from the byte data
+func inferImageType(data []byte) string {
+	if len(data) >= 8 {
+		// PNG: 89 50 4E 47 0D 0A 1A 0A
+		if data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A {
+			return "png"
+		}
+	}
+	if len(data) >= 3 {
+		// JPEG: FF D8 FF
+		if data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
+			return "jpeg"
+		}
+		// GIF: GIF87a or GIF89a
+		if data[0] == 'G' && data[1] == 'I' && data[2] == 'F' {
+			return "gif"
+		}
+	}
+	if len(data) >= 12 {
+		// WEBP: RIFF....WEBP
+		if data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P' {
+			return "webp"
+		}
+	}
+	if len(data) >= 2 {
+		// BMP: BM
+		if data[0] == 'B' && data[1] == 'M' {
+			return "bmp"
+		}
+	}
+	return "unknown"
+}
+
+// convertContentToGoogle converts [v1.Content] to [genai.Part]
 func convertContentToGoogle(content *v1.Content) genai.Part {
 	switch v := content.Content.(type) {
 	case *v1.Content_Text:
 		return genai.Text(v.Text)
 	case *v1.Content_Image:
-		//   TODO: Handle image content when supported
-		return nil
+		switch source := v.Image.Source.(type) {
+		case *v1.Image_Data:
+			return genai.ImageData(inferImageType(source.Data), source.Data)
+		default:
+			return nil
+		}
 	case *v1.Content_ToolCall:
 		switch t := v.ToolCall.Tool.(type) {
 		case *v1.ToolCall_Function:
@@ -110,6 +148,7 @@ func convertContentToGoogle(content *v1.Content) genai.Part {
 	}
 }
 
+// convertMessageToGoogle converts [v1.Message] to [genai.Content]
 func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 	var parts []genai.Part
 	if msg.Role == v1.Role_TOOL {
@@ -145,6 +184,7 @@ func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 	}
 }
 
+// convertMessageFromGoogle converts a [genai.Content] to a [v1.Message]
 func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	message := &v1.Message{
 		Id:   uuid.NewString(),
