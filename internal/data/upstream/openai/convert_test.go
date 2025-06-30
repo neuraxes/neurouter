@@ -65,9 +65,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 				},
 			},
 			{
-				Content: &v1.Content_Image_{
-					Image: &v1.Content_Image{
-						Source: &v1.Content_Image_Url{
+				Content: &v1.Content_Image{
+					Image: &v1.Image{
+						Source: &v1.Image_Url{
 							Url: "https://example.com/image.jpg",
 						},
 					},
@@ -312,23 +312,29 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 							Text: "Let me help you",
 						},
 					},
-				},
-				ToolCalls: []*v1.ToolCall{
 					{
-						Id: "call-1",
-						Tool: &v1.ToolCall_Function{
-							Function: &v1.ToolCall_FunctionCall{
-								Name:      "search",
-								Arguments: `{"query":"weather"}`,
+						Content: &v1.Content_ToolCall{
+							ToolCall: &v1.ToolCall{
+								Id: "call-1",
+								Tool: &v1.ToolCall_Function{
+									Function: &v1.ToolCall_FunctionCall{
+										Name:      "search",
+										Arguments: `{"query":"weather"}`,
+									},
+								},
 							},
 						},
 					},
 					{
-						Id: "call-2",
-						Tool: &v1.ToolCall_Function{
-							Function: &v1.ToolCall_FunctionCall{
-								Name:      "calculate",
-								Arguments: `{"expression":"1+1"}`,
+						Content: &v1.Content_ToolCall{
+							ToolCall: &v1.ToolCall{
+								Id: "call-2",
+								Tool: &v1.ToolCall_Function{
+									Function: &v1.ToolCall_FunctionCall{
+										Name:      "calculate",
+										Arguments: `{"expression":"1+1"}`,
+									},
+								},
 							},
 						},
 					},
@@ -355,11 +361,13 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 							Text: "Hello",
 						},
 					},
-				},
-				ToolCalls: []*v1.ToolCall{
 					{
-						Id:   "call-1",
-						Tool: nil,
+						Content: &v1.Content_ToolCall{
+							ToolCall: &v1.ToolCall{
+								Id:   "call-1",
+								Tool: nil,
+							},
+						},
 					},
 				},
 			}
@@ -594,10 +602,10 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 
 			msg := repo.convertMessageFromOpenAI(openAIMsg)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
-			So(msg.ToolCalls, ShouldHaveLength, 1)
-			So(msg.ToolCalls[0].Id, ShouldEqual, "call-1")
-			So(msg.ToolCalls[0].GetFunction().Name, ShouldEqual, "test_function")
-			So(msg.ToolCalls[0].GetFunction().Arguments, ShouldEqual, `{"arg1":"value1"}`)
+			So(msg.Contents, ShouldHaveLength, 1)
+			So(msg.Contents[0].GetToolCall().GetId(), ShouldEqual, "call-1")
+			So(msg.Contents[0].GetToolCall().GetFunction().Name, ShouldEqual, "test_function")
+			So(msg.Contents[0].GetToolCall().GetFunction().Arguments, ShouldEqual, `{"arg1":"value1"}`)
 		})
 
 		Convey("with empty content and no tool calls", func() {
@@ -609,7 +617,14 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 			msg := repo.convertMessageFromOpenAI(openAIMsg)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldBeNil)
-			So(msg.ToolCalls, ShouldBeNil)
+			// No tool calls, so no Content_ToolCall in Contents
+			hasToolCall := false
+			for _, c := range msg.Contents {
+				if _, ok := c.GetContent().(*v1.Content_ToolCall); ok {
+					hasToolCall = true
+				}
+			}
+			So(hasToolCall, ShouldBeFalse)
 		})
 	})
 }

@@ -55,9 +55,9 @@ func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Mes
 				})
 			case openai.ChatMessagePartTypeImageURL:
 				contents = append(contents, &v1.Content{
-					Content: &v1.Content_Image_{
-						Image: &v1.Content_Image{
-							Source: &v1.Content_Image_Url{
+					Content: &v1.Content_Image{
+						Image: &v1.Image{
+							Source: &v1.Image_Url{
 								Url: content.ImageURL.URL,
 							},
 						},
@@ -67,7 +67,6 @@ func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Mes
 		}
 	}
 
-	var toolCalls []*v1.ToolCall
 	for _, toolCall := range message.ToolCalls {
 		t := &v1.ToolCall{Id: toolCall.ID}
 		switch toolCall.Type {
@@ -79,14 +78,15 @@ func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Mes
 				},
 			}
 		}
-		toolCalls = append(toolCalls, t)
+		contents = append(contents, &v1.Content{
+			Content: &v1.Content_ToolCall{ToolCall: t},
+		})
 	}
 
 	return &v1.Message{
 		Role:       role,
 		Name:       message.Name,
 		Contents:   contents,
-		ToolCalls:  toolCalls,
 		ToolCallId: message.ToolCallID,
 	}
 }
@@ -165,6 +165,7 @@ func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
 			} else {
 				// Multipart message
 				var multiContent []openai.ChatMessagePart
+				var toolCalls []openai.ToolCall
 				for _, content := range resp.Message.Contents {
 					switch c := content.Content.(type) {
 					case *v1.Content_Text:
@@ -172,36 +173,30 @@ func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
 							Type: openai.ChatMessagePartTypeText,
 							Text: c.Text,
 						})
-					case *v1.Content_Image_:
+					case *v1.Content_Image:
 						multiContent = append(multiContent, openai.ChatMessagePart{
 							Type: openai.ChatMessagePartTypeImageURL,
 							ImageURL: &openai.ChatMessageImageURL{
 								URL: c.Image.GetUrl(),
 							},
 						})
+					case *v1.Content_ToolCall:
+						t := openai.ToolCall{
+							ID:   c.ToolCall.Id,
+							Type: openai.ToolTypeFunction,
+						}
+						if f := c.ToolCall.GetFunction(); f != nil {
+							t.Function = openai.FunctionCall{
+								Name:      f.Name,
+								Arguments: f.Arguments,
+							}
+						}
+						toolCalls = append(toolCalls, t)
 					}
 				}
 				message.MultiContent = multiContent
+				message.ToolCalls = toolCalls
 			}
-		}
-
-		// Handle tool calls
-		if len(resp.Message.ToolCalls) > 0 {
-			var toolCalls []openai.ToolCall
-			for _, toolCall := range resp.Message.ToolCalls {
-				t := openai.ToolCall{
-					ID:   toolCall.Id,
-					Type: openai.ToolTypeFunction,
-				}
-				if f := toolCall.GetFunction(); f != nil {
-					t.Function = openai.FunctionCall{
-						Name:      f.Name,
-						Arguments: f.Arguments,
-					}
-				}
-				toolCalls = append(toolCalls, t)
-			}
-			message.ToolCalls = toolCalls
 		}
 
 		message.ToolCallID = resp.Message.ToolCallId

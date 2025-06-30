@@ -64,19 +64,34 @@ enum Capability {
   CAPABILITY_TOOL_USE = 4;
 }
 
-// Multi-modality content
-message Content {
-  message Image {
-    oneof source {
-      string url = 1;
-      bytes data = 2;
-    }
+// Represent a image content
+message Image {
+  oneof source {
+    string url = 10;
+    bytes data = 11;
+  }
+}
+
+// Represent a tool call content
+message ToolCall {
+  message FunctionCall {
+    string name = 1;
+    string arguments = 2;
   }
 
+  string id = 1;
+  oneof tool {
+    FunctionCall function = 2;
+  }
+}
+
+// Multi-modality content
+message Content {
   oneof content {
     string text = 1;
     Image image = 2;
     string thinking = 3;
+    ToolCall tool_call = 4;
   }
 }
 

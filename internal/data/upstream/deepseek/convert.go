@@ -38,13 +38,27 @@ func (r *ChatRepo) convertMessageToDeepSeek(message *v1.Message) *Message {
 		role = "tool"
 	}
 
-	// Concatenate text contents
 	var content strings.Builder
+	var toolCalls []*ToolCall
 	for _, c := range message.Contents {
-		if textContent, ok := c.GetContent().(*v1.Content_Text); ok {
-			content.WriteString(textContent.Text)
-		} else {
-			r.log.Errorf("unsupported content type: %v", c)
+		switch cc := c.GetContent().(type) {
+		case *v1.Content_Text:
+			content.WriteString(cc.Text)
+		case *v1.Content_ToolCall:
+			switch tool := cc.ToolCall.Tool.(type) {
+			case *v1.ToolCall_Function:
+				f := tool.Function
+				toolCalls = append(toolCalls, &ToolCall{
+					ID:   cc.ToolCall.GetId(),
+					Type: "function",
+					Function: &FunctionCall{
+						Name:      f.GetName(),
+						Arguments: f.GetArguments(),
+					},
+				})
+			}
+		default:
+			r.log.Errorf("unsupported content type: %T", cc)
 		}
 	}
 
@@ -58,24 +72,7 @@ func (r *ChatRepo) convertMessageToDeepSeek(message *v1.Message) *Message {
 	if s := content.String(); s != "" {
 		deepseekMsg.Content = s
 	}
-
-	if message.ToolCalls != nil {
-		var toolCalls []*ToolCall
-		for _, toolCall := range message.ToolCalls {
-			switch t := toolCall.Tool.(type) {
-			case *v1.ToolCall_Function:
-				toolCalls = append(toolCalls, &ToolCall{
-					ID:   toolCall.Id,
-					Type: "function",
-					Function: &FunctionCall{
-						Name:      t.Function.Name,
-						Arguments: t.Function.Arguments,
-					},
-				})
-			default:
-				r.log.Errorf("unsupported tool call: %v", t)
-			}
-		}
+	if len(toolCalls) > 0 {
 		deepseekMsg.ToolCalls = toolCalls
 	}
 
@@ -147,7 +144,6 @@ func toolFunctionParametersToDeepSeek(params *v1.Tool_Function_Parameters) map[s
 
 // convertMessageFromDeepSeek converts a message from the DeepSeek API to an internal message.
 func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Message {
-
 	// Convert role
 	var role v1.Role
 	switch deepSeekMessage.Role {
@@ -188,15 +184,18 @@ func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Mess
 	}
 
 	if deepSeekMessage.ToolCalls != nil {
-		var toolCalls []*v1.ToolCall
 		for _, toolCall := range deepSeekMessage.ToolCalls {
-			if toolCall.Type == "function" {
-				toolCalls = append(toolCalls, &v1.ToolCall{
-					Id: toolCall.ID,
-					Tool: &v1.ToolCall_Function{
-						Function: &v1.ToolCall_FunctionCall{
-							Name:      toolCall.Function.Name,
-							Arguments: toolCall.Function.Arguments,
+			if toolCall.Type == "function" && toolCall.Function != nil {
+				message.Contents = append(message.Contents, &v1.Content{
+					Content: &v1.Content_ToolCall{
+						ToolCall: &v1.ToolCall{
+							Id: toolCall.ID,
+							Tool: &v1.ToolCall_Function{
+								Function: &v1.ToolCall_FunctionCall{
+									Name:      toolCall.Function.Name,
+									Arguments: toolCall.Function.Arguments,
+								},
+							},
 						},
 					},
 				})
@@ -204,7 +203,6 @@ func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Mess
 				r.log.Errorf("unsupported tool call type: %v", toolCall.Type)
 			}
 		}
-		message.ToolCalls = toolCalls
 	}
 
 	return message

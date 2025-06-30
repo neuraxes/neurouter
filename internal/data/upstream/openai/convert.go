@@ -94,7 +94,7 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 						m.Content.OfArrayOfContentParts,
 						openai.TextContentPart(c.Text),
 					)
-				case *v1.Content_Image_:
+				case *v1.Content_Image:
 					m.Content.OfArrayOfContentParts = append(
 						m.Content.OfArrayOfContentParts,
 						openai.ImageContentPart(
@@ -146,18 +146,22 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 			}
 		}
 
-		for _, toolCall := range message.ToolCalls {
-			switch t := toolCall.Tool.(type) {
-			case *v1.ToolCall_Function:
-				m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallParam{
-					ID: toolCall.Id,
-					Function: openai.ChatCompletionMessageToolCallFunctionParam{
-						Name:      t.Function.Name,
-						Arguments: t.Function.Arguments,
-					},
-				})
-			default:
-				r.log.Errorf("unsupported tool call: %v", t)
+		for _, content := range message.Contents {
+			switch c := content.GetContent().(type) {
+			case *v1.Content_ToolCall:
+				toolCall := c.ToolCall
+				switch t := toolCall.Tool.(type) {
+				case *v1.ToolCall_Function:
+					m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallParam{
+						ID: toolCall.Id,
+						Function: openai.ChatCompletionMessageToolCallFunctionParam{
+							Name:      t.Function.Name,
+							Arguments: t.Function.Arguments,
+						},
+					})
+				default:
+					r.log.Errorf("unsupported tool call: %v", t)
+				}
 			}
 		}
 
@@ -263,31 +267,30 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 	}
 
 	if openAIMessage.Content != "" {
-		message.Contents = []*v1.Content{
-			{
-				Content: &v1.Content_Text{
-					// The result may contain a leading space, so we need to trim it
-					Text: strings.TrimSpace(openAIMessage.Content),
-				},
+		message.Contents = append(message.Contents, &v1.Content{
+			Content: &v1.Content_Text{
+				Text: strings.TrimSpace(openAIMessage.Content),
 			},
-		}
+		})
 	}
 
 	if openAIMessage.ToolCalls != nil {
-		var toolCalls []*v1.ToolCall
 		for _, toolCall := range openAIMessage.ToolCalls {
-			// Currently only function tool calls are supported by OpenAI
-			toolCalls = append(toolCalls, &v1.ToolCall{
-				Id: toolCall.ID,
-				Tool: &v1.ToolCall_Function{
-					Function: &v1.ToolCall_FunctionCall{
-						Name:      toolCall.Function.Name,
-						Arguments: toolCall.Function.Arguments,
+			// Only function tool calls are supported by OpenAI
+			message.Contents = append(message.Contents, &v1.Content{
+				Content: &v1.Content_ToolCall{
+					ToolCall: &v1.ToolCall{
+						Id: toolCall.ID,
+						Tool: &v1.ToolCall_Function{
+							Function: &v1.ToolCall_FunctionCall{
+								Name:      toolCall.Function.Name,
+								Arguments: toolCall.Function.Arguments,
+							},
+						},
 					},
 				},
 			})
 		}
-		message.ToolCalls = toolCalls
 	}
 
 	return message
