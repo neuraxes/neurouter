@@ -140,6 +140,8 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 							},
 						},
 					)
+				case *v1.Content_ToolCall:
+					// Tool calls will be processed later
 				default:
 					r.log.Errorf("unsupported content for assistant: %v", c)
 				}
@@ -339,7 +341,7 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk, requestID string,
 		if c.Delta.ToolCalls != nil {
 			for _, toolCall := range c.Delta.ToolCalls {
 				switch toolCall.Type {
-				case "function":
+				default:
 					// Only function tool calls are supported by OpenAI
 					resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
 						Content: &v1.Content_ToolCall{

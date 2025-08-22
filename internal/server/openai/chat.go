@@ -41,11 +41,29 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 	}
 
 	if resp.Message != nil && len(resp.Message.Contents) > 0 {
+		var content string
+		var toolCalls []openai.ToolCall
+		for _, c := range resp.Message.Contents {
+			switch c := c.Content.(type) {
+			case *v1.Content_Text:
+				content = c.Text
+			case *v1.Content_ToolCall:
+				toolCalls = append(toolCalls, openai.ToolCall{
+					ID:   c.ToolCall.Id,
+					Type: openai.ToolTypeFunction,
+					Function: openai.FunctionCall{
+						Name:      c.ToolCall.GetFunction().GetName(),
+						Arguments: c.ToolCall.GetFunction().GetArguments(),
+					},
+				})
+			}
+		}
 		chunk.ID = resp.Message.Id
 		chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
 			Delta: openai.ChatCompletionStreamChoiceDelta{
-				Role:    openai.ChatMessageRoleAssistant,
-				Content: resp.Message.Contents[0].GetText(),
+				Role:      openai.ChatMessageRoleAssistant,
+				Content:   content,
+				ToolCalls: toolCalls,
 			},
 		})
 	}
