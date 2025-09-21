@@ -22,6 +22,7 @@ import (
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/server/anthropic"
 	"github.com/neuraxes/neurouter/internal/server/ollama"
 	"github.com/neuraxes/neurouter/internal/server/openai"
 	"github.com/neuraxes/neurouter/internal/service"
@@ -49,6 +50,7 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	v1.RegisterEmbeddingHTTPServer(srv, svc)
 	openai.RegisterOpenAIHTTPServer(srv, svc, svc)
 	ollama.RegisterOllamaHTTPServer(srv, svc, svc)
+	anthropic.RegisterAnthropicHTTPServer(srv, svc)
 
 	if j := jwtAuth(); j != nil {
 		srv.Use("/*", j)

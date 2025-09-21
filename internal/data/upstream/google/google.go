@@ -145,6 +145,7 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 	}
 
 	model := r.client.GenerativeModel(req.Model)
+	model.Tools = convertToolsToGoogle(req.Tools)
 	cs := model.StartChat()
 
 	// Add all but last message to history

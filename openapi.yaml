@@ -14,10 +14,12 @@ paths:
             parameters:
                 - name: id
                   in: query
+                  description: The unique identifier of the request
                   schema:
                     type: string
                 - name: model
                   in: query
+                  description: The requested model to use
                   schema:
                     type: string
                 - name: config.maxTokens
@@ -108,10 +110,18 @@ components:
             properties:
                 id:
                     type: string
+                    description: The unique identifier of the request
+                model:
+                    type: string
+                    description: The model used to generate the response
                 message:
-                    $ref: '#/components/schemas/neurouter.v1.Message'
+                    allOf:
+                        - $ref: '#/components/schemas/neurouter.v1.Message'
+                    description: The generated message
                 statistics:
-                    $ref: '#/components/schemas/neurouter.v1.Statistics'
+                    allOf:
+                        - $ref: '#/components/schemas/neurouter.v1.Statistics'
+                    description: The statistics for the generation
         neurouter.v1.Content:
             type: object
             properties:
@@ -169,9 +179,11 @@ components:
                     description: The unique identifier of the message
                 role:
                     type: integer
+                    description: The role of the message sender
                     format: enum
                 name:
                     type: string
+                    description: The optional name of the message sender
                 contents:
                     type: array
                     items:

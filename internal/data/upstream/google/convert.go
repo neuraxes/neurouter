@@ -54,9 +54,15 @@ func convertFunctionParametersToGoogle(params *v1.Tool_Function_Parameters) *gen
 		Required:   params.Required,
 	}
 	for k, v := range params.Properties {
+		propertyType := convertFunctionParamTypeToGoogle(v.Type)
+		var items *genai.Schema
+		if propertyType == genai.TypeArray {
+			items = &genai.Schema{}
+		}
 		schema.Properties[k] = &genai.Schema{
-			Type:        convertFunctionParamTypeToGoogle(v.Type),
+			Type:        propertyType,
 			Description: v.Description,
+			Items:       items,
 		}
 	}
 	return schema

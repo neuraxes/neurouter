@@ -40,7 +40,9 @@ enum Role {
 message Message {
   // The unique identifier of the message
   string id = 1;
+  // The role of the message sender
   Role role = 2;
+  // The optional name of the message sender
   string name = 3;
   // The multi-modality content
   repeated Content contents = 4;
@@ -49,15 +51,25 @@ message Message {
 }
 
 message ChatReq {
+  // The unique identifier of the request
   string id = 1;
+  // The requested model to use
   string model = 2;
+  // The generation configuration
   GenerationConfig config = 3;
+  // The conversation history
   repeated Message messages = 4;
+  // The tools available for the model to use
   repeated Tool tools = 5;
 }
 
 message ChatResp {
+  // The unique identifier of the request
   string id = 1;
-  Message message = 2;
-  Statistics statistics = 3;
+  // The model used to generate the response
+  string model = 2;
+  // The generated message
+  Message message = 3;
+  // The statistics for the generation
+  Statistics statistics = 4;
 }
