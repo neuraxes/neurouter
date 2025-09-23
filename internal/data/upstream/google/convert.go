@@ -23,38 +23,18 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-// convertFunctionParamTypeToGoogle maps string type to [genai.Type]
-func convertFunctionParamTypeToGoogle(t string) genai.Type {
-	switch t {
-	case "string":
-		return genai.TypeString
-	case "number":
-		return genai.TypeNumber
-	case "integer":
-		return genai.TypeInteger
-	case "boolean":
-		return genai.TypeBoolean
-	case "array":
-		return genai.TypeArray
-	case "object":
-		return genai.TypeObject
-	default:
-		return genai.TypeUnspecified
-	}
-}
-
-// convertFunctionParametersToGoogle converts [v1.Tool_Function_Parameters] to [*genai.Schema]
-func convertFunctionParametersToGoogle(params *v1.Tool_Function_Parameters) *genai.Schema {
+// convertFunctionParametersToGoogle converts [v1.Schema] to [*genai.Schema]
+func convertFunctionParametersToGoogle(params *v1.Schema) *genai.Schema {
 	if params == nil {
 		return nil
 	}
 	schema := &genai.Schema{
-		Type:       convertFunctionParamTypeToGoogle(params.Type),
+		Type:       genai.Type(params.Type),
 		Properties: map[string]*genai.Schema{},
 		Required:   params.Required,
 	}
 	for k, v := range params.Properties {
-		propertyType := convertFunctionParamTypeToGoogle(v.Type)
+		propertyType := genai.Type(v.Type)
 		var items *genai.Schema
 		if propertyType == genai.TypeArray {
 			items = &genai.Schema{}

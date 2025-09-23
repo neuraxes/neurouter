@@ -137,7 +137,7 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 		switch {
 		case tool.OfTool != nil:
 			// Client tool (function)
-			var parameters *v1.Tool_Function_Parameters
+			var parameters *v1.Schema
 			j, _ := json.Marshal(tool.OfTool.InputSchema)
 			_ = json.Unmarshal(j, &parameters)
 

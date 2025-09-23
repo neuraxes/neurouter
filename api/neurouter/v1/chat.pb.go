@@ -193,7 +193,7 @@ func (x *ChatReq) Reset() {
 }
 
 func (x *ChatReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
+	return "{hidden}"
 }
 
 func (*ChatReq) ProtoMessage() {}

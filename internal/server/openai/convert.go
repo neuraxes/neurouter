@@ -121,7 +121,7 @@ func convertChatReqFromOpenAI(req *openai.ChatCompletionRequest) *v1.ChatReq {
 		t := &v1.Tool{}
 		switch tool.Type {
 		case openai.ToolTypeFunction:
-			var parameters *v1.Tool_Function_Parameters
+			var parameters *v1.Schema
 			j, _ := json.Marshal(tool.Function.Parameters)
 			_ = json.Unmarshal(j, &parameters)
 			t.Tool = &v1.Tool_Function_{

@@ -134,7 +134,7 @@ func (r *ChatRepo) convertRequestToDeepSeek(req *entity.ChatReq) *ChatRequest {
 	return deepseekReq
 }
 
-func toolFunctionParametersToDeepSeek(params *v1.Tool_Function_Parameters) map[string]any {
+func toolFunctionParametersToDeepSeek(params *v1.Schema) map[string]any {
 	return map[string]any{
 		"type":       params.Type,
 		"properties": params.Properties,

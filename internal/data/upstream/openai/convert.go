@@ -255,7 +255,7 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 }
 
 // toolFunctionParametersToOpenAI converts tool function parameters to OpenAI function parameters.
-func toolFunctionParametersToOpenAI(parameters *v1.Tool_Function_Parameters) openai.FunctionParameters {
+func toolFunctionParametersToOpenAI(parameters *v1.Schema) openai.FunctionParameters {
 	return map[string]any{
 		"type":       parameters.Type,
 		"properties": parameters.Properties,
