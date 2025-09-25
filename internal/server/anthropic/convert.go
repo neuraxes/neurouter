@@ -64,15 +64,11 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 				args, _ = json.Marshal(content.OfToolUse.Input)
 			}
 			contents = append(contents, &v1.Content{
-				Content: &v1.Content_ToolCall{
-					ToolCall: &v1.ToolCall{
-						Id: content.OfToolUse.ID,
-						Tool: &v1.ToolCall_Function{
-							Function: &v1.ToolCall_FunctionCall{
-								Name:      content.OfToolUse.Name,
-								Arguments: string(args),
-							},
-						},
+				Content: &v1.Content_FunctionCall{
+					FunctionCall: &v1.FunctionCall{
+						Id:        content.OfToolUse.ID,
+						Name:      content.OfToolUse.Name,
+						Arguments: string(args),
 					},
 				},
 			})
@@ -188,20 +184,15 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 						Text: cont.Text,
 					})
 				}
-			case *v1.Content_ToolCall:
-				if cont.ToolCall != nil {
-					var input json.RawMessage
-					if func_call := cont.ToolCall.GetFunction(); func_call != nil {
-						inputData, _ := json.Marshal(func_call.Arguments)
-						input = inputData
-						content = append(content, anthropic.ContentBlockUnion{
-							Type:  "tool_use",
-							ID:    cont.ToolCall.Id,
-							Name:  func_call.Name,
-							Input: input,
-						})
-					}
-				}
+			case *v1.Content_FunctionCall:
+				f := cont.FunctionCall
+				content = append(content, anthropic.ContentBlockUnion{
+					Type:  "tool_use",
+					ID:    f.Id,
+					Name:  f.Name,
+					Input: json.RawMessage(f.Arguments),
+				})
+
 			}
 		}
 	}

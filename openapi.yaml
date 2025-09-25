@@ -131,8 +131,8 @@ components:
                     $ref: '#/components/schemas/neurouter.v1.Image'
                 thinking:
                     type: string
-                toolCall:
-                    $ref: '#/components/schemas/neurouter.v1.ToolCall'
+                functionCall:
+                    $ref: '#/components/schemas/neurouter.v1.FunctionCall'
             description: Multi-modality content
         neurouter.v1.EmbedReq:
             type: object
@@ -155,6 +155,16 @@ components:
                     items:
                         type: number
                         format: float
+        neurouter.v1.FunctionCall:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                arguments:
+                    type: string
+            description: Represent a function tool call content
         neurouter.v1.Image:
             type: object
             properties:
@@ -233,21 +243,6 @@ components:
                 completionTokens:
                     type: integer
                     format: int32
-        neurouter.v1.ToolCall:
-            type: object
-            properties:
-                id:
-                    type: string
-                function:
-                    $ref: '#/components/schemas/neurouter.v1.ToolCall_FunctionCall'
-            description: Represent a tool call content
-        neurouter.v1.ToolCall_FunctionCall:
-            type: object
-            properties:
-                name:
-                    type: string
-                arguments:
-                    type: string
 tags:
     - name: Chat
     - name: Embedding

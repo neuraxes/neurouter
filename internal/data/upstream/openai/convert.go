@@ -140,7 +140,7 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 							},
 						},
 					)
-				case *v1.Content_ToolCall:
+				case *v1.Content_FunctionCall:
 					// Tool calls will be processed later
 				default:
 					r.log.Errorf("unsupported content for assistant: %v", c)
@@ -150,20 +150,15 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
-			case *v1.Content_ToolCall:
-				toolCall := c.ToolCall
-				switch t := toolCall.Tool.(type) {
-				case *v1.ToolCall_Function:
-					m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallParam{
-						ID: toolCall.Id,
-						Function: openai.ChatCompletionMessageToolCallFunctionParam{
-							Name:      t.Function.Name,
-							Arguments: t.Function.Arguments,
-						},
-					})
-				default:
-					r.log.Errorf("unsupported tool call: %v", t)
-				}
+			case *v1.Content_FunctionCall:
+				f := c.FunctionCall
+				m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallParam{
+					ID: f.Id,
+					Function: openai.ChatCompletionMessageToolCallFunctionParam{
+						Name:      f.Name,
+						Arguments: f.Arguments,
+					},
+				})
 			}
 		}
 
@@ -282,15 +277,11 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 		for _, toolCall := range openAIMessage.ToolCalls {
 			// Only function tool calls are supported by OpenAI
 			message.Contents = append(message.Contents, &v1.Content{
-				Content: &v1.Content_ToolCall{
-					ToolCall: &v1.ToolCall{
-						Id: toolCall.ID,
-						Tool: &v1.ToolCall_Function{
-							Function: &v1.ToolCall_FunctionCall{
-								Name:      toolCall.Function.Name,
-								Arguments: toolCall.Function.Arguments,
-							},
-						},
+				Content: &v1.Content_FunctionCall{
+					FunctionCall: &v1.FunctionCall{
+						Id:        toolCall.ID,
+						Name:      toolCall.Function.Name,
+						Arguments: toolCall.Function.Arguments,
 					},
 				},
 			})
@@ -344,15 +335,11 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk, requestID string,
 				default:
 					// Only function tool calls are supported by OpenAI
 					resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-						Content: &v1.Content_ToolCall{
-							ToolCall: &v1.ToolCall{
-								Id: toolCall.ID,
-								Tool: &v1.ToolCall_Function{
-									Function: &v1.ToolCall_FunctionCall{
-										Name:      toolCall.Function.Name,
-										Arguments: toolCall.Function.Arguments,
-									},
-								},
+						Content: &v1.Content_FunctionCall{
+							FunctionCall: &v1.FunctionCall{
+								Id:        toolCall.ID,
+								Name:      toolCall.Function.Name,
+								Arguments: toolCall.Function.Arguments,
 							},
 						},
 					})

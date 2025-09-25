@@ -511,32 +511,30 @@ func (*Image_Url) isImage_Source() {}
 
 func (*Image_Data) isImage_Source() {}
 
-// Represent a tool call content
-type ToolCall struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Types that are valid to be assigned to Tool:
-	//
-	//	*ToolCall_Function
-	Tool          isToolCall_Tool `protobuf_oneof:"tool"`
+// Represent a function tool call content
+type FunctionCall struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Arguments     string                 `protobuf:"bytes,3,opt,name=arguments,proto3" json:"arguments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ToolCall) Reset() {
-	*x = ToolCall{}
+func (x *FunctionCall) Reset() {
+	*x = FunctionCall{}
 	mi := &file_neurouter_v1_common_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ToolCall) String() string {
+func (x *FunctionCall) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ToolCall) ProtoMessage() {}
+func (*FunctionCall) ProtoMessage() {}
 
-func (x *ToolCall) ProtoReflect() protoreflect.Message {
+func (x *FunctionCall) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_common_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -548,43 +546,31 @@ func (x *ToolCall) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ToolCall.ProtoReflect.Descriptor instead.
-func (*ToolCall) Descriptor() ([]byte, []int) {
+// Deprecated: Use FunctionCall.ProtoReflect.Descriptor instead.
+func (*FunctionCall) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ToolCall) GetId() string {
+func (x *FunctionCall) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *ToolCall) GetTool() isToolCall_Tool {
+func (x *FunctionCall) GetName() string {
 	if x != nil {
-		return x.Tool
+		return x.Name
 	}
-	return nil
+	return ""
 }
 
-func (x *ToolCall) GetFunction() *ToolCall_FunctionCall {
+func (x *FunctionCall) GetArguments() string {
 	if x != nil {
-		if x, ok := x.Tool.(*ToolCall_Function); ok {
-			return x.Function
-		}
+		return x.Arguments
 	}
-	return nil
+	return ""
 }
-
-type isToolCall_Tool interface {
-	isToolCall_Tool()
-}
-
-type ToolCall_Function struct {
-	Function *ToolCall_FunctionCall `protobuf:"bytes,2,opt,name=function,proto3,oneof"`
-}
-
-func (*ToolCall_Function) isToolCall_Tool() {}
 
 // Multi-modality content
 type Content struct {
@@ -594,7 +580,7 @@ type Content struct {
 	//	*Content_Text
 	//	*Content_Image
 	//	*Content_Thinking
-	//	*Content_ToolCall
+	//	*Content_FunctionCall
 	Content       isContent_Content `protobuf_oneof:"content"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -664,10 +650,10 @@ func (x *Content) GetThinking() string {
 	return ""
 }
 
-func (x *Content) GetToolCall() *ToolCall {
+func (x *Content) GetFunctionCall() *FunctionCall {
 	if x != nil {
-		if x, ok := x.Content.(*Content_ToolCall); ok {
-			return x.ToolCall
+		if x, ok := x.Content.(*Content_FunctionCall); ok {
+			return x.FunctionCall
 		}
 	}
 	return nil
@@ -689,8 +675,8 @@ type Content_Thinking struct {
 	Thinking string `protobuf:"bytes,3,opt,name=thinking,proto3,oneof"`
 }
 
-type Content_ToolCall struct {
-	ToolCall *ToolCall `protobuf:"bytes,4,opt,name=tool_call,json=toolCall,proto3,oneof"`
+type Content_FunctionCall struct {
+	FunctionCall *FunctionCall `protobuf:"bytes,4,opt,name=function_call,json=functionCall,proto3,oneof"`
 }
 
 func (*Content_Text) isContent_Content() {}
@@ -699,7 +685,7 @@ func (*Content_Image) isContent_Content() {}
 
 func (*Content_Thinking) isContent_Content() {}
 
-func (*Content_ToolCall) isContent_Content() {}
+func (*Content_FunctionCall) isContent_Content() {}
 
 type Schema struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -895,58 +881,6 @@ func (x *Statistics_Usage) GetCompletionTokens() int32 {
 	return 0
 }
 
-type ToolCall_FunctionCall struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Arguments     string                 `protobuf:"bytes,2,opt,name=arguments,proto3" json:"arguments,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ToolCall_FunctionCall) Reset() {
-	*x = ToolCall_FunctionCall{}
-	mi := &file_neurouter_v1_common_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ToolCall_FunctionCall) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ToolCall_FunctionCall) ProtoMessage() {}
-
-func (x *ToolCall_FunctionCall) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_common_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ToolCall_FunctionCall.ProtoReflect.Descriptor instead.
-func (*ToolCall_FunctionCall) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{3, 0}
-}
-
-func (x *ToolCall_FunctionCall) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *ToolCall_FunctionCall) GetArguments() string {
-	if x != nil {
-		return x.Arguments
-	}
-	return ""
-}
-
 type Tool_Function struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -958,7 +892,7 @@ type Tool_Function struct {
 
 func (x *Tool_Function) Reset() {
 	*x = Tool_Function{}
-	mi := &file_neurouter_v1_common_proto_msgTypes[10]
+	mi := &file_neurouter_v1_common_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -970,7 +904,7 @@ func (x *Tool_Function) String() string {
 func (*Tool_Function) ProtoMessage() {}
 
 func (x *Tool_Function) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_common_proto_msgTypes[10]
+	mi := &file_neurouter_v1_common_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1038,19 +972,16 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x03url\x18\n" +
 	" \x01(\tH\x00R\x03url\x12\x14\n" +
 	"\x04data\x18\v \x01(\fH\x00R\x04dataB\b\n" +
-	"\x06source\"\xa7\x01\n" +
-	"\bToolCall\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12A\n" +
-	"\bfunction\x18\x02 \x01(\v2#.neurouter.v1.ToolCall.FunctionCallH\x00R\bfunction\x1a@\n" +
-	"\fFunctionCall\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
-	"\targuments\x18\x02 \x01(\tR\targumentsB\x06\n" +
-	"\x04tool\"\xac\x01\n" +
+	"\x06source\"P\n" +
+	"\fFunctionCall\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
+	"\targuments\x18\x03 \x01(\tR\targuments\"\xb8\x01\n" +
 	"\aContent\x12\x14\n" +
 	"\x04text\x18\x01 \x01(\tH\x00R\x04text\x12+\n" +
 	"\x05image\x18\x02 \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05image\x12\x1c\n" +
-	"\bthinking\x18\x03 \x01(\tH\x00R\bthinking\x125\n" +
-	"\ttool_call\x18\x04 \x01(\v2\x16.neurouter.v1.ToolCallH\x00R\btoolCallB\t\n" +
+	"\bthinking\x18\x03 \x01(\tH\x00R\bthinking\x12A\n" +
+	"\rfunction_call\x18\x04 \x01(\v2\x1a.neurouter.v1.FunctionCallH\x00R\ffunctionCallB\t\n" +
 	"\acontent\"\xc2\x03\n" +
 	"\x06Schema\x12-\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x19.neurouter.v1.Schema.TypeR\x04type\x12 \n" +
@@ -1108,39 +1039,37 @@ func file_neurouter_v1_common_proto_rawDescGZIP() []byte {
 }
 
 var file_neurouter_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_neurouter_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_neurouter_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_neurouter_v1_common_proto_goTypes = []any{
-	(Modality)(0),                 // 0: neurouter.v1.Modality
-	(Capability)(0),               // 1: neurouter.v1.Capability
-	(Schema_Type)(0),              // 2: neurouter.v1.Schema.Type
-	(*GenerationConfig)(nil),      // 3: neurouter.v1.GenerationConfig
-	(*Statistics)(nil),            // 4: neurouter.v1.Statistics
-	(*Image)(nil),                 // 5: neurouter.v1.Image
-	(*ToolCall)(nil),              // 6: neurouter.v1.ToolCall
-	(*Content)(nil),               // 7: neurouter.v1.Content
-	(*Schema)(nil),                // 8: neurouter.v1.Schema
-	(*Tool)(nil),                  // 9: neurouter.v1.Tool
-	(*Statistics_Usage)(nil),      // 10: neurouter.v1.Statistics.Usage
-	(*ToolCall_FunctionCall)(nil), // 11: neurouter.v1.ToolCall.FunctionCall
-	nil,                           // 12: neurouter.v1.Schema.PropertiesEntry
-	(*Tool_Function)(nil),         // 13: neurouter.v1.Tool.Function
+	(Modality)(0),            // 0: neurouter.v1.Modality
+	(Capability)(0),          // 1: neurouter.v1.Capability
+	(Schema_Type)(0),         // 2: neurouter.v1.Schema.Type
+	(*GenerationConfig)(nil), // 3: neurouter.v1.GenerationConfig
+	(*Statistics)(nil),       // 4: neurouter.v1.Statistics
+	(*Image)(nil),            // 5: neurouter.v1.Image
+	(*FunctionCall)(nil),     // 6: neurouter.v1.FunctionCall
+	(*Content)(nil),          // 7: neurouter.v1.Content
+	(*Schema)(nil),           // 8: neurouter.v1.Schema
+	(*Tool)(nil),             // 9: neurouter.v1.Tool
+	(*Statistics_Usage)(nil), // 10: neurouter.v1.Statistics.Usage
+	nil,                      // 11: neurouter.v1.Schema.PropertiesEntry
+	(*Tool_Function)(nil),    // 12: neurouter.v1.Tool.Function
 }
 var file_neurouter_v1_common_proto_depIdxs = []int32{
 	10, // 0: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
-	11, // 1: neurouter.v1.ToolCall.function:type_name -> neurouter.v1.ToolCall.FunctionCall
-	5,  // 2: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
-	6,  // 3: neurouter.v1.Content.tool_call:type_name -> neurouter.v1.ToolCall
-	2,  // 4: neurouter.v1.Schema.type:type_name -> neurouter.v1.Schema.Type
-	8,  // 5: neurouter.v1.Schema.items:type_name -> neurouter.v1.Schema
-	12, // 6: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
-	13, // 7: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
-	8,  // 8: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
-	8,  // 9: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	5,  // 1: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
+	6,  // 2: neurouter.v1.Content.function_call:type_name -> neurouter.v1.FunctionCall
+	2,  // 3: neurouter.v1.Schema.type:type_name -> neurouter.v1.Schema.Type
+	8,  // 4: neurouter.v1.Schema.items:type_name -> neurouter.v1.Schema
+	11, // 5: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
+	12, // 6: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
+	8,  // 7: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
+	8,  // 8: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_common_proto_init() }
@@ -1158,14 +1087,11 @@ func file_neurouter_v1_common_proto_init() {
 		(*Image_Url)(nil),
 		(*Image_Data)(nil),
 	}
-	file_neurouter_v1_common_proto_msgTypes[3].OneofWrappers = []any{
-		(*ToolCall_Function)(nil),
-	}
 	file_neurouter_v1_common_proto_msgTypes[4].OneofWrappers = []any{
 		(*Content_Text)(nil),
 		(*Content_Image)(nil),
 		(*Content_Thinking)(nil),
-		(*Content_ToolCall)(nil),
+		(*Content_FunctionCall)(nil),
 	}
 	file_neurouter_v1_common_proto_msgTypes[6].OneofWrappers = []any{
 		(*Tool_Function_)(nil),
@@ -1176,7 +1102,7 @@ func file_neurouter_v1_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_common_proto_rawDesc), len(file_neurouter_v1_common_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   11,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

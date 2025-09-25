@@ -129,15 +129,15 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 				_, _ = s.httpCtx.Response().Write(eventJson)
 				_, _ = s.httpCtx.Response().Write([]byte("\n\n"))
 				s.httpCtx.Response().(http.Flusher).Flush()
-			case *v1.Content_ToolCall:
+			case *v1.Content_FunctionCall:
 				if !s.contentBlockStarted {
 					s.contentBlockStarted = true
 					event := anthropic.ContentBlockStartEvent{
 						Index: s.contentIndex,
 						ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
 							Type: "tool_use",
-							ID:   content.ToolCall.Id,
-							Name: content.ToolCall.GetFunction().GetName(),
+							ID:   content.FunctionCall.GetId(),
+							Name: content.FunctionCall.GetName(),
 						},
 					}
 					eventJson, _ := json.Marshal(event)
@@ -153,7 +153,7 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 					Index: s.contentIndex,
 					Delta: anthropic.RawContentBlockDeltaUnion{
 						Type:        "input_json_delta",
-						PartialJSON: content.ToolCall.GetFunction().GetArguments(),
+						PartialJSON: content.FunctionCall.GetArguments(),
 					},
 				}
 				eventJson, _ := json.Marshal(event)

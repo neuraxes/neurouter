@@ -68,18 +68,14 @@ func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Mes
 	}
 
 	for _, toolCall := range message.ToolCalls {
-		t := &v1.ToolCall{Id: toolCall.ID}
-		switch toolCall.Type {
-		case openai.ToolTypeFunction:
-			t.Tool = &v1.ToolCall_Function{
-				Function: &v1.ToolCall_FunctionCall{
+		contents = append(contents, &v1.Content{
+			Content: &v1.Content_FunctionCall{
+				FunctionCall: &v1.FunctionCall{
+					Id:        toolCall.ID,
 					Name:      toolCall.Function.Name,
 					Arguments: toolCall.Function.Arguments,
 				},
-			}
-		}
-		contents = append(contents, &v1.Content{
-			Content: &v1.Content_ToolCall{ToolCall: t},
+			},
 		})
 	}
 
@@ -180,18 +176,16 @@ func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
 								URL: c.Image.GetUrl(),
 							},
 						})
-					case *v1.Content_ToolCall:
-						t := openai.ToolCall{
-							ID:   c.ToolCall.Id,
+					case *v1.Content_FunctionCall:
+						f := c.FunctionCall
+						toolCalls = append(toolCalls, openai.ToolCall{
+							ID:   f.Id,
 							Type: openai.ToolTypeFunction,
-						}
-						if f := c.ToolCall.GetFunction(); f != nil {
-							t.Function = openai.FunctionCall{
+							Function: openai.FunctionCall{
 								Name:      f.Name,
 								Arguments: f.Arguments,
-							}
-						}
-						toolCalls = append(toolCalls, t)
+							},
+						})
 					}
 				}
 				message.MultiContent = multiContent

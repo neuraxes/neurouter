@@ -24,25 +24,13 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func TestConvertFunctionParamTypeToGoogle(t *testing.T) {
-	Convey("convertFunctionParamTypeToGoogle should map types correctly", t, func() {
-		So(convertFunctionParamTypeToGoogle("string"), ShouldEqual, genai.TypeString)
-		So(convertFunctionParamTypeToGoogle("number"), ShouldEqual, genai.TypeNumber)
-		So(convertFunctionParamTypeToGoogle("integer"), ShouldEqual, genai.TypeInteger)
-		So(convertFunctionParamTypeToGoogle("boolean"), ShouldEqual, genai.TypeBoolean)
-		So(convertFunctionParamTypeToGoogle("array"), ShouldEqual, genai.TypeArray)
-		So(convertFunctionParamTypeToGoogle("object"), ShouldEqual, genai.TypeObject)
-		So(convertFunctionParamTypeToGoogle("unknown"), ShouldEqual, genai.TypeUnspecified)
-	})
-}
-
 func TestConvertFunctionParametersToGoogle(t *testing.T) {
 	Convey("convertFunctionParametersToGoogle should convert parameters", t, func() {
-		params := &v1.Tool_Function_Parameters{
-			Type:     "object",
+		params := &v1.Schema{
+			Type:     v1.Schema_TYPE_OBJECT,
 			Required: []string{"foo"},
-			Properties: map[string]*v1.Tool_Function_Parameters_Property{
-				"foo": {Type: "string", Description: "desc"},
+			Properties: map[string]*v1.Schema{
+				"foo": {Type: v1.Schema_TYPE_STRING, Description: "desc"},
 			},
 		}
 		schema := convertFunctionParametersToGoogle(params)
@@ -66,9 +54,7 @@ func TestConvertToolsToGoogle(t *testing.T) {
 					Function: &v1.Tool_Function{
 						Name:        "fn",
 						Description: "desc",
-						Parameters: &v1.Tool_Function_Parameters{
-							Type: "object",
-						},
+						Parameters:  &v1.Schema{Type: v1.Schema_TYPE_OBJECT},
 					},
 				},
 			},
@@ -142,14 +128,10 @@ func TestConvertContentToGoogle(t *testing.T) {
 		args := map[string]any{"foo": "bar"}
 		argsJSON, _ := json.Marshal(args)
 		content := &v1.Content{
-			Content: &v1.Content_ToolCall{
-				ToolCall: &v1.ToolCall{
-					Tool: &v1.ToolCall_Function{
-						Function: &v1.ToolCall_FunctionCall{
-							Name:      "fn",
-							Arguments: string(argsJSON),
-						},
-					},
+			Content: &v1.Content_FunctionCall{
+				FunctionCall: &v1.FunctionCall{
+					Name:      "fn",
+					Arguments: string(argsJSON),
 				},
 			},
 		}
@@ -175,25 +157,10 @@ func TestConvertContentToGoogle(t *testing.T) {
 
 	Convey("convertContentToGoogle should return nil for tool call with invalid JSON", t, func() {
 		content := &v1.Content{
-			Content: &v1.Content_ToolCall{
-				ToolCall: &v1.ToolCall{
-					Tool: &v1.ToolCall_Function{
-						Function: &v1.ToolCall_FunctionCall{
-							Name:      "fn",
-							Arguments: "{invalid json}",
-						},
-					},
-				},
-			},
-		}
-		So(convertContentToGoogle(content), ShouldBeNil)
-	})
-
-	Convey("convertContentToGoogle should return nil for unknown tool call type", t, func() {
-		content := &v1.Content{
-			Content: &v1.Content_ToolCall{
-				ToolCall: &v1.ToolCall{
-					Tool: nil, // triggers default case
+			Content: &v1.Content_FunctionCall{
+				FunctionCall: &v1.FunctionCall{
+					Name:      "fn",
+					Arguments: "{invalid json}",
 				},
 			},
 		}
@@ -285,8 +252,8 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 		msg := convertMessageFromGoogle(content)
 		So(msg, ShouldNotBeNil)
 		So(msg.Contents, ShouldHaveLength, 1)
-		So(msg.Contents[0].GetToolCall().GetTool().(*v1.ToolCall_Function).Function.Name, ShouldEqual, "fn")
-		So(msg.Contents[0].GetToolCall().GetTool().(*v1.ToolCall_Function).Function.Arguments, ShouldEqual, `{"foo":"bar"}`)
+		So(msg.Contents[0].GetFunctionCall().GetName(), ShouldEqual, "fn")
+		So(msg.Contents[0].GetFunctionCall().GetArguments(), ShouldEqual, `{"foo":"bar"}`)
 	})
 
 	Convey("convertMessageFromGoogle should skip function call with marshal error", t, func() {

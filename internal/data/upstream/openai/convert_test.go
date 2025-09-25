@@ -313,28 +313,20 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 						},
 					},
 					{
-						Content: &v1.Content_ToolCall{
-							ToolCall: &v1.ToolCall{
-								Id: "call-1",
-								Tool: &v1.ToolCall_Function{
-									Function: &v1.ToolCall_FunctionCall{
-										Name:      "search",
-										Arguments: `{"query":"weather"}`,
-									},
-								},
+						Content: &v1.Content_FunctionCall{
+							FunctionCall: &v1.FunctionCall{
+								Id:        "call-1",
+								Name:      "search",
+								Arguments: `{"query":"weather"}`,
 							},
 						},
 					},
 					{
-						Content: &v1.Content_ToolCall{
-							ToolCall: &v1.ToolCall{
-								Id: "call-2",
-								Tool: &v1.ToolCall_Function{
-									Function: &v1.ToolCall_FunctionCall{
-										Name:      "calculate",
-										Arguments: `{"expression":"1+1"}`,
-									},
-								},
+						Content: &v1.Content_FunctionCall{
+							FunctionCall: &v1.FunctionCall{
+								Id:        "call-2",
+								Name:      "calculate",
+								Arguments: `{"expression":"1+1"}`,
 							},
 						},
 					},
@@ -359,14 +351,6 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 					{
 						Content: &v1.Content_Text{
 							Text: "Hello",
-						},
-					},
-					{
-						Content: &v1.Content_ToolCall{
-							ToolCall: &v1.ToolCall{
-								Id:   "call-1",
-								Tool: nil,
-							},
 						},
 					},
 				},
@@ -514,12 +498,10 @@ func TestConvertRequestToOpenAI(t *testing.T) {
 							Function: &v1.Tool_Function{
 								Name:        "test_function",
 								Description: "Test function description",
-								Parameters: &v1.Tool_Function_Parameters{
-									Type: "object",
-									Properties: map[string]*v1.Tool_Function_Parameters_Property{
-										"prop1": {
-											Type: "string",
-										},
+								Parameters: &v1.Schema{
+									Type: v1.Schema_TYPE_OBJECT,
+									Properties: map[string]*v1.Schema{
+										"prop1": {Type: v1.Schema_TYPE_STRING},
 									},
 									Required: []string{"prop1"},
 								},
@@ -534,10 +516,10 @@ func TestConvertRequestToOpenAI(t *testing.T) {
 			So(param.Tools[0].Function.Name, ShouldEqual, "test_function")
 			So(param.Tools[0].Function.Description.Value, ShouldEqual, "Test function description")
 			paramValue := param.Tools[0].Function.Parameters
-			So(paramValue["type"], ShouldEqual, "object")
+			So(paramValue["type"], ShouldEqual, v1.Schema_TYPE_OBJECT)
 			So(paramValue["required"], ShouldResemble, []string{"prop1"})
-			props := paramValue["properties"].(map[string]*v1.Tool_Function_Parameters_Property)
-			So(props["prop1"].Type, ShouldEqual, "string")
+			props := paramValue["properties"].(map[string]*v1.Schema)
+			So(props["prop1"].Type, ShouldEqual, v1.Schema_TYPE_STRING)
 		})
 
 		Convey("with nil config", func() {
@@ -603,9 +585,9 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 			msg := repo.convertMessageFromOpenAI(openAIMsg)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldHaveLength, 1)
-			So(msg.Contents[0].GetToolCall().GetId(), ShouldEqual, "call-1")
-			So(msg.Contents[0].GetToolCall().GetFunction().Name, ShouldEqual, "test_function")
-			So(msg.Contents[0].GetToolCall().GetFunction().Arguments, ShouldEqual, `{"arg1":"value1"}`)
+			So(msg.Contents[0].GetFunctionCall().GetId(), ShouldEqual, "call-1")
+			So(msg.Contents[0].GetFunctionCall().GetName(), ShouldEqual, "test_function")
+			So(msg.Contents[0].GetFunctionCall().GetArguments(), ShouldEqual, `{"arg1":"value1"}`)
 		})
 
 		Convey("with empty content and no tool calls", func() {
@@ -617,14 +599,14 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 			msg := repo.convertMessageFromOpenAI(openAIMsg)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldBeNil)
-			// No tool calls, so no Content_ToolCall in Contents
-			hasToolCall := false
+			// No tool calls, so no Content_FunctionCall in Contents
+			hasFunctionCall := false
 			for _, c := range msg.Contents {
-				if _, ok := c.GetContent().(*v1.Content_ToolCall); ok {
-					hasToolCall = true
+				if _, ok := c.GetContent().(*v1.Content_FunctionCall); ok {
+					hasFunctionCall = true
 				}
 			}
-			So(hasToolCall, ShouldBeFalse)
+			So(hasFunctionCall, ShouldBeFalse)
 		})
 	})
 }
@@ -739,10 +721,10 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 			So(resp.Id, ShouldEqual, "req-1")
 			So(resp.Message.Id, ShouldEqual, "msg-1")
 			So(resp.Message.Contents, ShouldHaveLength, 1)
-			toolCall := resp.Message.Contents[0].GetToolCall()
-			So(toolCall.GetId(), ShouldEqual, "tool-1")
-			So(toolCall.GetFunction().Name, ShouldEqual, "my_func")
-			So(toolCall.GetFunction().Arguments, ShouldEqual, "{\"foo\":1}")
+			functionCall := resp.Message.Contents[0].GetFunctionCall()
+			So(functionCall.GetId(), ShouldEqual, "tool-1")
+			So(functionCall.GetName(), ShouldEqual, "my_func")
+			So(functionCall.GetArguments(), ShouldEqual, "{\"foo\":1}")
 		})
 	})
 }

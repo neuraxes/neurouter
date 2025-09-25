@@ -103,31 +103,26 @@ func inferImageType(data []byte) string {
 
 // convertContentToGoogle converts [v1.Content] to [genai.Part]
 func convertContentToGoogle(content *v1.Content) genai.Part {
-	switch v := content.Content.(type) {
+	switch c := content.Content.(type) {
 	case *v1.Content_Text:
-		return genai.Text(v.Text)
+		return genai.Text(c.Text)
 	case *v1.Content_Image:
-		switch source := v.Image.Source.(type) {
+		switch source := c.Image.Source.(type) {
 		case *v1.Image_Data:
 			return genai.ImageData(inferImageType(source.Data), source.Data)
 		default:
 			return nil
 		}
-	case *v1.Content_ToolCall:
-		switch t := v.ToolCall.Tool.(type) {
-		case *v1.ToolCall_Function:
-			var args map[string]any
-			if t.Function.Arguments != "" {
-				if err := json.Unmarshal([]byte(t.Function.Arguments), &args); err != nil {
-					return nil
-				}
+	case *v1.Content_FunctionCall:
+		var args map[string]any
+		if c.FunctionCall.Arguments != "" {
+			if err := json.Unmarshal([]byte(c.FunctionCall.Arguments), &args); err != nil {
+				return nil
 			}
-			return genai.FunctionCall{
-				Name: t.Function.Name,
-				Args: args,
-			}
-		default:
-			return nil
+		}
+		return genai.FunctionCall{
+			Name: c.FunctionCall.Name,
+			Args: args,
 		}
 	default:
 		return nil
@@ -191,15 +186,11 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 				continue // Skip if arguments cannot be marshaled
 			}
 			message.Contents = append(message.Contents, &v1.Content{
-				Content: &v1.Content_ToolCall{
-					ToolCall: &v1.ToolCall{
-						Id: part.Name,
-						Tool: &v1.ToolCall_Function{
-							Function: &v1.ToolCall_FunctionCall{
-								Name:      part.Name,
-								Arguments: string(args),
-							},
-						},
+				Content: &v1.Content_FunctionCall{
+					FunctionCall: &v1.FunctionCall{
+						Id:        part.Name,
+						Name:      part.Name,
+						Arguments: string(args),
 					},
 				},
 			})

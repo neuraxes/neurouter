@@ -44,19 +44,16 @@ func (r *ChatRepo) convertMessageToDeepSeek(message *v1.Message) *Message {
 		switch cc := c.GetContent().(type) {
 		case *v1.Content_Text:
 			content.WriteString(cc.Text)
-		case *v1.Content_ToolCall:
-			switch tool := cc.ToolCall.Tool.(type) {
-			case *v1.ToolCall_Function:
-				f := tool.Function
-				toolCalls = append(toolCalls, &ToolCall{
-					ID:   cc.ToolCall.GetId(),
-					Type: "function",
-					Function: &FunctionCall{
-						Name:      f.GetName(),
-						Arguments: f.GetArguments(),
-					},
-				})
-			}
+		case *v1.Content_FunctionCall:
+			f := cc.FunctionCall
+			toolCalls = append(toolCalls, &ToolCall{
+				ID:   f.GetId(),
+				Type: "function",
+				Function: &FunctionCall{
+					Name:      f.GetName(),
+					Arguments: f.GetArguments(),
+				},
+			})
 		default:
 			r.log.Errorf("unsupported content type: %T", cc)
 		}
@@ -187,15 +184,11 @@ func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Mess
 		for _, toolCall := range deepSeekMessage.ToolCalls {
 			if toolCall.Type == "function" && toolCall.Function != nil {
 				message.Contents = append(message.Contents, &v1.Content{
-					Content: &v1.Content_ToolCall{
-						ToolCall: &v1.ToolCall{
-							Id: toolCall.ID,
-							Tool: &v1.ToolCall_Function{
-								Function: &v1.ToolCall_FunctionCall{
-									Name:      toolCall.Function.Name,
-									Arguments: toolCall.Function.Arguments,
-								},
-							},
+					Content: &v1.Content_FunctionCall{
+						FunctionCall: &v1.FunctionCall{
+							Id:        toolCall.ID,
+							Name:      toolCall.Function.Name,
+							Arguments: toolCall.Function.Arguments,
 						},
 					},
 				})

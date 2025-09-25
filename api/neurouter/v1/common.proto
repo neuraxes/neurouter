@@ -72,17 +72,11 @@ message Image {
   }
 }
 
-// Represent a tool call content
-message ToolCall {
-  message FunctionCall {
-    string name = 1;
-    string arguments = 2;
-  }
-
+// Represent a function tool call content
+message FunctionCall {
   string id = 1;
-  oneof tool {
-    FunctionCall function = 2;
-  }
+  string name = 2;
+  string arguments = 3;
 }
 
 // Multi-modality content
@@ -91,7 +85,7 @@ message Content {
     string text = 1;
     Image image = 2;
     string thinking = 3;
-    ToolCall tool_call = 4;
+    FunctionCall function_call = 4;
   }
 }
 

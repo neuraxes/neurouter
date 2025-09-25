@@ -47,13 +47,13 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 			switch c := c.Content.(type) {
 			case *v1.Content_Text:
 				content = c.Text
-			case *v1.Content_ToolCall:
+			case *v1.Content_FunctionCall:
 				toolCalls = append(toolCalls, openai.ToolCall{
-					ID:   c.ToolCall.Id,
+					ID:   c.FunctionCall.Id,
 					Type: openai.ToolTypeFunction,
 					Function: openai.FunctionCall{
-						Name:      c.ToolCall.GetFunction().GetName(),
-						Arguments: c.ToolCall.GetFunction().GetArguments(),
+						Name:      c.FunctionCall.GetName(),
+						Arguments: c.FunctionCall.GetArguments(),
 					},
 				})
 			}
