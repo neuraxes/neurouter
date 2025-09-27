@@ -17,19 +17,19 @@ package deepseek
 import (
 	"context"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/google/uuid"
 	"github.com/openai/openai-go/packages/ssestream"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
 type ChatRepo struct {
+	client httpClient
 	config *conf.DeepSeekConfig
 	log    *log.Helper
 }
@@ -39,43 +39,44 @@ func NewDeepSeekChatRepoFactory() repository.UpstreamFactory[conf.DeepSeekConfig
 }
 
 func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) (repository.ChatRepo, error) {
+	return NewDeepSeekChatRepoWithClient(config, logger, nil)
+}
+
+// NewDeepSeekChatRepoWithClient creates a ChatRepo with a custom HTTP client.
+func NewDeepSeekChatRepoWithClient(config *conf.DeepSeekConfig, logger log.Logger, client httpClient) (repository.ChatRepo, error) {
 	// Trim the trailing slash from the base URL to avoid double slashes
 	config.BaseUrl = strings.TrimSuffix(config.BaseUrl, "/")
+
+	if client == nil {
+		client = http.DefaultClient
+	}
 
 	return &ChatRepo{
 		config: config,
 		log:    log.NewHelper(logger),
+		client: client,
 	}, nil
 }
 
 func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	res, err := r.CreateChatCompletion(
-		ctx,
-		r.convertRequestToDeepSeek(req),
-	)
+	deepSeekReq := r.convertRequestToDeepSeek(req)
+
+	deepSeekResp, err := r.CreateChatCompletion(ctx, deepSeekReq)
 	if err != nil {
 		return
 	}
 
 	resp = &entity.ChatResp{
-		Id:      req.Id,
-		Message: r.convertMessageFromDeepSeek(res.Choices[0].Message),
+		Id:         req.Id,
+		Model:      deepSeekResp.Model,
+		Message:    r.convertMessageFromDeepSeek(deepSeekResp.ID, deepSeekResp.Choices[0].Message),
+		Statistics: convertStatisticsFromDeepSeek(deepSeekResp.Usage),
 	}
-	resp.Message.Id = res.ID
 
-	if res.Usage.PromptTokens != 0 || res.Usage.CompletionTokens != 0 {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:     int32(res.Usage.PromptTokens),
-				CompletionTokens: int32(res.Usage.CompletionTokens),
-			},
-		}
-	}
 	return
 }
 
 type deepSeekChatStreamClient struct {
-	id       string
 	req      *entity.ChatReq
 	upstream *ssestream.Stream[ChatStreamResponse] // Reuse SSE Stream from OpenAI
 }
@@ -90,49 +91,8 @@ func (c *deepSeekChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 	}
 
 	chunk := c.upstream.Current()
-	resp = &entity.ChatResp{
-		Id: c.req.Id,
-	}
 
-	if len(chunk.Choices) > 0 {
-		var contents []*v1.Content
-		for _, choice := range chunk.Choices {
-			if choice.Delta.ReasoningContent != "" {
-				contents = append(contents, &v1.Content{
-					Content: &v1.Content_Thinking{
-						Thinking: choice.Delta.ReasoningContent,
-					},
-				})
-			}
-			if choice.Delta.Content != "" {
-				contents = append(contents, &v1.Content{
-					Content: &v1.Content_Text{
-						Text: choice.Delta.Content,
-					},
-				})
-			}
-		}
-
-		resp.Message = &v1.Message{
-			Id:       c.id,
-			Role:     v1.Role_MODEL,
-			Contents: contents,
-		}
-
-		// Clear due to the reuse of the same message struct
-		chunk.Choices[0].Delta = nil
-	}
-
-	if chunk.Usage != nil && (chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0) {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:     int32(chunk.Usage.PromptTokens),
-				CompletionTokens: int32(chunk.Usage.CompletionTokens),
-			},
-		}
-	}
-
-	return
+	return convertStreamRespFromDeepSeek(c.req.Id, &chunk), nil
 }
 
 func (c *deepSeekChatStreamClient) Close() error {
@@ -152,7 +112,6 @@ func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client 
 	}
 
 	client = &deepSeekChatStreamClient{
-		id:       uuid.NewString(),
 		req:      req,
 		upstream: ssestream.NewStream[ChatStreamResponse](ssestream.NewDecoder(resp), err),
 	}

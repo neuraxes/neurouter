@@ -22,6 +22,11 @@ import (
 	"net/http"
 )
 
+// httpClient is the minimal interface for sending HTTP requests.
+type httpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 func (r *ChatRepo) CreateChatCompletion(ctx context.Context, req *ChatRequest) (resp *ChatResponse, err error) {
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
@@ -43,7 +48,7 @@ func (r *ChatRepo) CreateChatCompletion(ctx context.Context, req *ChatRequest) (
 	httpReq.Header.Set("Authorization", "Bearer "+r.config.ApiKey)
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	httpResp, err := http.DefaultClient.Do(httpReq)
+	httpResp, err := r.client.Do(httpReq)
 	if err != nil {
 		err = fmt.Errorf("failed to send request: %w", err)
 		return
@@ -51,9 +56,7 @@ func (r *ChatRepo) CreateChatCompletion(ctx context.Context, req *ChatRequest) (
 	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode != http.StatusOK {
-		var errResp struct {
-			Error *Error `json:"error"`
-		}
+		var errResp ErrorResp
 		if err = json.NewDecoder(httpResp.Body).Decode(&errResp); err != nil {
 			err = fmt.Errorf("failed to decode error response: %w", err)
 			return
@@ -92,16 +95,16 @@ func (r *ChatRepo) CreateChatCompletionStream(ctx context.Context, req *ChatRequ
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Accept", "text/event-stream")
 
-	httpResp, err = http.DefaultClient.Do(httpReq)
+	httpResp, err = r.client.Do(httpReq)
 	if err != nil {
 		err = fmt.Errorf("failed to send request: %w", err)
 		return
 	}
 
 	if httpResp.StatusCode != http.StatusOK {
-		var errResp struct {
-			Error *Error `json:"error"`
-		}
+		// Close the body on error to avoid leaking the connection
+		defer httpResp.Body.Close()
+		var errResp ErrorResp
 		if err = json.NewDecoder(httpResp.Body).Decode(&errResp); err != nil {
 			err = fmt.Errorf("failed to decode error response: %w", err)
 			return

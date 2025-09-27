@@ -52,7 +52,7 @@ type ChatRequest struct {
 	// Controls which (if any) tool is called by the model
 	ToolChoice *ToolChoice `json:"tool_choice,omitempty"`
 	// Whether to return log probabilities of the output tokens or not. If true, returns the log probabilities of each
-	// output token returned in the content of message
+	// output token returned in the content of message.
 	Logprobs bool `json:"logprobs,omitempty"`
 	// An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each
 	// with an associated log probability. logprobs must be set to true if this parameter is used.
@@ -233,4 +233,8 @@ type Error struct {
 
 func (e *Error) Error() string {
 	return e.Message
+}
+
+type ErrorResp struct {
+	Error *Error `json:"error"`
 }

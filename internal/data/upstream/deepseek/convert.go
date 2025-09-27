@@ -17,8 +17,6 @@ package deepseek
 import (
 	"strings"
 
-	"github.com/google/uuid"
-
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
@@ -140,7 +138,7 @@ func toolFunctionParametersToDeepSeek(params *v1.Schema) map[string]any {
 }
 
 // convertMessageFromDeepSeek converts a message from the DeepSeek API to an internal message.
-func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Message {
+func (r *ChatRepo) convertMessageFromDeepSeek(messageID string, deepSeekMessage *Message) *v1.Message {
 	// Convert role
 	var role v1.Role
 	switch deepSeekMessage.Role {
@@ -158,7 +156,7 @@ func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Mess
 	}
 
 	message := &v1.Message{
-		Id:         uuid.NewString(),
+		Id:         messageID,
 		Role:       role,
 		Name:       deepSeekMessage.Name,
 		ToolCallId: deepSeekMessage.ToolCallID,
@@ -199,4 +197,58 @@ func (r *ChatRepo) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Mess
 	}
 
 	return message
+}
+
+func convertStreamRespFromDeepSeek(requestID string, chunk *ChatStreamResponse) *entity.ChatResp {
+	resp := &entity.ChatResp{
+		Id:    requestID,
+		Model: chunk.Model,
+	}
+
+	if len(chunk.Choices) > 0 {
+		var contents []*v1.Content
+		for _, choice := range chunk.Choices {
+			if choice.Delta.ReasoningContent != "" {
+				contents = append(contents, &v1.Content{
+					Content: &v1.Content_Thinking{
+						Thinking: choice.Delta.ReasoningContent,
+					},
+				})
+			}
+			if choice.Delta.Content != "" {
+				contents = append(contents, &v1.Content{
+					Content: &v1.Content_Text{
+						Text: choice.Delta.Content,
+					},
+				})
+			}
+		}
+
+		resp.Message = &v1.Message{
+			Id:       chunk.ID,
+			Role:     v1.Role_MODEL,
+			Contents: contents,
+		}
+
+		// Clear due to the reuse of the same message struct
+		chunk.Choices[0].Delta = nil
+	}
+
+	// Map usage statistics if present
+	resp.Statistics = convertStatisticsFromDeepSeek(chunk.Usage)
+
+	return resp
+}
+
+func convertStatisticsFromDeepSeek(usage *Usage) *v1.Statistics {
+	if usage == nil {
+		return nil
+	}
+
+	return &v1.Statistics{
+		Usage: &v1.Statistics_Usage{
+			PromptTokens:     int32(usage.PromptTokens),
+			CompletionTokens: int32(usage.CompletionTokens),
+		},
+	}
 }
