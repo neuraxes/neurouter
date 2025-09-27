@@ -150,6 +150,8 @@ components:
             properties:
                 id:
                     type: string
+                model:
+                    type: string
                 embedding:
                     type: array
                     items:
@@ -239,10 +241,13 @@ components:
             properties:
                 promptTokens:
                     type: integer
-                    format: int32
+                    format: uint32
                 completionTokens:
                     type: integer
-                    format: int32
+                    format: uint32
+                cachedPromptTokens:
+                    type: integer
+                    format: uint32
 tags:
     - name: Chat
     - name: Embedding

@@ -28,7 +28,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
-type ChatRepo struct {
+type upstream struct {
 	client httpClient
 	config *conf.DeepSeekConfig
 	log    *log.Helper
@@ -42,7 +42,7 @@ func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) (reposi
 	return NewDeepSeekChatRepoWithClient(config, logger, nil)
 }
 
-// NewDeepSeekChatRepoWithClient creates a ChatRepo with a custom HTTP client.
+// NewDeepSeekChatRepoWithClient creates a repository.ChatRepo with a custom HTTP client.
 func NewDeepSeekChatRepoWithClient(config *conf.DeepSeekConfig, logger log.Logger, client httpClient) (repository.ChatRepo, error) {
 	// Trim the trailing slash from the base URL to avoid double slashes
 	config.BaseUrl = strings.TrimSuffix(config.BaseUrl, "/")
@@ -51,14 +51,14 @@ func NewDeepSeekChatRepoWithClient(config *conf.DeepSeekConfig, logger log.Logge
 		client = http.DefaultClient
 	}
 
-	return &ChatRepo{
+	return &upstream{
 		config: config,
 		log:    log.NewHelper(logger),
 		client: client,
 	}, nil
 }
 
-func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	deepSeekReq := r.convertRequestToDeepSeek(req)
 
 	deepSeekResp, err := r.CreateChatCompletion(ctx, deepSeekReq)
@@ -99,7 +99,7 @@ func (c *deepSeekChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 
-func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
 	deepSeekReq := r.convertRequestToDeepSeek(req)
 	deepSeekReq.Stream = true
 	deepSeekReq.StreamOptions = &StreamOptions{

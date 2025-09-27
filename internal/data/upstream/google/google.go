@@ -87,8 +87,8 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	if res.UsageMetadata != nil {
 		resp.Statistics = &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     res.UsageMetadata.PromptTokenCount,
-				CompletionTokens: res.UsageMetadata.CandidatesTokenCount,
+				PromptTokens:     uint32(res.UsageMetadata.PromptTokenCount),
+				CompletionTokens: uint32(res.UsageMetadata.CandidatesTokenCount),
 			},
 		}
 	}
@@ -126,8 +126,9 @@ func (c *googleChatStreamClient) Recv() (*entity.ChatResp, error) {
 	if res.UsageMetadata != nil && res.UsageMetadata.CandidatesTokenCount != 0 {
 		resp.Statistics = &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     res.UsageMetadata.PromptTokenCount,
-				CompletionTokens: res.UsageMetadata.CandidatesTokenCount,
+				PromptTokens:       uint32(res.UsageMetadata.PromptTokenCount),
+				CompletionTokens:   uint32(res.UsageMetadata.CandidatesTokenCount),
+				CachedPromptTokens: uint32(res.UsageMetadata.CachedContentTokenCount),
 			},
 		}
 	}

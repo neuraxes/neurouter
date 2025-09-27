@@ -99,7 +99,8 @@ func (x *EmbedReq) GetContents() []*Content {
 type EmbedResp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Embedding     []float32              `protobuf:"fixed32,2,rep,packed,name=embedding,proto3" json:"embedding,omitempty"`
+	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
+	Embedding     []float32              `protobuf:"fixed32,3,rep,packed,name=embedding,proto3" json:"embedding,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -141,6 +142,13 @@ func (x *EmbedResp) GetId() string {
 	return ""
 }
 
+func (x *EmbedResp) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
 func (x *EmbedResp) GetEmbedding() []float32 {
 	if x != nil {
 		return x.Embedding
@@ -156,10 +164,11 @@ const file_neurouter_v1_embedding_proto_rawDesc = "" +
 	"\bEmbedReq\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x121\n" +
-	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"9\n" +
+	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"O\n" +
 	"\tEmbedResp\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
-	"\tembedding\x18\x02 \x03(\x02R\tembedding2[\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\x12\x1c\n" +
+	"\tembedding\x18\x03 \x03(\x02R\tembedding2[\n" +
 	"\tEmbedding\x12N\n" +
 	"\x05Embed\x12\x16.neurouter.v1.EmbedReq\x1a\x17.neurouter.v1.EmbedResp\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/embedB3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 

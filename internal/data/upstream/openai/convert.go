@@ -301,8 +301,8 @@ func (r *upstream) convertResponseFromOpenAI(res *openai.ChatCompletion) *entity
 	if res.Usage.PromptTokens != 0 || res.Usage.CompletionTokens != 0 {
 		resp.Statistics = &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     int32(res.Usage.PromptTokens),
-				CompletionTokens: int32(res.Usage.CompletionTokens),
+				PromptTokens:     uint32(res.Usage.PromptTokens),
+				CompletionTokens: uint32(res.Usage.CompletionTokens),
 			},
 		}
 	}
@@ -351,8 +351,8 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk, requestID string,
 	if chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0 {
 		resp.Statistics = &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     int32(chunk.Usage.PromptTokens),
-				CompletionTokens: int32(chunk.Usage.CompletionTokens),
+				PromptTokens:     uint32(chunk.Usage.PromptTokens),
+				CompletionTokens: uint32(chunk.Usage.CompletionTokens),
 			},
 		}
 	}

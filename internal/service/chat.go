@@ -31,12 +31,7 @@ func (s *RouterService) Chat(ctx context.Context, req *v1.ChatReq) (resp *v1.Cha
 	}
 
 	chatReq := proto.Clone(req).(*v1.ChatReq)
-	r, err := s.chat.Chat(ctx, (*entity.ChatReq)(chatReq))
-	if err != nil {
-		return
-	}
-
-	resp = (*v1.ChatResp)(r)
+	resp, err = s.chat.Chat(ctx, chatReq)
 	return
 }
 
@@ -45,7 +40,7 @@ type wrappedChatStreamServer struct {
 }
 
 func (w *wrappedChatStreamServer) Send(resp *entity.ChatResp) error {
-	return w.srv.Send((*v1.ChatResp)(resp))
+	return w.srv.Send(resp)
 }
 
 func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer) error {
@@ -55,6 +50,6 @@ func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer
 	}
 
 	chatReq := proto.Clone(req).(*v1.ChatReq)
-	err := s.chat.ChatStream(srv.Context(), (*entity.ChatReq)(chatReq), &wrappedChatStreamServer{srv})
+	err := s.chat.ChatStream(srv.Context(), chatReq, &wrappedChatStreamServer{srv})
 	return err
 }

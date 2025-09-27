@@ -89,8 +89,8 @@ func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	if res.Usage.InputTokens != 0 || res.Usage.OutputTokens != 0 {
 		resp.Statistics = &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     int32(res.Usage.InputTokens),
-				CompletionTokens: int32(res.Usage.OutputTokens),
+				PromptTokens:     uint32(res.Usage.InputTokens),
+				CompletionTokens: uint32(res.Usage.OutputTokens),
 			},
 		}
 	}
@@ -136,7 +136,7 @@ next:
 	if chunk.Usage.OutputTokens != 0 {
 		resp.Statistics = &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				CompletionTokens: int32(chunk.Usage.OutputTokens),
+				CompletionTokens: uint32(chunk.Usage.OutputTokens),
 			},
 		}
 	}

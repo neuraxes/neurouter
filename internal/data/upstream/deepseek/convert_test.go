@@ -27,9 +27,9 @@ import (
 )
 
 func TestConvertMessageToDeepSeek(t *testing.T) {
-	Convey("Given a ChatRepo instance", t, func() {
+	Convey("Given a upstream instance", t, func() {
 		config := &conf.DeepSeekConfig{BaseUrl: "https://api.deepseek.com", ApiKey: "test-key"}
-		repo := &ChatRepo{
+		repo := &upstream{
 			config: config,
 			log:    log.NewHelper(log.DefaultLogger),
 		}
@@ -157,9 +157,9 @@ func TestConvertMessageToDeepSeek(t *testing.T) {
 }
 
 func TestConvertRequestToDeepSeek(t *testing.T) {
-	Convey("Given a ChatRepo instance", t, func() {
+	Convey("Given a upstream instance", t, func() {
 		config := &conf.DeepSeekConfig{BaseUrl: "https://api.deepseek.com", ApiKey: "test-key"}
-		repo := &ChatRepo{
+		repo := &upstream{
 			config: config,
 			log:    log.NewHelper(log.DefaultLogger),
 		}
@@ -279,9 +279,9 @@ func TestConvertRequestToDeepSeek(t *testing.T) {
 }
 
 func TestConvertMessageFromDeepSeek(t *testing.T) {
-	Convey("Given a ChatRepo instance", t, func() {
+	Convey("Given a upstream instance", t, func() {
 		config := &conf.DeepSeekConfig{BaseUrl: "https://api.deepseek.com", ApiKey: "test-key"}
-		repo := &ChatRepo{
+		repo := &upstream{
 			config: config,
 			log:    log.NewHelper(log.DefaultLogger),
 		}

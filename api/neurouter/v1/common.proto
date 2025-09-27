@@ -39,8 +39,9 @@ message GenerationConfig {
 
 message Statistics {
   message Usage {
-    int32 prompt_tokens = 1;
-    int32 completion_tokens = 2;
+    uint32 prompt_tokens = 1;
+    uint32 completion_tokens = 2;
+    uint32 cached_prompt_tokens = 3;
   }
 
   Usage usage = 1;

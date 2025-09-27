@@ -55,11 +55,11 @@ func newNeurouterUpstream(config *conf.NeurouterConfig, logger log.Logger) (repo
 }
 
 func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (*entity.ChatResp, error) {
-	resp, err := r.chatClient.Chat(ctx, (*v1.ChatReq)(req))
+	resp, err := r.chatClient.Chat(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return (*entity.ChatResp)(resp), nil
+	return resp, nil
 }
 
 type neurouterChatStreamClient struct {
@@ -71,7 +71,7 @@ func (c *neurouterChatStreamClient) Recv() (*entity.ChatResp, error) {
 	if err != nil {
 		return nil, err
 	}
-	return (*entity.ChatResp)(resp), nil
+	return resp, nil
 }
 
 func (c *neurouterChatStreamClient) Close() error {
@@ -79,7 +79,7 @@ func (c *neurouterChatStreamClient) Close() error {
 }
 
 func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
-	stream, err := r.chatClient.ChatStream(ctx, (*v1.ChatReq)(req))
+	stream, err := r.chatClient.ChatStream(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +90,9 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 }
 
 func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (*entity.EmbedResp, error) {
-	resp, err := r.embeddingClient.Embed(ctx, (*v1.EmbedReq)(req))
+	resp, err := r.embeddingClient.Embed(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return (*entity.EmbedResp)(resp), nil
+	return resp, nil
 }

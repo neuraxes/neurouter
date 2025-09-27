@@ -830,11 +830,12 @@ type Tool_Function_ struct {
 func (*Tool_Function_) isTool_Tool() {}
 
 type Statistics_Usage struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	PromptTokens     int32                  `protobuf:"varint,1,opt,name=prompt_tokens,json=promptTokens,proto3" json:"prompt_tokens,omitempty"`
-	CompletionTokens int32                  `protobuf:"varint,2,opt,name=completion_tokens,json=completionTokens,proto3" json:"completion_tokens,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	PromptTokens       uint32                 `protobuf:"varint,1,opt,name=prompt_tokens,json=promptTokens,proto3" json:"prompt_tokens,omitempty"`
+	CompletionTokens   uint32                 `protobuf:"varint,2,opt,name=completion_tokens,json=completionTokens,proto3" json:"completion_tokens,omitempty"`
+	CachedPromptTokens uint32                 `protobuf:"varint,3,opt,name=cached_prompt_tokens,json=cachedPromptTokens,proto3" json:"cached_prompt_tokens,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *Statistics_Usage) Reset() {
@@ -867,16 +868,23 @@ func (*Statistics_Usage) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{1, 0}
 }
 
-func (x *Statistics_Usage) GetPromptTokens() int32 {
+func (x *Statistics_Usage) GetPromptTokens() uint32 {
 	if x != nil {
 		return x.PromptTokens
 	}
 	return 0
 }
 
-func (x *Statistics_Usage) GetCompletionTokens() int32 {
+func (x *Statistics_Usage) GetCompletionTokens() uint32 {
 	if x != nil {
 		return x.CompletionTokens
+	}
+	return 0
+}
+
+func (x *Statistics_Usage) GetCachedPromptTokens() uint32 {
+	if x != nil {
+		return x.CachedPromptTokens
 	}
 	return 0
 }
@@ -961,13 +969,14 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"jsonSchemaB\n" +
 	"\n" +
 	"\btemplateB\t\n" +
-	"\agrammar\"\x9d\x01\n" +
+	"\agrammar\"\xd0\x01\n" +
 	"\n" +
 	"Statistics\x124\n" +
-	"\x05usage\x18\x01 \x01(\v2\x1e.neurouter.v1.Statistics.UsageR\x05usage\x1aY\n" +
+	"\x05usage\x18\x01 \x01(\v2\x1e.neurouter.v1.Statistics.UsageR\x05usage\x1a\x8b\x01\n" +
 	"\x05Usage\x12#\n" +
-	"\rprompt_tokens\x18\x01 \x01(\x05R\fpromptTokens\x12+\n" +
-	"\x11completion_tokens\x18\x02 \x01(\x05R\x10completionTokens\";\n" +
+	"\rprompt_tokens\x18\x01 \x01(\rR\fpromptTokens\x12+\n" +
+	"\x11completion_tokens\x18\x02 \x01(\rR\x10completionTokens\x120\n" +
+	"\x14cached_prompt_tokens\x18\x03 \x01(\rR\x12cachedPromptTokens\";\n" +
 	"\x05Image\x12\x12\n" +
 	"\x03url\x18\n" +
 	" \x01(\tH\x00R\x03url\x12\x14\n" +

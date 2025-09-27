@@ -35,7 +35,7 @@ func (s *RouterService) ListModel(ctx context.Context, req *v1.ListModelReq) (re
 
 	respModels := make([]*v1.ModelSpec, len(models))
 	for i, m := range models {
-		respModels[i] = (*v1.ModelSpec)(m)
+		respModels[i] = m
 	}
 
 	resp = &v1.ListModelResp{

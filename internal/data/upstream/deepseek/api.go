@@ -27,7 +27,7 @@ type httpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-func (r *ChatRepo) CreateChatCompletion(ctx context.Context, req *ChatRequest) (resp *ChatResponse, err error) {
+func (r *upstream) CreateChatCompletion(ctx context.Context, req *ChatRequest) (resp *ChatResponse, err error) {
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
 		err = fmt.Errorf("failed to marshal request: %w", err)
@@ -73,7 +73,7 @@ func (r *ChatRepo) CreateChatCompletion(ctx context.Context, req *ChatRequest) (
 	return
 }
 
-func (r *ChatRepo) CreateChatCompletionStream(ctx context.Context, req *ChatRequest) (httpResp *http.Response, err error) {
+func (r *upstream) CreateChatCompletionStream(ctx context.Context, req *ChatRequest) (httpResp *http.Response, err error) {
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
 		err = fmt.Errorf("failed to marshal request: %w", err)

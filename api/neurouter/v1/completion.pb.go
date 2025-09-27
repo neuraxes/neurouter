@@ -36,11 +36,15 @@ const (
 )
 
 type CompletionReq struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
-	Config        *GenerationConfig      `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
-	Contents      []*Content             `protobuf:"bytes,4,rep,name=contents,proto3" json:"contents,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The unique identifier of the request
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The requested model to use
+	Model string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
+	// The generation configuration
+	Config *GenerationConfig `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
+	// The multi-modality content
+	Contents      []*Content `protobuf:"bytes,4,rep,name=contents,proto3" json:"contents,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -104,10 +108,15 @@ func (x *CompletionReq) GetContents() []*Content {
 }
 
 type CompletionResp struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Contents      []*Content             `protobuf:"bytes,2,rep,name=contents,proto3" json:"contents,omitempty"`
-	Statistics    *Statistics            `protobuf:"bytes,3,opt,name=statistics,proto3" json:"statistics,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The unique identifier of the request
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The model used to generate the response
+	Model string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
+	// The multi-modality content
+	Contents []*Content `protobuf:"bytes,3,rep,name=contents,proto3" json:"contents,omitempty"`
+	// The statistics for the generation
+	Statistics    *Statistics `protobuf:"bytes,4,opt,name=statistics,proto3" json:"statistics,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -149,6 +158,13 @@ func (x *CompletionResp) GetId() string {
 	return ""
 }
 
+func (x *CompletionResp) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
 func (x *CompletionResp) GetContents() []*Content {
 	if x != nil {
 		return x.Contents
@@ -172,12 +188,13 @@ const file_neurouter_v1_completion_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x126\n" +
 	"\x06config\x18\x03 \x01(\v2\x1e.neurouter.v1.GenerationConfigR\x06config\x121\n" +
-	"\bcontents\x18\x04 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"\x8d\x01\n" +
+	"\bcontents\x18\x04 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"\xa3\x01\n" +
 	"\x0eCompletionResp\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x121\n" +
-	"\bcontents\x18\x02 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\x128\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\x121\n" +
+	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\x128\n" +
 	"\n" +
-	"statistics\x18\x03 \x01(\v2\x18.neurouter.v1.StatisticsR\n" +
+	"statistics\x18\x04 \x01(\v2\x18.neurouter.v1.StatisticsR\n" +
 	"statistics2\xa6\x01\n" +
 	"\n" +
 	"Completion\x12G\n" +

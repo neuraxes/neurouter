@@ -22,7 +22,7 @@ import (
 )
 
 // convertMessageToDeepSeek converts an internal message to a message that can be sent to the DeepSeek API.
-func (r *ChatRepo) convertMessageToDeepSeek(message *v1.Message) *Message {
+func (r *upstream) convertMessageToDeepSeek(message *v1.Message) *Message {
 	// Convert role
 	var role string
 	switch message.Role {
@@ -75,7 +75,7 @@ func (r *ChatRepo) convertMessageToDeepSeek(message *v1.Message) *Message {
 }
 
 // convertRequestToDeepSeek converts an internal request to a request that can be sent to the DeepSeek API.
-func (r *ChatRepo) convertRequestToDeepSeek(req *entity.ChatReq) *ChatRequest {
+func (r *upstream) convertRequestToDeepSeek(req *entity.ChatReq) *ChatRequest {
 	var messages []*Message
 	for _, message := range req.Messages {
 		m := r.convertMessageToDeepSeek(message)
@@ -138,7 +138,7 @@ func toolFunctionParametersToDeepSeek(params *v1.Schema) map[string]any {
 }
 
 // convertMessageFromDeepSeek converts a message from the DeepSeek API to an internal message.
-func (r *ChatRepo) convertMessageFromDeepSeek(messageID string, deepSeekMessage *Message) *v1.Message {
+func (r *upstream) convertMessageFromDeepSeek(messageID string, deepSeekMessage *Message) *v1.Message {
 	// Convert role
 	var role v1.Role
 	switch deepSeekMessage.Role {
@@ -247,8 +247,8 @@ func convertStatisticsFromDeepSeek(usage *Usage) *v1.Statistics {
 
 	return &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
-			PromptTokens:     int32(usage.PromptTokens),
-			CompletionTokens: int32(usage.CompletionTokens),
+			PromptTokens:     uint32(usage.PromptTokens),
+			CompletionTokens: uint32(usage.CompletionTokens),
 		},
 	}
 }

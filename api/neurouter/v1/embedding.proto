@@ -38,5 +38,6 @@ message EmbedReq {
 
 message EmbedResp {
   string id = 1;
-  repeated float embedding = 2;
+  string model = 2;
+  repeated float embedding = 3;
 }
