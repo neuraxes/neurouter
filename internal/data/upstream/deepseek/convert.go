@@ -222,6 +222,17 @@ func convertStreamRespFromDeepSeek(requestID string, chunk *ChatStreamResponse) 
 					},
 				})
 			}
+			for _, toolCall := range choice.Delta.ToolCalls {
+				contents = append(contents, &v1.Content{
+					Content: &v1.Content_FunctionCall{
+						FunctionCall: &v1.FunctionCall{
+							Id:        toolCall.ID,
+							Name:      toolCall.Function.Name,
+							Arguments: toolCall.Function.Arguments,
+						},
+					},
+				})
+			}
 		}
 
 		resp.Message = &v1.Message{
@@ -247,8 +258,9 @@ func convertStatisticsFromDeepSeek(usage *Usage) *v1.Statistics {
 
 	return &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
-			PromptTokens:     uint32(usage.PromptTokens),
-			CompletionTokens: uint32(usage.CompletionTokens),
+			PromptTokens:       uint32(usage.PromptTokens),
+			CompletionTokens:   uint32(usage.CompletionTokens),
+			CachedPromptTokens: uint32(usage.PromptCacheHitTokens),
 		},
 	}
 }

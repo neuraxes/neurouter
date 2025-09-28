@@ -14,6 +14,7 @@ require (
 	github.com/openai/openai-go v1.12.0
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/smartystreets/goconvey v1.8.1
+	github.com/tidwall/gjson v1.18.0
 	go.uber.org/automaxprocs v1.6.0
 	google.golang.org/api v0.249.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250908214217-97024824d090
@@ -42,7 +43,6 @@ require (
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
-	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect

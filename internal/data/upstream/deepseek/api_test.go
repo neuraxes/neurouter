@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tidwall/gjson"
 
 	"github.com/neuraxes/neurouter/internal/conf"
 )
@@ -70,15 +71,6 @@ const mockChatCompletionResp = `{
     "system_fingerprint": "fp_f253fc19d1_prod0820_fp8_kvcache"
 }`
 
-const mockChatCompletionError = `{
-    "error": {
-        "message": "Model Not Exist",
-        "type": "invalid_request_error",
-        "param": null,
-        "code": "invalid_request_error"
-    }
-}`
-
 const mockChatCompletionStreamResp = `data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}]}
 
 data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}]}
@@ -105,6 +97,99 @@ data: [DONE]
 
 `
 
+const mockChatCompletionWithToolResp = `{
+    "id": "fd8b3b63-8112-403f-aa52-57a46f320424",
+    "object": "chat.completion",
+    "created": 1759074553,
+    "model": "deepseek-chat",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "I'll check the current weather in Tokyo for you.",
+                "tool_calls": [
+                    {
+                        "index": 0,
+                        "id": "call_00_wVp0FIPEgzSN4qfP502y9zG8",
+                        "type": "function",
+                        "function": {
+                            "name": "get_weather",
+                            "arguments": "{\"location\": \"Tokyo\"}"
+                        }
+                    }
+                ]
+            },
+            "logprobs": null,
+            "finish_reason": "tool_calls"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 161,
+        "completion_tokens": 25,
+        "total_tokens": 186,
+        "prompt_tokens_details": {
+            "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 161
+    },
+    "system_fingerprint": "fp_8333852bec_prod0820_fp8_kvcache"
+}`
+
+const mockChatCompletionStreamWithToolResp = `data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"I"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"'ll"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" check"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" the"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" current"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" weather"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" in"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" Tokyo"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" for"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" you"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"."},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_00_Sq0n5HVeFHkS1mBrIGbwBQcK","type":"function","function":{"name":"get_weather","arguments":""}}]},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\""}}]},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"location"}}]},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\":"}}]},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":" \""}}]},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"Tokyo"}}]},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\"}"}}]},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"1986f9e8-0b5d-4331-88da-d2d2d8dd7a70","object":"chat.completion.chunk","created":1759075956,"model":"deepseek-chat","system_fingerprint":"fp_8333852bec_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":""},"logprobs":null,"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":161,"completion_tokens":25,"total_tokens":186,"prompt_tokens_details":{"cached_tokens":128},"prompt_cache_hit_tokens":128,"prompt_cache_miss_tokens":33}}
+
+data: [DONE]
+
+`
+
+const mockChatCompletionError = `{
+    "error": {
+        "message": "Model Not Exist",
+        "type": "invalid_request_error",
+        "param": null,
+        "code": "invalid_request_error"
+    }
+}`
+
 func TestCreateChatCompletion(t *testing.T) {
 	Convey("Given a upstream with a mock HTTP client", t, func() {
 		repo := &upstream{
@@ -128,6 +213,13 @@ func TestCreateChatCompletion(t *testing.T) {
 					So(httpReq.URL.String(), ShouldEqual, "http://localhost/chat/completions")
 					So(httpReq.Header.Get("Authorization"), ShouldEqual, "Bearer test-key")
 					So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
+
+					body, _ := io.ReadAll(httpReq.Body)
+					So(gjson.Get(string(body), "model").String(), ShouldEqual, "deepseek-chat")
+					So(gjson.Get(string(body), "messages.0.role").String(), ShouldEqual, "user")
+					So(gjson.Get(string(body), "messages.0.content").String(), ShouldEqual, "Hello!")
+					So(gjson.Get(string(body), "stream").Bool(), ShouldBeFalse)
+
 					return &http.Response{
 						StatusCode: http.StatusOK,
 						Body:       io.NopCloser(strings.NewReader(mockChatCompletionResp)),
@@ -237,6 +329,13 @@ func TestCreateChatCompletionStream(t *testing.T) {
 					So(httpReq.Header.Get("Authorization"), ShouldEqual, "Bearer test-key")
 					So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
 					So(httpReq.Header.Get("Accept"), ShouldEqual, "text/event-stream")
+
+					body, _ := io.ReadAll(httpReq.Body)
+					So(gjson.Get(string(body), "model").String(), ShouldEqual, "deepseek-chat")
+					So(gjson.Get(string(body), "messages.0.role").String(), ShouldEqual, "user")
+					So(gjson.Get(string(body), "messages.0.content").String(), ShouldEqual, "Hello!")
+					So(gjson.Get(string(body), "stream").Bool(), ShouldBeTrue)
+
 					return &http.Response{
 						StatusCode: http.StatusOK,
 						Body:       io.NopCloser(strings.NewReader(mockChatCompletionStreamResp)),
@@ -276,6 +375,210 @@ func TestCreateChatCompletionStream(t *testing.T) {
 		})
 
 		Convey("When the HTTP request fails", func() {
+			repo.client = &mockHTTPClient{
+				DoFunc: func(httpReq *http.Request) (*http.Response, error) {
+					return nil, errors.New("network error")
+				},
+			}
+
+			_, err := repo.CreateChatCompletionStream(context.Background(), req)
+
+			Convey("Then it should return an error", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "network error")
+			})
+		})
+	})
+}
+
+func TestCreateChatCompletionWithToolCalls(t *testing.T) {
+	Convey("Given an upstream with a mock HTTP client and a tool-enabled request", t, func() {
+		repo := &upstream{
+			config: &conf.DeepSeekConfig{
+				BaseUrl: "http://localhost",
+				ApiKey:  "test-key",
+			},
+			log: log.NewHelper(log.DefaultLogger),
+		}
+
+		// Build a request that includes tools
+		req := &ChatRequest{
+			Model: "deepseek-chat",
+			Messages: []*Message{
+				{Role: "user", Content: "What is the weather in Tokyo?"},
+			},
+			Tools: []*Tool{
+				{
+					Type: "function",
+					Function: &FunctionDefinition{
+						Name:        "get_weather",
+						Description: "Get the current weather for a city",
+						Parameters: map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"location": map[string]any{
+									"type":        "string",
+									"description": "City name",
+								},
+							},
+							"required": []string{"location"},
+						},
+					},
+				},
+			},
+		}
+
+		Convey("When CreateChatCompletion is called and the API returns a tool_calls response", func() {
+			repo.client = &mockHTTPClient{
+				DoFunc: func(httpReq *http.Request) (*http.Response, error) {
+					So(httpReq.URL.String(), ShouldEqual, "http://localhost/chat/completions")
+					So(httpReq.Header.Get("Authorization"), ShouldEqual, "Bearer test-key")
+					So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
+
+					body, _ := io.ReadAll(httpReq.Body)
+					So(gjson.Get(string(body), "model").String(), ShouldEqual, "deepseek-chat")
+					So(gjson.Get(string(body), "messages.0.role").String(), ShouldEqual, "user")
+					So(gjson.Get(string(body), "messages.0.content").String(), ShouldEqual, "What is the weather in Tokyo?")
+					So(gjson.Get(string(body), "tools.0.type").String(), ShouldEqual, "function")
+					So(gjson.Get(string(body), "tools.0.function.name").String(), ShouldEqual, "get_weather")
+					So(gjson.Get(string(body), "tools.0.function.description").String(), ShouldEqual, "Get the current weather for a city")
+					So(gjson.Get(string(body), "tools.0.function.parameters.type").String(), ShouldEqual, "object")
+					So(gjson.Get(string(body), "tools.0.function.parameters.properties.location.type").String(), ShouldEqual, "string")
+					So(gjson.Get(string(body), "tools.0.function.parameters.properties.location.description").String(), ShouldEqual, "City name")
+					So(gjson.Get(string(body), "tools.0.function.parameters.required.0").String(), ShouldEqual, "location")
+
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(strings.NewReader(mockChatCompletionWithToolResp)),
+					}, nil
+				},
+			}
+
+			resp, err := repo.CreateChatCompletion(context.Background(), req)
+
+			Convey("Then it should decode tool_calls correctly", func() {
+				So(err, ShouldBeNil)
+				So(resp, ShouldNotBeNil)
+				So(resp.ID, ShouldEqual, "fd8b3b63-8112-403f-aa52-57a46f320424")
+				So(resp.Object, ShouldEqual, "chat.completion")
+				So(resp.Created, ShouldEqual, 1759074553)
+				So(resp.Model, ShouldEqual, "deepseek-chat")
+				So(resp.Choices, ShouldHaveLength, 1)
+				choice := resp.Choices[0]
+				So(choice.Index, ShouldEqual, 0)
+				So(choice.Message.Role, ShouldEqual, "assistant")
+				So(choice.Message.Content, ShouldEqual, "I'll check the current weather in Tokyo for you.")
+				So(choice.LogProbs, ShouldBeNil)
+				So(choice.FinishReason, ShouldEqual, "tool_calls")
+				So(choice.Message.ToolCalls, ShouldHaveLength, 1)
+				tc := choice.Message.ToolCalls[0]
+				So(tc.ID, ShouldStartWith, "call_00_wVp0FIPEgzSN4qfP502y9zG8")
+				So(tc.Type, ShouldEqual, "function")
+				So(tc.Function, ShouldNotBeNil)
+				So(tc.Function.Name, ShouldEqual, "get_weather")
+				So(tc.Function.Arguments, ShouldEqual, "{\"location\": \"Tokyo\"}")
+			})
+		})
+	})
+}
+
+func TestCreateChatCompletionStreamWithToolCalls(t *testing.T) {
+	Convey("Given an upstream with a mock HTTP client for streaming with tool calls", t, func() {
+		repo := &upstream{
+			config: &conf.DeepSeekConfig{
+				BaseUrl: "http://localhost",
+				ApiKey:  "test-key",
+			},
+			log: log.NewHelper(log.DefaultLogger),
+		}
+
+		// Build a request that includes tools and enables streaming
+		req := &ChatRequest{
+			Model: "deepseek-chat",
+			Messages: []*Message{
+				{Role: "user", Content: "What is the weather in Tokyo?"},
+			},
+			Tools: []*Tool{
+				{
+					Type: "function",
+					Function: &FunctionDefinition{
+						Name:        "get_weather",
+						Description: "Get the current weather for a city",
+						Parameters: map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"location": map[string]any{
+									"type":        "string",
+									"description": "City name",
+								},
+							},
+							"required": []string{"location"},
+						},
+					},
+				},
+			},
+			Stream: true,
+		}
+
+		Convey("When CreateChatCompletionStream is called and the API returns a streaming response with tool_calls", func() {
+			repo.client = &mockHTTPClient{
+				DoFunc: func(httpReq *http.Request) (*http.Response, error) {
+					So(httpReq.URL.String(), ShouldEqual, "http://localhost/chat/completions")
+					So(httpReq.Header.Get("Authorization"), ShouldEqual, "Bearer test-key")
+					So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
+					So(httpReq.Header.Get("Accept"), ShouldEqual, "text/event-stream")
+
+					body, _ := io.ReadAll(httpReq.Body)
+					So(gjson.Get(string(body), "model").String(), ShouldEqual, "deepseek-chat")
+					So(gjson.Get(string(body), "messages.0.role").String(), ShouldEqual, "user")
+					So(gjson.Get(string(body), "messages.0.content").String(), ShouldEqual, "What is the weather in Tokyo?")
+					So(gjson.Get(string(body), "tools.0.type").String(), ShouldEqual, "function")
+					So(gjson.Get(string(body), "tools.0.function.name").String(), ShouldEqual, "get_weather")
+					So(gjson.Get(string(body), "tools.0.function.description").String(), ShouldEqual, "Get the current weather for a city")
+					So(gjson.Get(string(body), "tools.0.function.parameters.type").String(), ShouldEqual, "object")
+					So(gjson.Get(string(body), "tools.0.function.parameters.properties.location.type").String(), ShouldEqual, "string")
+					So(gjson.Get(string(body), "tools.0.function.parameters.properties.location.description").String(), ShouldEqual, "City name")
+					So(gjson.Get(string(body), "tools.0.function.parameters.required.0").String(), ShouldEqual, "location")
+
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(strings.NewReader(mockChatCompletionStreamWithToolResp)),
+					}, nil
+				},
+			}
+
+			resp, err := repo.CreateChatCompletionStream(context.Background(), req)
+
+			Convey("Then it should return a valid streaming response with tool calls", func() {
+				So(err, ShouldBeNil)
+				So(resp, ShouldNotBeNil)
+				So(resp.StatusCode, ShouldEqual, http.StatusOK)
+				body, readErr := io.ReadAll(resp.Body)
+				So(readErr, ShouldBeNil)
+				So(string(body), ShouldEqual, mockChatCompletionStreamWithToolResp)
+				So(resp.Body.Close(), ShouldBeNil)
+			})
+		})
+
+		Convey("When the API returns an error for streaming with tools", func() {
+			repo.client = &mockHTTPClient{
+				DoFunc: func(httpReq *http.Request) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusBadRequest,
+						Body:       io.NopCloser(strings.NewReader(mockChatCompletionError)),
+					}, nil
+				},
+			}
+
+			_, err := repo.CreateChatCompletionStream(context.Background(), req)
+
+			Convey("Then it should return an error", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "Model Not Exist")
+			})
+		})
+
+		Convey("When the HTTP request fails for streaming with tools", func() {
 			repo.client = &mockHTTPClient{
 				DoFunc: func(httpReq *http.Request) (*http.Response, error) {
 					return nil, errors.New("network error")

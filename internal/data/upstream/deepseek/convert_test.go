@@ -436,6 +436,45 @@ func TestConvertStreamRespFromDeepSeek(t *testing.T) {
 			})
 		})
 
+		Convey("When converting a chunk with tool calls", func() {
+			chunk := &ChatStreamResponse{
+				ID:    "chatcmpl-tools",
+				Model: "deepseek-chat",
+				Choices: []*ChatStreamChoice{
+					{
+						Delta: &Message{
+							ToolCalls: []*ToolCall{
+								{
+									ID:   "call-1",
+									Type: "function",
+									Function: &FunctionCall{
+										Name:      "get_time",
+										Arguments: `{"tz":"UTC"}`,
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			result := convertStreamRespFromDeepSeek("req-tools", chunk)
+
+			Convey("Then the converted response should include function call content", func() {
+				So(result.Id, ShouldEqual, "req-tools")
+				So(result.Model, ShouldEqual, "deepseek-chat")
+				So(result.Message, ShouldNotBeNil)
+				So(result.Message.Id, ShouldEqual, "chatcmpl-tools")
+				So(result.Message.Role, ShouldEqual, v1.Role_MODEL)
+				So(len(result.Message.Contents), ShouldEqual, 1)
+				fc := result.Message.Contents[0].GetFunctionCall()
+				So(fc, ShouldNotBeNil)
+				So(fc.Id, ShouldEqual, "call-1")
+				So(fc.Name, ShouldEqual, "get_time")
+				So(fc.Arguments, ShouldEqual, `{"tz":"UTC"}`)
+			})
+		})
+
 		Convey("When converting a chunk with usage statistics", func() {
 			chunk := &ChatStreamResponse{
 				ID:    "chatcmpl-789",
@@ -481,8 +520,9 @@ func TestConvertStatisticsFromDeepSeek(t *testing.T) {
 
 		Convey("When converting valid usage statistics", func() {
 			usage := &Usage{
-				PromptTokens:     15,
-				CompletionTokens: 25,
+				PromptTokens:         15,
+				CompletionTokens:     25,
+				PromptCacheHitTokens: 5,
 			}
 
 			result := convertStatisticsFromDeepSeek(usage)
@@ -492,6 +532,7 @@ func TestConvertStatisticsFromDeepSeek(t *testing.T) {
 				So(result.Usage, ShouldNotBeNil)
 				So(result.Usage.PromptTokens, ShouldEqual, 15)
 				So(result.Usage.CompletionTokens, ShouldEqual, 25)
+				So(result.Usage.CachedPromptTokens, ShouldEqual, 5)
 			})
 		})
 	})
