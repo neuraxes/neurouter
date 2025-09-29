@@ -39,41 +39,55 @@ func NewOpenAIFactory() repository.UpstreamFactory[conf.OpenAIConfig] {
 	return newOpenAIUpstream
 }
 
-func newOpenAIUpstream(config *conf.OpenAIConfig, logger log.Logger) (repo repository.ChatRepo, err error) {
+func newOpenAIUpstream(config *conf.OpenAIConfig, logger log.Logger) (repository.ChatRepo, error) {
+	return newOpenAIUpstreamWithClient(config, logger, nil)
+}
 
+// newOpenAIUpstreamWithClient creates a new OpenAI upstream with a custom HTTP client for testing.
+func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, logger log.Logger, client option.HTTPClient) (repo *upstream, err error) {
 	options := []option.RequestOption{
 		option.WithAPIKey(config.ApiKey),
 	}
 	if config.BaseUrl != "" {
 		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
-	client := openai.NewClient(options...)
+	if client != nil {
+		options = append(options, option.WithHTTPClient(client))
+	}
+
+	openaiClient := openai.NewClient(options...)
 
 	repo = &upstream{
 		config: config,
-		client: &client,
+		client: &openaiClient,
 		log:    log.NewHelper(logger),
 	}
 	return repo, nil
 }
 
 func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	res, err := r.client.Chat.Completions.New(
-		ctx,
-		r.convertRequestToOpenAI(req),
-	)
+	openAIReq := r.convertRequestToOpenAI(req)
+
+	openAIResp, err := r.client.Chat.Completions.New(ctx, openAIReq)
 	if err != nil {
 		return
 	}
-	resp = r.convertResponseFromOpenAI(res)
+
+	resp = &entity.ChatResp{
+		Id:         openAIResp.ID,
+		Model:      openAIResp.Model,
+		Message:    r.convertMessageFromOpenAI(&openAIResp.Choices[0].Message),
+		Statistics: convertStatisticsFromOpenAI(&openAIResp.Usage),
+	}
+
 	return
 
 }
 
 type openAIChatStreamClient struct {
-	id       string
-	req      *entity.ChatReq
-	upstream *ssestream.Stream[openai.ChatCompletionChunk]
+	req       *entity.ChatReq
+	upstream  *ssestream.Stream[openai.ChatCompletionChunk]
+	messageID string
 }
 
 func (c openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
@@ -84,8 +98,11 @@ func (c openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 		err = io.EOF
 		return
 	}
+
 	chunk := c.upstream.Current()
-	resp = convertChunkFromOpenAI(&chunk, c.req.Id, c.id)
+	resp = convertChunkFromOpenAI(&chunk)
+	resp.Message.Id = c.messageID
+
 	return
 }
 
@@ -99,9 +116,9 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (client 
 	stream := r.client.Chat.Completions.NewStreaming(ctx, openAIReq)
 
 	client = &openAIChatStreamClient{
-		id:       uuid.NewString(),
-		req:      req,
-		upstream: stream,
+		req:       req,
+		upstream:  stream,
+		messageID: uuid.NewString(),
 	}
 	return
 }

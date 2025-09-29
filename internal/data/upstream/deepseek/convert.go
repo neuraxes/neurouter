@@ -17,6 +17,7 @@ package deepseek
 import (
 	"strings"
 
+	"github.com/google/uuid"
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
@@ -138,7 +139,8 @@ func toolFunctionParametersToDeepSeek(params *v1.Schema) map[string]any {
 }
 
 // convertMessageFromDeepSeek converts a message from the DeepSeek API to an internal message.
-func (r *upstream) convertMessageFromDeepSeek(messageID string, deepSeekMessage *Message) *v1.Message {
+// The message ID will be generated using UUID.
+func (r *upstream) convertMessageFromDeepSeek(deepSeekMessage *Message) *v1.Message {
 	// Convert role
 	var role v1.Role
 	switch deepSeekMessage.Role {
@@ -156,7 +158,7 @@ func (r *upstream) convertMessageFromDeepSeek(messageID string, deepSeekMessage 
 	}
 
 	message := &v1.Message{
-		Id:         messageID,
+		Id:         uuid.NewString(),
 		Role:       role,
 		Name:       deepSeekMessage.Name,
 		ToolCallId: deepSeekMessage.ToolCallID,
@@ -199,44 +201,44 @@ func (r *upstream) convertMessageFromDeepSeek(messageID string, deepSeekMessage 
 	return message
 }
 
-func convertStreamRespFromDeepSeek(requestID string, chunk *ChatStreamResponse) *entity.ChatResp {
+func convertStreamRespFromDeepSeek(chunk *ChatStreamResponse) *entity.ChatResp {
 	resp := &entity.ChatResp{
-		Id:    requestID,
+		Id:    chunk.ID,
 		Model: chunk.Model,
 	}
 
 	if len(chunk.Choices) > 0 {
+		choice := chunk.Choices[0]
+
 		var contents []*v1.Content
-		for _, choice := range chunk.Choices {
-			if choice.Delta.ReasoningContent != "" {
-				contents = append(contents, &v1.Content{
-					Content: &v1.Content_Thinking{
-						Thinking: choice.Delta.ReasoningContent,
+		if choice.Delta.ReasoningContent != "" {
+			contents = append(contents, &v1.Content{
+				Content: &v1.Content_Thinking{
+					Thinking: choice.Delta.ReasoningContent,
+				},
+			})
+		}
+		if choice.Delta.Content != "" {
+			contents = append(contents, &v1.Content{
+				Content: &v1.Content_Text{
+					Text: choice.Delta.Content,
+				},
+			})
+		}
+		for _, toolCall := range choice.Delta.ToolCalls {
+			// Only function tool calls are supported
+			contents = append(contents, &v1.Content{
+				Content: &v1.Content_FunctionCall{
+					FunctionCall: &v1.FunctionCall{
+						Id:        toolCall.ID,
+						Name:      toolCall.Function.Name,
+						Arguments: toolCall.Function.Arguments,
 					},
-				})
-			}
-			if choice.Delta.Content != "" {
-				contents = append(contents, &v1.Content{
-					Content: &v1.Content_Text{
-						Text: choice.Delta.Content,
-					},
-				})
-			}
-			for _, toolCall := range choice.Delta.ToolCalls {
-				contents = append(contents, &v1.Content{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Id:        toolCall.ID,
-							Name:      toolCall.Function.Name,
-							Arguments: toolCall.Function.Arguments,
-						},
-					},
-				})
-			}
+				},
+			})
 		}
 
 		resp.Message = &v1.Message{
-			Id:       chunk.ID,
 			Role:     v1.Role_MODEL,
 			Contents: contents,
 		}

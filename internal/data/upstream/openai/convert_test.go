@@ -560,10 +560,11 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 	Convey("Test convertMessageFromOpenAI", t, func() {
 		Convey("with text content", func() {
 			openAIMsg := &openai.ChatCompletionMessage{
-				Content: "Hello world",
+				Content: " Hello world ",
 			}
 
 			msg := repo.convertMessageFromOpenAI(openAIMsg)
+			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents[0].GetText(), ShouldEqual, "Hello world")
 		})
@@ -583,6 +584,7 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 			}
 
 			msg := repo.convertMessageFromOpenAI(openAIMsg)
+			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldHaveLength, 1)
 			So(msg.Contents[0].GetFunctionCall().GetId(), ShouldEqual, "call-1")
@@ -597,6 +599,7 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 			}
 
 			msg := repo.convertMessageFromOpenAI(openAIMsg)
+			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldBeNil)
 			// No tool calls, so no Content_FunctionCall in Contents
@@ -611,57 +614,11 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 	})
 }
 
-func TestConvertResponseFromOpenAI(t *testing.T) {
-	repo := &upstream{
-		config: &conf.OpenAIConfig{},
-		log:    log.NewHelper(log.DefaultLogger),
-	}
-
-	Convey("Test convertResponseFromOpenAI", t, func() {
-		Convey("with basic response", func() {
-			openAIResp := &openai.ChatCompletion{
-				ID: "resp-1",
-				Choices: []openai.ChatCompletionChoice{
-					{
-						Message: openai.ChatCompletionMessage{
-							Content: "Hello world",
-						},
-					},
-				},
-			}
-
-			resp := repo.convertResponseFromOpenAI(openAIResp)
-			So(resp.Id, ShouldEqual, "resp-1")
-			So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello world")
-		})
-
-		Convey("with usage statistics", func() {
-			openAIResp := &openai.ChatCompletion{
-				ID: "resp-1",
-				Choices: []openai.ChatCompletionChoice{
-					{
-						Message: openai.ChatCompletionMessage{
-							Content: "Hello world",
-						},
-					},
-				},
-				Usage: openai.CompletionUsage{
-					PromptTokens:     10,
-					CompletionTokens: 20,
-				},
-			}
-
-			resp := repo.convertResponseFromOpenAI(openAIResp)
-			So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 10)
-			So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 20)
-		})
-	})
-}
-
 func TestConvertChunkFromOpenAI(t *testing.T) {
 	Convey("Test convertChunkFromOpenAI", t, func() {
 		Convey("with content", func() {
 			chunk := &openai.ChatCompletionChunk{
+				ID: "chatcmpl-1",
 				Choices: []openai.ChatCompletionChunkChoice{
 					{
 						Delta: openai.ChatCompletionChunkChoiceDelta{
@@ -671,14 +628,15 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 				},
 			}
 
-			resp := convertChunkFromOpenAI(chunk, "req-1", "msg-1")
-			So(resp.Id, ShouldEqual, "req-1")
-			So(resp.Message.Id, ShouldEqual, "msg-1")
+			resp := convertChunkFromOpenAI(chunk)
+			So(resp.Id, ShouldEqual, "chatcmpl-1")
+			So(resp.Message.Id, ShouldBeEmpty)
 			So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello")
 		})
 
 		Convey("with usage statistics", func() {
 			chunk := &openai.ChatCompletionChunk{
+				ID: "msg-1",
 				Choices: []openai.ChatCompletionChunkChoice{
 					{
 						Delta: openai.ChatCompletionChunkChoiceDelta{
@@ -692,13 +650,14 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 				},
 			}
 
-			resp := convertChunkFromOpenAI(chunk, "req-1", "msg-1")
+			resp := convertChunkFromOpenAI(chunk)
 			So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 5)
 			So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 10)
 		})
 
 		Convey("with function tool call", func() {
 			chunk := &openai.ChatCompletionChunk{
+				ID: "chatcmpl-1",
 				Choices: []openai.ChatCompletionChunkChoice{
 					{
 						Delta: openai.ChatCompletionChunkChoiceDelta{
@@ -717,14 +676,75 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 				},
 			}
 
-			resp := convertChunkFromOpenAI(chunk, "req-1", "msg-1")
-			So(resp.Id, ShouldEqual, "req-1")
-			So(resp.Message.Id, ShouldEqual, "msg-1")
+			resp := convertChunkFromOpenAI(chunk)
+			So(resp.Id, ShouldEqual, "chatcmpl-1")
+			So(resp.Message.Id, ShouldBeEmpty)
 			So(resp.Message.Contents, ShouldHaveLength, 1)
 			functionCall := resp.Message.Contents[0].GetFunctionCall()
 			So(functionCall.GetId(), ShouldEqual, "tool-1")
 			So(functionCall.GetName(), ShouldEqual, "my_func")
 			So(functionCall.GetArguments(), ShouldEqual, "{\"foo\":1}")
+		})
+	})
+}
+
+func TestConvertStatisticsFromOpenAI(t *testing.T) {
+	Convey("Test convertStatisticsFromOpenAI", t, func() {
+		Convey("with nil usage", func() {
+			result := convertStatisticsFromOpenAI(nil)
+
+			Convey("Then the result should be nil", func() {
+				So(result, ShouldBeNil)
+			})
+		})
+
+		Convey("with valid usage statistics", func() {
+			usage := &openai.CompletionUsage{
+				PromptTokens:     10,
+				CompletionTokens: 20,
+				PromptTokensDetails: openai.CompletionUsagePromptTokensDetails{
+					CachedTokens: 5,
+				},
+			}
+
+			result := convertStatisticsFromOpenAI(usage)
+
+			Convey("Then the converted statistics should have correct values", func() {
+				So(result, ShouldNotBeNil)
+				So(result.Usage, ShouldNotBeNil)
+				So(result.Usage.PromptTokens, ShouldEqual, 10)
+				So(result.Usage.CompletionTokens, ShouldEqual, 20)
+				So(result.Usage.CachedPromptTokens, ShouldEqual, 5)
+			})
+		})
+
+		Convey("with zero token counts", func() {
+			usage := &openai.CompletionUsage{
+				PromptTokens:     0,
+				CompletionTokens: 0,
+			}
+
+			result := convertStatisticsFromOpenAI(usage)
+
+			Convey("Then the converted statistics should be nil", func() {
+				So(result, ShouldBeNil)
+			})
+		})
+
+		Convey("with large token counts", func() {
+			usage := &openai.CompletionUsage{
+				PromptTokens:     4294967295, // Max uint32
+				CompletionTokens: 2147483647, // Large number
+			}
+
+			result := convertStatisticsFromOpenAI(usage)
+
+			Convey("Then the converted statistics should handle large values", func() {
+				So(result, ShouldNotBeNil)
+				So(result.Usage, ShouldNotBeNil)
+				So(result.Usage.PromptTokens, ShouldEqual, 4294967295)
+				So(result.Usage.CompletionTokens, ShouldEqual, 2147483647)
+			})
 		})
 	})
 }

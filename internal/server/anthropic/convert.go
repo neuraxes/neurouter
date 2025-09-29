@@ -15,6 +15,7 @@
 package anthropic
 
 import (
+	"encoding/base64"
 	"encoding/json"
 
 	"github.com/anthropics/anthropic-sdk-go"
@@ -34,6 +35,7 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 	}
 
 	var contents []*v1.Content
+	var toolCallID string
 
 	// Handle content from Anthropic message
 	for _, content := range message.Content {
@@ -45,19 +47,33 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 				},
 			})
 		case content.OfImage != nil:
-			var url string
-			if content.OfImage.Source.OfURL != nil {
-				url = content.OfImage.Source.OfURL.URL
-			}
-			contents = append(contents, &v1.Content{
-				Content: &v1.Content_Image{
-					Image: &v1.Image{
-						Source: &v1.Image_Url{
-							Url: url,
+			switch {
+			case content.OfImage.Source.OfURL != nil:
+				contents = append(contents, &v1.Content{
+					Content: &v1.Content_Image{
+						Image: &v1.Image{
+							Source: &v1.Image_Url{
+								Url: content.OfImage.Source.OfURL.URL,
+							},
 						},
 					},
-				},
-			})
+				})
+			case content.OfImage.Source.OfBase64 != nil:
+				// Handle base64 image source
+				data, err := base64.StdEncoding.DecodeString(content.OfImage.Source.OfBase64.Data)
+				if err != nil {
+					continue
+				}
+				contents = append(contents, &v1.Content{
+					Content: &v1.Content_Image{
+						Image: &v1.Image{
+							Source: &v1.Image_Data{
+								Data: data,
+							},
+						},
+					},
+				})
+			}
 		case content.OfToolUse != nil:
 			var args []byte
 			if content.OfToolUse.Input != nil {
@@ -74,6 +90,8 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 			})
 		case content.OfToolResult != nil:
 			// Handle tool results
+			role = v1.Role_TOOL
+			toolCallID = content.OfToolResult.ToolUseID
 			for _, resultContent := range content.OfToolResult.Content {
 				if resultContent.OfText != nil {
 					contents = append(contents, &v1.Content{
@@ -87,8 +105,9 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 	}
 
 	return &v1.Message{
-		Role:     role,
-		Contents: contents,
+		Role:       role,
+		Contents:   contents,
+		ToolCallId: toolCallID,
 	}
 }
 

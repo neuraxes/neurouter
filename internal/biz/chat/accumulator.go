@@ -26,7 +26,7 @@ func (a *ChatRespAccumulator) Accumulate(resp *v1.ChatResp) {
 	}
 
 	a.resp.Id = resp.Id
-	a.resp.Model += resp.Model
+	a.resp.Model = resp.Model
 
 	// Accumulate message content
 	a.accumulateMessage(resp.Message)

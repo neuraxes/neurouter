@@ -51,7 +51,7 @@ message Message {
 }
 
 message ChatReq {
-  // The unique identifier of the request
+  // The unique identifier of the chat
   string id = 1;
   // The requested model to use
   string model = 2;
@@ -64,7 +64,7 @@ message ChatReq {
 }
 
 message ChatResp {
-  // The unique identifier of the request
+  // The unique identifier of the chat
   string id = 1;
   // The model used to generate the response
   string model = 2;

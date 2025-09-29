@@ -46,13 +46,14 @@ const mockChatCompletionResp = `{
     "id": "1c416330-2dca-4478-a1ac-1257d6512c7d",
     "object": "chat.completion",
     "created": 1758977545,
-    "model": "deepseek-chat",
+    "model": "deepseek-reasoner",
     "choices": [
         {
             "index": 0,
             "message": {
                 "role": "assistant",
-                "content": "Hello! How can I help you today?"
+                "content": "Hello! How can I help you today?",
+                "reasoning_content": "Hmm, the user just said \"Hello!\" with an exclamation mark, so they seem cheerful and friendly. This is a simple greeting, so no complex analysis needed. \n\nI should mirror their friendly tone while keeping it warm and professional. A straightforward welcoming response would work best here - acknowledge the greeting, express readiness to help, and leave the conversation open-ended for them to steer. \n\nNo need to overthink this. A simple \"Hello!\" in return, followed by a standard offer of assistance, covers all bases. The exclamation mark matches their energy level appropriately."
             },
             "logprobs": null,
             "finish_reason": "stop"
@@ -71,27 +72,39 @@ const mockChatCompletionResp = `{
     "system_fingerprint": "fp_f253fc19d1_prod0820_fp8_kvcache"
 }`
 
-const mockChatCompletionStreamResp = `data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}]}
+const mockChatCompletionStreamResp = `data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"role":"assistant","content":null,"reasoning_content":""},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":null,"reasoning_content":"Hmm, the user just said \"Hello!\" with an exclamation mark, which suggests a friendly and enthusiastic tone."},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"!"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":null,"reasoning_content":" This is a simple greeting, so no complex analysis is needed."},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" How"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":null,"reasoning_content":" \n\n"},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" can"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":null,"reasoning_content":"The best response would be to mirror their energy with an equally warm and welcoming reply"},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" I"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":null,"reasoning_content":"."},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" help"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"Hello","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" you"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"!","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" today"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" 😊","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"?"},"logprobs":null,"finish_reason":null}]}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" It","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
 
-data: {"id":"71b67039-9a15-4b3d-be53-2d1ce5847f2f","object":"chat.completion.chunk","created":1758989659,"model":"deepseek-chat","system_fingerprint":"fp_f253fc19d1_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":""},"logprobs":null,"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":9,"total_tokens":21,"prompt_tokens_details":{"cached_tokens":0},"prompt_cache_hit_tokens":0,"prompt_cache_miss_tokens":12}}
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"'s","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" wonderful","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" to","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" meet","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":" you","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"!","reasoning_content":null},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"f802c271-d4da-4773-b8b3-b1e4dfbf14f3","object":"chat.completion.chunk","created":1759299469,"model":"deepseek-reasoner","system_fingerprint":"fp_ffc7281d48_prod0820_fp8_kvcache","choices":[{"index":0,"delta":{"content":"","reasoning_content":null},"logprobs":null,"finish_reason":"stop"}],"usage":{"prompt_tokens":6,"completion_tokens":169,"total_tokens":175,"prompt_tokens_details":{"cached_tokens":0},"completion_tokens_details":{"reasoning_tokens":117},"prompt_cache_hit_tokens":1,"prompt_cache_miss_tokens":5}}
 
 data: [DONE]
 
@@ -235,11 +248,12 @@ func TestCreateChatCompletion(t *testing.T) {
 				So(resp.ID, ShouldEqual, "1c416330-2dca-4478-a1ac-1257d6512c7d")
 				So(resp.Object, ShouldEqual, "chat.completion")
 				So(resp.Created, ShouldEqual, 1758977545)
-				So(resp.Model, ShouldEqual, "deepseek-chat")
+				So(resp.Model, ShouldEqual, "deepseek-reasoner")
 				So(resp.Choices, ShouldHaveLength, 1)
 				So(resp.Choices[0].Index, ShouldEqual, 0)
 				So(resp.Choices[0].Message.Role, ShouldEqual, "assistant")
 				So(resp.Choices[0].Message.Content, ShouldEqual, "Hello! How can I help you today?")
+				So(resp.Choices[0].Message.ReasoningContent, ShouldEqual, "Hmm, the user just said \"Hello!\" with an exclamation mark, so they seem cheerful and friendly. This is a simple greeting, so no complex analysis needed. \n\nI should mirror their friendly tone while keeping it warm and professional. A straightforward welcoming response would work best here - acknowledge the greeting, express readiness to help, and leave the conversation open-ended for them to steer. \n\nNo need to overthink this. A simple \"Hello!\" in return, followed by a standard offer of assistance, covers all bases. The exclamation mark matches their energy level appropriately.")
 				So(resp.Choices[0].LogProbs, ShouldBeNil)
 				So(resp.Choices[0].FinishReason, ShouldEqual, "stop")
 				So(resp.Usage.PromptTokens, ShouldEqual, 12)

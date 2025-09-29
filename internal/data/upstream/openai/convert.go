@@ -33,9 +33,10 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 	{
 		var sb strings.Builder
 		for _, content := range message.Contents {
-			if textContent, ok := content.GetContent().(*v1.Content_Text); ok {
-				sb.WriteString(textContent.Text)
-			} else {
+			switch c := content.Content.(type) {
+			case *v1.Content_Text:
+				sb.WriteString(c.Text)
+			case *v1.Content_Image:
 				isPlainText = false
 			}
 		}
@@ -259,6 +260,7 @@ func toolFunctionParametersToOpenAI(parameters *v1.Schema) openai.FunctionParame
 }
 
 // convertMessageFromOpenAI converts an OpenAI chat completion message to an internal message.
+// The message ID will be generated using UUID.
 func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
 	message := &v1.Message{
 		Id:   uuid.NewString(),
@@ -291,39 +293,19 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 	return message
 }
 
-// convertResponseFromOpenAI converts an OpenAI chat completion to an internal response.
-func (r *upstream) convertResponseFromOpenAI(res *openai.ChatCompletion) *entity.ChatResp {
-	resp := &entity.ChatResp{
-		Id:      res.ID,
-		Message: r.convertMessageFromOpenAI(&res.Choices[0].Message),
-	}
-
-	if res.Usage.PromptTokens != 0 || res.Usage.CompletionTokens != 0 {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:     uint32(res.Usage.PromptTokens),
-				CompletionTokens: uint32(res.Usage.CompletionTokens),
-			},
-		}
-	}
-
-	return resp
-}
-
 // convertChunkFromOpenAI converts an OpenAI chat completion chunk to an internal response.
-func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk, requestID string, messageID string) *entity.ChatResp {
+func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp {
 	resp := &entity.ChatResp{
-		Id: requestID,
+		Id:    chunk.ID,
+		Model: chunk.Model,
 	}
 
 	if len(chunk.Choices) > 0 {
 		c := chunk.Choices[0]
-		resp.Message = &v1.Message{
-			Id:   messageID,
-			Role: v1.Role_MODEL,
-		}
+		var contents []*v1.Content
+
 		if c.Delta.Content != "" {
-			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+			contents = append(contents, &v1.Content{
 				Content: &v1.Content_Text{
 					Text: c.Delta.Content,
 				},
@@ -331,31 +313,39 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk, requestID string,
 		}
 		if c.Delta.ToolCalls != nil {
 			for _, toolCall := range c.Delta.ToolCalls {
-				switch toolCall.Type {
-				default:
-					// Only function tool calls are supported by OpenAI
-					resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-						Content: &v1.Content_FunctionCall{
-							FunctionCall: &v1.FunctionCall{
-								Id:        toolCall.ID,
-								Name:      toolCall.Function.Name,
-								Arguments: toolCall.Function.Arguments,
-							},
+				contents = append(contents, &v1.Content{
+					Content: &v1.Content_FunctionCall{
+						FunctionCall: &v1.FunctionCall{
+							Id:        toolCall.ID,
+							Name:      toolCall.Function.Name,
+							Arguments: toolCall.Function.Arguments,
 						},
-					})
-				}
+					},
+				})
 			}
 		}
-	}
 
-	if chunk.Usage.PromptTokens != 0 || chunk.Usage.CompletionTokens != 0 {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:     uint32(chunk.Usage.PromptTokens),
-				CompletionTokens: uint32(chunk.Usage.CompletionTokens),
-			},
+		resp.Message = &v1.Message{
+			Role:     v1.Role_MODEL,
+			Contents: contents,
 		}
 	}
 
+	resp.Statistics = convertStatisticsFromOpenAI(&chunk.Usage)
+
 	return resp
+}
+
+func convertStatisticsFromOpenAI(usage *openai.CompletionUsage) *v1.Statistics {
+	if usage == nil || (usage.PromptTokens == 0 && usage.CompletionTokens == 0 && usage.PromptTokensDetails.CachedTokens == 0) {
+		return nil
+	}
+
+	return &v1.Statistics{
+		Usage: &v1.Statistics_Usage{
+			PromptTokens:       uint32(usage.PromptTokens),
+			CompletionTokens:   uint32(usage.CompletionTokens),
+			CachedPromptTokens: uint32(usage.PromptTokensDetails.CachedTokens),
+		},
+	}
 }

@@ -38,7 +38,7 @@ func TestNewDeepSeekChatRepo(t *testing.T) {
 		logger := log.DefaultLogger
 
 		Convey("When NewDeepSeekChatRepo is called", func() {
-			repo, err := NewDeepSeekChatRepo(config, logger)
+			repo, err := newDeepSeekChatRepo(config, logger)
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)
@@ -52,7 +52,7 @@ func TestNewDeepSeekChatRepo(t *testing.T) {
 
 		Convey("When NewDeepSeekChatRepoWithClient is called", func() {
 			mockClient := &mockHTTPClient{}
-			repo, err := NewDeepSeekChatRepoWithClient(config, logger, mockClient)
+			repo, err := newDeepSeekChatRepoWithClient(config, logger, mockClient)
 
 			Convey("Then it should return a new upstream with the custom client", func() {
 				So(err, ShouldBeNil)
@@ -72,7 +72,7 @@ func TestChat(t *testing.T) {
 			ApiKey:  "test-key",
 		}
 		mockClient := &mockHTTPClient{}
-		repo, err := NewDeepSeekChatRepoWithClient(config, log.DefaultLogger, mockClient)
+		repo, err := newDeepSeekChatRepoWithClient(config, log.DefaultLogger, mockClient)
 		So(err, ShouldBeNil)
 
 		chatRepo, ok := repo.(*upstream)
@@ -109,13 +109,15 @@ func TestChat(t *testing.T) {
 			Convey("Then it should return a valid response and no error", func() {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
-				So(resp.Id, ShouldEqual, "test-req-id")
-				So(resp.Model, ShouldEqual, "deepseek-chat")
+				So(resp.Id, ShouldEqual, "1c416330-2dca-4478-a1ac-1257d6512c7d")
+				So(resp.Model, ShouldEqual, "deepseek-reasoner")
 				So(resp.Message, ShouldNotBeNil)
-				So(resp.Message.Id, ShouldEqual, "1c416330-2dca-4478-a1ac-1257d6512c7d")
+				So(resp.Message.Id, ShouldHaveLength, 36)
+				So(resp.Message.Id, ShouldNotEqual, "1c416330-2dca-4478-a1ac-1257d6512c7d")
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
-				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello! How can I help you today?")
+				So(len(resp.Message.Contents), ShouldEqual, 2)
+				So(resp.Message.Contents[1].GetText(), ShouldEqual, "Hello! How can I help you today?")
+				So(resp.Message.Contents[0].GetThinking(), ShouldEqual, "Hmm, the user just said \"Hello!\" with an exclamation mark, so they seem cheerful and friendly. This is a simple greeting, so no complex analysis needed. \n\nI should mirror their friendly tone while keeping it warm and professional. A straightforward welcoming response would work best here - acknowledge the greeting, express readiness to help, and leave the conversation open-ended for them to steer. \n\nNo need to overthink this. A simple \"Hello!\" in return, followed by a standard offer of assistance, covers all bases. The exclamation mark matches their energy level appropriately.")
 				So(resp.Statistics, ShouldNotBeNil)
 				So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 12)
 				So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 9)
@@ -139,18 +141,66 @@ func TestChat(t *testing.T) {
 
 var mockChatStreamResp = []*entity.ChatResp{
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
 			Role: v1.Role_MODEL,
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Content: &v1.Content_Thinking{Thinking: "Hmm, the user just said \"Hello!\" with an exclamation mark, which suggests a friendly and enthusiastic tone."},
+			}},
+		},
+	},
+	{
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
+		Message: &v1.Message{
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Content: &v1.Content_Thinking{Thinking: " This is a simple greeting, so no complex analysis is needed."},
+			}},
+		},
+	},
+	{
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
+		Message: &v1.Message{
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Content: &v1.Content_Thinking{Thinking: " \n\n"},
+			}},
+		},
+	},
+	{
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
+		Message: &v1.Message{
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Content: &v1.Content_Thinking{Thinking: "The best response would be to mirror their energy with an equally warm and welcoming reply"},
+			}},
+		},
+	},
+	{
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
+		Message: &v1.Message{
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Content: &v1.Content_Thinking{Thinking: "."},
+			}},
+		},
+	},
+	{
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
+		Message: &v1.Message{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Content: &v1.Content_Text{Text: "Hello"},
@@ -158,10 +208,9 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Content: &v1.Content_Text{Text: "!"},
@@ -169,54 +218,69 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Text{Text: " How"},
+				Content: &v1.Content_Text{Text: " 😊"},
 			}},
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Text{Text: " can"},
+				Content: &v1.Content_Text{Text: " It"},
 			}},
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Text{Text: " I"},
+				Content: &v1.Content_Text{Text: "'s"},
 			}},
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Text{Text: " help"},
+				Content: &v1.Content_Text{Text: " wonderful"},
 			}},
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Content: &v1.Content_Text{Text: " to"},
+			}},
+		},
+	},
+	{
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
+		Message: &v1.Message{
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Content: &v1.Content_Text{Text: " meet"},
+			}},
+		},
+	},
+	{
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
+		Message: &v1.Message{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Content: &v1.Content_Text{Text: " you"},
@@ -224,38 +288,26 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Text{Text: " today"},
+				Content: &v1.Content_Text{Text: "!"},
 			}},
 		},
 	},
 	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
+		Id:    "f802c271-d4da-4773-b8b3-b1e4dfbf14f3",
+		Model: "deepseek-reasoner",
 		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Content: &v1.Content_Text{Text: "?"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "deepseek-chat",
-		Message: &v1.Message{
-			Id:   "71b67039-9a15-4b3d-be53-2d1ce5847f2f",
 			Role: v1.Role_MODEL,
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     12,
-				CompletionTokens: 9,
+				PromptTokens:       6,
+				CompletionTokens:   169,
+				CachedPromptTokens: 1,
 			},
 		},
 	},
@@ -268,7 +320,7 @@ func TestChatStream(t *testing.T) {
 			ApiKey:  "test-key",
 		}
 		mockClient := &mockHTTPClient{}
-		repo, err := NewDeepSeekChatRepoWithClient(config, log.DefaultLogger, mockClient)
+		repo, err := newDeepSeekChatRepoWithClient(config, log.DefaultLogger, mockClient)
 		So(err, ShouldBeNil)
 
 		chatRepo, ok := repo.(*upstream)
@@ -306,18 +358,29 @@ func TestChatStream(t *testing.T) {
 				So(streamClient, ShouldNotBeNil)
 				defer streamClient.Close()
 
+				var messageID string
 				var responses []*entity.ChatResp
 				for {
 					resp, err := streamClient.Recv()
 					if err == io.EOF {
 						break
 					}
+
 					So(err, ShouldBeNil)
 					So(resp, ShouldNotBeNil)
-					So(resp.Id, ShouldEqual, "test-stream-req-id")
-					So(resp.Model, ShouldEqual, "deepseek-chat")
+					So(resp.Id, ShouldEqual, "f802c271-d4da-4773-b8b3-b1e4dfbf14f3")
+					So(resp.Model, ShouldEqual, "deepseek-reasoner")
 
+					messageID = resp.Message.Id
 					responses = append(responses, resp)
+				}
+
+				So(messageID, ShouldHaveLength, 36)
+				So(messageID, ShouldNotEqual, "f802c271-d4da-4773-b8b3-b1e4dfbf14f3")
+				So(len(responses), ShouldEqual, len(mockChatStreamResp))
+
+				for _, resp := range mockChatStreamResp {
+					resp.Message.Id = messageID
 				}
 
 				for i, resp := range responses {
@@ -348,7 +411,7 @@ func TestChatWithToolCall(t *testing.T) {
 			ApiKey:  "test-key",
 		}
 		mockClient := &mockHTTPClient{}
-		repo, err := NewDeepSeekChatRepoWithClient(config, log.DefaultLogger, mockClient)
+		repo, err := newDeepSeekChatRepoWithClient(config, log.DefaultLogger, mockClient)
 		So(err, ShouldBeNil)
 
 		chatRepo, ok := repo.(*upstream)
@@ -412,10 +475,11 @@ func TestChatWithToolCall(t *testing.T) {
 			Convey("Then it should return a valid response with tool calls and no error", func() {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
-				So(resp.Id, ShouldEqual, "test-tool-call-req-id")
+				So(resp.Id, ShouldEqual, "fd8b3b63-8112-403f-aa52-57a46f320424")
 				So(resp.Model, ShouldEqual, "deepseek-chat")
 				So(resp.Message, ShouldNotBeNil)
-				So(resp.Message.Id, ShouldEqual, "fd8b3b63-8112-403f-aa52-57a46f320424")
+				So(resp.Message.Id, ShouldHaveLength, 36)
+				So(resp.Message.Id, ShouldNotEqual, "fd8b3b63-8112-403f-aa52-57a46f320424")
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(len(resp.Message.Contents), ShouldEqual, 2)
 				So(resp.Message.Contents[0].GetText(), ShouldEqual, "I'll check the current weather in Tokyo for you.")
@@ -434,117 +498,104 @@ func TestChatWithToolCall(t *testing.T) {
 
 var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "I"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "'ll"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " check"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " the"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " current"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " weather"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " in"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " Tokyo"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " for"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " you"}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:       "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role:     v1.Role_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "."}}},
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -559,10 +610,9 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -576,10 +626,9 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -593,10 +642,9 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -610,10 +658,9 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -627,10 +674,9 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -644,10 +690,9 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -661,10 +706,9 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "test-stream-tool-call-req-id",
+		Id:    "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 		Model: "deepseek-chat",
 		Message: &v1.Message{
-			Id:   "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70",
 			Role: v1.Role_MODEL,
 		},
 		Statistics: &v1.Statistics{
@@ -684,7 +728,7 @@ func TestChatStreamWithToolCall(t *testing.T) {
 			ApiKey:  "test-key",
 		}
 		mockClient := &mockHTTPClient{}
-		repo, err := NewDeepSeekChatRepoWithClient(config, log.DefaultLogger, mockClient)
+		repo, err := newDeepSeekChatRepoWithClient(config, log.DefaultLogger, mockClient)
 		So(err, ShouldBeNil)
 
 		chatRepo, ok := repo.(*upstream)
@@ -750,6 +794,7 @@ func TestChatStreamWithToolCall(t *testing.T) {
 				So(streamClient, ShouldNotBeNil)
 				defer streamClient.Close()
 
+				var messageID string
 				var responses []*entity.ChatResp
 				for {
 					resp, err := streamClient.Recv()
@@ -758,14 +803,22 @@ func TestChatStreamWithToolCall(t *testing.T) {
 					}
 					So(err, ShouldBeNil)
 					So(resp, ShouldNotBeNil)
+					So(resp.Id, ShouldEqual, "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70")
+					So(resp.Model, ShouldEqual, "deepseek-chat")
+
+					messageID = resp.Message.Id
 					responses = append(responses, resp)
 				}
 
+				So(messageID, ShouldHaveLength, 36)
+				So(messageID, ShouldNotEqual, "1986f9e8-0b5d-4331-88da-d2d2d8dd7a70")
 				So(len(responses), ShouldEqual, len(mockChatStreamWithToolCallResp))
+
+				for _, resp := range mockChatStreamWithToolCallResp {
+					resp.Message.Id = messageID
+				}
+
 				for i, resp := range responses {
-					if !proto.Equal(resp, mockChatStreamWithToolCallResp[i]) {
-						t.Errorf("Response %d does not match expected.\nGot: %+v\nExpected: %+v", i, resp, mockChatStreamWithToolCallResp[i])
-					}
 					So(proto.Equal(resp, mockChatStreamWithToolCallResp[i]), ShouldBeTrue)
 				}
 			})

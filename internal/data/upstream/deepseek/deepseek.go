@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/google/uuid"
 	"github.com/openai/openai-go/packages/ssestream"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -35,15 +36,15 @@ type upstream struct {
 }
 
 func NewDeepSeekChatRepoFactory() repository.UpstreamFactory[conf.DeepSeekConfig] {
-	return NewDeepSeekChatRepo
+	return newDeepSeekChatRepo
 }
 
-func NewDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) (repository.ChatRepo, error) {
-	return NewDeepSeekChatRepoWithClient(config, logger, nil)
+func newDeepSeekChatRepo(config *conf.DeepSeekConfig, logger log.Logger) (repository.ChatRepo, error) {
+	return newDeepSeekChatRepoWithClient(config, logger, nil)
 }
 
-// NewDeepSeekChatRepoWithClient creates a repository.ChatRepo with a custom HTTP client.
-func NewDeepSeekChatRepoWithClient(config *conf.DeepSeekConfig, logger log.Logger, client httpClient) (repository.ChatRepo, error) {
+// newDeepSeekChatRepoWithClient creates a repository.ChatRepo with a custom HTTP client.
+func newDeepSeekChatRepoWithClient(config *conf.DeepSeekConfig, logger log.Logger, client httpClient) (repository.ChatRepo, error) {
 	// Trim the trailing slash from the base URL to avoid double slashes
 	config.BaseUrl = strings.TrimSuffix(config.BaseUrl, "/")
 
@@ -67,9 +68,9 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	}
 
 	resp = &entity.ChatResp{
-		Id:         req.Id,
+		Id:         deepSeekResp.ID,
 		Model:      deepSeekResp.Model,
-		Message:    r.convertMessageFromDeepSeek(deepSeekResp.ID, deepSeekResp.Choices[0].Message),
+		Message:    r.convertMessageFromDeepSeek(deepSeekResp.Choices[0].Message),
 		Statistics: convertStatisticsFromDeepSeek(deepSeekResp.Usage),
 	}
 
@@ -77,8 +78,9 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 }
 
 type deepSeekChatStreamClient struct {
-	req      *entity.ChatReq
-	upstream *ssestream.Stream[ChatStreamResponse] // Reuse SSE Stream from OpenAI
+	req       *entity.ChatReq
+	upstream  *ssestream.Stream[ChatStreamResponse] // Reuse SSE Stream from OpenAI
+	messageID string
 }
 
 func (c *deepSeekChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
@@ -91,8 +93,10 @@ func (c *deepSeekChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 	}
 
 	chunk := c.upstream.Current()
+	resp = convertStreamRespFromDeepSeek(&chunk)
+	resp.Message.Id = c.messageID
 
-	return convertStreamRespFromDeepSeek(c.req.Id, &chunk), nil
+	return
 }
 
 func (c *deepSeekChatStreamClient) Close() error {
@@ -112,8 +116,9 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (client 
 	}
 
 	client = &deepSeekChatStreamClient{
-		req:      req,
-		upstream: ssestream.NewStream[ChatStreamResponse](ssestream.NewDecoder(resp), err),
+		req:       req,
+		upstream:  ssestream.NewStream[ChatStreamResponse](ssestream.NewDecoder(resp), err),
+		messageID: uuid.NewString(),
 	}
 	return
 }

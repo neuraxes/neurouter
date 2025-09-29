@@ -292,10 +292,10 @@ func TestConvertMessageFromDeepSeek(t *testing.T) {
 				Content: "Hello! How can I help you today?",
 			}
 
-			result := repo.convertMessageFromDeepSeek("msg-1", deepSeekMessage)
+			result := repo.convertMessageFromDeepSeek(deepSeekMessage)
 
 			Convey("Then the converted message should have correct role and content", func() {
-				So(result.Id, ShouldEqual, "msg-1")
+				So(result.Id, ShouldHaveLength, 36)
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
 				So(len(result.Contents), ShouldEqual, 1)
 				So(result.Contents[0].GetText(), ShouldEqual, "Hello! How can I help you today?")
@@ -309,10 +309,10 @@ func TestConvertMessageFromDeepSeek(t *testing.T) {
 				ReasoningContent: "Let me think about this step by step...",
 			}
 
-			result := repo.convertMessageFromDeepSeek("msg-2", deepSeekMessage)
+			result := repo.convertMessageFromDeepSeek(deepSeekMessage)
 
 			Convey("Then the converted message should have both thinking and text content", func() {
-				So(result.Id, ShouldEqual, "msg-2")
+				So(result.Id, ShouldHaveLength, 36)
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
 				So(len(result.Contents), ShouldEqual, 2)
 				So(result.Contents[0].GetThinking(), ShouldEqual, "Let me think about this step by step...")
@@ -335,10 +335,10 @@ func TestConvertMessageFromDeepSeek(t *testing.T) {
 				},
 			}
 
-			result := repo.convertMessageFromDeepSeek("msg-3", deepSeekMessage)
+			result := repo.convertMessageFromDeepSeek(deepSeekMessage)
 
 			Convey("Then the converted message should have function call content", func() {
-				So(result.Id, ShouldEqual, "msg-3")
+				So(result.Id, ShouldHaveLength, 36)
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
 				So(len(result.Contents), ShouldEqual, 1)
 				funcCall := result.Contents[0].GetFunctionCall()
@@ -356,10 +356,10 @@ func TestConvertMessageFromDeepSeek(t *testing.T) {
 				ToolCallID: "call-1",
 			}
 
-			result := repo.convertMessageFromDeepSeek("msg-4", deepSeekMessage)
+			result := repo.convertMessageFromDeepSeek(deepSeekMessage)
 
 			Convey("Then the converted message should have correct tool response", func() {
-				So(result.Id, ShouldEqual, "msg-4")
+				So(result.Id, ShouldHaveLength, 36)
 				So(result.Role, ShouldEqual, v1.Role_TOOL)
 				So(result.ToolCallId, ShouldEqual, "call-1")
 				So(len(result.Contents), ShouldEqual, 1)
@@ -373,7 +373,7 @@ func TestConvertMessageFromDeepSeek(t *testing.T) {
 				Content: "This should not work",
 			}
 
-			result := repo.convertMessageFromDeepSeek("msg-5", deepSeekMessage)
+			result := repo.convertMessageFromDeepSeek(deepSeekMessage)
 
 			Convey("Then the result should be nil", func() {
 				So(result, ShouldBeNil)
@@ -397,13 +397,13 @@ func TestConvertStreamRespFromDeepSeek(t *testing.T) {
 				},
 			}
 
-			result := convertStreamRespFromDeepSeek("req-1", chunk)
+			result := convertStreamRespFromDeepSeek(chunk)
 
 			Convey("Then the converted response should have correct structure", func() {
-				So(result.Id, ShouldEqual, "req-1")
+				So(result.Id, ShouldEqual, "chatcmpl-123")
 				So(result.Model, ShouldEqual, "deepseek-chat")
 				So(result.Message, ShouldNotBeNil)
-				So(result.Message.Id, ShouldEqual, "chatcmpl-123")
+				So(result.Message.Id, ShouldBeEmpty)
 				So(result.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(len(result.Message.Contents), ShouldEqual, 1)
 				So(result.Message.Contents[0].GetText(), ShouldEqual, "Hello")
@@ -424,10 +424,10 @@ func TestConvertStreamRespFromDeepSeek(t *testing.T) {
 				},
 			}
 
-			result := convertStreamRespFromDeepSeek("req-2", chunk)
+			result := convertStreamRespFromDeepSeek(chunk)
 
 			Convey("Then the converted response should have both thinking and text content", func() {
-				So(result.Id, ShouldEqual, "req-2")
+				So(result.Id, ShouldEqual, "chatcmpl-456")
 				So(result.Model, ShouldEqual, "deepseek-reasoner")
 				So(result.Message, ShouldNotBeNil)
 				So(len(result.Message.Contents), ShouldEqual, 2)
@@ -458,13 +458,13 @@ func TestConvertStreamRespFromDeepSeek(t *testing.T) {
 				},
 			}
 
-			result := convertStreamRespFromDeepSeek("req-tools", chunk)
+			result := convertStreamRespFromDeepSeek(chunk)
 
 			Convey("Then the converted response should include function call content", func() {
-				So(result.Id, ShouldEqual, "req-tools")
+				So(result.Id, ShouldEqual, "chatcmpl-tools")
 				So(result.Model, ShouldEqual, "deepseek-chat")
 				So(result.Message, ShouldNotBeNil)
-				So(result.Message.Id, ShouldEqual, "chatcmpl-tools")
+				So(result.Message.Id, ShouldBeEmpty)
 				So(result.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(len(result.Message.Contents), ShouldEqual, 1)
 				fc := result.Message.Contents[0].GetFunctionCall()
@@ -492,10 +492,10 @@ func TestConvertStreamRespFromDeepSeek(t *testing.T) {
 				},
 			}
 
-			result := convertStreamRespFromDeepSeek("req-3", chunk)
+			result := convertStreamRespFromDeepSeek(chunk)
 
 			Convey("Then the converted response should have usage statistics", func() {
-				So(result.Id, ShouldEqual, "req-3")
+				So(result.Id, ShouldEqual, "chatcmpl-789")
 				So(result.Model, ShouldEqual, "deepseek-chat")
 				So(result.Message, ShouldNotBeNil)
 				So(len(result.Message.Contents), ShouldEqual, 1)
