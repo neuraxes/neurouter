@@ -271,3 +271,42 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 		So(msg.Contents, ShouldBeEmpty)
 	})
 }
+
+func TestConvertStatisticsFromGoogle(t *testing.T) {
+	Convey("convertStatisticsFromGoogle should convert usage metadata", t, func() {
+		usage := &genai.UsageMetadata{
+			PromptTokenCount:        100,
+			CandidatesTokenCount:    50,
+			CachedContentTokenCount: 25,
+		}
+
+		stats := convertStatisticsFromGoogle(usage)
+
+		So(stats, ShouldNotBeNil)
+		So(stats.Usage, ShouldNotBeNil)
+		So(stats.Usage.PromptTokens, ShouldEqual, 100)
+		So(stats.Usage.CompletionTokens, ShouldEqual, 50)
+		So(stats.Usage.CachedPromptTokens, ShouldEqual, 25)
+	})
+
+	Convey("convertStatisticsFromGoogle should return nil for nil input", t, func() {
+		stats := convertStatisticsFromGoogle(nil)
+		So(stats, ShouldBeNil)
+	})
+
+	Convey("convertStatisticsFromGoogle should handle zero values", t, func() {
+		usage := &genai.UsageMetadata{
+			PromptTokenCount:        0,
+			CandidatesTokenCount:    0,
+			CachedContentTokenCount: 0,
+		}
+
+		stats := convertStatisticsFromGoogle(usage)
+
+		So(stats, ShouldNotBeNil)
+		So(stats.Usage, ShouldNotBeNil)
+		So(stats.Usage.PromptTokens, ShouldEqual, 0)
+		So(stats.Usage.CompletionTokens, ShouldEqual, 0)
+		So(stats.Usage.CachedPromptTokens, ShouldEqual, 0)
+	})
+}

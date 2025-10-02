@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/generative-ai-go/genai"
@@ -26,7 +27,6 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -43,7 +43,19 @@ func NewGoogleFactory() repository.UpstreamFactory[conf.GoogleConfig] {
 }
 
 func newGoogleUpstream(config *conf.GoogleConfig, logger log.Logger) (repo repository.ChatRepo, err error) {
-	client, err := genai.NewClient(context.Background(), option.WithAPIKey(config.ApiKey))
+	return newGoogleUpstreamWithClient(config, nil, logger)
+}
+
+func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Client, logger log.Logger) (repo repository.ChatRepo, err error) {
+	options := []option.ClientOption{
+		option.WithAPIKey(config.ApiKey),
+	}
+
+	if httpClient != nil {
+		options = append(options, option.WithHTTPClient(httpClient))
+	}
+
+	client, err := genai.NewClient(context.Background(), options...)
 	if err != nil {
 		return
 	}
@@ -59,7 +71,7 @@ func newGoogleUpstream(config *conf.GoogleConfig, logger log.Logger) (repo repos
 func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	messageLen := len(req.Messages)
 	if messageLen == 0 {
-		return nil, fmt.Errorf("no messages")
+		return nil, fmt.Errorf("request has no message")
 	}
 
 	model := r.client.GenerativeModel(req.Model)
@@ -73,36 +85,29 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 
 	// Send the last message
 	lastMsg := convertMessageToGoogle(req.Messages[len(req.Messages)-1])
-	res, err := cs.SendMessage(ctx, lastMsg.Parts...)
+	googleResp, err := cs.SendMessage(ctx, lastMsg.Parts...)
 	if err != nil {
 		return
 	}
 
-	message := convertMessageFromGoogle(res.Candidates[0].Content)
 	resp = &entity.ChatResp{
-		Id:      req.Id,
-		Message: message,
+		Id:         req.Id,
+		Model:      req.Model,
+		Message:    convertMessageFromGoogle(googleResp.Candidates[0].Content),
+		Statistics: convertStatisticsFromGoogle(googleResp.UsageMetadata),
 	}
 
-	if res.UsageMetadata != nil {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:     uint32(res.UsageMetadata.PromptTokenCount),
-				CompletionTokens: uint32(res.UsageMetadata.CandidatesTokenCount),
-			},
-		}
-	}
 	return
 }
 
 type googleChatStreamClient struct {
-	id       string
-	req      *entity.ChatReq
-	upstream *genai.GenerateContentResponseIterator
+	req       *entity.ChatReq
+	upstream  *genai.GenerateContentResponseIterator
+	messageID string
 }
 
 func (c *googleChatStreamClient) Recv() (*entity.ChatResp, error) {
-	res, err := c.upstream.Next()
+	googleResp, err := c.upstream.Next()
 	if errors.Is(err, iterator.Done) {
 		return nil, io.EOF
 	}
@@ -110,28 +115,18 @@ func (c *googleChatStreamClient) Recv() (*entity.ChatResp, error) {
 		return nil, err
 	}
 
-	if len(res.Candidates) == 0 {
-		return nil, io.EOF
-	}
-
-	message := convertMessageFromGoogle(res.Candidates[0].Content)
-	message.Id = c.id
-
 	resp := &entity.ChatResp{
 		Id:      c.req.Id,
-		Message: message,
+		Model:   c.req.Model,
+		Message: convertMessageFromGoogle(googleResp.Candidates[0].Content),
 	}
+	resp.Message.Id = c.messageID
 
 	// Only send for last chunk
-	if res.UsageMetadata != nil && res.UsageMetadata.CandidatesTokenCount != 0 {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:       uint32(res.UsageMetadata.PromptTokenCount),
-				CompletionTokens:   uint32(res.UsageMetadata.CandidatesTokenCount),
-				CachedPromptTokens: uint32(res.UsageMetadata.CachedContentTokenCount),
-			},
-		}
+	if googleResp.UsageMetadata != nil && googleResp.UsageMetadata.CandidatesTokenCount != 0 {
+		resp.Statistics = convertStatisticsFromGoogle(googleResp.UsageMetadata)
 	}
+
 	return resp, nil
 }
 
@@ -159,9 +154,9 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 	iter := cs.SendMessageStream(ctx, lastMsg.Parts...)
 
 	return &googleChatStreamClient{
-		id:       uuid.NewString(),
-		req:      req,
-		upstream: iter,
+		req:       req,
+		upstream:  iter,
+		messageID: uuid.NewString(),
 	}, nil
 }
 

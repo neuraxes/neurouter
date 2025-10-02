@@ -106,6 +106,10 @@ func convertContentToGoogle(content *v1.Content) genai.Part {
 		return genai.Text(c.Text)
 	case *v1.Content_Image:
 		switch source := c.Image.Source.(type) {
+		case *v1.Image_Url:
+			// TODO: Download the image.
+			// Google GenAI API does not support image URL.
+			return nil
 		case *v1.Image_Data:
 			return genai.ImageData(inferImageType(source.Data), source.Data)
 		default:
@@ -196,4 +200,19 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	}
 
 	return message
+}
+
+// convertStatisticsFromGoogle converts Google UsageMetadata to v1.Statistics
+func convertStatisticsFromGoogle(usage *genai.UsageMetadata) *v1.Statistics {
+	if usage == nil {
+		return nil
+	}
+
+	return &v1.Statistics{
+		Usage: &v1.Statistics_Usage{
+			PromptTokens:       uint32(usage.PromptTokenCount),
+			CompletionTokens:   uint32(usage.CandidatesTokenCount),
+			CachedPromptTokens: uint32(usage.CachedContentTokenCount),
+		},
+	}
 }
