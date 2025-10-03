@@ -40,11 +40,11 @@ func NewOpenAIFactory() repository.UpstreamFactory[conf.OpenAIConfig] {
 }
 
 func newOpenAIUpstream(config *conf.OpenAIConfig, logger log.Logger) (repository.ChatRepo, error) {
-	return newOpenAIUpstreamWithClient(config, logger, nil)
+	return newOpenAIUpstreamWithClient(config, nil, logger)
 }
 
 // newOpenAIUpstreamWithClient creates a new OpenAI upstream with a custom HTTP client for testing.
-func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, logger log.Logger, client option.HTTPClient) (repo *upstream, err error) {
+func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, client option.HTTPClient, logger log.Logger) (repo *upstream, err error) {
 	options := []option.RequestOption{
 		option.WithAPIKey(config.ApiKey),
 	}

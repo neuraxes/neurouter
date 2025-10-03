@@ -55,11 +55,7 @@ func newNeurouterUpstream(config *conf.NeurouterConfig, logger log.Logger) (repo
 }
 
 func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (*entity.ChatResp, error) {
-	resp, err := r.chatClient.Chat(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return r.chatClient.Chat(ctx, req)
 }
 
 type neurouterChatStreamClient struct {
@@ -90,9 +86,5 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 }
 
 func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (*entity.EmbedResp, error) {
-	resp, err := r.embeddingClient.Embed(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return r.embeddingClient.Embed(ctx, req)
 }

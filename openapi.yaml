@@ -14,7 +14,7 @@ paths:
             parameters:
                 - name: id
                   in: query
-                  description: The unique identifier of the request
+                  description: The unique identifier of the chat
                   schema:
                     type: string
                 - name: model
@@ -110,7 +110,7 @@ components:
             properties:
                 id:
                     type: string
-                    description: The unique identifier of the request
+                    description: The unique identifier of the chat
                 model:
                     type: string
                     description: The model used to generate the response

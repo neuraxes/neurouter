@@ -175,10 +175,9 @@ func TestNewOpenAIUpstream(t *testing.T) {
 			BaseUrl: "https://api.openai.com/v1/",
 			ApiKey:  "test-key",
 		}
-		logger := log.DefaultLogger
 
 		Convey("When newOpenAIUpstream is called", func() {
-			repo, err := newOpenAIUpstream(config, logger)
+			repo, err := newOpenAIUpstream(config, log.DefaultLogger)
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)
@@ -193,7 +192,7 @@ func TestNewOpenAIUpstream(t *testing.T) {
 
 		Convey("When newOpenAIUpstreamWithClient is called", func() {
 			mockClient := &mockHTTPClient{}
-			repo, err := newOpenAIUpstreamWithClient(config, logger, mockClient)
+			repo, err := newOpenAIUpstreamWithClient(config, mockClient, log.DefaultLogger)
 
 			Convey("Then it should return a new upstream with the custom client", func() {
 				So(err, ShouldBeNil)
@@ -213,7 +212,7 @@ func TestChat(t *testing.T) {
 			ApiKey:  "test-key",
 		}
 		mockClient := &mockHTTPClient{}
-		repo, err := newOpenAIUpstreamWithClient(config, log.DefaultLogger, mockClient)
+		repo, err := newOpenAIUpstreamWithClient(config, mockClient, log.DefaultLogger)
 		So(err, ShouldBeNil)
 
 		req := &entity.ChatReq{
@@ -393,7 +392,7 @@ func TestChatStream(t *testing.T) {
 			ApiKey:  "test-key",
 		}
 		mockClient := &mockHTTPClient{}
-		repo, err := newOpenAIUpstreamWithClient(config, log.DefaultLogger, mockClient)
+		repo, err := newOpenAIUpstreamWithClient(config, mockClient, log.DefaultLogger)
 		So(err, ShouldBeNil)
 
 		req := &entity.ChatReq{
@@ -479,7 +478,7 @@ func TestChatWithToolCall(t *testing.T) {
 			ApiKey:  "test-key",
 		}
 		mockClient := &mockHTTPClient{}
-		repo, err := newOpenAIUpstreamWithClient(config, log.DefaultLogger, mockClient)
+		repo, err := newOpenAIUpstreamWithClient(config, mockClient, log.DefaultLogger)
 		So(err, ShouldBeNil)
 
 		req := &entity.ChatReq{
@@ -782,7 +781,7 @@ func TestChatStreamWithToolCall(t *testing.T) {
 			ApiKey:  "test-key",
 		}
 		mockClient := &mockHTTPClient{}
-		repo, err := newOpenAIUpstreamWithClient(config, log.DefaultLogger, mockClient)
+		repo, err := newOpenAIUpstreamWithClient(config, mockClient, log.DefaultLogger)
 		So(err, ShouldBeNil)
 
 		req := &entity.ChatReq{

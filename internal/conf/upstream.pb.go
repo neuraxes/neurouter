@@ -620,8 +620,8 @@ type AnthropicConfig struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	ApiKey  string                 `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
 	BaseUrl string                 `protobuf:"bytes,2,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
-	// Whether to merge the system prompt into messages
-	MergeSystem   bool `protobuf:"varint,3,opt,name=merge_system,json=mergeSystem,proto3" json:"merge_system,omitempty"`
+	// Whether to put the system prompt into messages (as user message)
+	SystemAsUser  bool `protobuf:"varint,3,opt,name=system_as_user,json=systemAsUser,proto3" json:"system_as_user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -670,9 +670,9 @@ func (x *AnthropicConfig) GetBaseUrl() string {
 	return ""
 }
 
-func (x *AnthropicConfig) GetMergeSystem() bool {
+func (x *AnthropicConfig) GetSystemAsUser() bool {
 	if x != nil {
-		return x.MergeSystem
+		return x.SystemAsUser
 	}
 	return false
 }
@@ -767,11 +767,11 @@ const file_conf_upstream_proto_rawDesc = "" +
 	"\x1eprefer_string_content_for_tool\x18\x06 \x01(\bR\x1apreferStringContentForTool\x12;\n" +
 	"\x1aprefer_single_part_content\x18\a \x01(\bR\x17preferSinglePartContent\"'\n" +
 	"\fGoogleConfig\x12\x17\n" +
-	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\"h\n" +
+	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\"k\n" +
 	"\x0fAnthropicConfig\x12\x17\n" +
 	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x19\n" +
-	"\bbase_url\x18\x02 \x01(\tR\abaseUrl\x12!\n" +
-	"\fmerge_system\x18\x03 \x01(\bR\vmergeSystem\"D\n" +
+	"\bbase_url\x18\x02 \x01(\tR\abaseUrl\x12$\n" +
+	"\x0esystem_as_user\x18\x03 \x01(\bR\fsystemAsUser\"D\n" +
 	"\x0eDeepSeekConfig\x12\x17\n" +
 	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x19\n" +
 	"\bbase_url\x18\x02 \x01(\tR\abaseUrl*s\n" +

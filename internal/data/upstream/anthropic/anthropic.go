@@ -22,7 +22,6 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/anthropics/anthropic-sdk-go/packages/ssestream"
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/google/uuid"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -30,26 +29,34 @@ import (
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
-type ChatRepo struct {
+type upstream struct {
 	config *conf.AnthropicConfig
 	client *anthropic.Client
 	log    *log.Helper
 }
 
 func NewAnthropicChatRepoFactory() repository.UpstreamFactory[conf.AnthropicConfig] {
-	return NewAnthropicChatRepo
+	return newAnthropicUpstream
 }
 
-func NewAnthropicChatRepo(config *conf.AnthropicConfig, logger log.Logger) (repo repository.ChatRepo, err error) {
+func newAnthropicUpstream(config *conf.AnthropicConfig, logger log.Logger) (repository.ChatRepo, error) {
+	return newAnthropicUpstreamWithClient(config, nil, logger)
+}
+
+func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient option.HTTPClient, logger log.Logger) (repo repository.ChatRepo, err error) {
 	options := []option.RequestOption{
 		option.WithAPIKey(config.ApiKey),
 	}
 	if config.BaseUrl != "" {
 		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
+	if httpClient != nil {
+		options = append(options, option.WithHTTPClient(httpClient))
+	}
+
 	client := anthropic.NewClient(options...)
 
-	repo = &ChatRepo{
+	repo = &upstream{
 		config: config,
 		client: &client,
 		log:    log.NewHelper(logger),
@@ -57,53 +64,42 @@ func NewAnthropicChatRepo(config *conf.AnthropicConfig, logger log.Logger) (repo
 	return
 }
 
-func (r *ChatRepo) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	res, err := r.client.Messages.New(
-		ctx,
-		r.convertRequestToAnthropic(req),
-	)
-	if err != nil {
-		return
-	}
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+	anthropicReq := r.convertRequestToAnthropic(req)
 
-	id, err := uuid.NewUUID()
+	anthropicResp, err := r.client.Messages.New(ctx, anthropicReq)
 	if err != nil {
 		return
 	}
 
 	resp = &entity.ChatResp{
-		Id: req.Id,
-		Message: &v1.Message{
-			Id:   id.String(),
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Content: &v1.Content_Text{
-						Text: res.Content[0].Text,
-					},
-				},
-			},
-		},
+		Id:      req.Id,
+		Model:   string(anthropicReq.Model),
+		Message: convertContentsFromAnthropic(anthropicResp.Content),
 	}
 
-	if res.Usage.InputTokens != 0 || res.Usage.OutputTokens != 0 {
+	if anthropicResp.Usage.InputTokens != 0 || anthropicResp.Usage.OutputTokens != 0 {
 		resp.Statistics = &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     uint32(res.Usage.InputTokens),
-				CompletionTokens: uint32(res.Usage.OutputTokens),
+				PromptTokens:       uint32(anthropicResp.Usage.InputTokens),
+				CompletionTokens:   uint32(anthropicResp.Usage.OutputTokens),
+				CachedPromptTokens: uint32(anthropicResp.Usage.CacheReadInputTokens),
 			},
 		}
 	}
+
 	return
 }
 
 type anthropicChatStreamClient struct {
-	id       string
-	req      *entity.ChatReq
-	upstream *ssestream.Stream[anthropic.MessageStreamEventUnion]
+	req         *entity.ChatReq
+	upstream    *ssestream.Stream[anthropic.MessageStreamEventUnion]
+	messageID   string
+	model       string
+	inputTokens uint32
 }
 
-func (c anthropicChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
+func (c *anthropicChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 next:
 	if !c.upstream.Next() {
 		if err = c.upstream.Err(); err != nil {
@@ -114,52 +110,24 @@ next:
 	}
 
 	chunk := c.upstream.Current()
-	if chunk.Type != "content_block_delta" {
+	resp = c.convertChunkFromAnthropic(&chunk)
+	if resp == nil {
+		// The chunk is ignored, jump to the next one.
 		goto next
 	}
 
-	resp = &entity.ChatResp{
-		Id: c.req.Id,
-		Message: &v1.Message{
-			Id:   c.id,
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Content: &v1.Content_Text{
-						Text: chunk.Delta.Text,
-					},
-				},
-			},
-		},
-	}
-
-	if chunk.Usage.OutputTokens != 0 {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				CompletionTokens: uint32(chunk.Usage.OutputTokens),
-			},
-		}
-	}
 	return
 }
 
-func (c anthropicChatStreamClient) Close() error {
+func (c *anthropicChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 
-func (r *ChatRepo) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
-	stream := r.client.Messages.NewStreaming(
-		ctx,
-		r.convertRequestToAnthropic(req),
-	)
-
-	id, err := uuid.NewUUID()
-	if err != nil {
-		return
-	}
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
+	anthropicReq := r.convertRequestToAnthropic(req)
+	stream := r.client.Messages.NewStreaming(ctx, anthropicReq)
 
 	client = &anthropicChatStreamClient{
-		id:       id.String(),
 		req:      req,
 		upstream: stream,
 	}
