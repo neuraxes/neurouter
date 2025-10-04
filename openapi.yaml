@@ -24,29 +24,35 @@ paths:
                     type: string
                 - name: config.maxTokens
                   in: query
+                  description: The maximum number of tokens that can be generated.
                   schema:
                     type: string
                 - name: config.temperature
                   in: query
+                  description: The temperature sampling. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
                   schema:
                     type: number
                     format: float
                 - name: config.topP
                   in: query
+                  description: The nucleus sampling, where the model considers the results of the tokens with top_p probability mass.
                   schema:
                     type: number
                     format: float
                 - name: config.topK
                   in: query
+                  description: The top_k sampling, where the model considers the results of the top_k most probable tokens.
                   schema:
                     type: string
                 - name: config.frequencyPenalty
                   in: query
+                  description: Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
                   schema:
                     type: number
                     format: float
                 - name: config.presencePenalty
                   in: query
+                  description: Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
                   schema:
                     type: number
                     format: float
@@ -56,14 +62,17 @@ paths:
                     type: string
                 - name: config.presetGrammar
                   in: query
+                  description: Preset grammars, e.g. "text", "json_object", etc.
                   schema:
                     type: string
                 - name: config.gbnfGrammar
                   in: query
+                  description: The GGML BNF grammar definition.
                   schema:
                     type: string
                 - name: config.jsonSchema
                   in: query
+                  description: The JSON schema definition.
                   schema:
                     type: string
             responses:

@@ -113,15 +113,21 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 
 // convertChatReqFromAnthropic converts a message request from Anthropic API to Router API
 func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
-	config := &v1.GenerationConfig{
-		MaxTokens: req.MaxTokens,
-	}
+	config := &v1.GenerationConfig{}
 
+	if req.MaxTokens != 0 {
+		config.MaxTokens = &req.MaxTokens
+	}
 	if req.Temperature.Valid() {
-		config.Temperature = float32(req.Temperature.Value)
+		temp := float32(req.Temperature.Value)
+		config.Temperature = &temp
 	}
 	if req.TopP.Valid() {
-		config.TopP = float32(req.TopP.Value)
+		topP := float32(req.TopP.Value)
+		config.TopP = &topP
+	}
+	if req.TopK.Valid() {
+		config.TopK = &req.TopK.Value
 	}
 
 	var messages []*v1.Message

@@ -89,15 +89,28 @@ func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Mes
 
 // convertChatReqFromOpenAI converts a chat completion request from OpenAI API to Router API
 func convertChatReqFromOpenAI(req *openai.ChatCompletionRequest) *v1.ChatReq {
-	config := &v1.GenerationConfig{
-		Temperature: req.Temperature,
-		TopP:        req.TopP,
-	}
+	config := &v1.GenerationConfig{}
+
 	if req.MaxCompletionTokens != 0 {
-		config.MaxTokens = int64(req.MaxCompletionTokens)
+		maxTokens := int64(req.MaxCompletionTokens)
+		config.MaxTokens = &maxTokens
 	} else if req.MaxTokens != 0 {
-		config.MaxTokens = int64(req.MaxTokens)
+		maxTokens := int64(req.MaxTokens)
+		config.MaxTokens = &maxTokens
 	}
+	if req.Temperature != 0 {
+		config.Temperature = &req.Temperature
+	}
+	if req.TopP != 0 {
+		config.TopP = &req.TopP
+	}
+	if req.FrequencyPenalty != 0 {
+		config.FrequencyPenalty = &req.FrequencyPenalty
+	}
+	if req.PresencePenalty != 0 {
+		config.PresencePenalty = &req.PresencePenalty
+	}
+
 	if req.ResponseFormat != nil {
 		switch req.ResponseFormat.Type {
 		case openai.ChatCompletionResponseFormatTypeJSONObject:

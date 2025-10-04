@@ -190,15 +190,20 @@ func TestConvertRequestToDeepSeek(t *testing.T) {
 		})
 
 		Convey("When converting a request with generation config", func() {
+			maxTokens := int64(1000)
+			temperature := float32(0.8)
+			topP := float32(0.9)
+			frequencyPenalty := float32(0.1)
+			presencePenalty := float32(0.2)
 			req := &entity.ChatReq{
 				Id:    "req-2",
 				Model: "deepseek-chat",
 				Config: &v1.GenerationConfig{
-					MaxTokens:        1000,
-					Temperature:      0.8,
-					TopP:             0.9,
-					FrequencyPenalty: 0.1,
-					PresencePenalty:  0.2,
+					MaxTokens:        &maxTokens,
+					Temperature:      &temperature,
+					TopP:             &topP,
+					FrequencyPenalty: &frequencyPenalty,
+					PresencePenalty:  &presencePenalty,
 					Grammar:          &v1.GenerationConfig_PresetGrammar{PresetGrammar: "json_object"},
 				},
 				Messages: []*v1.Message{

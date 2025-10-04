@@ -466,14 +466,19 @@ func TestConvertRequestToOpenAI(t *testing.T) {
 		})
 
 		Convey("with configuration", func() {
+			maxTokens := int64(100)
+			temperature := float32(0.7)
+			topP := float32(0.9)
+			frequencyPenalty := float32(1.0)
+			presencePenalty := float32(1.0)
 			req := &entity.ChatReq{
 				Model: "gpt-4",
 				Config: &v1.GenerationConfig{
-					MaxTokens:        100,
-					Temperature:      0.7,
-					TopP:             0.9,
-					FrequencyPenalty: 1.0,
-					PresencePenalty:  1.0,
+					MaxTokens:        &maxTokens,
+					Temperature:      &temperature,
+					TopP:             &topP,
+					FrequencyPenalty: &frequencyPenalty,
+					PresencePenalty:  &presencePenalty,
 					Grammar: &v1.GenerationConfig_PresetGrammar{
 						PresetGrammar: "json_object",
 					},

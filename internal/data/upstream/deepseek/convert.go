@@ -91,15 +91,21 @@ func (r *upstream) convertRequestToDeepSeek(req *entity.ChatReq) *ChatRequest {
 	}
 
 	if c := req.Config; c != nil {
-		if c.MaxTokens != 0 {
-			deepseekReq.MaxTokens = int(c.MaxTokens)
+		if c.MaxTokens != nil {
+			deepseekReq.MaxTokens = int(*c.MaxTokens)
 		}
-		deepseekReq.Temperature = float64(c.Temperature)
-		if c.TopP != 0 {
-			deepseekReq.TopP = float64(c.TopP)
+		if c.Temperature != nil {
+			deepseekReq.Temperature = float64(*c.Temperature)
 		}
-		deepseekReq.FrequencyPenalty = float64(c.FrequencyPenalty)
-		deepseekReq.PresencePenalty = float64(c.PresencePenalty)
+		if c.TopP != nil {
+			deepseekReq.TopP = float64(*c.TopP)
+		}
+		if c.FrequencyPenalty != nil {
+			deepseekReq.FrequencyPenalty = float64(*c.FrequencyPenalty)
+		}
+		if c.PresencePenalty != nil {
+			deepseekReq.PresencePenalty = float64(*c.PresencePenalty)
+		}
 		if c.GetPresetGrammar() == "json_object" {
 			deepseekReq.ResponseFormat = &ResponseFormat{
 				Type: "json_object",

@@ -211,15 +211,21 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 	}
 
 	if c := req.Config; c != nil {
-		if c.MaxTokens != 0 {
-			openAIReq.MaxCompletionTokens = openai.Opt(c.MaxTokens)
+		if c.MaxTokens != nil {
+			openAIReq.MaxCompletionTokens = openai.Opt(*c.MaxTokens)
 		}
-		openAIReq.Temperature = openai.Opt(float64(c.Temperature))
-		if c.TopP != 0 {
-			openAIReq.TopP = openai.Opt(float64(c.TopP))
+		if c.Temperature != nil {
+			openAIReq.Temperature = openai.Opt(float64(*c.Temperature))
 		}
-		openAIReq.FrequencyPenalty = openai.Opt(float64(c.FrequencyPenalty))
-		openAIReq.PresencePenalty = openai.Opt(float64(c.PresencePenalty))
+		if c.TopP != nil {
+			openAIReq.TopP = openai.Opt(float64(*c.TopP))
+		}
+		if c.FrequencyPenalty != nil {
+			openAIReq.FrequencyPenalty = openai.Opt(float64(*c.FrequencyPenalty))
+		}
+		if c.PresencePenalty != nil {
+			openAIReq.PresencePenalty = openai.Opt(float64(*c.PresencePenalty))
+		}
 		if c.GetPresetGrammar() == "json_object" {
 			openAIReq.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
 				OfJSONObject: &openai.ResponseFormatJSONObjectParam{},

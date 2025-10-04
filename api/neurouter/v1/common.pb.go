@@ -209,13 +209,19 @@ func (Schema_Type) EnumDescriptor() ([]byte, []int) {
 }
 
 type GenerationConfig struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	MaxTokens        int64                  `protobuf:"varint,1,opt,name=max_tokens,json=maxTokens,proto3" json:"max_tokens,omitempty"`
-	Temperature      float32                `protobuf:"fixed32,2,opt,name=temperature,proto3" json:"temperature,omitempty"`
-	TopP             float32                `protobuf:"fixed32,3,opt,name=top_p,json=topP,proto3" json:"top_p,omitempty"`
-	TopK             int64                  `protobuf:"varint,4,opt,name=top_k,json=topK,proto3" json:"top_k,omitempty"`
-	FrequencyPenalty float32                `protobuf:"fixed32,5,opt,name=frequency_penalty,json=frequencyPenalty,proto3" json:"frequency_penalty,omitempty"`
-	PresencePenalty  float32                `protobuf:"fixed32,6,opt,name=presence_penalty,json=presencePenalty,proto3" json:"presence_penalty,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The maximum number of tokens that can be generated.
+	MaxTokens *int64 `protobuf:"varint,1,opt,name=max_tokens,json=maxTokens,proto3,oneof" json:"max_tokens,omitempty"`
+	// The temperature sampling. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+	Temperature *float32 `protobuf:"fixed32,2,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
+	// The nucleus sampling, where the model considers the results of the tokens with top_p probability mass.
+	TopP *float32 `protobuf:"fixed32,3,opt,name=top_p,json=topP,proto3,oneof" json:"top_p,omitempty"`
+	// The top_k sampling, where the model considers the results of the top_k most probable tokens.
+	TopK *int64 `protobuf:"varint,4,opt,name=top_k,json=topK,proto3,oneof" json:"top_k,omitempty"`
+	// Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+	FrequencyPenalty *float32 `protobuf:"fixed32,5,opt,name=frequency_penalty,json=frequencyPenalty,proto3,oneof" json:"frequency_penalty,omitempty"`
+	// Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+	PresencePenalty *float32 `protobuf:"fixed32,6,opt,name=presence_penalty,json=presencePenalty,proto3,oneof" json:"presence_penalty,omitempty"`
 	// Types that are valid to be assigned to Template:
 	//
 	//	*GenerationConfig_PresetTemplate
@@ -261,43 +267,43 @@ func (*GenerationConfig) Descriptor() ([]byte, []int) {
 }
 
 func (x *GenerationConfig) GetMaxTokens() int64 {
-	if x != nil {
-		return x.MaxTokens
+	if x != nil && x.MaxTokens != nil {
+		return *x.MaxTokens
 	}
 	return 0
 }
 
 func (x *GenerationConfig) GetTemperature() float32 {
-	if x != nil {
-		return x.Temperature
+	if x != nil && x.Temperature != nil {
+		return *x.Temperature
 	}
 	return 0
 }
 
 func (x *GenerationConfig) GetTopP() float32 {
-	if x != nil {
-		return x.TopP
+	if x != nil && x.TopP != nil {
+		return *x.TopP
 	}
 	return 0
 }
 
 func (x *GenerationConfig) GetTopK() int64 {
-	if x != nil {
-		return x.TopK
+	if x != nil && x.TopK != nil {
+		return *x.TopK
 	}
 	return 0
 }
 
 func (x *GenerationConfig) GetFrequencyPenalty() float32 {
-	if x != nil {
-		return x.FrequencyPenalty
+	if x != nil && x.FrequencyPenalty != nil {
+		return *x.FrequencyPenalty
 	}
 	return 0
 }
 
 func (x *GenerationConfig) GetPresencePenalty() float32 {
-	if x != nil {
-		return x.PresencePenalty
+	if x != nil && x.PresencePenalty != nil {
+		return *x.PresencePenalty
 	}
 	return 0
 }
@@ -367,14 +373,17 @@ type isGenerationConfig_Grammar interface {
 }
 
 type GenerationConfig_PresetGrammar struct {
+	// Preset grammars, e.g. "text", "json_object", etc.
 	PresetGrammar string `protobuf:"bytes,60,opt,name=preset_grammar,json=presetGrammar,proto3,oneof"`
 }
 
 type GenerationConfig_GbnfGrammar struct {
+	// The GGML BNF grammar definition.
 	GbnfGrammar string `protobuf:"bytes,61,opt,name=gbnf_grammar,json=gbnfGrammar,proto3,oneof"`
 }
 
 type GenerationConfig_JsonSchema struct {
+	// The JSON schema definition.
 	JsonSchema string `protobuf:"bytes,62,opt,name=json_schema,json=jsonSchema,proto3,oneof"`
 }
 
@@ -953,15 +962,15 @@ var File_neurouter_v1_common_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\n" +
-	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\"\x88\x03\n" +
-	"\x10GenerationConfig\x12\x1d\n" +
+	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\"\x84\x04\n" +
+	"\x10GenerationConfig\x12\"\n" +
 	"\n" +
-	"max_tokens\x18\x01 \x01(\x03R\tmaxTokens\x12 \n" +
-	"\vtemperature\x18\x02 \x01(\x02R\vtemperature\x12\x13\n" +
-	"\x05top_p\x18\x03 \x01(\x02R\x04topP\x12\x13\n" +
-	"\x05top_k\x18\x04 \x01(\x03R\x04topK\x12+\n" +
-	"\x11frequency_penalty\x18\x05 \x01(\x02R\x10frequencyPenalty\x12)\n" +
-	"\x10presence_penalty\x18\x06 \x01(\x02R\x0fpresencePenalty\x12)\n" +
+	"max_tokens\x18\x01 \x01(\x03H\x02R\tmaxTokens\x88\x01\x01\x12%\n" +
+	"\vtemperature\x18\x02 \x01(\x02H\x03R\vtemperature\x88\x01\x01\x12\x18\n" +
+	"\x05top_p\x18\x03 \x01(\x02H\x04R\x04topP\x88\x01\x01\x12\x18\n" +
+	"\x05top_k\x18\x04 \x01(\x03H\x05R\x04topK\x88\x01\x01\x120\n" +
+	"\x11frequency_penalty\x18\x05 \x01(\x02H\x06R\x10frequencyPenalty\x88\x01\x01\x12.\n" +
+	"\x10presence_penalty\x18\x06 \x01(\x02H\aR\x0fpresencePenalty\x88\x01\x01\x12)\n" +
 	"\x0fpreset_template\x182 \x01(\tH\x00R\x0epresetTemplate\x12'\n" +
 	"\x0epreset_grammar\x18< \x01(\tH\x01R\rpresetGrammar\x12#\n" +
 	"\fgbnf_grammar\x18= \x01(\tH\x01R\vgbnfGrammar\x12!\n" +
@@ -969,7 +978,13 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"jsonSchemaB\n" +
 	"\n" +
 	"\btemplateB\t\n" +
-	"\agrammar\"\xd0\x01\n" +
+	"\agrammarB\r\n" +
+	"\v_max_tokensB\x0e\n" +
+	"\f_temperatureB\b\n" +
+	"\x06_top_pB\b\n" +
+	"\x06_top_kB\x14\n" +
+	"\x12_frequency_penaltyB\x13\n" +
+	"\x11_presence_penalty\"\xd0\x01\n" +
 	"\n" +
 	"Statistics\x124\n" +
 	"\x05usage\x18\x01 \x01(\v2\x1e.neurouter.v1.Statistics.UsageR\x05usage\x1a\x8b\x01\n" +
