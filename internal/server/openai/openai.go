@@ -20,7 +20,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func RegisterOpenAIHTTPServer(s *http.Server, chatSvc v1.ChatServer, embedSvc v1.EmbeddingServer) {
+func RegisterOpenAIHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v1.ChatServer, embedSvc v1.EmbeddingServer) {
 	r := s.Route("/")
 	r.POST("/chat/completions", func(ctx http.Context) error {
 		return handleChatCompletion(ctx, chatSvc)
@@ -33,5 +33,8 @@ func RegisterOpenAIHTTPServer(s *http.Server, chatSvc v1.ChatServer, embedSvc v1
 	})
 	r.POST("/v1/embeddings", func(ctx http.Context) error {
 		return handleEmbedding(ctx, embedSvc)
+	})
+	r.GET("/models", func(ctx http.Context) error {
+		return handleListModels(ctx, modelSvc)
 	})
 }

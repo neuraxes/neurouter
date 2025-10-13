@@ -48,7 +48,7 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	v1.RegisterModelHTTPServer(srv, svc)
 	v1.RegisterChatHTTPServer(srv, svc)
 	v1.RegisterEmbeddingHTTPServer(srv, svc)
-	openai.RegisterOpenAIHTTPServer(srv, svc, svc)
+	openai.RegisterOpenAIHTTPServer(srv, svc, svc, svc)
 	ollama.RegisterOllamaHTTPServer(srv, svc, svc)
 	anthropic.RegisterAnthropicHTTPServer(srv, svc)
 
