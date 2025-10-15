@@ -141,7 +141,7 @@ func convertChatReqFromOpenAI(req *openai.ChatCompletionRequest) *v1.ChatReq {
 				},
 			}
 		default:
-			// TODO: Handle other tool types
+			// Only function tool is supported
 			continue
 		}
 		tools = append(tools, t)

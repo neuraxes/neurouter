@@ -54,7 +54,10 @@ func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatReq) (resp *ent
 		req.Model = m.Id
 	}
 
-	return repo.Chat(ctx, req)
+	resp, err = repo.Chat(ctx, req)
+
+	uc.printChat(req, resp)
+	return
 }
 
 func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, server repository.ChatStreamServer) error {
@@ -75,21 +78,26 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, serv
 	}
 	defer client.Close()
 
+	accumulator := NewChatRespAccumulator()
 	for {
 		resp, err := client.Recv()
 		if err == io.EOF {
-			return nil
+			break
 		} else if err != nil {
 			return err
 		}
 
 		if errors.Is(ctx.Err(), context.Canceled) {
-			return nil
+			break
 		}
 
+		accumulator.Accumulate(resp)
 		err = server.Send(resp)
 		if err != nil {
 			return err
 		}
 	}
+
+	uc.printChat(req, accumulator.Resp())
+	return nil
 }
