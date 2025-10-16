@@ -112,9 +112,10 @@ message Schema {
 
   Type type = 1;
   string description = 2;
-  repeated Schema items = 3;
+  Schema items = 3;
   map<string, Schema> properties = 4;
   repeated string required = 5;
+  repeated string enum = 6;
 }
 
 message Tool {

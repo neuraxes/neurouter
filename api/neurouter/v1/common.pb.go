@@ -700,9 +700,10 @@ type Schema struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          Schema_Type            `protobuf:"varint,1,opt,name=type,proto3,enum=neurouter.v1.Schema_Type" json:"type,omitempty"`
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Items         []*Schema              `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
+	Items         *Schema                `protobuf:"bytes,3,opt,name=items,proto3" json:"items,omitempty"`
 	Properties    map[string]*Schema     `protobuf:"bytes,4,rep,name=properties,proto3" json:"properties,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Required      []string               `protobuf:"bytes,5,rep,name=required,proto3" json:"required,omitempty"`
+	Enum          []string               `protobuf:"bytes,6,rep,name=enum,proto3" json:"enum,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -751,7 +752,7 @@ func (x *Schema) GetDescription() string {
 	return ""
 }
 
-func (x *Schema) GetItems() []*Schema {
+func (x *Schema) GetItems() *Schema {
 	if x != nil {
 		return x.Items
 	}
@@ -768,6 +769,13 @@ func (x *Schema) GetProperties() map[string]*Schema {
 func (x *Schema) GetRequired() []string {
 	if x != nil {
 		return x.Required
+	}
+	return nil
+}
+
+func (x *Schema) GetEnum() []string {
+	if x != nil {
+		return x.Enum
 	}
 	return nil
 }
@@ -1006,15 +1014,16 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x05image\x18\x02 \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05image\x12\x1c\n" +
 	"\bthinking\x18\x03 \x01(\tH\x00R\bthinking\x12A\n" +
 	"\rfunction_call\x18\x04 \x01(\v2\x1a.neurouter.v1.FunctionCallH\x00R\ffunctionCallB\t\n" +
-	"\acontent\"\xc2\x03\n" +
+	"\acontent\"\xd6\x03\n" +
 	"\x06Schema\x12-\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x19.neurouter.v1.Schema.TypeR\x04type\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12*\n" +
-	"\x05items\x18\x03 \x03(\v2\x14.neurouter.v1.SchemaR\x05items\x12D\n" +
+	"\x05items\x18\x03 \x01(\v2\x14.neurouter.v1.SchemaR\x05items\x12D\n" +
 	"\n" +
 	"properties\x18\x04 \x03(\v2$.neurouter.v1.Schema.PropertiesEntryR\n" +
 	"properties\x12\x1a\n" +
-	"\brequired\x18\x05 \x03(\tR\brequired\x1aS\n" +
+	"\brequired\x18\x05 \x03(\tR\brequired\x12\x12\n" +
+	"\x04enum\x18\x06 \x03(\tR\x04enum\x1aS\n" +
 	"\x0fPropertiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
 	"\x05value\x18\x02 \x01(\v2\x14.neurouter.v1.SchemaR\x05value:\x028\x01\"\x83\x01\n" +
