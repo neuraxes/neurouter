@@ -22,6 +22,11 @@ import (
 
 func RegisterOllamaHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v1.ChatServer) {
 	r := s.Route("/")
+	r.GET("/api/version", func(ctx http.Context) error {
+		return ctx.JSON(200, map[string]any{
+			"version": "0.7.0",
+		})
+	})
 	r.GET("/api/tags", func(ctx http.Context) error {
 		return handleListModels(ctx, modelSvc)
 	})

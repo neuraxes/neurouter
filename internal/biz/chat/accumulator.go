@@ -76,6 +76,11 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 			lastThinking.Thinking += c.Thinking
 
 		case *v1.Content_FunctionCall:
+			if c.FunctionCall.Id != "" {
+				// A new function call, append as new content
+				a.resp.Message.Contents = append(a.resp.Message.Contents, content)
+				continue
+			}
 			lastFunctionCall := lastContent.Content.(*v1.Content_FunctionCall)
 			lastFunctionCall.FunctionCall.Id += c.FunctionCall.Id
 			lastFunctionCall.FunctionCall.Name += c.FunctionCall.Name

@@ -101,7 +101,9 @@ func (c openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 
 	chunk := c.upstream.Current()
 	resp = convertChunkFromOpenAI(&chunk)
-	resp.Message.Id = c.messageID
+	if resp.Message != nil {
+		resp.Message.Id = c.messageID
+	}
 
 	return
 }
