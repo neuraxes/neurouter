@@ -73,6 +73,9 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 			PromptTokens:     int(resp.Statistics.Usage.PromptTokens),
 			CompletionTokens: int(resp.Statistics.Usage.CompletionTokens),
 		}
+		chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
+			FinishReason: openai.FinishReasonStop,
+		})
 	}
 
 	chunkJson, err := json.Marshal(chunk)
