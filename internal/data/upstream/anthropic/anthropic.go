@@ -23,7 +23,6 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/packages/ssestream"
 	"github.com/go-kratos/kratos/v2/log"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -73,19 +72,10 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	}
 
 	resp = &entity.ChatResp{
-		Id:      req.Id,
-		Model:   string(anthropicReq.Model),
-		Message: convertContentsFromAnthropic(anthropicResp.Content),
-	}
-
-	if anthropicResp.Usage.InputTokens != 0 || anthropicResp.Usage.OutputTokens != 0 {
-		resp.Statistics = &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				PromptTokens:       uint32(anthropicResp.Usage.InputTokens),
-				CompletionTokens:   uint32(anthropicResp.Usage.OutputTokens),
-				CachedPromptTokens: uint32(anthropicResp.Usage.CacheReadInputTokens),
-			},
-		}
+		Id:         req.Id,
+		Model:      string(anthropicResp.Model),
+		Message:    convertContentsFromAnthropic(anthropicResp.Content),
+		Statistics: convertStatisticsFromAnthropic(&anthropicResp.Usage),
 	}
 
 	return

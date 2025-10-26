@@ -17,12 +17,32 @@ package anthropic
 import (
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/google/uuid"
+	"github.com/tidwall/gjson"
+	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-// convertSystemToAnthropic converts system messages to a format that can be sent to the Anthropic API.
+func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfig, req *anthropic.MessageNewParams) {
+	if config == nil {
+		return
+	}
+	if config.MaxTokens != nil {
+		req.MaxTokens = *config.MaxTokens
+	}
+	if config.Temperature != nil {
+		req.Temperature = anthropic.Opt(float64(*config.Temperature))
+	}
+	if config.TopP != nil {
+		req.TopP = anthropic.Opt(float64(*config.TopP))
+	}
+	if config.TopK != nil {
+		req.TopK = anthropic.Opt(*config.TopK)
+	}
+}
+
+// convertSystemToAnthropic converts system messages to Anthropic format.
 func (r *upstream) convertSystemToAnthropic(messages []*v1.Message) []anthropic.TextBlockParam {
 	var parts []anthropic.TextBlockParam
 	for _, message := range messages {
@@ -34,28 +54,52 @@ func (r *upstream) convertSystemToAnthropic(messages []*v1.Message) []anthropic.
 			case *v1.Content_Text:
 				parts = append(parts, anthropic.TextBlockParam{Text: c.Text})
 			default:
-				r.log.Errorf("unsupported content: %v", c)
+				r.log.Errorf("unsupport content: %v", c)
 			}
 		}
 	}
 	return parts
 }
 
-// convertMessageToAnthropic converts an internal message to a message that can be sent to the Anthropic API.
+// convertMessageToAnthropic converts a newurouter message to Anthropic format.
 func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.MessageParam {
 	var parts []anthropic.ContentBlockParamUnion
 	for _, content := range message.Contents {
 		switch c := content.GetContent().(type) {
 		case *v1.Content_Text:
 			parts = append(parts, anthropic.NewTextBlock(c.Text))
+		case *v1.Content_Reasoning:
+			parts = append(parts, anthropic.NewThinkingBlock("", c.Reasoning))
 		case *v1.Content_Image:
-			parts = append(parts, anthropic.ContentBlockParamUnion{
-				OfImage: &anthropic.ImageBlockParam{
-					Source: anthropic.ImageBlockParamSourceUnion{
-						OfURL: &anthropic.URLImageSourceParam{
-							URL: c.Image.GetUrl(),
+			parts = append(parts, anthropic.NewImageBlock(
+				anthropic.URLImageSourceParam{
+					URL: c.Image.GetUrl(),
+				},
+			))
+		case *v1.Content_ToolUse:
+			parts = append(parts, anthropic.NewToolUseBlock(
+				c.ToolUse.Id,
+				c.ToolUse.GetTextualInput(),
+				c.ToolUse.Name,
+			))
+		case *v1.Content_ToolResult:
+			var outputs []anthropic.ToolResultBlockParamContentUnion
+
+			for _, output := range c.ToolResult.Outputs {
+				switch o := output.Output.(type) {
+				case *v1.ToolResult_Output_Text:
+					outputs = append(outputs, anthropic.ToolResultBlockParamContentUnion{
+						OfText: &anthropic.TextBlockParam{
+							Text: o.Text,
 						},
-					},
+					})
+				}
+			}
+
+			parts = append(parts, anthropic.ContentBlockParamUnion{
+				OfToolResult: &anthropic.ToolResultBlockParam{
+					ToolUseID: c.ToolResult.Id,
+					Content:   outputs,
 				},
 			})
 		}
@@ -76,11 +120,13 @@ func (r *upstream) convertInputSchemaToAnthropic(params *v1.Schema) (schema anth
 	return
 }
 
-// convertRequestToAnthropic converts an internal request to a request that can be sent to the Anthropic API.
+// convertRequestToAnthropic converts a newurouter request to Anthropic format.
 func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.MessageNewParams {
 	params := anthropic.MessageNewParams{
 		Model: anthropic.Model(req.Model),
 	}
+
+	r.convertGenerationConfigToAnthropic(req.Config, &params)
 
 	if !r.config.SystemAsUser {
 		params.System = r.convertSystemToAnthropic(req.Messages)
@@ -98,15 +144,16 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 		for _, tool := range req.Tools {
 			switch t := tool.Tool.(type) {
 			case *v1.Tool_Function_:
-				tools = append(tools, anthropic.ToolUnionParam{
-					OfTool: &anthropic.ToolParam{
-						Name:        t.Function.Name,
-						Description: anthropic.Opt(t.Function.Description),
-						InputSchema: r.convertInputSchemaToAnthropic(t.Function.Parameters),
-					},
-				})
+				at := &anthropic.ToolParam{
+					Name:        t.Function.Name,
+					InputSchema: r.convertInputSchemaToAnthropic(t.Function.Parameters),
+				}
+				if t.Function.Description != "" {
+					at.Description = anthropic.Opt(t.Function.Description)
+				}
+				tools = append(tools, anthropic.ToolUnionParam{OfTool: at})
 			default:
-				r.log.Errorf("unsupported tool: %v", t)
+				r.log.Errorf("unsupport tool: %v", t)
 			}
 		}
 		params.Tools = tools
@@ -115,7 +162,7 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 	return params
 }
 
-// convertContentsFromAnthropic converts an Anthropic message contents to an internal message.
+// convertContentsFromAnthropic converts Anthropic contents to a newurouter message.
 func convertContentsFromAnthropic(contents []anthropic.ContentBlockUnion) *v1.Message {
 	message := &v1.Message{
 		Id:   uuid.NewString(),
@@ -123,23 +170,50 @@ func convertContentsFromAnthropic(contents []anthropic.ContentBlockUnion) *v1.Me
 	}
 
 	for _, content := range contents {
-		if content.Thinking != "" {
+		switch content.Type {
+		case "thinking":
 			message.Contents = append(message.Contents, &v1.Content{
-				Content: &v1.Content_Thinking{
-					Thinking: content.Thinking,
+				Content: &v1.Content_Reasoning{
+					Reasoning: content.Thinking,
 				},
 			})
-		}
-		if content.Text != "" {
+		case "text":
 			message.Contents = append(message.Contents, &v1.Content{
 				Content: &v1.Content_Text{
 					Text: content.Text,
+				},
+			})
+		case "tool_use":
+			message.Contents = append(message.Contents, &v1.Content{
+				Content: &v1.Content_ToolUse{
+					ToolUse: &v1.ToolUse{
+						Id:   content.ID,
+						Name: content.Name,
+						Inputs: []*v1.ToolUse_Input{
+							{
+								Input: &v1.ToolUse_Input_Text{
+									Text: gjson.Parse(string(content.Input)).String(),
+								},
+							},
+						},
+					},
 				},
 			})
 		}
 	}
 
 	return message
+}
+
+func (c *anthropicChatStreamClient) newResp() *entity.ChatResp {
+	return &entity.ChatResp{
+		Id:    c.req.Id,
+		Model: c.model,
+		Message: &v1.Message{
+			Id:   c.messageID,
+			Role: v1.Role_MODEL,
+		},
+	}
 }
 
 // convertChunkFromAnthropic converts an Anthropic streaming chunk to an internal response.
@@ -151,54 +225,71 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		c.inputTokens = uint32(chunk.Message.Usage.InputTokens)
 		return nil
 	case "content_block_start":
-		if chunk.ContentBlock.Type == "tool_use" {
-			return &entity.ChatResp{
-				Id:    c.req.Id,
-				Model: c.model,
-				Message: &v1.Message{
-					Id:   c.messageID,
-					Role: v1.Role_MODEL,
-					Contents: []*v1.Content{
-						{
-							Content: &v1.Content_FunctionCall{
-								FunctionCall: &v1.FunctionCall{
-									Id:   chunk.ContentBlock.ToolUseID,
-									Name: chunk.ContentBlock.Name,
-								},
-							},
-						},
+		var resp *entity.ChatResp
+		switch chunk.ContentBlock.Type {
+		case "text":
+			if chunk.ContentBlock.Text != "" {
+				resp = c.newResp()
+				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+					Index: ptr.To(uint32(chunk.Index)),
+					Content: &v1.Content_Text{
+						Text: chunk.ContentBlock.Text,
+					},
+				})
+			}
+		case "thinking":
+			if chunk.ContentBlock.Thinking != "" {
+				resp = c.newResp()
+				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+					Index: ptr.To(uint32(chunk.Index)),
+					Content: &v1.Content_Reasoning{
+						Reasoning: chunk.ContentBlock.Thinking,
+					},
+				})
+			}
+		case "tool_use":
+			resp = c.newResp()
+			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+				Index: ptr.To(uint32(chunk.Index)),
+				Content: &v1.Content_ToolUse{
+					ToolUse: &v1.ToolUse{
+						Id:   chunk.ContentBlock.ID,
+						Name: chunk.ContentBlock.Name,
+						// Inputs will be sent in deltas.
 					},
 				},
-			}
+			})
 		}
-		return nil
+		return resp
 	case "content_block_delta":
-		resp := &entity.ChatResp{
-			Id:    c.req.Id,
-			Model: c.model,
-			Message: &v1.Message{
-				Id:   c.messageID,
-				Role: v1.Role_MODEL,
-			},
-		}
+		resp := c.newResp()
 		switch chunk.Delta.Type {
 		case "thinking_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Content: &v1.Content_Thinking{
-					Thinking: chunk.Delta.Thinking,
+				Index: ptr.To(uint32(chunk.Index)),
+				Content: &v1.Content_Reasoning{
+					Reasoning: chunk.Delta.Thinking,
 				},
 			})
 		case "text_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+				Index: ptr.To(uint32(chunk.Index)),
 				Content: &v1.Content_Text{
 					Text: chunk.Delta.Text,
 				},
 			})
 		case "input_json_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Content: &v1.Content_FunctionCall{
-					FunctionCall: &v1.FunctionCall{
-						Arguments: chunk.Delta.PartialJSON,
+				Index: ptr.To(uint32(chunk.Index)),
+				Content: &v1.Content_ToolUse{
+					ToolUse: &v1.ToolUse{
+						Inputs: []*v1.ToolUse_Input{
+							{
+								Input: &v1.ToolUse_Input_Text{
+									Text: chunk.Delta.PartialJSON,
+								},
+							},
+						},
 					},
 				},
 			})
@@ -207,20 +298,38 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		}
 		return resp
 	case "message_delta":
-		if chunk.Usage.OutputTokens != 0 {
-			return &entity.ChatResp{
-				Id:    c.req.Id,
-				Model: c.model,
-				Statistics: &v1.Statistics{
-					Usage: &v1.Statistics_Usage{
-						PromptTokens:     c.inputTokens,
-						CompletionTokens: uint32(chunk.Usage.OutputTokens),
-					},
+		if chunk.Usage.InputTokens != 0 || chunk.Usage.OutputTokens != 0 {
+			resp := c.newResp()
+			resp.Message = nil
+			resp.Statistics = &v1.Statistics{
+				Usage: &v1.Statistics_Usage{
+					InputTokens:       c.inputTokens + uint32(chunk.Usage.InputTokens),
+					OutputTokens:      uint32(chunk.Usage.OutputTokens),
+					CachedInputTokens: uint32(chunk.Usage.CacheReadInputTokens),
 				},
 			}
+			return resp
 		}
 		fallthrough
 	default:
 		return nil
+	}
+}
+
+func convertStatisticsFromAnthropic(usage *anthropic.Usage) *v1.Statistics {
+	if usage == nil {
+		return nil
+	}
+
+	if usage.InputTokens == 0 && usage.OutputTokens == 0 {
+		return nil
+	}
+
+	return &v1.Statistics{
+		Usage: &v1.Statistics_Usage{
+			InputTokens:       uint32(usage.InputTokens),
+			OutputTokens:      uint32(usage.OutputTokens),
+			CachedInputTokens: uint32(usage.CacheReadInputTokens),
+		},
 	}
 }

@@ -17,7 +17,7 @@ syntax = "proto3";
 package neurouter.v1;
 
 import "google/api/annotations.proto";
-import "neurouter/v1/common.proto";
+import "neurouter/v1/content.proto";
 
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 

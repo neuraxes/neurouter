@@ -43,7 +43,6 @@ type UseCaseImpl struct {
 func NewModelUseCase(
 	c *conf.Upstream,
 	anthropicFactory repository.UpstreamFactory[conf.AnthropicConfig],
-	deepSeekFactory repository.UpstreamFactory[conf.DeepSeekConfig],
 	googleFactory repository.UpstreamFactory[conf.GoogleConfig],
 	neurouterFactory repository.UpstreamFactory[conf.NeurouterConfig],
 	openAIFactory repository.UpstreamFactory[conf.OpenAIConfig],
@@ -68,8 +67,6 @@ func NewModelUseCase(
 				repo, err = googleFactory(config.GetGoogle(), logger)
 			case *conf.UpstreamConfig_Anthropic:
 				repo, err = anthropicFactory(config.GetAnthropic(), logger)
-			case *conf.UpstreamConfig_DeepSeek:
-				repo, err = deepSeekFactory(config.GetDeepSeek(), logger)
 			}
 
 			if err != nil {

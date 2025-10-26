@@ -134,14 +134,19 @@ components:
         neurouter.v1.Content:
             type: object
             properties:
+                index:
+                    type: integer
+                    format: uint32
                 text:
+                    type: string
+                reasoning:
                     type: string
                 image:
                     $ref: '#/components/schemas/neurouter.v1.Image'
-                thinking:
-                    type: string
-                functionCall:
-                    $ref: '#/components/schemas/neurouter.v1.FunctionCall'
+                toolUse:
+                    $ref: '#/components/schemas/neurouter.v1.ToolUse'
+                toolResult:
+                    $ref: '#/components/schemas/neurouter.v1.ToolResult'
             description: Multi-modality content
         neurouter.v1.EmbedReq:
             type: object
@@ -166,19 +171,11 @@ components:
                     items:
                         type: number
                         format: float
-        neurouter.v1.FunctionCall:
-            type: object
-            properties:
-                id:
-                    type: string
-                name:
-                    type: string
-                arguments:
-                    type: string
-            description: Represent a function tool call content
         neurouter.v1.Image:
             type: object
             properties:
+                mimeType:
+                    type: string
                 url:
                     type: string
                 data:
@@ -210,9 +207,6 @@ components:
                     items:
                         $ref: '#/components/schemas/neurouter.v1.Content'
                     description: The multi-modality content
-                toolCallId:
-                    type: string
-                    description: Indicate the message is a response to a tool call
         neurouter.v1.ModelSpec:
             type: object
             properties:
@@ -248,15 +242,53 @@ components:
         neurouter.v1.Statistics_Usage:
             type: object
             properties:
-                promptTokens:
+                inputTokens:
                     type: integer
                     format: uint32
-                completionTokens:
+                outputTokens:
                     type: integer
                     format: uint32
-                cachedPromptTokens:
+                cachedInputTokens:
                     type: integer
                     format: uint32
+        neurouter.v1.ToolResult:
+            type: object
+            properties:
+                id:
+                    type: string
+                outputs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.ToolResult_Output'
+            description: Represent a result from tool
+        neurouter.v1.ToolResult_Output:
+            type: object
+            properties:
+                index:
+                    type: integer
+                    format: uint32
+                text:
+                    type: string
+        neurouter.v1.ToolUse:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                inputs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.ToolUse_Input'
+            description: Represent a tool use
+        neurouter.v1.ToolUse_Input:
+            type: object
+            properties:
+                index:
+                    type: integer
+                    format: uint32
+                text:
+                    type: string
 tags:
     - name: Chat
     - name: Embedding

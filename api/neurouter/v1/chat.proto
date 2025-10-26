@@ -18,6 +18,7 @@ package neurouter.v1;
 
 import "google/api/annotations.proto";
 import "neurouter/v1/common.proto";
+import "neurouter/v1/content.proto";
 
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
@@ -34,7 +35,6 @@ enum Role {
   SYSTEM = 0;
   USER = 1;
   MODEL = 2;
-  TOOL = 3;
 }
 
 message Message {
@@ -46,8 +46,6 @@ message Message {
   string name = 3;
   // The multi-modality content
   repeated Content contents = 4;
-  // Indicate the message is a response to a tool call
-  string tool_call_id = 5;
 }
 
 message ChatReq {

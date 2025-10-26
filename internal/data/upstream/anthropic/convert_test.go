@@ -291,8 +291,14 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 func TestConvertContentsFromAnthropic(t *testing.T) {
 	Convey("Given anthropic content blocks", t, func() {
 		blocks := []anthropic.ContentBlockUnion{
-			{Thinking: "think"},
-			{Text: "answer"},
+			{
+				Type:     "thinking",
+				Thinking: "think",
+			},
+			{
+				Type: "text",
+				Text: "answer",
+			},
 		}
 
 		msg := convertContentsFromAnthropic(blocks)
@@ -302,7 +308,7 @@ func TestConvertContentsFromAnthropic(t *testing.T) {
 			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(len(msg.Contents), ShouldEqual, 2)
-			So(msg.Contents[0].GetThinking(), ShouldEqual, "think")
+			So(msg.Contents[0].GetReasoning(), ShouldEqual, "think")
 			So(msg.Contents[1].GetText(), ShouldEqual, "answer")
 		})
 	})
@@ -331,9 +337,9 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			chunk := &anthropic.MessageStreamEventUnion{
 				Type: "content_block_start",
 				ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
-					Type:      "tool_use",
-					ToolUseID: "tool-1",
-					Name:      "get_weather",
+					Type: "tool_use",
+					ID:   "tool-1",
+					Name: "get_weather",
 				},
 			}
 			resp := client.convertChunkFromAnthropic(chunk)
@@ -342,7 +348,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 				So(resp.Id, ShouldEqual, "req-1")
 				So(resp.Message, ShouldNotBeNil)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
-				fc := resp.Message.Contents[0].GetFunctionCall()
+				fc := resp.Message.Contents[0].GetToolUse()
 				So(fc, ShouldNotBeNil)
 				So(fc.Id, ShouldEqual, "tool-1")
 				So(fc.Name, ShouldEqual, "get_weather")
@@ -354,7 +360,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			d1 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "thinking_delta", Thinking: "let me think"}}
 			r1 := client.convertChunkFromAnthropic(d1)
 			So(r1, ShouldNotBeNil)
-			So(r1.Message.Contents[0].GetThinking(), ShouldEqual, "let me think")
+			So(r1.Message.Contents[0].GetReasoning(), ShouldEqual, "let me think")
 
 			// text_delta
 			d2 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "text_delta", Text: "hello"}}
@@ -366,8 +372,8 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			d3 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "input_json_delta", PartialJSON: "{\"x\":1}"}}
 			r3 := client.convertChunkFromAnthropic(d3)
 			So(r3, ShouldNotBeNil)
-			So(r3.Message.Contents[0].GetFunctionCall(), ShouldNotBeNil)
-			So(r3.Message.Contents[0].GetFunctionCall().Arguments, ShouldEqual, "{\"x\":1}")
+			So(r3.Message.Contents[0].GetToolUse(), ShouldNotBeNil)
+			So(r3.Message.Contents[0].GetToolUse().GetTextualInput(), ShouldEqual, "{\"x\":1}")
 		})
 
 		Convey("When receiving message_delta with usage", func() {
@@ -391,8 +397,8 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			Convey("Then statistics are emitted", func() {
 				So(resp, ShouldNotBeNil)
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 12)
-				So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 34)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 12)
+				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 34)
 			})
 		})
 	})

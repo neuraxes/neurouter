@@ -49,8 +49,8 @@ func TestPrintChat(t *testing.T) {
 					Role: v1.Role_USER,
 					Contents: []*v1.Content{
 						{
-							Content: &v1.Content_Thinking{
-								Thinking: "Thinking...",
+							Content: &v1.Content_Reasoning{
+								Reasoning: "Reasoning...",
 							},
 						},
 						{
@@ -110,11 +110,18 @@ func TestPrintChat(t *testing.T) {
 						},
 					},
 					{
-						Content: &v1.Content_FunctionCall{
-							FunctionCall: &v1.FunctionCall{
-								Id:        "fn-call-1",
-								Name:      "get_weather",
-								Arguments: `{"location": "San Francisco"}`,
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:   "fn-call-1",
+								Name: "get_weather",
+								Inputs: []*v1.ToolUse_Input{
+									{
+										Index: ptr.To[uint32](0),
+										Input: &v1.ToolUse_Input_Text{
+											Text: `{"location": "San Francisco"}`,
+										},
+									},
+								},
 							},
 						},
 					},
@@ -122,10 +129,11 @@ func TestPrintChat(t *testing.T) {
 			},
 			Statistics: &v1.Statistics{
 				Usage: &v1.Statistics_Usage{
-					PromptTokens: 10,
+					InputTokens: 10,
 				},
 			},
 		}
-		uc.printChat(req, resp)
+		err := uc.printChat(req, resp)
+		So(err, ShouldBeNil)
 	})
 }

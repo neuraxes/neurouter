@@ -67,7 +67,6 @@ Message {{$i}}:
  • ID: {{$msg.Id}}
  • Role: {{$msg.Role}}
  • Name: {{$msg.Name}}
- • ToolCallID: {{$msg.ToolCallId}}
  • Contents ({{len $msg.Contents}}):
 {{- range $j, $content := $msg.Contents}}
  • Content {{$j}}:
@@ -102,9 +101,9 @@ Message:
 {{- if .Response.Statistics}}
 {{- if .Response.Statistics.Usage}}
 Statistics:
- • Prompt Tokens: {{.Response.Statistics.Usage.PromptTokens}}
- • Completion Tokens: {{.Response.Statistics.Usage.CompletionTokens}}
- • Cached Prompt Tokens: {{.Response.Statistics.Usage.CachedPromptTokens}}
+ • Input Tokens: {{.Response.Statistics.Usage.InputTokens}}
+ • Output Tokens: {{.Response.Statistics.Usage.OutputTokens}}
+ • Cached Input Tokens: {{.Response.Statistics.Usage.CachedInputTokens}}
 {{- end}}
 {{- end}}
 {{- end}}
@@ -134,18 +133,27 @@ func formatContent(content *v1.Content) string {
 		case *v1.Image_Data:
 			return "<IMAGE_DATA>" + fmt.Sprintf("%d bytes", len(src.Data)) + "</IMAGE_DATA>"
 		}
-	case *v1.Content_Thinking:
-		return "<THINKING>\n" + c.Thinking + "\n</THINKING>"
-	case *v1.Content_FunctionCall:
+	case *v1.Content_Reasoning:
+		return "<REASONING>\n" + c.Reasoning + "\n</REASONING>"
+	case *v1.Content_ToolUse:
 		return fmt.Sprintf(
-			`<FN_CALL>
+			`<TOOL_USE>
 ID: %s
 Name: %s
 Args: %s
-</FN_CALL>`,
-			c.FunctionCall.Id,
-			c.FunctionCall.Name,
-			c.FunctionCall.Arguments,
+</TOOL_USE>`,
+			c.ToolUse.Id,
+			c.ToolUse.Name,
+			c.ToolUse.GetTextualInput(),
+		)
+	case *v1.Content_ToolResult:
+		return fmt.Sprintf(
+			`<TOOL_RESULT>
+ID: %s
+Output: %s
+</TOOL_RESULT>`,
+			c.ToolResult.Id,
+			c.ToolResult.GetTextualOutput(),
 		)
 	}
 

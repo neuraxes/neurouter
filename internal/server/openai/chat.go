@@ -47,13 +47,13 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 			switch c := c.Content.(type) {
 			case *v1.Content_Text:
 				content = c.Text
-			case *v1.Content_FunctionCall:
+			case *v1.Content_ToolUse:
 				toolCalls = append(toolCalls, openai.ToolCall{
-					ID:   c.FunctionCall.Id,
+					ID:   c.ToolUse.Id,
 					Type: openai.ToolTypeFunction,
 					Function: openai.FunctionCall{
-						Name:      c.FunctionCall.GetName(),
-						Arguments: c.FunctionCall.GetArguments(),
+						Name:      c.ToolUse.GetName(),
+						Arguments: c.ToolUse.GetTextualInput(),
 					},
 				})
 			}
@@ -70,8 +70,8 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 
 	if resp.Statistics != nil {
 		chunk.Usage = &openai.Usage{
-			PromptTokens:     int(resp.Statistics.Usage.PromptTokens),
-			CompletionTokens: int(resp.Statistics.Usage.CompletionTokens),
+			PromptTokens:     int(resp.Statistics.Usage.InputTokens),
+			CompletionTokens: int(resp.Statistics.Usage.OutputTokens),
 		}
 		chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
 			FinishReason: openai.FinishReasonStop,

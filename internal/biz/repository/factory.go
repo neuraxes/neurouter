@@ -23,7 +23,7 @@ import (
 // UpstreamConfig is a type constraint for LLM provider configurations.
 // It allows for configuration of different upstream LLM providers like OpenAI, Google, Anthropic, etc.
 type UpstreamConfig interface {
-	conf.NeurouterConfig | conf.OpenAIConfig | conf.GoogleConfig | conf.AnthropicConfig | conf.DeepSeekConfig
+	conf.NeurouterConfig | conf.OpenAIConfig | conf.GoogleConfig | conf.AnthropicConfig
 }
 
 // UpstreamFactory is a generic factory function type for creating ChatRepo instances.

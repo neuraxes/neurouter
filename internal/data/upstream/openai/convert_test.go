@@ -83,23 +83,26 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 		multiPartRichMessage.Role = v1.Role_SYSTEM
 
 		Convey("with single part textual content", func() {
-			param := repo.convertMessageToOpenAI(singlePartTextualMessage)
-			result := param.OfSystem
+			params := repo.convertMessageToOpenAI(singlePartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfSystem
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
 			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "You are helpful assistant.")
 		})
 
 		Convey("with multi part textual content", func() {
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfSystem
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfSystem
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 2)
 			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "You are helpful")
 			So(result.Content.OfArrayOfContentParts[1].Text, ShouldEqual, " assistant.")
 		})
 
 		Convey("with multi part rich content", func() {
-			param := repo.convertMessageToOpenAI(multiPartRichMessage)
-			result := param.OfSystem
+			params := repo.convertMessageToOpenAI(multiPartRichMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfSystem
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
 			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "Here is a image:")
 		})
@@ -116,8 +119,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 					},
 				},
 			}
-			param := repo.convertMessageToOpenAI(message)
-			result := param.OfSystem
+			params := repo.convertMessageToOpenAI(message)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfSystem
 			So(result.Name.Value, ShouldEqual, "System")
 		})
 
@@ -126,8 +130,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 				PreferStringContentForSystem: true,
 			}
 
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfSystem
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfSystem
 			So(result.Content.OfString.Value, ShouldEqual, "You are helpful assistant.")
 		})
 
@@ -136,8 +141,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 				PreferSinglePartContent: true,
 			}
 
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfSystem
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfSystem
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
 			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "You are helpful assistant.")
 		})
@@ -150,23 +156,26 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 		multiPartRichMessage.Role = v1.Role_USER
 
 		Convey("with single part textual content", func() {
-			param := repo.convertMessageToOpenAI(singlePartTextualMessage)
-			result := param.OfUser
+			params := repo.convertMessageToOpenAI(singlePartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfUser
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
 			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "You are helpful assistant.")
 		})
 
 		Convey("with multi part textual content", func() {
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfUser
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfUser
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 2)
 			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "You are helpful")
 			So(result.Content.OfArrayOfContentParts[1].OfText.Text, ShouldEqual, " assistant.")
 		})
 
 		Convey("with multi part rich content", func() {
-			param := repo.convertMessageToOpenAI(multiPartRichMessage)
-			result := param.OfUser
+			params := repo.convertMessageToOpenAI(multiPartRichMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfUser
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 2)
 			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "Here is a image:")
 			So(result.Content.OfArrayOfContentParts[1].OfImageURL.ImageURL.URL, ShouldEqual, "https://example.com/image.jpg")
@@ -184,8 +193,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 					},
 				},
 			}
-			param := repo.convertMessageToOpenAI(message)
-			result := param.OfUser
+			params := repo.convertMessageToOpenAI(message)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfUser
 			So(result.Name.Value, ShouldEqual, "User")
 		})
 
@@ -194,8 +204,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 				PreferStringContentForUser: true,
 			}
 
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfUser
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfUser
 			So(result.Content.OfString.Value, ShouldEqual, "You are helpful assistant.")
 		})
 
@@ -204,8 +215,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 				PreferSinglePartContent: true,
 			}
 
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfUser
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfUser
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
 			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "You are helpful assistant.")
 		})
@@ -219,8 +231,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 					},
 				},
 			}
-			param := repo.convertMessageToOpenAI(message)
-			result := param.OfUser
+			params := repo.convertMessageToOpenAI(message)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfUser
 			So(result.Content.OfString.Value, ShouldEqual, "")
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 0)
 		})
@@ -230,8 +243,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 				Role:     v1.Role_USER,
 				Contents: []*v1.Content{},
 			}
-			param := repo.convertMessageToOpenAI(message)
-			result := param.OfUser
+			params := repo.convertMessageToOpenAI(message)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfUser
 			So(result.Content.OfString.Value, ShouldEqual, "")
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 0)
 		})
@@ -244,23 +258,26 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 		multiPartRichMessage.Role = v1.Role_MODEL
 
 		Convey("with single part textual content", func() {
-			param := repo.convertMessageToOpenAI(singlePartTextualMessage)
-			result := param.OfAssistant
+			params := repo.convertMessageToOpenAI(singlePartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfAssistant
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
 			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "You are helpful assistant.")
 		})
 
 		Convey("with multi part textual content", func() {
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfAssistant
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfAssistant
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 2)
 			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "You are helpful")
 			So(result.Content.OfArrayOfContentParts[1].OfText.Text, ShouldEqual, " assistant.")
 		})
 
 		Convey("with multi part rich content", func() {
-			param := repo.convertMessageToOpenAI(multiPartRichMessage)
-			result := param.OfAssistant
+			params := repo.convertMessageToOpenAI(multiPartRichMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfAssistant
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
 			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "Here is a image:")
 		})
@@ -270,8 +287,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 				PreferStringContentForAssistant: true,
 			}
 
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfAssistant
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfAssistant
 			So(result.Content.OfString.Value, ShouldEqual, "You are helpful assistant.")
 		})
 
@@ -280,8 +298,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 				PreferSinglePartContent: true,
 			}
 
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfAssistant
+			params := repo.convertMessageToOpenAI(multiPartTextualMessage)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfAssistant
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
 			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "You are helpful assistant.")
 		})
@@ -298,8 +317,9 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 					},
 				},
 			}
-			param := repo.convertMessageToOpenAI(message)
-			result := param.OfAssistant
+			params := repo.convertMessageToOpenAI(message)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfAssistant
 			So(result.Name.Value, ShouldEqual, "Claude")
 		})
 
@@ -313,27 +333,39 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 						},
 					},
 					{
-						Content: &v1.Content_FunctionCall{
-							FunctionCall: &v1.FunctionCall{
-								Id:        "call-1",
-								Name:      "search",
-								Arguments: `{"query":"weather"}`,
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:   "call-1",
+								Name: "search",
+								Inputs: []*v1.ToolUse_Input{
+									{
+										Input: &v1.ToolUse_Input_Text{
+											Text: `{"query":"weather"}`,
+										},
+									},
+								},
 							},
 						},
 					},
 					{
-						Content: &v1.Content_FunctionCall{
-							FunctionCall: &v1.FunctionCall{
-								Id:        "call-2",
-								Name:      "calculate",
-								Arguments: `{"expression":"1+1"}`,
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:   "call-2",
+								Name: "calculate",
+								Inputs: []*v1.ToolUse_Input{
+									{
+										Input: &v1.ToolUse_Input_Text{
+											Text: `{"expression":"1+1"}`,
+										},
+									},
+								},
 							},
 						},
 					},
 				},
 			}
-			param := repo.convertMessageToOpenAI(message)
-			result := param.OfAssistant
+			params := repo.convertMessageToOpenAI(message)
+			result := params[0].OfAssistant
 			calls := result.ToolCalls
 			So(calls, ShouldHaveLength, 2)
 			So(calls[0].ID, ShouldEqual, "call-1")
@@ -355,67 +387,153 @@ func TestConvertMessageToOpenAI(t *testing.T) {
 					},
 				},
 			}
-			param := repo.convertMessageToOpenAI(message)
-			result := param.OfAssistant
+			params := repo.convertMessageToOpenAI(message)
+			result := params[0].OfAssistant
 			So(result.ToolCalls, ShouldBeEmpty)
 		})
 	})
 
-	Convey("Test for TOOL role", t, func() {
+	Convey("Test for USER role with ToolResult", t, func() {
 		repo.config = &conf.OpenAIConfig{}
-		singlePartTextualMessage.Role = v1.Role_TOOL
-		singlePartTextualMessage.ToolCallId = "tool-call-id-1"
-		multiPartTextualMessage.Role = v1.Role_TOOL
-		multiPartTextualMessage.ToolCallId = "tool-call-id-2"
-		multiPartRichMessage.Role = v1.Role_TOOL
-		multiPartRichMessage.ToolCallId = "tool-call-id-3"
 
-		Convey("with single part textual content", func() {
-			param := repo.convertMessageToOpenAI(singlePartTextualMessage)
-			result := param.OfTool
+		Convey("with only tool result", func() {
+			message := &v1.Message{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{
+						Content: &v1.Content_ToolResult{
+							ToolResult: &v1.ToolResult{
+								Id: "tool-call-id-1",
+								Outputs: []*v1.ToolResult_Output{
+									{
+										Output: &v1.ToolResult_Output_Text{
+											Text: "Tool execution output 1",
+										},
+									},
+									{
+										Output: &v1.ToolResult_Output_Text{
+											Text: "Tool execution output 2",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			params := repo.convertMessageToOpenAI(message)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfTool
 			So(result.ToolCallID, ShouldEqual, "tool-call-id-1")
-			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
-			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "You are helpful assistant.")
-		})
-
-		Convey("with multi part textual content", func() {
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfTool
-			So(result.ToolCallID, ShouldEqual, "tool-call-id-2")
 			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 2)
-			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "You are helpful")
-			So(result.Content.OfArrayOfContentParts[1].Text, ShouldEqual, " assistant.")
+			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "Tool execution output 1")
+			So(result.Content.OfArrayOfContentParts[1].Text, ShouldEqual, "Tool execution output 2")
 		})
 
-		Convey("with multi part rich content", func() {
-			param := repo.convertMessageToOpenAI(multiPartRichMessage)
-			result := param.OfTool
-			So(result.ToolCallID, ShouldEqual, "tool-call-id-3")
-			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
-			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "Here is a image:")
+		Convey("with multiple tool results", func() {
+			message := &v1.Message{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{
+						Content: &v1.Content_ToolResult{
+							ToolResult: &v1.ToolResult{
+								Id: "tool-call-id-1",
+								Outputs: []*v1.ToolResult_Output{
+									{
+										Output: &v1.ToolResult_Output_Text{
+											Text: "Result 1",
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Content: &v1.Content_ToolResult{
+							ToolResult: &v1.ToolResult{
+								Id: "tool-call-id-2",
+								Outputs: []*v1.ToolResult_Output{
+									{
+										Output: &v1.ToolResult_Output_Text{
+											Text: "Result 2",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			params := repo.convertMessageToOpenAI(message)
+			So(params, ShouldHaveLength, 2)
+			So(params[0].OfTool.ToolCallID, ShouldEqual, "tool-call-id-1")
+			So(params[0].OfTool.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "Result 1")
+			So(params[1].OfTool.ToolCallID, ShouldEqual, "tool-call-id-2")
+			So(params[1].OfTool.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "Result 2")
 		})
 
-		Convey("with PreferStringContentForTool enabled", func() {
+		Convey("with tool result and user text", func() {
+			message := &v1.Message{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{
+						Content: &v1.Content_ToolResult{
+							ToolResult: &v1.ToolResult{
+								Id: "tool-call-id-1",
+								Outputs: []*v1.ToolResult_Output{
+									{
+										Output: &v1.ToolResult_Output_Text{
+											Text: "Tool result",
+										},
+									},
+								},
+							},
+						},
+					},
+					{
+						Content: &v1.Content_Text{
+							Text: "Additional user comment",
+						},
+					},
+				},
+			}
+			params := repo.convertMessageToOpenAI(message)
+			So(params, ShouldHaveLength, 2)
+			// First should be tool message
+			So(params[0].OfTool.ToolCallID, ShouldEqual, "tool-call-id-1")
+			So(params[0].OfTool.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "Tool result")
+			// Second should be user message
+			So(params[1].OfUser.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "Additional user comment")
+		})
+
+		Convey("with tool result and PreferStringContentForTool enabled", func() {
 			repo.config = &conf.OpenAIConfig{
 				PreferStringContentForTool: true,
 			}
 
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfTool
-			So(result.ToolCallID, ShouldEqual, "tool-call-id-2")
-			So(result.Content.OfString.Value, ShouldEqual, "You are helpful assistant.")
-		})
-
-		Convey("with PreferSinglePartContent enabled", func() {
-			repo.config = &conf.OpenAIConfig{
-				PreferSinglePartContent: true,
+			message := &v1.Message{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{
+						Content: &v1.Content_ToolResult{
+							ToolResult: &v1.ToolResult{
+								Id: "tool-call-id-1",
+								Outputs: []*v1.ToolResult_Output{
+									{
+										Output: &v1.ToolResult_Output_Text{
+											Text: "Result text",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			}
-
-			param := repo.convertMessageToOpenAI(multiPartTextualMessage)
-			result := param.OfTool
-			So(result.ToolCallID, ShouldEqual, "tool-call-id-2")
-			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
-			So(result.Content.OfArrayOfContentParts[0].Text, ShouldEqual, "You are helpful assistant.")
+			params := repo.convertMessageToOpenAI(message)
+			result := params[0].OfTool
+			So(result.ToolCallID, ShouldEqual, "tool-call-id-1")
+			So(result.Content.OfString.Value, ShouldEqual, "Result text")
 		})
 	})
 
@@ -592,9 +710,9 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldHaveLength, 1)
-			So(msg.Contents[0].GetFunctionCall().GetId(), ShouldEqual, "call-1")
-			So(msg.Contents[0].GetFunctionCall().GetName(), ShouldEqual, "test_function")
-			So(msg.Contents[0].GetFunctionCall().GetArguments(), ShouldEqual, `{"arg1":"value1"}`)
+			So(msg.Contents[0].GetToolUse().GetId(), ShouldEqual, "call-1")
+			So(msg.Contents[0].GetToolUse().GetName(), ShouldEqual, "test_function")
+			So(msg.Contents[0].GetToolUse().GetTextualInput(), ShouldEqual, `{"arg1":"value1"}`)
 		})
 
 		Convey("with empty content and no tool calls", func() {
@@ -607,10 +725,10 @@ func TestConvertMessageFromOpenAI(t *testing.T) {
 			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldBeNil)
-			// No tool calls, so no Content_FunctionCall in Contents
+			// No tool calls, so no Content_ToolUse in Contents
 			hasFunctionCall := false
 			for _, c := range msg.Contents {
-				if _, ok := c.GetContent().(*v1.Content_FunctionCall); ok {
+				if _, ok := c.GetContent().(*v1.Content_ToolUse); ok {
 					hasFunctionCall = true
 				}
 			}
@@ -656,8 +774,8 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 			}
 
 			resp := convertChunkFromOpenAI(chunk)
-			So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 5)
-			So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 10)
+			So(resp.Statistics.Usage.InputTokens, ShouldEqual, 5)
+			So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 10)
 		})
 
 		Convey("with function tool call", func() {
@@ -685,10 +803,10 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 			So(resp.Id, ShouldEqual, "chatcmpl-1")
 			So(resp.Message.Id, ShouldBeEmpty)
 			So(resp.Message.Contents, ShouldHaveLength, 1)
-			functionCall := resp.Message.Contents[0].GetFunctionCall()
+			functionCall := resp.Message.Contents[0].GetToolUse()
 			So(functionCall.GetId(), ShouldEqual, "tool-1")
 			So(functionCall.GetName(), ShouldEqual, "my_func")
-			So(functionCall.GetArguments(), ShouldEqual, "{\"foo\":1}")
+			So(functionCall.GetTextualInput(), ShouldEqual, "{\"foo\":1}")
 		})
 	})
 }
@@ -717,9 +835,9 @@ func TestConvertStatisticsFromOpenAI(t *testing.T) {
 			Convey("Then the converted statistics should have correct values", func() {
 				So(result, ShouldNotBeNil)
 				So(result.Usage, ShouldNotBeNil)
-				So(result.Usage.PromptTokens, ShouldEqual, 10)
-				So(result.Usage.CompletionTokens, ShouldEqual, 20)
-				So(result.Usage.CachedPromptTokens, ShouldEqual, 5)
+				So(result.Usage.InputTokens, ShouldEqual, 10)
+				So(result.Usage.OutputTokens, ShouldEqual, 20)
+				So(result.Usage.CachedInputTokens, ShouldEqual, 5)
 			})
 		})
 
@@ -747,8 +865,8 @@ func TestConvertStatisticsFromOpenAI(t *testing.T) {
 			Convey("Then the converted statistics should handle large values", func() {
 				So(result, ShouldNotBeNil)
 				So(result.Usage, ShouldNotBeNil)
-				So(result.Usage.PromptTokens, ShouldEqual, 4294967295)
-				So(result.Usage.CompletionTokens, ShouldEqual, 2147483647)
+				So(result.Usage.InputTokens, ShouldEqual, 4294967295)
+				So(result.Usage.OutputTokens, ShouldEqual, 2147483647)
 			})
 		})
 	})

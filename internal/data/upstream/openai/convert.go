@@ -20,13 +20,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/shared"
+	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
 // convertMessageToOpenAI converts an internal message to a message that can be sent to the OpenAI API.
-func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompletionMessageParamUnion {
+func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatCompletionMessageParamUnion {
 	plainText := ""
 	isPlainText := true
 
@@ -72,45 +73,96 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 			}
 		}
 
-		return &openai.ChatCompletionMessageParamUnion{OfSystem: m}
+		return []openai.ChatCompletionMessageParamUnion{{OfSystem: m}}
 	case v1.Role_USER:
-		m := &openai.ChatCompletionUserMessageParam{}
+		var result []openai.ChatCompletionMessageParamUnion
 
-		if message.Name != "" {
-			m.Name = openai.Opt(message.Name)
-		}
-
-		if isPlainText && r.config.PreferStringContentForUser {
-			m.Content.OfString = openai.Opt(plainText)
-		} else if isPlainText && r.config.PreferSinglePartContent {
-			m.Content.OfArrayOfContentParts = append(
-				m.Content.OfArrayOfContentParts,
-				openai.TextContentPart(plainText),
-			)
-		} else {
-			for _, content := range message.Contents {
-				switch c := content.GetContent().(type) {
-				case *v1.Content_Text:
-					m.Content.OfArrayOfContentParts = append(
-						m.Content.OfArrayOfContentParts,
-						openai.TextContentPart(c.Text),
-					)
-				case *v1.Content_Image:
-					m.Content.OfArrayOfContentParts = append(
-						m.Content.OfArrayOfContentParts,
-						openai.ImageContentPart(
-							openai.ChatCompletionContentPartImageImageURLParam{
-								URL: c.Image.GetUrl(),
-							},
-						),
-					)
-				default:
-					r.log.Errorf("unsupported content for user: %v", c)
-				}
+		// Check if there are any tool results that need to be split
+		var toolResults []*v1.ToolResult
+		var normalContents []*v1.Content
+		for _, content := range message.Contents {
+			if tr := content.GetToolResult(); tr != nil {
+				toolResults = append(toolResults, tr)
+			} else {
+				normalContents = append(normalContents, content)
 			}
 		}
 
-		return &openai.ChatCompletionMessageParamUnion{OfUser: m}
+		// First, add tool result messages if any
+		for _, toolResult := range toolResults {
+			toolMsg := &openai.ChatCompletionToolMessageParam{
+				ToolCallID: toolResult.Id,
+			}
+
+			outputText := toolResult.GetTextualOutput()
+			if r.config.PreferStringContentForTool {
+				toolMsg.Content.OfString = openai.Opt(outputText)
+			} else if isPlainText && r.config.PreferSinglePartContent {
+				toolMsg.Content.OfArrayOfContentParts = append(
+					toolMsg.Content.OfArrayOfContentParts,
+					openai.ChatCompletionContentPartTextParam{Text: outputText},
+				)
+			} else {
+				for _, content := range toolResult.Outputs {
+					switch c := content.GetOutput().(type) {
+					case *v1.ToolResult_Output_Text:
+						toolMsg.Content.OfArrayOfContentParts = append(
+							toolMsg.Content.OfArrayOfContentParts,
+							openai.ChatCompletionContentPartTextParam{Text: c.Text},
+						)
+					default:
+						r.log.Errorf("unsupported content for tool: %v", c)
+					}
+				}
+
+			}
+
+			result = append(result, openai.ChatCompletionMessageParamUnion{OfTool: toolMsg})
+		}
+
+		// Then, add user message for normal contents
+		// At least one user message should be added
+		if len(result) == 0 || len(normalContents) > 0 {
+			m := &openai.ChatCompletionUserMessageParam{}
+
+			if message.Name != "" {
+				m.Name = openai.Opt(message.Name)
+			}
+
+			if isPlainText && r.config.PreferStringContentForUser {
+				m.Content.OfString = openai.Opt(plainText)
+			} else if isPlainText && r.config.PreferSinglePartContent {
+				m.Content.OfArrayOfContentParts = append(
+					m.Content.OfArrayOfContentParts,
+					openai.TextContentPart(plainText),
+				)
+			} else {
+				for _, content := range normalContents {
+					switch c := content.GetContent().(type) {
+					case *v1.Content_Text:
+						m.Content.OfArrayOfContentParts = append(
+							m.Content.OfArrayOfContentParts,
+							openai.TextContentPart(c.Text),
+						)
+					case *v1.Content_Image:
+						m.Content.OfArrayOfContentParts = append(
+							m.Content.OfArrayOfContentParts,
+							openai.ImageContentPart(
+								openai.ChatCompletionContentPartImageImageURLParam{
+									URL: c.Image.GetUrl(),
+								},
+							),
+						)
+					default:
+						r.log.Errorf("unsupported content for user: %v", c)
+					}
+				}
+			}
+
+			result = append(result, openai.ChatCompletionMessageParamUnion{OfUser: m})
+		}
+
+		return result
 	case v1.Role_MODEL:
 		m := &openai.ChatCompletionAssistantMessageParam{}
 
@@ -141,7 +193,7 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 							},
 						},
 					)
-				case *v1.Content_FunctionCall:
+				case *v1.Content_ToolUse:
 					// Tool calls will be processed later
 				default:
 					r.log.Errorf("unsupported content for assistant: %v", c)
@@ -151,46 +203,19 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) *openai.ChatCompl
 
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
-			case *v1.Content_FunctionCall:
-				f := c.FunctionCall
+			case *v1.Content_ToolUse:
+				f := c.ToolUse
 				m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallParam{
 					ID: f.Id,
 					Function: openai.ChatCompletionMessageToolCallFunctionParam{
 						Name:      f.Name,
-						Arguments: f.Arguments,
+						Arguments: f.GetTextualInput(),
 					},
 				})
 			}
 		}
 
-		return &openai.ChatCompletionMessageParamUnion{OfAssistant: m}
-	case v1.Role_TOOL:
-		m := &openai.ChatCompletionToolMessageParam{
-			ToolCallID: message.ToolCallId,
-		}
-
-		if isPlainText && r.config.PreferStringContentForTool {
-			m.Content.OfString = openai.Opt(plainText)
-		} else if isPlainText && r.config.PreferSinglePartContent {
-			m.Content.OfArrayOfContentParts = append(
-				m.Content.OfArrayOfContentParts,
-				openai.ChatCompletionContentPartTextParam{Text: plainText},
-			)
-		} else {
-			for _, content := range message.Contents {
-				switch c := content.GetContent().(type) {
-				case *v1.Content_Text:
-					m.Content.OfArrayOfContentParts = append(
-						m.Content.OfArrayOfContentParts,
-						openai.ChatCompletionContentPartTextParam{Text: c.Text},
-					)
-				default:
-					r.log.Errorf("unsupported content for tool: %v", c)
-				}
-			}
-		}
-
-		return &openai.ChatCompletionMessageParamUnion{OfTool: m}
+		return []openai.ChatCompletionMessageParamUnion{{OfAssistant: m}}
 	default:
 		r.log.Errorf("unsupported role: %v", message.Role)
 		return nil
@@ -206,7 +231,7 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 	for _, message := range req.Messages {
 		m := r.convertMessageToOpenAI(message)
 		if m != nil {
-			openAIReq.Messages = append(openAIReq.Messages, *m)
+			openAIReq.Messages = append(openAIReq.Messages, m...)
 		}
 	}
 
@@ -281,15 +306,35 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 		})
 	}
 
+	// Support reasoning content from DeepSeek
+	if openAIMessage.JSON.ExtraFields != nil {
+		if reasoningContent, ok := openAIMessage.JSON.ExtraFields["reasoning_content"]; ok {
+			rc := gjson.Parse(reasoningContent.Raw()).String()
+			if rc != "" {
+				message.Contents = append(message.Contents, &v1.Content{
+					Content: &v1.Content_Reasoning{
+						Reasoning: rc,
+					},
+				})
+			}
+		}
+	}
+
 	if openAIMessage.ToolCalls != nil {
 		for _, toolCall := range openAIMessage.ToolCalls {
 			// Only function tool calls are supported by OpenAI
 			message.Contents = append(message.Contents, &v1.Content{
-				Content: &v1.Content_FunctionCall{
-					FunctionCall: &v1.FunctionCall{
-						Id:        toolCall.ID,
-						Name:      toolCall.Function.Name,
-						Arguments: toolCall.Function.Arguments,
+				Content: &v1.Content_ToolUse{
+					ToolUse: &v1.ToolUse{
+						Id:   toolCall.ID,
+						Name: toolCall.Function.Name,
+						Inputs: []*v1.ToolUse_Input{
+							{
+								Input: &v1.ToolUse_Input_Text{
+									Text: toolCall.Function.Arguments,
+								},
+							},
+						},
 					},
 				},
 			})
@@ -317,14 +362,35 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp 
 				},
 			})
 		}
+
+		// Support reasoning content from DeepSeek
+		if c.Delta.JSON.ExtraFields != nil {
+			if reasoningContent, ok := c.Delta.JSON.ExtraFields["reasoning_content"]; ok {
+				rc := gjson.Parse(reasoningContent.Raw()).String()
+				if rc != "" {
+					contents = append(contents, &v1.Content{
+						Content: &v1.Content_Reasoning{
+							Reasoning: rc,
+						},
+					})
+				}
+			}
+		}
+
 		if c.Delta.ToolCalls != nil {
 			for _, toolCall := range c.Delta.ToolCalls {
 				contents = append(contents, &v1.Content{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Id:        toolCall.ID,
-							Name:      toolCall.Function.Name,
-							Arguments: toolCall.Function.Arguments,
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Id:   toolCall.ID,
+							Name: toolCall.Function.Name,
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{
+										Text: toolCall.Function.Arguments,
+									},
+								},
+							},
 						},
 					},
 				})
@@ -349,9 +415,9 @@ func convertStatisticsFromOpenAI(usage *openai.CompletionUsage) *v1.Statistics {
 
 	return &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
-			PromptTokens:       uint32(usage.PromptTokens),
-			CompletionTokens:   uint32(usage.CompletionTokens),
-			CachedPromptTokens: uint32(usage.PromptTokensDetails.CachedTokens),
+			InputTokens:       uint32(usage.PromptTokens),
+			OutputTokens:      uint32(usage.CompletionTokens),
+			CachedInputTokens: uint32(usage.PromptTokensDetails.CachedTokens),
 		},
 	}
 }

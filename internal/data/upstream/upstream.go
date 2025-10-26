@@ -18,7 +18,6 @@ import (
 	"github.com/google/wire"
 
 	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic"
-	"github.com/neuraxes/neurouter/internal/data/upstream/deepseek"
 	"github.com/neuraxes/neurouter/internal/data/upstream/google"
 	"github.com/neuraxes/neurouter/internal/data/upstream/neurouter"
 	"github.com/neuraxes/neurouter/internal/data/upstream/openai"
@@ -26,7 +25,6 @@ import (
 
 var ProviderSet = wire.NewSet(
 	anthropic.NewAnthropicChatRepoFactory,
-	deepseek.NewDeepSeekChatRepoFactory,
 	google.NewGoogleFactory,
 	neurouter.NewNeurouterFactory,
 	openai.NewOpenAIFactory,

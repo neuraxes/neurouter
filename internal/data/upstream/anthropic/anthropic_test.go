@@ -11,6 +11,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
+	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -114,6 +115,38 @@ data: {"type":"message_stop"}
 
 `
 
+const mockChatCompletionStreamWithToolResp = `event: message_start
+data: {"type": "message_start", "message": {"id": "msg_2025110101035835cf6f2bd30e4b12", "type": "message", "role": "assistant", "model": "claude-3-7-sonnet-latest", "content": [], "stop_reason": null, "stop_sequence": null, "usage": {"input_tokens": 0, "output_tokens": 0}}}
+
+event: ping
+data: {"type": "ping"}
+
+event: content_block_start
+data: {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}
+
+event: content_block_delta
+data: {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "I'll check the current weather in San Francisco for you.\n"}}
+
+event: content_block_stop
+data: {"type": "content_block_stop", "index": 0}
+
+event: content_block_start
+data: {"type": "content_block_start", "index": 1, "content_block": {"type": "tool_use", "id": "call_gf0dxtb9rrt", "name": "get_weather", "input": {}}}
+
+event: content_block_delta
+data: {"type": "content_block_delta", "index": 1, "delta": {"type": "input_json_delta", "partial_json": "{\"location\":\"San Francisco\"}"}}
+
+event: content_block_stop
+data: {"type": "content_block_stop", "index": 1}
+
+event: message_delta
+data: {"type": "message_delta", "delta": {"stop_reason": "tool_use", "stop_sequence": null}, "usage": {"input_tokens": 463, "output_tokens": 31, "cache_read_input_tokens": 32}}
+
+event: message_stop
+data: {"type": "message_stop"}
+
+`
+
 func TestNewAnthropicUpstream(t *testing.T) {
 	Convey("Given a configuration and logger", t, func() {
 		config := &conf.AnthropicConfig{
@@ -192,17 +225,17 @@ func TestChat(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
 				So(resp.Id, ShouldEqual, "test-req-id")
-				So(resp.Model, ShouldEqual, "claude-3-opus-20240229")
+				So(resp.Model, ShouldEqual, "claude-3-7-sonnet-latest")
 				So(resp.Message, ShouldNotBeNil)
 				So(resp.Message.Id, ShouldHaveLength, 36)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(resp.Message.Contents, ShouldHaveLength, 2)
-				So(resp.Message.Contents[0].GetThinking(), ShouldEqual, "Hmm, the user just said \"Hello!\" - a simple and friendly greeting. No complex queries or specific requests here. \n\nSince it's a casual opening, a warm and welcoming response would be appropriate. Can mirror their cheerful tone while keeping it concise. \n\nThe response should acknowledge the greeting, express enthusiasm about helping, and leave the conversation open-ended for them to continue. No need for lengthy explanations or assumptions about their needs at this stage.")
+				So(resp.Message.Contents[0].GetReasoning(), ShouldEqual, "Hmm, the user just said \"Hello!\" - a simple and friendly greeting. No complex queries or specific requests here. \n\nSince it's a casual opening, a warm and welcoming response would be appropriate. Can mirror their cheerful tone while keeping it concise. \n\nThe response should acknowledge the greeting, express enthusiasm about helping, and leave the conversation open-ended for them to continue. No need for lengthy explanations or assumptions about their needs at this stage.")
 				So(resp.Message.Contents[1].GetText(), ShouldEqual, "Hello! 😊 How are you doing today? Is there anything I can help you with or would you like to chat about something in particular?")
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 6)
-				So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 120)
-				So(resp.Statistics.Usage.CachedPromptTokens, ShouldEqual, 1)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 6)
+				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 120)
+				So(resp.Statistics.Usage.CachedInputTokens, ShouldEqual, 1)
 			})
 		})
 
@@ -228,7 +261,8 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Thinking{Thinking: "This is a simple greeting, so no complex analysis is needed."},
+				Index:   ptr.To[uint32](0),
+				Content: &v1.Content_Reasoning{Reasoning: "This is a simple greeting, so no complex analysis is needed."},
 			}},
 		},
 	},
@@ -238,7 +272,8 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Thinking{Thinking: " \n\n"},
+				Index:   ptr.To[uint32](0),
+				Content: &v1.Content_Reasoning{Reasoning: " \n\n"},
 			}},
 		},
 	},
@@ -248,7 +283,8 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Thinking{Thinking: " I should respond in a warm and welcoming manner to match their energy"},
+				Index:   ptr.To[uint32](0),
+				Content: &v1.Content_Reasoning{Reasoning: " I should respond in a warm and welcoming manner to match their energy"},
 			}},
 		},
 	},
@@ -258,7 +294,8 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Content: &v1.Content_Thinking{Thinking: "."},
+				Index:   ptr.To[uint32](0),
+				Content: &v1.Content_Reasoning{Reasoning: "."},
 			}},
 		},
 	},
@@ -268,6 +305,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
+				Index:   ptr.To[uint32](1),
 				Content: &v1.Content_Text{Text: "Hello there! 👋 It"},
 			}},
 		},
@@ -278,6 +316,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
+				Index:   ptr.To[uint32](1),
 				Content: &v1.Content_Text{Text: "'s"},
 			}},
 		},
@@ -288,6 +327,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
+				Index:   ptr.To[uint32](1),
 				Content: &v1.Content_Text{Text: " great to see"},
 			}},
 		},
@@ -298,6 +338,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
+				Index:   ptr.To[uint32](1),
 				Content: &v1.Content_Text{Text: " you"},
 			}},
 		},
@@ -308,6 +349,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
+				Index:   ptr.To[uint32](1),
 				Content: &v1.Content_Text{Text: "!"},
 			}},
 		},
@@ -318,6 +360,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
+				Index:   ptr.To[uint32](1),
 				Content: &v1.Content_Text{Text: " 😊"},
 			}},
 		},
@@ -326,8 +369,8 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Model: "claude-3-7-sonnet-latest",
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     6,
-				CompletionTokens: 167,
+				InputTokens:  6,
+				OutputTokens: 167,
 			},
 		},
 	},

@@ -56,7 +56,6 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 	a.resp.Message.Id = message.Id
 	a.resp.Message.Role = message.Role
 	a.resp.Message.Name += message.Name
-	a.resp.Message.ToolCallId += message.ToolCallId
 
 	// Accumulate contents
 	for _, content := range message.Contents {
@@ -71,20 +70,20 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 			lastText := lastContent.Content.(*v1.Content_Text)
 			lastText.Text += c.Text
 
-		case *v1.Content_Thinking:
-			lastThinking := lastContent.Content.(*v1.Content_Thinking)
-			lastThinking.Thinking += c.Thinking
+		case *v1.Content_Reasoning:
+			lastThinking := lastContent.Content.(*v1.Content_Reasoning)
+			lastThinking.Reasoning += c.Reasoning
 
-		case *v1.Content_FunctionCall:
-			if c.FunctionCall.Id != "" {
+		case *v1.Content_ToolUse:
+			if c.ToolUse.Id != "" {
 				// A new function call, append as new content
 				a.resp.Message.Contents = append(a.resp.Message.Contents, content)
 				continue
 			}
-			lastFunctionCall := lastContent.Content.(*v1.Content_FunctionCall)
-			lastFunctionCall.FunctionCall.Id += c.FunctionCall.Id
-			lastFunctionCall.FunctionCall.Name += c.FunctionCall.Name
-			lastFunctionCall.FunctionCall.Arguments += c.FunctionCall.Arguments
+			lastFunctionCall := lastContent.Content.(*v1.Content_ToolUse)
+			lastFunctionCall.ToolUse.Id += c.ToolUse.Id
+			lastFunctionCall.ToolUse.Name += c.ToolUse.Name
+			lastFunctionCall.ToolUse.Inputs[0].Input.(*v1.ToolUse_Input_Text).Text += c.ToolUse.GetTextualInput()
 		}
 	}
 }
@@ -103,7 +102,7 @@ func (a *ChatRespAccumulator) accumulateStatistics(statistics *v1.Statistics) {
 			a.resp.Statistics.Usage = &v1.Statistics_Usage{}
 		}
 
-		a.resp.Statistics.Usage.PromptTokens = statistics.Usage.PromptTokens
-		a.resp.Statistics.Usage.CompletionTokens += statistics.Usage.CompletionTokens
+		a.resp.Statistics.Usage.InputTokens = statistics.Usage.InputTokens
+		a.resp.Statistics.Usage.OutputTokens += statistics.Usage.OutputTokens
 	}
 }

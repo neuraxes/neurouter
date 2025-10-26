@@ -128,15 +128,46 @@ func TestConvertContentToGoogle(t *testing.T) {
 		args := map[string]any{"foo": "bar"}
 		argsJSON, _ := json.Marshal(args)
 		content := &v1.Content{
-			Content: &v1.Content_FunctionCall{
-				FunctionCall: &v1.FunctionCall{
-					Name:      "fn",
-					Arguments: string(argsJSON),
+			Content: &v1.Content_ToolUse{
+				ToolUse: &v1.ToolUse{
+					Name: "fn",
+					Inputs: []*v1.ToolUse_Input{
+						{
+							Input: &v1.ToolUse_Input_Text{
+								Text: string(argsJSON),
+							},
+						},
+					},
 				},
 			},
 		}
 		part := convertContentToGoogle(content)
 		So(part, ShouldHaveSameTypeAs, genai.FunctionCall{})
+		funcCall := part.(genai.FunctionCall)
+		So(funcCall.Name, ShouldEqual, "fn")
+		So(funcCall.Args, ShouldResemble, args)
+	})
+
+	Convey("convertContentToGoogle should convert tool result", t, func() {
+		content := &v1.Content{
+			Content: &v1.Content_ToolResult{
+				ToolResult: &v1.ToolResult{
+					Id: "tool-id",
+					Outputs: []*v1.ToolResult_Output{
+						{
+							Output: &v1.ToolResult_Output_Text{
+								Text: "result text",
+							},
+						},
+					},
+				},
+			},
+		}
+		part := convertContentToGoogle(content)
+		So(part, ShouldHaveSameTypeAs, genai.FunctionResponse{})
+		funcResp := part.(genai.FunctionResponse)
+		So(funcResp.Name, ShouldEqual, "tool-id")
+		So(funcResp.Response["result"], ShouldEqual, "result text")
 	})
 
 	Convey("convertContentToGoogle should return nil for unknown", t, func() {
@@ -157,10 +188,16 @@ func TestConvertContentToGoogle(t *testing.T) {
 
 	Convey("convertContentToGoogle should return nil for tool call with invalid JSON", t, func() {
 		content := &v1.Content{
-			Content: &v1.Content_FunctionCall{
-				FunctionCall: &v1.FunctionCall{
-					Name:      "fn",
-					Arguments: "{invalid json}",
+			Content: &v1.Content_ToolUse{
+				ToolUse: &v1.ToolUse{
+					Name: "fn",
+					Inputs: []*v1.ToolUse_Input{
+						{
+							Input: &v1.ToolUse_Input_Text{
+								Text: "{invalid json}",
+							},
+						},
+					},
 				},
 			},
 		}
@@ -183,12 +220,24 @@ func TestConvertMessageToGoogle(t *testing.T) {
 		So(result.Parts[0].(genai.Text), ShouldEqual, genai.Text("hi"))
 	})
 
-	Convey("convertMessageToGoogle should convert tool message", t, func() {
+	Convey("convertMessageToGoogle should convert user message with tool result", t, func() {
 		msg := &v1.Message{
-			Role:       v1.Role_TOOL,
-			ToolCallId: "tool1",
+			Role: v1.Role_USER,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Text{Text: "result"}},
+				{
+					Content: &v1.Content_ToolResult{
+						ToolResult: &v1.ToolResult{
+							Id: "tool1",
+							Outputs: []*v1.ToolResult_Output{
+								{
+									Output: &v1.ToolResult_Output_Text{
+										Text: "result2",
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		}
 		result := convertMessageToGoogle(msg)
@@ -196,6 +245,7 @@ func TestConvertMessageToGoogle(t *testing.T) {
 		So(result.Role, ShouldEqual, "user")
 		So(result.Parts, ShouldHaveLength, 1)
 		So(result.Parts[0].(genai.FunctionResponse).Name, ShouldEqual, "tool1")
+		So(result.Parts[0].(genai.FunctionResponse).Response["result"], ShouldEqual, "result2")
 	})
 
 	Convey("convertMessageToGoogle should handle system role", t, func() {
@@ -252,8 +302,8 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 		msg := convertMessageFromGoogle(content)
 		So(msg, ShouldNotBeNil)
 		So(msg.Contents, ShouldHaveLength, 1)
-		So(msg.Contents[0].GetFunctionCall().GetName(), ShouldEqual, "fn")
-		So(msg.Contents[0].GetFunctionCall().GetArguments(), ShouldEqual, `{"foo":"bar"}`)
+		So(msg.Contents[0].GetToolUse().GetName(), ShouldEqual, "fn")
+		So(msg.Contents[0].GetToolUse().GetTextualInput(), ShouldEqual, `{"foo":"bar"}`)
 	})
 
 	Convey("convertMessageFromGoogle should skip function call with marshal error", t, func() {
@@ -284,9 +334,9 @@ func TestConvertStatisticsFromGoogle(t *testing.T) {
 
 		So(stats, ShouldNotBeNil)
 		So(stats.Usage, ShouldNotBeNil)
-		So(stats.Usage.PromptTokens, ShouldEqual, 100)
-		So(stats.Usage.CompletionTokens, ShouldEqual, 50)
-		So(stats.Usage.CachedPromptTokens, ShouldEqual, 25)
+		So(stats.Usage.InputTokens, ShouldEqual, 100)
+		So(stats.Usage.OutputTokens, ShouldEqual, 50)
+		So(stats.Usage.CachedInputTokens, ShouldEqual, 25)
 	})
 
 	Convey("convertStatisticsFromGoogle should return nil for nil input", t, func() {
@@ -305,8 +355,8 @@ func TestConvertStatisticsFromGoogle(t *testing.T) {
 
 		So(stats, ShouldNotBeNil)
 		So(stats.Usage, ShouldNotBeNil)
-		So(stats.Usage.PromptTokens, ShouldEqual, 0)
-		So(stats.Usage.CompletionTokens, ShouldEqual, 0)
-		So(stats.Usage.CachedPromptTokens, ShouldEqual, 0)
+		So(stats.Usage.InputTokens, ShouldEqual, 0)
+		So(stats.Usage.OutputTokens, ShouldEqual, 0)
+		So(stats.Usage.CachedInputTokens, ShouldEqual, 0)
 	})
 }

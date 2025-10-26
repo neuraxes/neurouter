@@ -219,7 +219,7 @@ func TestChat(t *testing.T) {
 				So(len(resp.Message.Contents), ShouldEqual, 1)
 				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello there! How can I help you today?\n")
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 2)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 2)
 				// TODO: Completion token count is currently broken in google's SDK, add when available
 			})
 		})
@@ -258,8 +258,8 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     1,
-				CompletionTokens: 11,
+				InputTokens:  1,
+				OutputTokens: 11,
 			},
 		},
 	},
@@ -416,11 +416,11 @@ func TestChatWithToolCalls(t *testing.T) {
 				So(len(resp.Message.Id), ShouldEqual, 36)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetFunctionCall().GetName(), ShouldEqual, "get_weather")
-				So(resp.Message.Contents[0].GetFunctionCall().GetArguments(), ShouldEqual, "{\"location\":\"Tokyo\"}")
+				So(resp.Message.Contents[0].GetToolUse().GetName(), ShouldEqual, "get_weather")
+				So(resp.Message.Contents[0].GetToolUse().GetTextualInput(), ShouldEqual, "{\"location\":\"Tokyo\"}")
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 23)
-				So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 5)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 23)
+				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 5)
 			})
 		})
 	})
@@ -434,11 +434,17 @@ var mockChatStreamRespWithToolCall = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Id:        "get_weather",
-							Name:      "get_weather",
-							Arguments: "{\"location\":\"Tokyo\"}",
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Id:   "get_weather",
+							Name: "get_weather",
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{
+										Text: "{\"location\":\"Tokyo\"}",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -446,8 +452,8 @@ var mockChatStreamRespWithToolCall = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     23,
-				CompletionTokens: 5,
+				InputTokens:  23,
+				OutputTokens: 5,
 			},
 		},
 	},

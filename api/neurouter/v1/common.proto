@@ -48,9 +48,9 @@ message GenerationConfig {
 
 message Statistics {
   message Usage {
-    uint32 prompt_tokens = 1;
-    uint32 completion_tokens = 2;
-    uint32 cached_prompt_tokens = 3;
+    uint32 input_tokens = 1;
+    uint32 output_tokens = 2;
+    uint32 cached_input_tokens = 3;
   }
 
   Usage usage = 1;
@@ -72,31 +72,6 @@ enum Capability {
   CAPABILITY_COMPLETION = 2;
   CAPABILITY_EMBEDDING = 3;
   CAPABILITY_TOOL_USE = 4;
-}
-
-// Represent a image content
-message Image {
-  oneof source {
-    string url = 10;
-    bytes data = 11;
-  }
-}
-
-// Represent a function tool call content
-message FunctionCall {
-  string id = 1;
-  string name = 2;
-  string arguments = 3;
-}
-
-// Multi-modality content
-message Content {
-  oneof content {
-    string text = 1;
-    Image image = 2;
-    string thinking = 3;
-    FunctionCall function_call = 4;
-  }
 }
 
 message Schema {

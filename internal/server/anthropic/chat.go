@@ -129,15 +129,15 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 				_, _ = s.httpCtx.Response().Write(eventJson)
 				_, _ = s.httpCtx.Response().Write([]byte("\n\n"))
 				s.httpCtx.Response().(http.Flusher).Flush()
-			case *v1.Content_FunctionCall:
+			case *v1.Content_ToolUse:
 				if !s.contentBlockStarted {
 					s.contentBlockStarted = true
 					event := anthropic.ContentBlockStartEvent{
 						Index: s.contentIndex,
 						ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
 							Type: "tool_use",
-							ID:   content.FunctionCall.GetId(),
-							Name: content.FunctionCall.GetName(),
+							ID:   content.ToolUse.GetId(),
+							Name: content.ToolUse.GetName(),
 						},
 					}
 					eventJson, _ := json.Marshal(event)
@@ -153,7 +153,7 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 					Index: s.contentIndex,
 					Delta: anthropic.RawContentBlockDeltaUnion{
 						Type:        "input_json_delta",
-						PartialJSON: content.FunctionCall.GetArguments(),
+						PartialJSON: content.ToolUse.GetTextualInput(),
 					},
 				}
 				eventJson, _ := json.Marshal(event)
@@ -181,7 +181,7 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 				StopReason: "end_turn",
 			},
 			Usage: anthropic.MessageDeltaUsage{
-				OutputTokens: int64(resp.Statistics.Usage.CompletionTokens),
+				OutputTokens: int64(resp.Statistics.Usage.OutputTokens),
 			},
 		}
 		eventJson, _ := json.Marshal(deltaEvent)

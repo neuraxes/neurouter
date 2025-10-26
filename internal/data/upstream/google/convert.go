@@ -115,16 +115,24 @@ func convertContentToGoogle(content *v1.Content) genai.Part {
 		default:
 			return nil
 		}
-	case *v1.Content_FunctionCall:
+	case *v1.Content_ToolUse:
 		var args map[string]any
-		if c.FunctionCall.Arguments != "" {
-			if err := json.Unmarshal([]byte(c.FunctionCall.Arguments), &args); err != nil {
+		if c.ToolUse.GetTextualInput() != "" {
+			if err := json.Unmarshal([]byte(c.ToolUse.GetTextualInput()), &args); err != nil {
 				return nil
 			}
 		}
 		return genai.FunctionCall{
-			Name: c.FunctionCall.Name,
+			Name: c.ToolUse.Name,
 			Args: args,
+		}
+	case *v1.Content_ToolResult:
+		return genai.FunctionResponse{
+			Name: c.ToolResult.Id,
+			Response: map[string]any{
+				// TODO: Try to parse the result as JSON?
+				"result": c.ToolResult.GetTextualOutput(),
+			},
 		}
 	default:
 		return nil
@@ -134,18 +142,9 @@ func convertContentToGoogle(content *v1.Content) genai.Part {
 // convertMessageToGoogle converts [v1.Message] to [genai.Content]
 func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 	var parts []genai.Part
-	if msg.Role == v1.Role_TOOL {
-		parts = append(parts, genai.FunctionResponse{
-			Name: msg.ToolCallId,
-			Response: map[string]any{
-				"content": msg.Contents[0].GetText(), // TODO: Handle multiple contents or different types
-			},
-		})
-	} else {
-		for _, content := range msg.Contents {
-			if part := convertContentToGoogle(content); part != nil {
-				parts = append(parts, part)
-			}
+	for _, content := range msg.Contents {
+		if part := convertContentToGoogle(content); part != nil {
+			parts = append(parts, part)
 		}
 	}
 
@@ -157,8 +156,6 @@ func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 		role = "user"
 	case v1.Role_MODEL:
 		role = "model"
-	case v1.Role_TOOL:
-		role = "user" // Google AI doesn't support tool role, use user role instead
 	}
 
 	return &genai.Content{
@@ -188,11 +185,17 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 				continue // Skip if arguments cannot be marshaled
 			}
 			message.Contents = append(message.Contents, &v1.Content{
-				Content: &v1.Content_FunctionCall{
-					FunctionCall: &v1.FunctionCall{
-						Id:        part.Name,
-						Name:      part.Name,
-						Arguments: string(args),
+				Content: &v1.Content_ToolUse{
+					ToolUse: &v1.ToolUse{
+						Id:   part.Name,
+						Name: part.Name,
+						Inputs: []*v1.ToolUse_Input{
+							{
+								Input: &v1.ToolUse_Input_Text{
+									Text: string(args),
+								},
+							},
+						},
 					},
 				},
 			})
@@ -210,9 +213,9 @@ func convertStatisticsFromGoogle(usage *genai.UsageMetadata) *v1.Statistics {
 
 	return &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
-			PromptTokens:       uint32(usage.PromptTokenCount),
-			CompletionTokens:   uint32(usage.CandidatesTokenCount),
-			CachedPromptTokens: uint32(usage.CachedContentTokenCount),
+			InputTokens:       uint32(usage.PromptTokenCount),
+			OutputTokens:      uint32(usage.CandidatesTokenCount),
+			CachedInputTokens: uint32(usage.CachedContentTokenCount),
 		},
 	}
 }

@@ -17,6 +17,7 @@ package openai
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -252,8 +253,8 @@ func TestChat(t *testing.T) {
 				So(len(resp.Message.Contents), ShouldEqual, 1)
 				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello! How can I help you today?")
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 12)
-				So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 9)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 12)
+				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 9)
 			})
 		})
 
@@ -378,8 +379,8 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     12,
-				CompletionTokens: 9,
+				InputTokens:  12,
+				OutputTokens: 9,
 			},
 		},
 	},
@@ -537,14 +538,14 @@ func TestChatWithToolCall(t *testing.T) {
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(len(resp.Message.Contents), ShouldEqual, 2)
 				So(resp.Message.Contents[0].GetText(), ShouldEqual, "I'll check the current weather in Tokyo for you.")
-				So(resp.Message.Contents[1].GetFunctionCall(), ShouldNotBeNil)
-				fc := resp.Message.Contents[1].GetFunctionCall()
+				So(resp.Message.Contents[1].GetToolUse(), ShouldNotBeNil)
+				fc := resp.Message.Contents[1].GetToolUse()
 				So(fc.Id, ShouldEqual, "call_abc123def456")
 				So(fc.Name, ShouldEqual, "get_weather")
-				So(fc.Arguments, ShouldEqual, `{"location": "Tokyo"}`)
+				So(fc.GetTextualInput(), ShouldEqual, `{"location": "Tokyo"}`)
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.PromptTokens, ShouldEqual, 161)
-				So(resp.Statistics.Usage.CompletionTokens, ShouldEqual, 25)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 161)
+				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 25)
 			})
 		})
 	})
@@ -653,10 +654,15 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
 							Id:   "call_abc123def456",
 							Name: "get_weather",
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{},
+								},
+							},
 						},
 					},
 				},
@@ -670,9 +676,13 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Arguments: `{"`,
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{Text: `{"`},
+								},
+							},
 						},
 					},
 				},
@@ -686,9 +696,13 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Arguments: `location`,
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{Text: `location`},
+								},
+							},
 						},
 					},
 				},
@@ -702,9 +716,13 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Arguments: `":`,
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{Text: `":`},
+								},
+							},
 						},
 					},
 				},
@@ -718,9 +736,13 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Arguments: ` "`,
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{Text: ` "`},
+								},
+							},
 						},
 					},
 				},
@@ -734,9 +756,13 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Arguments: `Tokyo`,
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{Text: `Tokyo`},
+								},
+							},
 						},
 					},
 				},
@@ -750,9 +776,13 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_FunctionCall{
-						FunctionCall: &v1.FunctionCall{
-							Arguments: `"}`,
+					Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Inputs: []*v1.ToolUse_Input{
+								{
+									Input: &v1.ToolUse_Input_Text{Text: `"}`},
+								},
+							},
 						},
 					},
 				},
@@ -767,8 +797,8 @@ var mockChatStreamWithToolCallResp = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				PromptTokens:     161,
-				CompletionTokens: 25,
+				InputTokens:  161,
+				OutputTokens: 25,
 			},
 		},
 	},
@@ -858,6 +888,9 @@ func TestChatStreamWithToolCall(t *testing.T) {
 				}
 
 				for i, resp := range responses {
+					if !proto.Equal(resp, mockChatStreamWithToolCallResp[i]) {
+						fmt.Printf("Mismatch at index %d:\nGot: %+v\nWant: %+v\n", i, resp, mockChatStreamWithToolCallResp[i])
+					}
 					So(proto.Equal(resp, mockChatStreamWithToolCallResp[i]), ShouldBeTrue)
 				}
 			})

@@ -35,7 +35,6 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 	}
 
 	var contents []*v1.Content
-	var toolCallID string
 
 	// Handle content from Anthropic message
 	for _, content := range message.Content {
@@ -80,34 +79,44 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 				args, _ = json.Marshal(content.OfToolUse.Input)
 			}
 			contents = append(contents, &v1.Content{
-				Content: &v1.Content_FunctionCall{
-					FunctionCall: &v1.FunctionCall{
-						Id:        content.OfToolUse.ID,
-						Name:      content.OfToolUse.Name,
-						Arguments: string(args),
+				Content: &v1.Content_ToolUse{
+					ToolUse: &v1.ToolUse{
+						Id:   content.OfToolUse.ID,
+						Name: content.OfToolUse.Name,
+						Inputs: []*v1.ToolUse_Input{
+							{
+								Input: &v1.ToolUse_Input_Text{
+									Text: string(args),
+								},
+							},
+						},
 					},
 				},
 			})
 		case content.OfToolResult != nil:
-			// Handle tool results
-			role = v1.Role_TOOL
-			toolCallID = content.OfToolResult.ToolUseID
+			tr := &v1.ToolResult{
+				Id: content.OfToolResult.ToolUseID,
+			}
 			for _, resultContent := range content.OfToolResult.Content {
 				if resultContent.OfText != nil {
-					contents = append(contents, &v1.Content{
-						Content: &v1.Content_Text{
+					tr.Outputs = append(tr.Outputs, &v1.ToolResult_Output{
+						Output: &v1.ToolResult_Output_Text{
 							Text: resultContent.OfText.Text,
 						},
 					})
 				}
 			}
+			contents = append(contents, &v1.Content{
+				Content: &v1.Content_ToolResult{
+					ToolResult: tr,
+				},
+			})
 		}
 	}
 
 	return &v1.Message{
-		Role:       role,
-		Contents:   contents,
-		ToolCallId: toolCallID,
+		Role:     role,
+		Contents: contents,
 	}
 }
 
@@ -209,13 +218,13 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 						Text: cont.Text,
 					})
 				}
-			case *v1.Content_FunctionCall:
-				f := cont.FunctionCall
+			case *v1.Content_ToolUse:
+				f := cont.ToolUse
 				content = append(content, anthropic.ContentBlockUnion{
 					Type:  "tool_use",
 					ID:    f.Id,
 					Name:  f.Name,
-					Input: json.RawMessage(f.Arguments),
+					Input: json.RawMessage(f.GetTextualInput()),
 				})
 
 			}
@@ -226,8 +235,8 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 	// Add usage statistics
 	if resp.Statistics != nil && resp.Statistics.Usage != nil {
 		anthropicResp.Usage = anthropic.Usage{
-			InputTokens:  int64(resp.Statistics.Usage.PromptTokens),
-			OutputTokens: int64(resp.Statistics.Usage.CompletionTokens),
+			InputTokens:  int64(resp.Statistics.Usage.InputTokens),
+			OutputTokens: int64(resp.Statistics.Usage.OutputTokens),
 		}
 	}
 
