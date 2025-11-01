@@ -19,9 +19,45 @@ import (
 	"encoding/json"
 
 	"github.com/anthropics/anthropic-sdk-go"
+	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
+
+func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.GenerationConfig {
+	config := &v1.GenerationConfig{}
+	if req.MaxTokens != 0 {
+		config.MaxTokens = &req.MaxTokens
+	}
+	if req.Temperature.Valid() {
+		config.Temperature = ptr.To(float32(req.Temperature.Value))
+	}
+	if req.TopP.Valid() {
+		config.TopP = ptr.To(float32(req.TopP.Value))
+	}
+	if req.TopK.Valid() {
+		config.TopK = &req.TopK.Value
+	}
+	return config
+}
+
+func convertSystemFromAnthropic(system []anthropic.TextBlockParam) *v1.Message {
+	if len(system) == 0 {
+		return nil
+	}
+	var contents []*v1.Content
+	for _, block := range system {
+		contents = append(contents, &v1.Content{
+			Content: &v1.Content_Text{
+				Text: block.Text,
+			},
+		})
+	}
+	return &v1.Message{
+		Role:     v1.Role_SYSTEM,
+		Contents: contents,
+	}
+}
 
 func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 	var role v1.Role
@@ -35,8 +71,6 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 	}
 
 	var contents []*v1.Content
-
-	// Handle content from Anthropic message
 	for _, content := range message.Content {
 		switch {
 		case content.OfText != nil:
@@ -58,7 +92,6 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 					},
 				})
 			case content.OfImage.Source.OfBase64 != nil:
-				// Handle base64 image source
 				data, err := base64.StdEncoding.DecodeString(content.OfImage.Source.OfBase64.Data)
 				if err != nil {
 					continue
@@ -97,11 +130,12 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 			tr := &v1.ToolResult{
 				Id: content.OfToolResult.ToolUseID,
 			}
-			for _, resultContent := range content.OfToolResult.Content {
-				if resultContent.OfText != nil {
+			for _, output := range content.OfToolResult.Content {
+				switch {
+				case output.OfText != nil:
 					tr.Outputs = append(tr.Outputs, &v1.ToolResult_Output{
 						Output: &v1.ToolResult_Output_Text{
-							Text: resultContent.OfText.Text,
+							Text: output.OfText.Text,
 						},
 					})
 				}
@@ -120,45 +154,16 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 	}
 }
 
-// convertChatReqFromAnthropic converts a message request from Anthropic API to Router API
 func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
-	config := &v1.GenerationConfig{}
-
-	if req.MaxTokens != 0 {
-		config.MaxTokens = &req.MaxTokens
-	}
-	if req.Temperature.Valid() {
-		temp := float32(req.Temperature.Value)
-		config.Temperature = &temp
-	}
-	if req.TopP.Valid() {
-		topP := float32(req.TopP.Value)
-		config.TopP = &topP
-	}
-	if req.TopK.Valid() {
-		config.TopK = &req.TopK.Value
-	}
-
 	var messages []*v1.Message
+
+	system := convertSystemFromAnthropic(req.System)
+	if system != nil {
+		messages = append(messages, system)
+	}
+
 	for _, message := range req.Messages {
 		messages = append(messages, convertMessageFromAnthropic(&message))
-	}
-
-	// Handle system prompts
-	if len(req.System) > 0 {
-		var systemContent []*v1.Content
-		for _, sysBlock := range req.System {
-			systemContent = append(systemContent, &v1.Content{
-				Content: &v1.Content_Text{
-					Text: sysBlock.Text,
-				},
-			})
-		}
-		systemMessage := &v1.Message{
-			Role:     v1.Role_SYSTEM,
-			Contents: systemContent,
-		}
-		messages = append([]*v1.Message{systemMessage}, messages...)
 	}
 
 	var tools []*v1.Tool
@@ -166,25 +171,18 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 		t := &v1.Tool{}
 		switch {
 		case tool.OfTool != nil:
-			// Client tool (function)
 			var parameters *v1.Schema
 			j, _ := json.Marshal(tool.OfTool.InputSchema)
 			_ = json.Unmarshal(j, &parameters)
 
-			var description string
-			if tool.OfTool.Description.Valid() {
-				description = tool.OfTool.Description.Value
-			}
-
 			t.Tool = &v1.Tool_Function_{
 				Function: &v1.Tool_Function{
 					Name:        tool.OfTool.Name,
-					Description: description,
+					Description: tool.OfTool.Description.Value,
 					Parameters:  parameters,
 				},
 			}
 		default:
-			// Skip unsupported tool types
 			continue
 		}
 		tools = append(tools, t)
@@ -192,53 +190,60 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 
 	return &v1.ChatReq{
 		Model:    string(req.Model),
-		Config:   config,
+		Config:   convertGenerationConfigFromAnthropic(req),
 		Messages: messages,
 		Tools:    tools,
 	}
 }
 
-// convertChatRespToAnthropic converts a chat completion response from Router API to Anthropic API
 func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 	anthropicResp := &anthropic.Message{
-		ID:   resp.Message.Id,
-		Role: "assistant",
-		Type: "message",
+		Type:  "message",
+		ID:    resp.Message.Id,
+		Model: anthropic.Model(resp.Model),
+		Role:  "assistant",
 	}
 
-	// Convert content blocks
-	var content []anthropic.ContentBlockUnion
-	if resp.Message != nil && len(resp.Message.Contents) > 0 {
-		for _, c := range resp.Message.Contents {
-			switch cont := c.Content.(type) {
+	if resp.Message != nil {
+		for _, content := range resp.Message.Contents {
+			switch c := content.Content.(type) {
 			case *v1.Content_Text:
-				if cont.Text != "" {
-					content = append(content, anthropic.ContentBlockUnion{
+				if c.Text != "" {
+					anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
 						Type: "text",
-						Text: cont.Text,
+						Text: c.Text,
+					})
+				}
+			case *v1.Content_Reasoning:
+				if c.Reasoning != "" {
+					anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
+						Type:     "thinking",
+						Thinking: c.Reasoning,
 					})
 				}
 			case *v1.Content_ToolUse:
-				f := cont.ToolUse
-				content = append(content, anthropic.ContentBlockUnion{
+				f := c.ToolUse
+				anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
 					Type:  "tool_use",
 					ID:    f.Id,
 					Name:  f.Name,
 					Input: json.RawMessage(f.GetTextualInput()),
 				})
-
 			}
 		}
 	}
-	anthropicResp.Content = content
 
-	// Add usage statistics
 	if resp.Statistics != nil && resp.Statistics.Usage != nil {
-		anthropicResp.Usage = anthropic.Usage{
-			InputTokens:  int64(resp.Statistics.Usage.InputTokens),
-			OutputTokens: int64(resp.Statistics.Usage.OutputTokens),
-		}
+		anthropicResp.Usage = convertStatisticsToAnthropic(resp.Statistics)
 	}
 
 	return anthropicResp
+}
+
+func convertStatisticsToAnthropic(stats *v1.Statistics) anthropic.Usage {
+	return anthropic.Usage{
+		InputTokens:          int64(stats.Usage.InputTokens),
+		OutputTokens:         int64(stats.Usage.OutputTokens),
+		CacheReadInputTokens: int64(stats.Usage.CachedInputTokens),
+	}
 }
