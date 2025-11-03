@@ -21,6 +21,7 @@ import (
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/go-kratos/kratos/v2/transport/http"
+
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
@@ -167,14 +168,16 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 					}
 					s.sendJsonEvent("content_block_start", event)
 				}
-				event := anthropic.ContentBlockDeltaEvent{
-					Index: s.contentIndex,
-					Delta: anthropic.RawContentBlockDeltaUnion{
-						Type:        "input_json_delta",
-						PartialJSON: content.ToolUse.GetTextualInput(),
-					},
+				if len(content.ToolUse.Inputs) > 0 {
+					event := anthropic.ContentBlockDeltaEvent{
+						Index: s.contentIndex,
+						Delta: anthropic.RawContentBlockDeltaUnion{
+							Type:        "input_json_delta",
+							PartialJSON: content.ToolUse.GetTextualInput(),
+						},
+					}
+					s.sendJsonEvent("content_block_delta", event)
 				}
-				s.sendJsonEvent("content_block_delta", event)
 			}
 		}
 	}

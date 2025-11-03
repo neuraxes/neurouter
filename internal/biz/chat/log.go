@@ -25,87 +25,90 @@ import (
 
 const chatPrettyPrintTmpl = `
 {{- if .Request}}
---- CHAT REQUEST ---
-ID: {{.Request.Id}}
-Model: {{.Request.Model}}
+<chat_request id="{{.Request.Id}}" model="{{.Request.Model}}">
 {{- if .Request.Config}}
-Configuration:
+  <generation_config>
 {{- if .Request.Config.MaxTokens}}
- • Max Tokens: {{.Request.Config.MaxTokens}}
+   • Max Tokens: {{.Request.Config.MaxTokens}}
 {{- end}}
 {{- if .Request.Config.Temperature}}
- • Temperature: {{printf "%.2f" .Request.Config.GetTemperature}}
+   • Temperature: {{printf "%.2f" .Request.Config.GetTemperature}}
 {{- end}}
 {{- if .Request.Config.TopP}}
- • Top P: {{printf "%.2f" .Request.Config.GetTopP}}
+   • Top P: {{printf "%.2f" .Request.Config.GetTopP}}
 {{- end}}
 {{- if .Request.Config.TopK}}
- • Top K: {{.Request.Config.GetTopK}}
+   • Top K: {{.Request.Config.GetTopK}}
 {{- end}}
 {{- if .Request.Config.FrequencyPenalty}}
- • Frequency Penalty: {{printf "%.2f" .Request.Config.GetFrequencyPenalty}}
+   • Frequency Penalty: {{printf "%.2f" .Request.Config.GetFrequencyPenalty}}
 {{- end}}
 {{- if .Request.Config.PresencePenalty}}
- • Presence Penalty: {{printf "%.2f" .Request.Config.GetPresencePenalty}}
+   • Presence Penalty: {{printf "%.2f" .Request.Config.GetPresencePenalty}}
 {{- end}}
 {{- if .Request.Config.GetPresetTemplate}}
- • Preset Template: {{.Request.Config.GetPresetTemplate}}
+   • Preset Template: {{.Request.Config.GetPresetTemplate}}
 {{- end}}
 {{- if .Request.Config.GetPresetGrammar}}
- • Preset Grammar: {{.Request.Config.GetPresetGrammar}}
+   • Preset Grammar: {{.Request.Config.GetPresetGrammar}}
 {{- end}}
 {{- if .Request.Config.GetGbnfGrammar}}
- • GBNF Grammar: {{.Request.Config.GetGbnfGrammar}}
+   • GBNF Grammar: {{.Request.Config.GetGbnfGrammar}}
 {{- end}}
 {{- if .Request.Config.GetJsonSchema}}
- • JSON Schema: {{.Request.Config.GetJsonSchema}}
+   • JSON Schema: {{.Request.Config.GetJsonSchema}}
 {{- end}}
+  </generation_config>
 {{- end}}
-Messages ({{len .Request.Messages}}):
+  <messages len={{len .Request.Messages}}>
 {{- range $i, $msg := .Request.Messages}}
-Message {{$i}}:
- • ID: {{$msg.Id}}
- • Role: {{$msg.Role}}
- • Name: {{$msg.Name}}
- • Contents ({{len $msg.Contents}}):
+    <message index={{$i}} id="{{$msg.Id}}" role="{{$msg.Role}}" name="{{$msg.Name}}">
+      <contents len={{len $msg.Contents}}>
 {{- range $j, $content := $msg.Contents}}
- • Content {{$j}}:
+        <content index={{$j}}>
 {{formatContent $content}}
+        </content>
 {{- end}}
+      </contents>
+    </message>
 {{- end}}
+  </messages>
 {{- if .Request.Tools}}
-Tools ({{len .Request.Tools}}):
+  <tool_declarations len={{len .Request.Tools}}>
 {{- range $i, $tool := .Request.Tools}}
- • Tool {{$i}}:
+    <tool_declaration index={{$i}}>
 {{- if $tool.GetFunction}}
   • Function: {{$tool.GetFunction.Name}}
   • Description: {{$tool.GetFunction.Description}}
   • Parameters: {{formatSchema $tool.GetFunction.Parameters}}
 {{- end}}
+    </tool_declaration>
+{{- end}}
+  </tool_declarations>
 {{- end}}
 {{- end}}
-{{- end}}
-
+</chat_request>
 {{- if .Response}}
---- CHAT RESPONSE ---
-ID: {{.Response.Id}}
-Model: {{.Response.Model}}
-Message:
- • ID: {{.Response.Message.Id}}
- • Role: {{.Response.Message.Role}}
- • Contents ({{len .Response.Message.Contents}}):
+<chat_response id="{{.Response.Id}}" model="{{.Response.Model}}">
+  <message id="{{.Response.Message.Id}}" role="{{.Response.Message.Role}}">
+    <contents len={{len .Response.Message.Contents}}>
 {{- range $i, $content := .Response.Message.Contents}}
- • Content {{$i}}:
+      <content index={{$i}}>
 {{formatContent $content}}
+      </content>
 {{- end}}
+    </contents>
+  </message>
 {{- if .Response.Statistics}}
+  <statistics>
 {{- if .Response.Statistics.Usage}}
-Statistics:
- • Input Tokens: {{.Response.Statistics.Usage.InputTokens}}
- • Output Tokens: {{.Response.Statistics.Usage.OutputTokens}}
- • Cached Input Tokens: {{.Response.Statistics.Usage.CachedInputTokens}}
+   • Input Tokens: {{.Response.Statistics.Usage.InputTokens}}
+   • Output Tokens: {{.Response.Statistics.Usage.OutputTokens}}
+   • Cached Input Tokens: {{.Response.Statistics.Usage.CachedInputTokens}}
 {{- end}}
+  </statistics>
 {{- end}}
+</chat_response>
 {{- end}}
 `
 
@@ -125,39 +128,36 @@ func init() {
 func formatContent(content *v1.Content) string {
 	switch c := content.Content.(type) {
 	case *v1.Content_Text:
-		return "<TEXT>\n" + c.Text + "\n</TEXT>"
+		return "<content_text>\n" + c.Text + "\n</content_text>"
 	case *v1.Content_Image:
 		switch src := c.Image.Source.(type) {
 		case *v1.Image_Url:
-			return "<IMAGE_URL>" + src.Url + "</IMAGE_URL>"
+			return "<content_image_url>" + src.Url + "</content_image_url>"
 		case *v1.Image_Data:
-			return "<IMAGE_DATA>" + fmt.Sprintf("%d bytes", len(src.Data)) + "</IMAGE_DATA>"
+			return "<content_image_data>" + fmt.Sprintf("%d bytes", len(src.Data)) + "</content_image_data>"
 		}
 	case *v1.Content_Reasoning:
-		return "<REASONING>\n" + c.Reasoning + "\n</REASONING>"
+		return "<content_reasoning>\n" + c.Reasoning + "\n</content_reasoning>"
 	case *v1.Content_ToolUse:
 		return fmt.Sprintf(
-			`<TOOL_USE>
-ID: %s
-Name: %s
-Args: %s
-</TOOL_USE>`,
+			`<content_tool_use id="%s" name="%s">
+%s
+</content_tool_use>`,
 			c.ToolUse.Id,
 			c.ToolUse.Name,
 			c.ToolUse.GetTextualInput(),
 		)
 	case *v1.Content_ToolResult:
 		return fmt.Sprintf(
-			`<TOOL_RESULT>
-ID: %s
-Output: %s
-</TOOL_RESULT>`,
+			`<content_tool_result id="%s">
+%s
+</content_tool_result>`,
 			c.ToolResult.Id,
 			c.ToolResult.GetTextualOutput(),
 		)
 	}
 
-	return "<UNKNOWN>"
+	return "<content_unknown>"
 }
 
 func formatSchema(schema *v1.Schema) string {

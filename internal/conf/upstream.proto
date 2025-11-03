@@ -88,7 +88,8 @@ message GoogleConfig {
 
 message AnthropicConfig {
   string api_key = 1;
-  string base_url = 2;
+  string auth_token = 2;
+  string base_url = 3;
   // Whether to put the system prompt into messages (as user message)
-  bool system_as_user = 3;
+  bool system_as_user = 4;
 }

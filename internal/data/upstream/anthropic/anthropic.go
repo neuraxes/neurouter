@@ -43,8 +43,12 @@ func newAnthropicUpstream(config *conf.AnthropicConfig, logger log.Logger) (repo
 }
 
 func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient option.HTTPClient, logger log.Logger) (repo repository.ChatRepo, err error) {
-	options := []option.RequestOption{
-		option.WithAPIKey(config.ApiKey),
+	options := []option.RequestOption{}
+	if config.ApiKey != "" {
+		options = append(options, option.WithAPIKey(config.ApiKey))
+	}
+	if config.AuthToken != "" {
+		options = append(options, option.WithAuthToken(config.AuthToken))
 	}
 	if config.BaseUrl != "" {
 		options = append(options, option.WithBaseURL(config.BaseUrl))

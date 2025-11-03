@@ -18,9 +18,10 @@ import (
 	"testing"
 
 	"github.com/go-kratos/kratos/v2/log"
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	. "github.com/smartystreets/goconvey/convey"
 	"k8s.io/utils/ptr"
+
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
 func TestPrintChat(t *testing.T) {

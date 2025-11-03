@@ -18,8 +18,9 @@ import (
 	"context"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/sashabaranov/go-openai"
+
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
 func handleListModels(httpCtx http.Context, svc v1.ModelServer) error {

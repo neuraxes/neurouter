@@ -15,6 +15,8 @@
 package anthropic
 
 import (
+	"encoding/json"
+
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
@@ -77,9 +79,19 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 				},
 			))
 		case *v1.Content_ToolUse:
+			textualInput := c.ToolUse.GetTextualInput()
+
+			var input any
+			err := json.Unmarshal([]byte(textualInput), &input)
+			if err != nil {
+				// Fallback to string
+				input = textualInput
+				continue
+			}
+
 			parts = append(parts, anthropic.NewToolUseBlock(
 				c.ToolUse.Id,
-				c.ToolUse.GetTextualInput(),
+				input,
 				c.ToolUse.Name,
 			))
 		case *v1.Content_ToolResult:
