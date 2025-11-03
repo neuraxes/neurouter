@@ -57,7 +57,8 @@ message ToolResult {
 
 // Multi-modality content
 message Content {
-  optional uint32 index = 1;
+  optional string id = 1;
+  optional uint32 index = 2;
   oneof content {
     string text = 10;
     string reasoning = 11;

@@ -243,7 +243,8 @@ func (x *ToolResult) GetOutputs() []*ToolResult_Output {
 // Multi-modality content
 type Content struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Index *uint32                `protobuf:"varint,1,opt,name=index,proto3,oneof" json:"index,omitempty"`
+	Id    *string                `protobuf:"bytes,1,opt,name=id,proto3,oneof" json:"id,omitempty"`
+	Index *uint32                `protobuf:"varint,2,opt,name=index,proto3,oneof" json:"index,omitempty"`
 	// Types that are valid to be assigned to Content:
 	//
 	//	*Content_Text
@@ -284,6 +285,13 @@ func (x *Content) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Content.ProtoReflect.Descriptor instead.
 func (*Content) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Content) GetId() string {
+	if x != nil && x.Id != nil {
+		return *x.Id
+	}
+	return ""
 }
 
 func (x *Content) GetIndex() uint32 {
@@ -557,9 +565,10 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	"\x04text\x18\n" +
 	" \x01(\tH\x00R\x04textB\b\n" +
 	"\x06outputB\b\n" +
-	"\x06_index\"\x8d\x02\n" +
-	"\aContent\x12\x19\n" +
-	"\x05index\x18\x01 \x01(\rH\x01R\x05index\x88\x01\x01\x12\x14\n" +
+	"\x06_index\"\xa9\x02\n" +
+	"\aContent\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\tH\x01R\x02id\x88\x01\x01\x12\x19\n" +
+	"\x05index\x18\x02 \x01(\rH\x02R\x05index\x88\x01\x01\x12\x14\n" +
 	"\x04text\x18\n" +
 	" \x01(\tH\x00R\x04text\x12\x1e\n" +
 	"\treasoning\x18\v \x01(\tH\x00R\treasoning\x12+\n" +
@@ -567,7 +576,8 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	"\btool_use\x18\r \x01(\v2\x15.neurouter.v1.ToolUseH\x00R\atoolUse\x12;\n" +
 	"\vtool_result\x18\x0e \x01(\v2\x18.neurouter.v1.ToolResultH\x00R\n" +
 	"toolResultB\t\n" +
-	"\acontentB\b\n" +
+	"\acontentB\x05\n" +
+	"\x03_idB\b\n" +
 	"\x06_indexB3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (

@@ -16,37 +16,55 @@ package google
 
 import (
 	"encoding/json"
+	"strings"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/google/uuid"
+	"google.golang.org/genai"
+	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-// convertFunctionParametersToGoogle converts [v1.Schema] to [*genai.Schema]
+func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *genai.GenerateContentConfig) {
+	if config == nil || googleConfig == nil {
+		return
+	}
+	if config.MaxTokens != nil {
+		googleConfig.MaxOutputTokens = int32(*config.MaxTokens)
+	}
+	if config.Temperature != nil {
+		googleConfig.Temperature = config.Temperature
+	}
+	if config.TopP != nil {
+		googleConfig.TopP = config.TopP
+	}
+	if config.TopK != nil {
+		googleConfig.TopK = ptr.To(float32(*config.TopK))
+	}
+}
+
 func convertFunctionParametersToGoogle(params *v1.Schema) *genai.Schema {
 	if params == nil {
 		return nil
 	}
 	schema := &genai.Schema{
-		Type:       genai.Type(params.Type),
-		Properties: map[string]*genai.Schema{},
-		Required:   params.Required,
+		Type:        genai.Type(strings.TrimPrefix(v1.Schema_Type_name[int32(params.Type)], "TYPE_")),
+		Description: params.Description,
+		Required:    params.Required,
+		Enum:        params.Enum,
 	}
-	for k, v := range params.Properties {
-		property := &genai.Schema{
-			Type:        genai.Type(v.Type),
-			Description: v.Description,
+	switch params.Type {
+	case v1.Schema_TYPE_ARRAY:
+		schema.Items = convertFunctionParametersToGoogle(params.Items)
+	case v1.Schema_TYPE_OBJECT:
+		schema.Properties = make(map[string]*genai.Schema)
+		for key, prop := range params.Properties {
+			schema.Properties[key] = convertFunctionParametersToGoogle(prop)
 		}
-		if property.Type == genai.TypeArray {
-			property.Items = &genai.Schema{}
-		}
-		schema.Properties[k] = property
 	}
 	return schema
 }
 
-// convertToolsToGoogle converts a slice of [v1.Tool] to a slice of [genai.Tool]
 func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	if len(tools) == 0 {
 		return nil
@@ -55,93 +73,99 @@ func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	for _, tool := range tools {
 		switch t := tool.Tool.(type) {
 		case *v1.Tool_Function_:
-			fn := t.Function
 			functionDecls = append(functionDecls, &genai.FunctionDeclaration{
-				Name:        fn.GetName(),
-				Description: fn.GetDescription(),
-				Parameters:  convertFunctionParametersToGoogle(fn.GetParameters()),
+				Name:        t.Function.GetName(),
+				Description: t.Function.GetDescription(),
+				Parameters:  convertFunctionParametersToGoogle(t.Function.GetParameters()),
 			})
 		}
 	}
 	return []*genai.Tool{{FunctionDeclarations: functionDecls}}
 }
 
-// inferImageType infers the image type from the byte data
+// inferImageType infers the MIME type from the byte data
 func inferImageType(data []byte) string {
 	if len(data) >= 8 {
 		// PNG: 89 50 4E 47 0D 0A 1A 0A
 		if data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A {
-			return "png"
+			return "image/png"
 		}
 	}
 	if len(data) >= 3 {
 		// JPEG: FF D8 FF
 		if data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
-			return "jpeg"
+			return "image/jpeg"
 		}
 		// GIF: GIF87a or GIF89a
 		if data[0] == 'G' && data[1] == 'I' && data[2] == 'F' {
-			return "gif"
+			return "image/gif"
 		}
 	}
 	if len(data) >= 12 {
 		// WEBP: RIFF....WEBP
 		if data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P' {
-			return "webp"
+			return "image/webp"
 		}
 	}
 	if len(data) >= 2 {
 		// BMP: BM
 		if data[0] == 'B' && data[1] == 'M' {
-			return "bmp"
+			return "image/bmp"
 		}
 	}
-	return "unknown"
+	return "application/octet-stream"
 }
 
-// convertContentToGoogle converts [v1.Content] to [genai.Part]
-func convertContentToGoogle(content *v1.Content) genai.Part {
+func convertContentToGoogle(content *v1.Content) *genai.Part {
 	switch c := content.Content.(type) {
 	case *v1.Content_Text:
-		return genai.Text(c.Text)
+		return genai.NewPartFromText(c.Text)
 	case *v1.Content_Image:
+		mimeType := c.Image.MimeType
 		switch source := c.Image.Source.(type) {
 		case *v1.Image_Url:
-			// TODO: Download the image.
-			// Google GenAI API does not support image URL.
-			return nil
+			return genai.NewPartFromURI(source.Url, mimeType)
 		case *v1.Image_Data:
-			return genai.ImageData(inferImageType(source.Data), source.Data)
+			if mimeType == "" {
+				mimeType = inferImageType(source.Data)
+			}
+			return genai.NewPartFromBytes(source.Data, mimeType)
 		default:
 			return nil
 		}
 	case *v1.Content_ToolUse:
+		textualInput := c.ToolUse.GetTextualInput()
+
 		var args map[string]any
-		if c.ToolUse.GetTextualInput() != "" {
-			if err := json.Unmarshal([]byte(c.ToolUse.GetTextualInput()), &args); err != nil {
-				return nil
+		if textualInput != "" {
+			if err := json.Unmarshal([]byte(textualInput), &args); err != nil {
+				args = map[string]any{
+					"args": textualInput,
+				}
 			}
 		}
-		return genai.FunctionCall{
-			Name: c.ToolUse.Name,
-			Args: args,
-		}
+
+		return genai.NewPartFromFunctionCall(c.ToolUse.Name, args)
 	case *v1.Content_ToolResult:
-		return genai.FunctionResponse{
-			Name: c.ToolResult.Id,
-			Response: map[string]any{
-				// TODO: Try to parse the result as JSON?
-				"result": c.ToolResult.GetTextualOutput(),
-			},
+		textualOutput := c.ToolResult.GetTextualOutput()
+
+		var output map[string]any
+		if textualOutput != "" {
+			if err := json.Unmarshal([]byte(textualOutput), &output); err != nil {
+				output = map[string]any{
+					"result": textualOutput,
+				}
+			}
 		}
+
+		return genai.NewPartFromFunctionResponse(c.ToolResult.Id, output)
 	default:
 		return nil
 	}
 }
 
-// convertMessageToGoogle converts [v1.Message] to [genai.Content]
 func convertMessageToGoogle(msg *v1.Message) *genai.Content {
-	var parts []genai.Part
+	var parts []*genai.Part
 	for _, content := range msg.Contents {
 		if part := convertContentToGoogle(content); part != nil {
 			parts = append(parts, part)
@@ -164,7 +188,6 @@ func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 	}
 }
 
-// convertMessageFromGoogle converts a [genai.Content] to a [v1.Message]
 func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	message := &v1.Message{
 		Id:   uuid.NewString(),
@@ -172,23 +195,34 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	}
 
 	for _, part := range content.Parts {
-		switch part := part.(type) {
-		case genai.Text:
+		if part.Thought {
+			if part.Text != "" {
+				message.Contents = append(message.Contents, &v1.Content{
+					Content: &v1.Content_Reasoning{
+						Reasoning: part.Text,
+					},
+				})
+				continue
+			}
+		}
+		if part.Text != "" {
 			message.Contents = append(message.Contents, &v1.Content{
 				Content: &v1.Content_Text{
-					Text: string(part),
+					Text: part.Text,
 				},
 			})
-		case genai.FunctionCall:
-			args, err := json.Marshal(part.Args)
+			continue
+		}
+		if part.FunctionCall != nil {
+			args, err := json.Marshal(part.FunctionCall.Args)
 			if err != nil {
-				continue // Skip if arguments cannot be marshaled
+				continue
 			}
 			message.Contents = append(message.Contents, &v1.Content{
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
-						Id:   part.Name,
-						Name: part.Name,
+						Id:   part.FunctionCall.Name,
+						Name: part.FunctionCall.Name,
 						Inputs: []*v1.ToolUse_Input{
 							{
 								Input: &v1.ToolUse_Input_Text{
@@ -205,8 +239,7 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	return message
 }
 
-// convertStatisticsFromGoogle converts Google UsageMetadata to v1.Statistics
-func convertStatisticsFromGoogle(usage *genai.UsageMetadata) *v1.Statistics {
+func convertStatisticsFromGoogle(usage *genai.GenerateContentResponseUsageMetadata) *v1.Statistics {
 	if usage == nil {
 		return nil
 	}
@@ -214,7 +247,7 @@ func convertStatisticsFromGoogle(usage *genai.UsageMetadata) *v1.Statistics {
 	return &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
 			InputTokens:       uint32(usage.PromptTokenCount),
-			OutputTokens:      uint32(usage.CandidatesTokenCount),
+			OutputTokens:      uint32(usage.CandidatesTokenCount + usage.ThoughtsTokenCount),
 			CachedInputTokens: uint32(usage.CachedContentTokenCount),
 		},
 	}

@@ -16,16 +16,12 @@ package google
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"io"
+	"iter"
 	"net/http"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/google/generative-ai-go/genai"
-	"github.com/google/uuid"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
@@ -47,15 +43,15 @@ func newGoogleUpstream(config *conf.GoogleConfig, logger log.Logger) (repo repos
 }
 
 func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Client, logger log.Logger) (repo repository.ChatRepo, err error) {
-	options := []option.ClientOption{
-		option.WithAPIKey(config.ApiKey),
+	cc := &genai.ClientConfig{
+		APIKey: config.ApiKey,
 	}
 
 	if httpClient != nil {
-		options = append(options, option.WithHTTPClient(httpClient))
+		cc.HTTPClient = httpClient
 	}
 
-	client, err := genai.NewClient(context.Background(), options...)
+	client, err := genai.NewClient(context.Background(), cc)
 	if err != nil {
 		return
 	}
@@ -69,46 +65,44 @@ func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Cli
 }
 
 func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	messageLen := len(req.Messages)
-	if messageLen == 0 {
-		return nil, fmt.Errorf("request has no message")
+	config := &genai.GenerateContentConfig{
+		Tools: convertToolsToGoogle(req.Tools),
+		ThinkingConfig: &genai.ThinkingConfig{
+			IncludeThoughts: true,
+		},
+	}
+	convertGenerationConfigToGoogle(req.Config, config)
+
+	var messages []*genai.Content
+	for _, msg := range req.Messages {
+		messages = append(messages, convertMessageToGoogle(msg))
 	}
 
-	model := r.client.GenerativeModel(req.Model)
-	model.Tools = convertToolsToGoogle(req.Tools)
-	cs := model.StartChat()
-
-	// Add all but last message to history
-	for i := 0; i < messageLen-1; i++ {
-		cs.History = append(cs.History, convertMessageToGoogle(req.Messages[i]))
-	}
-
-	// Send the last message
-	lastMsg := convertMessageToGoogle(req.Messages[len(req.Messages)-1])
-	googleResp, err := cs.SendMessage(ctx, lastMsg.Parts...)
+	googleResp, err := r.client.Models.GenerateContent(ctx, req.Model, messages, config)
 	if err != nil {
 		return
 	}
 
 	resp = &entity.ChatResp{
 		Id:         req.Id,
-		Model:      req.Model,
+		Model:      googleResp.ModelVersion,
 		Message:    convertMessageFromGoogle(googleResp.Candidates[0].Content),
 		Statistics: convertStatisticsFromGoogle(googleResp.UsageMetadata),
 	}
+	resp.Message.Id = googleResp.ResponseID
 
 	return
 }
 
 type googleChatStreamClient struct {
-	req       *entity.ChatReq
-	upstream  *genai.GenerateContentResponseIterator
-	messageID string
+	req  *entity.ChatReq
+	next func() (*genai.GenerateContentResponse, error, bool)
+	stop func()
 }
 
 func (c *googleChatStreamClient) Recv() (*entity.ChatResp, error) {
-	googleResp, err := c.upstream.Next()
-	if errors.Is(err, iterator.Done) {
+	googleResp, err, ok := c.next()
+	if !ok {
 		return nil, io.EOF
 	}
 	if err != nil {
@@ -120,7 +114,7 @@ func (c *googleChatStreamClient) Recv() (*entity.ChatResp, error) {
 		Model:   c.req.Model,
 		Message: convertMessageFromGoogle(googleResp.Candidates[0].Content),
 	}
-	resp.Message.Id = c.messageID
+	resp.Message.Id = googleResp.ResponseID
 
 	// Only send for last chunk
 	if googleResp.UsageMetadata != nil && googleResp.UsageMetadata.CandidatesTokenCount != 0 {
@@ -131,53 +125,52 @@ func (c *googleChatStreamClient) Recv() (*entity.ChatResp, error) {
 }
 
 func (c *googleChatStreamClient) Close() error {
+	c.stop()
 	return nil
 }
 
 func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
-	messageLen := len(req.Messages)
-	if messageLen == 0 {
-		return nil, io.EOF
+	config := &genai.GenerateContentConfig{
+		Tools: convertToolsToGoogle(req.Tools),
+		ThinkingConfig: &genai.ThinkingConfig{
+			IncludeThoughts: true,
+		},
+	}
+	convertGenerationConfigToGoogle(req.Config, config)
+
+	var messages []*genai.Content
+	for _, msg := range req.Messages {
+		messages = append(messages, convertMessageToGoogle(msg))
 	}
 
-	model := r.client.GenerativeModel(req.Model)
-	model.Tools = convertToolsToGoogle(req.Tools)
-	cs := model.StartChat()
+	it := r.client.Models.GenerateContentStream(ctx, req.Model, messages, config)
 
-	// Add all but last message to history
-	for i := 0; i < messageLen-1; i++ {
-		cs.History = append(cs.History, convertMessageToGoogle(req.Messages[i]))
-	}
-
-	// Send the last message
-	lastMsg := convertMessageToGoogle(req.Messages[len(req.Messages)-1])
-	iter := cs.SendMessageStream(ctx, lastMsg.Parts...)
+	// Adapt iterator to stream client
+	next, stop := iter.Pull2(it)
 
 	return &googleChatStreamClient{
-		req:       req,
-		upstream:  iter,
-		messageID: uuid.NewString(),
+		req:  req,
+		next: next,
+		stop: stop,
 	}, nil
 }
 
 func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entity.EmbedResp, err error) {
-	model := r.client.EmbeddingModel(req.Model)
-
-	var parts []genai.Part
+	var parts []*genai.Part
 	for _, content := range req.Contents {
 		if part := convertContentToGoogle(content); part != nil {
 			parts = append(parts, part)
 		}
 	}
 
-	res, err := model.EmbedContent(ctx, parts...)
+	googleResp, err := r.client.Models.EmbedContent(ctx, req.Model, []*genai.Content{{Parts: parts}}, &genai.EmbedContentConfig{})
 	if err != nil {
 		return
 	}
 
 	resp = &entity.EmbedResp{
 		Id:        req.Id,
-		Embedding: res.Embedding.Values,
+		Embedding: googleResp.Embeddings[0].Values,
 	}
 	return
 }

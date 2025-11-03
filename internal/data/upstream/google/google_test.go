@@ -3,6 +3,7 @@ package google
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -29,140 +30,96 @@ func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return nil, errors.New("RoundTripFunc is not set")
 }
 
-const mockChatResp = `[
-    {
-        "candidates": [
+const mockGenerateContentResp = `{
+    "candidates": [
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "Right, okay, let's keep it professional, friendly, and helpful. As an AI assistant, my primary function is to be of service.",
+                        "thought": true
+                    },
+                    {
+                        "text": "Hello there! How can I help you today?"
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+        }
+    ],
+    "usageMetadata": {
+        "promptTokenCount": 10,
+        "candidatesTokenCount": 8,
+        "totalTokenCount": 47,
+        "promptTokensDetails": [
             {
-                "content": {
-                    "parts": [
-                        {
-                            "text": "Hello"
-                        }
-                    ],
-                    "role": "model"
-                }
+                "modality": "TEXT",
+                "tokenCount": 10
             }
         ],
-        "usageMetadata": {
-            "promptTokenCount": 2,
-            "totalTokenCount": 2,
-            "promptTokensDetails": [
-                {
-                    "modality": 1,
-                    "tokenCount": 2
-                }
-            ]
-        },
-        "modelVersion": "gemini-2.0-flash",
-        "responseId": "bIreaOrWOZLEnvgPo8mZ8A4"
+        "thoughtsTokenCount": 27
     },
-    {
-        "candidates": [
-            {
-                "content": {
-                    "parts": [
-                        {
-                            "text": " there! How"
-                        }
-                    ],
-                    "role": "model"
-                }
-            }
-        ],
-        "usageMetadata": {
-            "promptTokenCount": 2,
-            "totalTokenCount": 2,
-            "promptTokensDetails": [
-                {
-                    "modality": 1,
-                    "tokenCount": 2
-                }
-            ]
-        },
-        "modelVersion": "gemini-2.0-flash",
-        "responseId": "bIreaOrWOZLEnvgPo8mZ8A4"
-    },
-    {
-        "candidates": [
-            {
-                "content": {
-                    "parts": [
-                        {
-                            "text": " can I help you today?\n"
-                        }
-                    ],
-                    "role": "model"
-                },
-                "finishReason": 1
-            }
-        ],
-        "usageMetadata": {
-            "promptTokenCount": 1,
-            "candidatesTokenCount": 11,
-            "totalTokenCount": 12,
-            "promptTokensDetails": [
-                {
-                    "modality": 1,
-                    "tokenCount": 1
-                }
-            ],
-            "candidatesTokensDetails": [
-                {
-                    "modality": 1,
-                    "tokenCount": 11
-                }
-            ]
-        },
-        "modelVersion": "gemini-2.0-flash",
-        "responseId": "bIreaOrWOZLEnvgPo8mZ8A4"
-    }
-]`
+    "modelVersion": "gemini-2.5-flash",
+    "responseId": "BmcPafuSOIej2roP08fp6AI"
+}`
 
-const mockChatRespWithToolCall = `[
-    {
-        "candidates": [
-            {
-                "content": {
-                    "parts": [
-                        {
-                            "functionCall": {
-                                "name": "get_weather",
-                                "args": {
-                                    "location": "Tokyo"
-                                }
+const mockGenerateContentStreamResp = `data: {"candidates": [{"content": {"parts": [{"text": "**Considering First Interactions**\n\nI've been examining how I respond to simple greetings like \"hi.\" My primary focus is acknowledging the greeting as a social foundation. Next, I consider the formality and tone of the initial message to ensure an appropriate response. It's a fundamental part of the interaction.\n\n\n","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 2,"totalTokenCount": 73,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 2}],"thoughtsTokenCount": 71},"modelVersion": "gemini-2.5-flash","responseId": "jHIPaZKcEoOR0-kPxMfy0Ag"}
+
+data: {"candidates": [{"content": {"parts": [{"text": "**Developing Optimal Response Strategies**\n\nI'm refining my response to \"hi\" to maximize usefulness. My focus now is on creating the perfect blend of acknowledgment and assistance. I'm prioritizing directness and helpfulness. The response \"Hi there! How can I help you today?\" is shaping up as the most effective starting point. This ensures a welcoming tone while immediately offering support.\n\n\n","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 2,"totalTokenCount": 315,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 2}],"thoughtsTokenCount": 313},"modelVersion": "gemini-2.5-flash","responseId": "jHIPaZKcEoOR0-kPxMfy0Ag"}
+
+data: {"candidates": [{"content": {"parts": [{"text": "**Formulating Ideal Responses**\n\nI'm solidifying my approach to \"hi\" and similar greetings. I now focus on a consistent flow, acknowledging the greeting and then immediately offering assistance. The process incorporates mirroring the tone, ensuring an open-ended invitation.  \"Hi there! How can I help you today?\" efficiently fulfills these conditions, combining a friendly greeting with an immediate offer of help.\n\n\n","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 2,"totalTokenCount": 346,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 2}],"thoughtsTokenCount": 344},"modelVersion": "gemini-2.5-flash","responseId": "jHIPaZKcEoOR0-kPxMfy0Ag"}
+
+data: {"candidates": [{"content": {"parts": [{"text": "Hi there! How can I help you today?"}],"role": "model"},"finishReason": "STOP","index": 0}],"usageMetadata": {"promptTokenCount": 2,"candidatesTokenCount": 7,"totalTokenCount": 353,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 2}],"thoughtsTokenCount": 344},"modelVersion": "gemini-2.5-flash","responseId": "jHIPaZKcEoOR0-kPxMfy0Ag"}
+`
+
+const mockGenerateContentWithToolCall = `{
+    "candidates": [
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "**Okay, here's what I'm thinking:**\n\nAlright, so the user wants to know the weather in Shanghai. Easy enough. I know I have a tool specifically for that, a get_weather function. Looks like I just need to feed it a city name. So, I should call that tool, and I'll use city='shanghai' as the input. That should give me the weather data they're looking for. Seems straightforward!\n",
+                        "thought": true
+                    },
+                    {
+                        "functionCall": {
+                            "name": "get_weather",
+                            "args": {
+                                "city": "shanghai"
                             }
-                        }
-                    ],
-                    "role": "model"
-                },
-                "finishReason": 1
+                        },
+                        "thoughtSignature": "Cu0BAdHtim/1tmi8ZRpfrEgl+Gi++Kc324ShOTqoDpHiN9X82Sp1pgvhLoKcAEBTzdPdWviBCNREjUqhFSfCaIWqPq9Mum5g9k8gj76Cz5Tzxjf3f7TEypscN3r/EnpleAQQNp105mMKqhi3hwpSFIpn0T2zgT142ow+vzgfPQeA6crel3/yi/3FGyRsQL2K/GuyqDrKBhJei0pXAP/rLMlH5FOJcGuxNrJlH2dZhXIcCYVnABxZg0Qchlxr0kZ6fe7oLOu7hVGbl1vxq12alaTsuetmQil738x1Tmwd4g7tFvSGnZZG37quTBrpXzNa"
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0,
+            "finishMessage": "Model generated function call(s)."
+        }
+    ],
+    "usageMetadata": {
+        "promptTokenCount": 50,
+        "candidatesTokenCount": 17,
+        "totalTokenCount": 119,
+        "promptTokensDetails": [
+            {
+                "modality": "TEXT",
+                "tokenCount": 50
             }
         ],
-        "usageMetadata": {
-            "promptTokenCount": 23,
-            "candidatesTokenCount": 5,
-            "totalTokenCount": 28,
-            "promptTokensDetails": [
-                {
-                    "modality": 1,
-                    "tokenCount": 23
-                }
-            ],
-            "candidatesTokensDetails": [
-                {
-                    "modality": 1,
-                    "tokenCount": 5
-                }
-            ]
-        },
-        "modelVersion": "gemini-2.0-flash",
-        "responseId": "YqDeaJ6dGbqN2PgPnp-G6Aw"
-    }
-]`
+        "thoughtsTokenCount": 52
+    },
+    "modelVersion": "gemini-2.5-flash",
+    "responseId": "J3YPafGkDK3H1e8Pv57FgAQ"
+}`
 
-func TestNewGoogleUpstream(t *testing.T) {
-	// TODO
-}
+const mockGenerateContentStreamWithToolCall = `data: {"candidates": [{"content": {"parts": [{"text": "**Pinpointing Location Details**\n\nI've zeroed in on the initial challenge: understanding \"capital of us\" requires pinpointing Washington D.C. as the target location. Now, I can confidently deploy the get_weather tool, feeding it \"Washington D.C.\" for precise weather data.\n\n\n","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 52,"totalTokenCount": 108,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 52}],"thoughtsTokenCount": 56},"modelVersion": "gemini-2.5-flash","responseId": "CnIPabyjF53Ivr0P4f-e2QU"}
+
+data: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "get_weather","args": {"city": "Washington D.C."}},"thoughtSignature": "CiQB0e2Kb6TkudQsDxtD31FVR08uogP/Bg0v09ujrGIhrx9VQ1IKYgHR7YpvNGHEHX8O/GkY5kxUtxywioE7wlsDXFy8wzq/ang5CWJp1w6DdCRk/z56XrimEJIFMap6AfwCQoEgQnyxS+CxYubeq8RGdTS9X1+tVDCKMR1HcIwzMONal/IcIwt6CqoBAdHtim820E3x/2hGPtduP5IxMdnBAn0srutyqsG/eA3VFhP4qSRUXBSrg1kDZuUtpKsg87IjddAXh4Yz7YVh1KahPnfLO+0h7eMiBYqw/0B61AUTQfA3zbF3byCgfvpSJm/MEhUevoIY2cVTlFv2G57/D1t0ssJllAJ1rZrk1zv1JF5Pq5RBZrB+z8Ox4Uc9HeW7nPAlFzGeSxGzUr3K+kvrSSDNGx8AuZM="}],"role": "model"},"finishReason": "STOP","index": 0,"finishMessage": "Model generated function call(s)."}],"usageMetadata": {"promptTokenCount": 52,"candidatesTokenCount": 17,"totalTokenCount": 125,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 52}],"thoughtsTokenCount": 56},"modelVersion": "gemini-2.5-flash","responseId": "CnIPabyjF53Ivr0P4f-e2QU"}
+`
 
 func TestChat(t *testing.T) {
 	Convey("Given a upstream with a mock HTTP round tripper", t, func() {
@@ -176,7 +133,7 @@ func TestChat(t *testing.T) {
 
 		req := &entity.ChatReq{
 			Id:    "test-req-id",
-			Model: "gemini-2.0-flash",
+			Model: "gemini-2.5-flash",
 			Messages: []*v1.Message{
 				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "You are a helpful assistant."}}}},
 				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "Hello!"}}}},
@@ -188,7 +145,7 @@ func TestChat(t *testing.T) {
 				body, err := io.ReadAll(req.Body)
 				So(err, ShouldBeNil)
 				bodyStr := string(body)
-				So(gjson.Get(bodyStr, "model").String(), ShouldEqual, "models/gemini-2.0-flash")
+				So(req.URL.Path, ShouldContainSubstring, "/gemini-2.5-flash:generateContent")
 				So(gjson.Get(bodyStr, "contents.#").Int(), ShouldEqual, 2)
 				So(gjson.Get(bodyStr, "contents.0.role").String(), ShouldEqual, "user")
 				So(gjson.Get(bodyStr, "contents.0.parts.#").Int(), ShouldEqual, 1)
@@ -202,7 +159,7 @@ func TestChat(t *testing.T) {
 					Header: http.Header{
 						"Content-Type": []string{"application/json"},
 					},
-					Body: io.NopCloser(strings.NewReader(mockChatResp)),
+					Body: io.NopCloser(strings.NewReader(mockGenerateContentResp)),
 				}, nil
 			}
 
@@ -212,15 +169,17 @@ func TestChat(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
 				So(resp.Id, ShouldEqual, "test-req-id")
-				So(resp.Model, ShouldEqual, "gemini-2.0-flash")
+				So(resp.Model, ShouldEqual, "gemini-2.5-flash")
 				So(resp.Message, ShouldNotBeNil)
-				So(len(resp.Message.Id), ShouldEqual, 36)
+				So(resp.Message.Id, ShouldNotBeEmpty)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
-				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello there! How can I help you today?\n")
+				So(resp.Message.Contents, ShouldHaveLength, 2)
+				So(resp.Message.Contents[0].GetReasoning(), ShouldEqual, "Right, okay, let's keep it professional, friendly, and helpful. As an AI assistant, my primary function is to be of service.")
+				So(resp.Message.Contents[1].GetText(), ShouldEqual, "Hello there! How can I help you today?")
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 2)
-				// TODO: Completion token count is currently broken in google's SDK, add when available
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 10)
+				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 35)
+				So(resp.Statistics.Usage.CachedInputTokens, ShouldEqual, 0)
 			})
 		})
 	})
@@ -229,37 +188,51 @@ func TestChat(t *testing.T) {
 var mockChatStreamResp = []*entity.ChatResp{
 	{
 		Id:    "test-stream-req-id",
-		Model: "gemini-2.0-flash",
+		Model: "gemini-2.5-flash",
 		Message: &v1.Message{
+			Id:   "jHIPaZKcEoOR0-kPxMfy0Ag",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Text{Text: "Hello"}},
+				{Content: &v1.Content_Reasoning{Reasoning: "**Considering First Interactions**\n\nI've been examining how I respond to simple greetings like \"hi.\" My primary focus is acknowledging the greeting as a social foundation. Next, I consider the formality and tone of the initial message to ensure an appropriate response. It's a fundamental part of the interaction.\n\n\n"}},
 			},
 		},
 	},
 	{
 		Id:    "test-stream-req-id",
-		Model: "gemini-2.0-flash",
+		Model: "gemini-2.5-flash",
 		Message: &v1.Message{
+			Id:   "jHIPaZKcEoOR0-kPxMfy0Ag",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Text{Text: " there! How"}},
+				{Content: &v1.Content_Reasoning{Reasoning: "**Developing Optimal Response Strategies**\n\nI'm refining my response to \"hi\" to maximize usefulness. My focus now is on creating the perfect blend of acknowledgment and assistance. I'm prioritizing directness and helpfulness. The response \"Hi there! How can I help you today?\" is shaping up as the most effective starting point. This ensures a welcoming tone while immediately offering support.\n\n\n"}},
 			},
 		},
 	},
 	{
 		Id:    "test-stream-req-id",
-		Model: "gemini-2.0-flash",
+		Model: "gemini-2.5-flash",
 		Message: &v1.Message{
+			Id:   "jHIPaZKcEoOR0-kPxMfy0Ag",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Text{Text: " can I help you today?\n"}},
+				{Content: &v1.Content_Reasoning{Reasoning: "**Formulating Ideal Responses**\n\nI'm solidifying my approach to \"hi\" and similar greetings. I now focus on a consistent flow, acknowledging the greeting and then immediately offering assistance. The process incorporates mirroring the tone, ensuring an open-ended invitation.  \"Hi there! How can I help you today?\" efficiently fulfills these conditions, combining a friendly greeting with an immediate offer of help.\n\n\n"}},
+			},
+		},
+	},
+	{
+		Id:    "test-stream-req-id",
+		Model: "gemini-2.5-flash",
+		Message: &v1.Message{
+			Id:   "jHIPaZKcEoOR0-kPxMfy0Ag",
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{
+				{Content: &v1.Content_Text{Text: "Hi there! How can I help you today?"}},
 			},
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				InputTokens:  1,
-				OutputTokens: 11,
+				InputTokens:  2,
+				OutputTokens: 351,
 			},
 		},
 	},
@@ -277,7 +250,7 @@ func TestChatStream(t *testing.T) {
 
 		req := &entity.ChatReq{
 			Id:    "test-stream-req-id",
-			Model: "gemini-2.0-flash",
+			Model: "gemini-2.5-flash",
 			Messages: []*v1.Message{
 				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "You are a helpful assistant."}}}},
 				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "Hello!"}}}},
@@ -289,7 +262,7 @@ func TestChatStream(t *testing.T) {
 				body, err := io.ReadAll(req.Body)
 				So(err, ShouldBeNil)
 				bodyStr := string(body)
-				So(gjson.Get(bodyStr, "model").String(), ShouldEqual, "models/gemini-2.0-flash")
+				So(req.URL.Path, ShouldContainSubstring, "/gemini-2.5-flash:streamGenerateContent")
 				So(gjson.Get(bodyStr, "contents.#").Int(), ShouldEqual, 2)
 				So(gjson.Get(bodyStr, "contents.0.role").String(), ShouldEqual, "user")
 				So(gjson.Get(bodyStr, "contents.0.parts.#").Int(), ShouldEqual, 1)
@@ -303,7 +276,7 @@ func TestChatStream(t *testing.T) {
 					Header: http.Header{
 						"Content-Type": []string{"application/json"},
 					},
-					Body: io.NopCloser(strings.NewReader(mockChatResp)),
+					Body: io.NopCloser(strings.NewReader(mockGenerateContentStreamResp)),
 				}, nil
 			}
 
@@ -314,7 +287,6 @@ func TestChatStream(t *testing.T) {
 				So(streamClient, ShouldNotBeNil)
 				defer streamClient.Close()
 
-				var messageID string
 				var responses []*entity.ChatResp
 				for {
 					resp, err := streamClient.Recv()
@@ -324,17 +296,15 @@ func TestChatStream(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(resp, ShouldNotBeNil)
 
-					messageID = resp.Message.Id
 					responses = append(responses, resp)
 				}
 
 				So(responses, ShouldHaveLength, len(mockChatStreamResp))
 
-				for _, mockResp := range mockChatStreamResp {
-					mockResp.Message.Id = messageID
-				}
-
 				for i, resp := range responses {
+					if !proto.Equal(resp, mockChatStreamResp[i]) {
+						fmt.Println("\n", resp.String(), "\n", mockChatStreamResp[i].String())
+					}
 					So(proto.Equal(resp, mockChatStreamResp[i]), ShouldBeTrue)
 				}
 			})
@@ -354,9 +324,9 @@ func TestChatWithToolCalls(t *testing.T) {
 
 		req := &entity.ChatReq{
 			Id:    "test-req-id",
-			Model: "gemini-2.0-flash",
+			Model: "gemini-2.5-flash",
 			Messages: []*v1.Message{
-				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "What is the weather in Tokyo?"}}}},
+				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "What is the weather in Shanghai?"}}}},
 			},
 			Tools: []*v1.Tool{
 				{
@@ -367,12 +337,12 @@ func TestChatWithToolCalls(t *testing.T) {
 							Parameters: &v1.Schema{
 								Type: v1.Schema_TYPE_OBJECT,
 								Properties: map[string]*v1.Schema{
-									"location": {
+									"city": {
 										Type:        v1.Schema_TYPE_STRING,
 										Description: "City name",
 									},
 								},
-								Required: []string{"location"},
+								Required: []string{"city"},
 							},
 						},
 					},
@@ -385,23 +355,23 @@ func TestChatWithToolCalls(t *testing.T) {
 				body, err := io.ReadAll(req.Body)
 				So(err, ShouldBeNil)
 				bodyStr := string(body)
-				So(gjson.Get(bodyStr, "model").String(), ShouldEqual, "models/gemini-2.0-flash")
+				So(req.URL.Path, ShouldContainSubstring, "/gemini-2.5-flash:generateContent")
 				So(gjson.Get(bodyStr, "contents.#").Int(), ShouldEqual, 1)
 				So(gjson.Get(bodyStr, "contents.0.role").String(), ShouldEqual, "user")
 				So(gjson.Get(bodyStr, "contents.0.parts.#").Int(), ShouldEqual, 1)
-				So(gjson.Get(bodyStr, "contents.0.parts.0.text").String(), ShouldEqual, "What is the weather in Tokyo?")
+				So(gjson.Get(bodyStr, "contents.0.parts.0.text").String(), ShouldEqual, "What is the weather in Shanghai?")
 				So(gjson.Get(bodyStr, "tools.#").Int(), ShouldEqual, 1)
 				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.#").Int(), ShouldEqual, 1)
 				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.0.name").String(), ShouldEqual, "get_weather")
 				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.0.description").String(), ShouldEqual, "Get the current weather for a city")
-				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.0.parameters.required.0").String(), ShouldEqual, "location")
+				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.0.parameters.required.0").String(), ShouldEqual, "city")
 
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Header: http.Header{
 						"Content-Type": []string{"application/json"},
 					},
-					Body: io.NopCloser(strings.NewReader(mockChatRespWithToolCall)),
+					Body: io.NopCloser(strings.NewReader(mockGenerateContentWithToolCall)),
 				}, nil
 			}
 
@@ -411,16 +381,17 @@ func TestChatWithToolCalls(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
 				So(resp.Id, ShouldEqual, "test-req-id")
-				So(resp.Model, ShouldEqual, "gemini-2.0-flash")
+				So(resp.Model, ShouldEqual, "gemini-2.5-flash")
 				So(resp.Message, ShouldNotBeNil)
-				So(len(resp.Message.Id), ShouldEqual, 36)
+				So(resp.Message.Id, ShouldNotBeEmpty)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
-				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetToolUse().GetName(), ShouldEqual, "get_weather")
-				So(resp.Message.Contents[0].GetToolUse().GetTextualInput(), ShouldEqual, "{\"location\":\"Tokyo\"}")
+				So(resp.Message.Contents, ShouldHaveLength, 2)
+				So(resp.Message.Contents[0].GetReasoning(), ShouldEqual, "**Okay, here's what I'm thinking:**\n\nAlright, so the user wants to know the weather in Shanghai. Easy enough. I know I have a tool specifically for that, a get_weather function. Looks like I just need to feed it a city name. So, I should call that tool, and I'll use city='shanghai' as the input. That should give me the weather data they're looking for. Seems straightforward!\n")
+				So(resp.Message.Contents[1].GetToolUse().GetName(), ShouldEqual, "get_weather")
+				So(resp.Message.Contents[1].GetToolUse().GetTextualInput(), ShouldEqual, "{\"city\":\"shanghai\"}")
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 23)
-				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 5)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 50)
+				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 69)
 			})
 		})
 	})
@@ -429,8 +400,20 @@ func TestChatWithToolCalls(t *testing.T) {
 var mockChatStreamRespWithToolCall = []*entity.ChatResp{
 	{
 		Id:    "test-stream-req-id",
-		Model: "gemini-2.0-flash",
+		Model: "gemini-2.5-flash",
 		Message: &v1.Message{
+			Id:   "CnIPabyjF53Ivr0P4f-e2QU",
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{
+				{Content: &v1.Content_Reasoning{Reasoning: "**Pinpointing Location Details**\n\nI've zeroed in on the initial challenge: understanding \"capital of us\" requires pinpointing Washington D.C. as the target location. Now, I can confidently deploy the get_weather tool, feeding it \"Washington D.C.\" for precise weather data.\n\n\n"}},
+			},
+		},
+	},
+	{
+		Id:    "test-stream-req-id",
+		Model: "gemini-2.5-flash",
+		Message: &v1.Message{
+			Id:   "CnIPabyjF53Ivr0P4f-e2QU",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
@@ -440,9 +423,7 @@ var mockChatStreamRespWithToolCall = []*entity.ChatResp{
 							Name: "get_weather",
 							Inputs: []*v1.ToolUse_Input{
 								{
-									Input: &v1.ToolUse_Input_Text{
-										Text: "{\"location\":\"Tokyo\"}",
-									},
+									Input: &v1.ToolUse_Input_Text{Text: "{\"city\":\"Washington D.C.\"}"},
 								},
 							},
 						},
@@ -452,8 +433,8 @@ var mockChatStreamRespWithToolCall = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				InputTokens:  23,
-				OutputTokens: 5,
+				InputTokens:  52,
+				OutputTokens: 73,
 			},
 		},
 	},
@@ -471,9 +452,9 @@ func TestChatStreamWithToolCalls(t *testing.T) {
 
 		req := &entity.ChatReq{
 			Id:    "test-stream-req-id",
-			Model: "gemini-2.0-flash",
+			Model: "gemini-2.5-flash",
 			Messages: []*v1.Message{
-				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "What is the weather in Tokyo?"}}}},
+				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "What is the weather in the capital of us"}}}},
 			},
 			Tools: []*v1.Tool{
 				{
@@ -484,12 +465,12 @@ func TestChatStreamWithToolCalls(t *testing.T) {
 							Parameters: &v1.Schema{
 								Type: v1.Schema_TYPE_OBJECT,
 								Properties: map[string]*v1.Schema{
-									"location": {
+									"city": {
 										Type:        v1.Schema_TYPE_STRING,
 										Description: "City name",
 									},
 								},
-								Required: []string{"location"},
+								Required: []string{"city"},
 							},
 						},
 					},
@@ -502,23 +483,23 @@ func TestChatStreamWithToolCalls(t *testing.T) {
 				body, err := io.ReadAll(req.Body)
 				So(err, ShouldBeNil)
 				bodyStr := string(body)
-				So(gjson.Get(bodyStr, "model").String(), ShouldEqual, "models/gemini-2.0-flash")
+				So(req.URL.Path, ShouldContainSubstring, "/gemini-2.5-flash:streamGenerateContent")
 				So(gjson.Get(bodyStr, "contents.#").Int(), ShouldEqual, 1)
 				So(gjson.Get(bodyStr, "contents.0.role").String(), ShouldEqual, "user")
 				So(gjson.Get(bodyStr, "contents.0.parts.#").Int(), ShouldEqual, 1)
-				So(gjson.Get(bodyStr, "contents.0.parts.0.text").String(), ShouldEqual, "What is the weather in Tokyo?")
+				So(gjson.Get(bodyStr, "contents.0.parts.0.text").String(), ShouldEqual, "What is the weather in the capital of us")
 				So(gjson.Get(bodyStr, "tools.#").Int(), ShouldEqual, 1)
 				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.#").Int(), ShouldEqual, 1)
 				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.0.name").String(), ShouldEqual, "get_weather")
 				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.0.description").String(), ShouldEqual, "Get the current weather for a city")
-				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.0.parameters.required.0").String(), ShouldEqual, "location")
+				So(gjson.Get(bodyStr, "tools.0.functionDeclarations.0.parameters.required.0").String(), ShouldEqual, "city")
 
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Header: http.Header{
 						"Content-Type": []string{"application/json"},
 					},
-					Body: io.NopCloser(strings.NewReader(mockChatRespWithToolCall)),
+					Body: io.NopCloser(strings.NewReader(mockGenerateContentStreamWithToolCall)),
 				}, nil
 			}
 
@@ -529,7 +510,6 @@ func TestChatStreamWithToolCalls(t *testing.T) {
 				So(streamClient, ShouldNotBeNil)
 				defer streamClient.Close()
 
-				var messageID string
 				var responses []*entity.ChatResp
 				for {
 					resp, err := streamClient.Recv()
@@ -539,15 +519,10 @@ func TestChatStreamWithToolCalls(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(resp, ShouldNotBeNil)
 
-					messageID = resp.Message.Id
 					responses = append(responses, resp)
 				}
 
 				So(responses, ShouldHaveLength, len(mockChatStreamRespWithToolCall))
-
-				for _, mockResp := range mockChatStreamRespWithToolCall {
-					mockResp.Message.Id = messageID
-				}
 
 				for i, resp := range responses {
 					So(proto.Equal(resp, mockChatStreamRespWithToolCall[i]), ShouldBeTrue)

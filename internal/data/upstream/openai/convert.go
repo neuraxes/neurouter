@@ -19,14 +19,33 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/shared"
 	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-// convertMessageToOpenAI converts an internal message to a message that can be sent to the OpenAI API.
+func convertGenerationConfigToOpenAI(config *v1.GenerationConfig, req *openai.ChatCompletionNewParams) {
+	if config == nil {
+		return
+	}
+	if config.MaxTokens != nil {
+		req.MaxCompletionTokens = openai.Opt(*config.MaxTokens)
+	}
+	if config.Temperature != nil {
+		req.Temperature = openai.Opt(float64(*config.Temperature))
+	}
+	if config.TopP != nil {
+		req.TopP = openai.Opt(float64(*config.TopP))
+	}
+	if config.FrequencyPenalty != nil {
+		req.FrequencyPenalty = openai.Opt(float64(*config.FrequencyPenalty))
+	}
+	if config.PresencePenalty != nil {
+		req.PresencePenalty = openai.Opt(float64(*config.PresencePenalty))
+	}
+}
+
 func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatCompletionMessageParamUnion {
 	plainText := ""
 	isPlainText := true
@@ -76,53 +95,45 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 		return []openai.ChatCompletionMessageParamUnion{{OfSystem: m}}
 	case v1.Role_USER:
 		var result []openai.ChatCompletionMessageParamUnion
+		var userContents []*v1.Content
 
-		// Check if there are any tool results that need to be split
-		var toolResults []*v1.ToolResult
-		var normalContents []*v1.Content
 		for _, content := range message.Contents {
-			if tr := content.GetToolResult(); tr != nil {
-				toolResults = append(toolResults, tr)
-			} else {
-				normalContents = append(normalContents, content)
-			}
-		}
-
-		// First, add tool result messages if any
-		for _, toolResult := range toolResults {
-			toolMsg := &openai.ChatCompletionToolMessageParam{
-				ToolCallID: toolResult.Id,
-			}
-
-			outputText := toolResult.GetTextualOutput()
-			if r.config.PreferStringContentForTool {
-				toolMsg.Content.OfString = openai.Opt(outputText)
-			} else if isPlainText && r.config.PreferSinglePartContent {
-				toolMsg.Content.OfArrayOfContentParts = append(
-					toolMsg.Content.OfArrayOfContentParts,
-					openai.ChatCompletionContentPartTextParam{Text: outputText},
-				)
-			} else {
-				for _, content := range toolResult.Outputs {
-					switch c := content.GetOutput().(type) {
-					case *v1.ToolResult_Output_Text:
-						toolMsg.Content.OfArrayOfContentParts = append(
-							toolMsg.Content.OfArrayOfContentParts,
-							openai.ChatCompletionContentPartTextParam{Text: c.Text},
-						)
-					default:
-						r.log.Errorf("unsupported content for tool: %v", c)
-					}
+			switch c := content.GetContent().(type) {
+			case *v1.Content_ToolResult:
+				toolMsg := &openai.ChatCompletionToolMessageParam{
+					ToolCallID: c.ToolResult.Id,
 				}
 
-			}
+				outputText := c.ToolResult.GetTextualOutput()
+				if r.config.PreferStringContentForTool {
+					toolMsg.Content.OfString = openai.Opt(outputText)
+				} else if r.config.PreferSinglePartContent {
+					toolMsg.Content.OfArrayOfContentParts = append(
+						toolMsg.Content.OfArrayOfContentParts,
+						openai.ChatCompletionContentPartTextParam{Text: outputText},
+					)
+				} else {
+					for _, content := range c.ToolResult.Outputs {
+						switch c := content.GetOutput().(type) {
+						case *v1.ToolResult_Output_Text:
+							toolMsg.Content.OfArrayOfContentParts = append(
+								toolMsg.Content.OfArrayOfContentParts,
+								openai.ChatCompletionContentPartTextParam{Text: c.Text},
+							)
+						default:
+							r.log.Errorf("unsupported content for tool result: %v", c)
+						}
+					}
 
-			result = append(result, openai.ChatCompletionMessageParamUnion{OfTool: toolMsg})
+				}
+
+				result = append(result, openai.ChatCompletionMessageParamUnion{OfTool: toolMsg})
+			default:
+				userContents = append(userContents, content)
+			}
 		}
 
-		// Then, add user message for normal contents
-		// At least one user message should be added
-		if len(result) == 0 || len(normalContents) > 0 {
+		if len(result) == 0 || len(userContents) > 0 {
 			m := &openai.ChatCompletionUserMessageParam{}
 
 			if message.Name != "" {
@@ -137,7 +148,7 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 					openai.TextContentPart(plainText),
 				)
 			} else {
-				for _, content := range normalContents {
+				for _, content := range userContents {
 					switch c := content.GetContent().(type) {
 					case *v1.Content_Text:
 						m.Content.OfArrayOfContentParts = append(
@@ -193,6 +204,8 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 							},
 						},
 					)
+				case *v1.Content_Reasoning:
+					// Reasoning content should be ignored
 				case *v1.Content_ToolUse:
 					// Tool calls will be processed later
 				default:
@@ -204,12 +217,11 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
 			case *v1.Content_ToolUse:
-				f := c.ToolUse
 				m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallParam{
-					ID: f.Id,
+					ID: c.ToolUse.Id,
 					Function: openai.ChatCompletionMessageToolCallFunctionParam{
-						Name:      f.Name,
-						Arguments: f.GetTextualInput(),
+						Name:      c.ToolUse.Name,
+						Arguments: c.ToolUse.GetTextualInput(),
 					},
 				})
 			}
@@ -217,8 +229,16 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 
 		return []openai.ChatCompletionMessageParamUnion{{OfAssistant: m}}
 	default:
-		r.log.Errorf("unsupported role: %v", message.Role)
+		r.log.Errorf("invalid role: %v", message.Role)
 		return nil
+	}
+}
+
+func convertToolParametersToOpenAI(parameters *v1.Schema) openai.FunctionParameters {
+	return map[string]any{
+		"type":       parameters.Type,
+		"properties": parameters.Properties,
+		"required":   parameters.Required,
 	}
 }
 
@@ -228,33 +248,14 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 		Model: req.Model,
 	}
 
+	if req.Config != nil {
+		convertGenerationConfigToOpenAI(req.Config, &openAIReq)
+	}
+
 	for _, message := range req.Messages {
 		m := r.convertMessageToOpenAI(message)
 		if m != nil {
 			openAIReq.Messages = append(openAIReq.Messages, m...)
-		}
-	}
-
-	if c := req.Config; c != nil {
-		if c.MaxTokens != nil {
-			openAIReq.MaxCompletionTokens = openai.Opt(*c.MaxTokens)
-		}
-		if c.Temperature != nil {
-			openAIReq.Temperature = openai.Opt(float64(*c.Temperature))
-		}
-		if c.TopP != nil {
-			openAIReq.TopP = openai.Opt(float64(*c.TopP))
-		}
-		if c.FrequencyPenalty != nil {
-			openAIReq.FrequencyPenalty = openai.Opt(float64(*c.FrequencyPenalty))
-		}
-		if c.PresencePenalty != nil {
-			openAIReq.PresencePenalty = openai.Opt(float64(*c.PresencePenalty))
-		}
-		if c.GetPresetGrammar() == "json_object" {
-			openAIReq.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
-				OfJSONObject: &openai.ResponseFormatJSONObjectParam{},
-			}
 		}
 	}
 
@@ -263,14 +264,14 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 		for _, tool := range req.Tools {
 			switch t := tool.Tool.(type) {
 			case *v1.Tool_Function_:
-				// Currently only function tool calls are supported by OpenAI
-				tools = append(tools, openai.ChatCompletionToolParam{
-					Function: shared.FunctionDefinitionParam{
-						Name:        t.Function.Name,
-						Description: openai.Opt(t.Function.Description),
-						Parameters:  toolFunctionParametersToOpenAI(t.Function.Parameters),
-					},
-				})
+				ot := openai.FunctionDefinitionParam{
+					Name:       t.Function.Name,
+					Parameters: convertToolParametersToOpenAI(t.Function.Parameters),
+				}
+				if t.Function.Description != "" {
+					ot.Description = openai.Opt(t.Function.Description)
+				}
+				tools = append(tools, openai.ChatCompletionToolParam{Function: ot})
 			default:
 				r.log.Errorf("unsupported tool: %v", t)
 			}
@@ -279,15 +280,6 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 	}
 
 	return openAIReq
-}
-
-// toolFunctionParametersToOpenAI converts tool function parameters to OpenAI function parameters.
-func toolFunctionParametersToOpenAI(parameters *v1.Schema) openai.FunctionParameters {
-	return map[string]any{
-		"type":       parameters.Type,
-		"properties": parameters.Properties,
-		"required":   parameters.Required,
-	}
 }
 
 // convertMessageFromOpenAI converts an OpenAI chat completion message to an internal message.
@@ -320,25 +312,23 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 		}
 	}
 
-	if openAIMessage.ToolCalls != nil {
-		for _, toolCall := range openAIMessage.ToolCalls {
-			// Only function tool calls are supported by OpenAI
-			message.Contents = append(message.Contents, &v1.Content{
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Id:   toolCall.ID,
-						Name: toolCall.Function.Name,
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: toolCall.Function.Arguments,
-								},
+	for _, toolCall := range openAIMessage.ToolCalls {
+		// Only function tool calls are supported by OpenAI
+		message.Contents = append(message.Contents, &v1.Content{
+			Content: &v1.Content_ToolUse{
+				ToolUse: &v1.ToolUse{
+					Id:   toolCall.ID,
+					Name: toolCall.Function.Name,
+					Inputs: []*v1.ToolUse_Input{
+						{
+							Input: &v1.ToolUse_Input_Text{
+								Text: toolCall.Function.Arguments,
 							},
 						},
 					},
 				},
-			})
-		}
+			},
+		})
 	}
 
 	return message
@@ -377,24 +367,22 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp 
 			}
 		}
 
-		if c.Delta.ToolCalls != nil {
-			for _, toolCall := range c.Delta.ToolCalls {
-				contents = append(contents, &v1.Content{
-					Content: &v1.Content_ToolUse{
-						ToolUse: &v1.ToolUse{
-							Id:   toolCall.ID,
-							Name: toolCall.Function.Name,
-							Inputs: []*v1.ToolUse_Input{
-								{
-									Input: &v1.ToolUse_Input_Text{
-										Text: toolCall.Function.Arguments,
-									},
+		for _, toolCall := range c.Delta.ToolCalls {
+			contents = append(contents, &v1.Content{
+				Content: &v1.Content_ToolUse{
+					ToolUse: &v1.ToolUse{
+						Id:   toolCall.ID,
+						Name: toolCall.Function.Name,
+						Inputs: []*v1.ToolUse_Input{
+							{
+								Input: &v1.ToolUse_Input_Text{
+									Text: toolCall.Function.Arguments,
 								},
 							},
 						},
 					},
-				})
-			}
+				},
+			})
 		}
 
 		resp.Message = &v1.Message{

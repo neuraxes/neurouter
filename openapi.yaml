@@ -134,6 +134,8 @@ components:
         neurouter.v1.Content:
             type: object
             properties:
+                id:
+                    type: string
                 index:
                     type: integer
                     format: uint32
