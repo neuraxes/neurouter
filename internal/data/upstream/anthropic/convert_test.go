@@ -308,7 +308,8 @@ func TestConvertContentsFromAnthropic(t *testing.T) {
 			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(len(msg.Contents), ShouldEqual, 2)
-			So(msg.Contents[0].GetReasoning(), ShouldEqual, "think")
+			So(msg.Contents[0].Reasoning, ShouldBeTrue)
+			So(msg.Contents[0].GetText(), ShouldEqual, "think")
 			So(msg.Contents[1].GetText(), ShouldEqual, "answer")
 		})
 	})
@@ -360,7 +361,8 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			d1 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "thinking_delta", Thinking: "let me think"}}
 			r1 := client.convertChunkFromAnthropic(d1)
 			So(r1, ShouldNotBeNil)
-			So(r1.Message.Contents[0].GetReasoning(), ShouldEqual, "let me think")
+			So(r1.Message.Contents[0].Reasoning, ShouldBeTrue)
+			So(r1.Message.Contents[0].GetText(), ShouldEqual, "let me think")
 
 			// text_delta
 			d2 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "text_delta", Text: "hello"}}

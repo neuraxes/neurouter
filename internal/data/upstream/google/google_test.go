@@ -174,7 +174,8 @@ func TestChat(t *testing.T) {
 				So(resp.Message.Id, ShouldNotBeEmpty)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(resp.Message.Contents, ShouldHaveLength, 2)
-				So(resp.Message.Contents[0].GetReasoning(), ShouldEqual, "Right, okay, let's keep it professional, friendly, and helpful. As an AI assistant, my primary function is to be of service.")
+				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
+				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Right, okay, let's keep it professional, friendly, and helpful. As an AI assistant, my primary function is to be of service.")
 				So(resp.Message.Contents[1].GetText(), ShouldEqual, "Hello there! How can I help you today?")
 				So(resp.Statistics, ShouldNotBeNil)
 				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 10)
@@ -193,7 +194,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "jHIPaZKcEoOR0-kPxMfy0Ag",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Reasoning{Reasoning: "**Considering First Interactions**\n\nI've been examining how I respond to simple greetings like \"hi.\" My primary focus is acknowledging the greeting as a social foundation. Next, I consider the formality and tone of the initial message to ensure an appropriate response. It's a fundamental part of the interaction.\n\n\n"}},
+				{Reasoning: true, Content: &v1.Content_Text{Text: "**Considering First Interactions**\n\nI've been examining how I respond to simple greetings like \"hi.\" My primary focus is acknowledging the greeting as a social foundation. Next, I consider the formality and tone of the initial message to ensure an appropriate response. It's a fundamental part of the interaction.\n\n\n"}},
 			},
 		},
 	},
@@ -204,7 +205,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "jHIPaZKcEoOR0-kPxMfy0Ag",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Reasoning{Reasoning: "**Developing Optimal Response Strategies**\n\nI'm refining my response to \"hi\" to maximize usefulness. My focus now is on creating the perfect blend of acknowledgment and assistance. I'm prioritizing directness and helpfulness. The response \"Hi there! How can I help you today?\" is shaping up as the most effective starting point. This ensures a welcoming tone while immediately offering support.\n\n\n"}},
+				{Reasoning: true, Content: &v1.Content_Text{Text: "**Developing Optimal Response Strategies**\n\nI'm refining my response to \"hi\" to maximize usefulness. My focus now is on creating the perfect blend of acknowledgment and assistance. I'm prioritizing directness and helpfulness. The response \"Hi there! How can I help you today?\" is shaping up as the most effective starting point. This ensures a welcoming tone while immediately offering support.\n\n\n"}},
 			},
 		},
 	},
@@ -215,7 +216,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "jHIPaZKcEoOR0-kPxMfy0Ag",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Reasoning{Reasoning: "**Formulating Ideal Responses**\n\nI'm solidifying my approach to \"hi\" and similar greetings. I now focus on a consistent flow, acknowledging the greeting and then immediately offering assistance. The process incorporates mirroring the tone, ensuring an open-ended invitation.  \"Hi there! How can I help you today?\" efficiently fulfills these conditions, combining a friendly greeting with an immediate offer of help.\n\n\n"}},
+				{Reasoning: true, Content: &v1.Content_Text{Text: "**Formulating Ideal Responses**\n\nI'm solidifying my approach to \"hi\" and similar greetings. I now focus on a consistent flow, acknowledging the greeting and then immediately offering assistance. The process incorporates mirroring the tone, ensuring an open-ended invitation.  \"Hi there! How can I help you today?\" efficiently fulfills these conditions, combining a friendly greeting with an immediate offer of help.\n\n\n"}},
 			},
 		},
 	},
@@ -386,7 +387,8 @@ func TestChatWithToolCalls(t *testing.T) {
 				So(resp.Message.Id, ShouldNotBeEmpty)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(resp.Message.Contents, ShouldHaveLength, 2)
-				So(resp.Message.Contents[0].GetReasoning(), ShouldEqual, "**Okay, here's what I'm thinking:**\n\nAlright, so the user wants to know the weather in Shanghai. Easy enough. I know I have a tool specifically for that, a get_weather function. Looks like I just need to feed it a city name. So, I should call that tool, and I'll use city='shanghai' as the input. That should give me the weather data they're looking for. Seems straightforward!\n")
+				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
+				So(resp.Message.Contents[0].GetText(), ShouldEqual, "**Okay, here's what I'm thinking:**\n\nAlright, so the user wants to know the weather in Shanghai. Easy enough. I know I have a tool specifically for that, a get_weather function. Looks like I just need to feed it a city name. So, I should call that tool, and I'll use city='shanghai' as the input. That should give me the weather data they're looking for. Seems straightforward!\n")
 				So(resp.Message.Contents[1].GetToolUse().GetName(), ShouldEqual, "get_weather")
 				So(resp.Message.Contents[1].GetToolUse().GetTextualInput(), ShouldEqual, "{\"city\":\"shanghai\"}")
 				So(resp.Statistics, ShouldNotBeNil)
@@ -405,7 +407,7 @@ var mockChatStreamRespWithToolCall = []*entity.ChatResp{
 			Id:   "CnIPabyjF53Ivr0P4f-e2QU",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Reasoning{Reasoning: "**Pinpointing Location Details**\n\nI've zeroed in on the initial challenge: understanding \"capital of us\" requires pinpointing Washington D.C. as the target location. Now, I can confidently deploy the get_weather tool, feeding it \"Washington D.C.\" for precise weather data.\n\n\n"}},
+				{Reasoning: true, Content: &v1.Content_Text{Text: "**Pinpointing Location Details**\n\nI've zeroed in on the initial challenge: understanding \"capital of us\" requires pinpointing Washington D.C. as the target location. Now, I can confidently deploy the get_weather tool, feeding it \"Washington D.C.\" for precise weather data.\n\n\n"}},
 			},
 		},
 	},
@@ -417,6 +419,9 @@ var mockChatStreamRespWithToolCall = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
+					Metadata: map[string]string{
+						"thoughtSignature": "CiQB0e2Kb6TkudQsDxtD31FVR08uogP/Bg0v09ujrGIhrx9VQ1IKYgHR7YpvNGHEHX8O/GkY5kxUtxywioE7wlsDXFy8wzq/ang5CWJp1w6DdCRk/z56XrimEJIFMap6AfwCQoEgQnyxS+CxYubeq8RGdTS9X1+tVDCKMR1HcIwzMONal/IcIwt6CqoBAdHtim820E3x/2hGPtduP5IxMdnBAn0srutyqsG/eA3VFhP4qSRUXBSrg1kDZuUtpKsg87IjddAXh4Yz7YVh1KahPnfLO+0h7eMiBYqw/0B61AUTQfA3zbF3byCgfvpSJm/MEhUevoIY2cVTlFv2G57/D1t0ssJllAJ1rZrk1zv1JF5Pq5RBZrB+z8Ox4Uc9HeW7nPAlFzGeSxGzUr3K+kvrSSDNGx8AuZM=",
+					},
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
 							Id:   "get_weather",

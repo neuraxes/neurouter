@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"text/template"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
@@ -65,7 +66,7 @@ const chatPrettyPrintTmpl = `
     <message index={{$i}} id="{{$msg.Id}}" role="{{$msg.Role}}" name="{{$msg.Name}}">
       <contents len={{len $msg.Contents}}>
 {{- range $j, $content := $msg.Contents}}
-        <content index={{$j}}>
+        <content index={{$j}} reasoning="{{ $content.Reasoning }}">
 {{formatContent $content}}
         </content>
 {{- end}}
@@ -93,7 +94,7 @@ const chatPrettyPrintTmpl = `
   <message id="{{.Response.Message.Id}}" role="{{.Response.Message.Role}}">
     <contents len={{len .Response.Message.Contents}}>
 {{- range $i, $content := .Response.Message.Contents}}
-      <content index={{$i}}>
+      <content index={{$i}} reasoning="{{ $content.Reasoning }}">
 {{formatContent $content}}
       </content>
 {{- end}}
@@ -126,38 +127,37 @@ func init() {
 }
 
 func formatContent(content *v1.Content) string {
+	sb := strings.Builder{}
+
 	switch c := content.Content.(type) {
 	case *v1.Content_Text:
-		return "<content_text>\n" + c.Text + "\n</content_text>"
+		sb.WriteString("<content_text>\n")
+		sb.WriteString(c.Text)
+		sb.WriteString("\n</content_text>")
 	case *v1.Content_Image:
 		switch src := c.Image.Source.(type) {
 		case *v1.Image_Url:
-			return "<content_image_url>" + src.Url + "</content_image_url>"
+			sb.WriteString("<content_image_url>")
+			sb.WriteString(src.Url)
+			sb.WriteString("</content_image_url>")
 		case *v1.Image_Data:
-			return "<content_image_data>" + fmt.Sprintf("%d bytes", len(src.Data)) + "</content_image_data>"
+			sb.WriteString("<content_image_data>")
+			sb.WriteString(fmt.Sprintf("%d bytes", len(src.Data)))
+			sb.WriteString("</content_image_data>")
 		}
-	case *v1.Content_Reasoning:
-		return "<content_reasoning>\n" + c.Reasoning + "\n</content_reasoning>"
 	case *v1.Content_ToolUse:
-		return fmt.Sprintf(
-			`<content_tool_use id="%s" name="%s">
-%s
-</content_tool_use>`,
-			c.ToolUse.Id,
-			c.ToolUse.Name,
-			c.ToolUse.GetTextualInput(),
-		)
+		sb.WriteString(fmt.Sprintf(`<content_tool_use id="%s" name="%s">`, c.ToolUse.Id, c.ToolUse.Name))
+		sb.WriteString("\n")
+		sb.WriteString(c.ToolUse.GetTextualInput())
+		sb.WriteString("\n</content_tool_use>")
 	case *v1.Content_ToolResult:
-		return fmt.Sprintf(
-			`<content_tool_result id="%s">
-%s
-</content_tool_result>`,
-			c.ToolResult.Id,
-			c.ToolResult.GetTextualOutput(),
-		)
+		sb.WriteString(fmt.Sprintf(`<content_tool_result id="%s">`, c.ToolResult.Id))
+		sb.WriteString("\n")
+		sb.WriteString(c.ToolResult.GetTextualOutput())
+		sb.WriteString("\n</content_tool_result>")
 	}
 
-	return "<content_unknown>"
+	return sb.String()
 }
 
 func formatSchema(schema *v1.Schema) string {

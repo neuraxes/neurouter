@@ -230,7 +230,9 @@ func TestChat(t *testing.T) {
 				So(resp.Message.Id, ShouldHaveLength, 36)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
 				So(resp.Message.Contents, ShouldHaveLength, 2)
-				So(resp.Message.Contents[0].GetReasoning(), ShouldEqual, "Hmm, the user just said \"Hello!\" - a simple and friendly greeting. No complex queries or specific requests here. \n\nSince it's a casual opening, a warm and welcoming response would be appropriate. Can mirror their cheerful tone while keeping it concise. \n\nThe response should acknowledge the greeting, express enthusiasm about helping, and leave the conversation open-ended for them to continue. No need for lengthy explanations or assumptions about their needs at this stage.")
+				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
+				So(resp.Message.Contents[0].Metadata["signature"], ShouldEqual, "14bfe852-1643-486f-a6fb-1e64b253986a")
+				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hmm, the user just said \"Hello!\" - a simple and friendly greeting. No complex queries or specific requests here. \n\nSince it's a casual opening, a warm and welcoming response would be appropriate. Can mirror their cheerful tone while keeping it concise. \n\nThe response should acknowledge the greeting, express enthusiasm about helping, and leave the conversation open-ended for them to continue. No need for lengthy explanations or assumptions about their needs at this stage.")
 				So(resp.Message.Contents[1].GetText(), ShouldEqual, "Hello! 😊 How are you doing today? Is there anything I can help you with or would you like to chat about something in particular?")
 				So(resp.Statistics, ShouldNotBeNil)
 				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 6)
@@ -256,50 +258,71 @@ func TestChat(t *testing.T) {
 
 var mockChatStreamResp = []*entity.ChatResp{
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](0),
-				Content: &v1.Content_Reasoning{Reasoning: "This is a simple greeting, so no complex analysis is needed."},
+				Index: ptr.To[uint32](0),
+				Metadata: map[string]string{
+					"signature": "",
+				},
+				Reasoning: true,
+				Content:   &v1.Content_Text{Text: "This is a simple greeting, so no complex analysis is needed."},
 			}},
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](0),
-				Content: &v1.Content_Reasoning{Reasoning: " \n\n"},
+				Index: ptr.To[uint32](0),
+				Metadata: map[string]string{
+					"signature": "",
+				},
+				Reasoning: true,
+				Content:   &v1.Content_Text{Text: " \n\n"},
 			}},
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](0),
-				Content: &v1.Content_Reasoning{Reasoning: " I should respond in a warm and welcoming manner to match their energy"},
+				Index: ptr.To[uint32](0),
+				Metadata: map[string]string{
+					"signature": "",
+				},
+				Reasoning: true,
+				Content:   &v1.Content_Text{Text: " I should respond in a warm and welcoming manner to match their energy"},
 			}},
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](0),
-				Content: &v1.Content_Reasoning{Reasoning: "."},
+				Index: ptr.To[uint32](0),
+				Metadata: map[string]string{
+					"signature": "",
+				},
+				Reasoning: true,
+				Content:   &v1.Content_Text{Text: "."},
 			}},
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
@@ -311,6 +334,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
@@ -322,6 +346,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
@@ -333,6 +358,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
@@ -344,6 +370,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
@@ -355,6 +382,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Message: &v1.Message{
 			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
@@ -366,6 +394,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
+		Id:    "test-stream-req-id",
 		Model: "claude-3-7-sonnet-latest",
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{

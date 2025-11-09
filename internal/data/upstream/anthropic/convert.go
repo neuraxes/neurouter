@@ -69,9 +69,12 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 	for _, content := range message.Contents {
 		switch c := content.GetContent().(type) {
 		case *v1.Content_Text:
-			parts = append(parts, anthropic.NewTextBlock(c.Text))
-		case *v1.Content_Reasoning:
-			parts = append(parts, anthropic.NewThinkingBlock("", c.Reasoning))
+			if content.Reasoning {
+				signature := content.Metadata["signature"]
+				parts = append(parts, anthropic.NewThinkingBlock(signature, c.Text))
+			} else {
+				parts = append(parts, anthropic.NewTextBlock(c.Text))
+			}
 		case *v1.Content_Image:
 			parts = append(parts, anthropic.NewImageBlock(
 				anthropic.URLImageSourceParam{
@@ -185,8 +188,12 @@ func convertContentsFromAnthropic(contents []anthropic.ContentBlockUnion) *v1.Me
 		switch content.Type {
 		case "thinking":
 			message.Contents = append(message.Contents, &v1.Content{
-				Content: &v1.Content_Reasoning{
-					Reasoning: content.Thinking,
+				Metadata: map[string]string{
+					"signature": content.Signature,
+				},
+				Reasoning: true,
+				Content: &v1.Content_Text{
+					Text: content.Thinking,
 				},
 			})
 		case "text":
@@ -254,8 +261,12 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 				resp = c.newResp()
 				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
 					Index: ptr.To(uint32(chunk.Index)),
-					Content: &v1.Content_Reasoning{
-						Reasoning: chunk.ContentBlock.Thinking,
+					Metadata: map[string]string{
+						"signature": chunk.ContentBlock.Signature,
+					},
+					Reasoning: true,
+					Content: &v1.Content_Text{
+						Text: chunk.ContentBlock.Thinking,
 					},
 				})
 			}
@@ -279,8 +290,12 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		case "thinking_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
 				Index: ptr.To(uint32(chunk.Index)),
-				Content: &v1.Content_Reasoning{
-					Reasoning: chunk.Delta.Thinking,
+				Metadata: map[string]string{
+					"signature": chunk.Delta.Signature,
+				},
+				Reasoning: true,
+				Content: &v1.Content_Text{
+					Text: chunk.Delta.Thinking,
 				},
 			})
 		case "text_delta":

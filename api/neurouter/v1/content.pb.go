@@ -243,12 +243,15 @@ func (x *ToolResult) GetOutputs() []*ToolResult_Output {
 // Multi-modality content
 type Content struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    *string                `protobuf:"bytes,1,opt,name=id,proto3,oneof" json:"id,omitempty"`
-	Index *uint32                `protobuf:"varint,2,opt,name=index,proto3,oneof" json:"index,omitempty"`
+	// The index of current content
+	Index *uint32 `protobuf:"varint,1,opt,name=index,proto3,oneof" json:"index,omitempty"`
+	// Additional metadata for the content
+	Metadata map[string]string `protobuf:"bytes,2,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Whether the content is for reasoning
+	Reasoning bool `protobuf:"varint,3,opt,name=reasoning,proto3" json:"reasoning,omitempty"`
 	// Types that are valid to be assigned to Content:
 	//
 	//	*Content_Text
-	//	*Content_Reasoning
 	//	*Content_Image
 	//	*Content_ToolUse
 	//	*Content_ToolResult
@@ -287,18 +290,25 @@ func (*Content) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *Content) GetId() string {
-	if x != nil && x.Id != nil {
-		return *x.Id
-	}
-	return ""
-}
-
 func (x *Content) GetIndex() uint32 {
 	if x != nil && x.Index != nil {
 		return *x.Index
 	}
 	return 0
+}
+
+func (x *Content) GetMetadata() map[string]string {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+func (x *Content) GetReasoning() bool {
+	if x != nil {
+		return x.Reasoning
+	}
+	return false
 }
 
 func (x *Content) GetContent() isContent_Content {
@@ -312,15 +322,6 @@ func (x *Content) GetText() string {
 	if x != nil {
 		if x, ok := x.Content.(*Content_Text); ok {
 			return x.Text
-		}
-	}
-	return ""
-}
-
-func (x *Content) GetReasoning() string {
-	if x != nil {
-		if x, ok := x.Content.(*Content_Reasoning); ok {
-			return x.Reasoning
 		}
 	}
 	return ""
@@ -361,25 +362,19 @@ type Content_Text struct {
 	Text string `protobuf:"bytes,10,opt,name=text,proto3,oneof"`
 }
 
-type Content_Reasoning struct {
-	Reasoning string `protobuf:"bytes,11,opt,name=reasoning,proto3,oneof"`
-}
-
 type Content_Image struct {
-	Image *Image `protobuf:"bytes,12,opt,name=image,proto3,oneof"`
+	Image *Image `protobuf:"bytes,11,opt,name=image,proto3,oneof"`
 }
 
 type Content_ToolUse struct {
-	ToolUse *ToolUse `protobuf:"bytes,13,opt,name=tool_use,json=toolUse,proto3,oneof"`
+	ToolUse *ToolUse `protobuf:"bytes,12,opt,name=tool_use,json=toolUse,proto3,oneof"`
 }
 
 type Content_ToolResult struct {
-	ToolResult *ToolResult `protobuf:"bytes,14,opt,name=tool_result,json=toolResult,proto3,oneof"`
+	ToolResult *ToolResult `protobuf:"bytes,13,opt,name=tool_result,json=toolResult,proto3,oneof"`
 }
 
 func (*Content_Text) isContent_Content() {}
-
-func (*Content_Reasoning) isContent_Content() {}
 
 func (*Content_Image) isContent_Content() {}
 
@@ -565,19 +560,21 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	"\x04text\x18\n" +
 	" \x01(\tH\x00R\x04textB\b\n" +
 	"\x06outputB\b\n" +
-	"\x06_index\"\xa9\x02\n" +
-	"\aContent\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\tH\x01R\x02id\x88\x01\x01\x12\x19\n" +
-	"\x05index\x18\x02 \x01(\rH\x02R\x05index\x88\x01\x01\x12\x14\n" +
+	"\x06_index\"\x89\x03\n" +
+	"\aContent\x12\x19\n" +
+	"\x05index\x18\x01 \x01(\rH\x01R\x05index\x88\x01\x01\x12?\n" +
+	"\bmetadata\x18\x02 \x03(\v2#.neurouter.v1.Content.MetadataEntryR\bmetadata\x12\x1c\n" +
+	"\treasoning\x18\x03 \x01(\bR\treasoning\x12\x14\n" +
 	"\x04text\x18\n" +
-	" \x01(\tH\x00R\x04text\x12\x1e\n" +
-	"\treasoning\x18\v \x01(\tH\x00R\treasoning\x12+\n" +
-	"\x05image\x18\f \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05image\x122\n" +
-	"\btool_use\x18\r \x01(\v2\x15.neurouter.v1.ToolUseH\x00R\atoolUse\x12;\n" +
-	"\vtool_result\x18\x0e \x01(\v2\x18.neurouter.v1.ToolResultH\x00R\n" +
-	"toolResultB\t\n" +
-	"\acontentB\x05\n" +
-	"\x03_idB\b\n" +
+	" \x01(\tH\x00R\x04text\x12+\n" +
+	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05image\x122\n" +
+	"\btool_use\x18\f \x01(\v2\x15.neurouter.v1.ToolUseH\x00R\atoolUse\x12;\n" +
+	"\vtool_result\x18\r \x01(\v2\x18.neurouter.v1.ToolResultH\x00R\n" +
+	"toolResult\x1a;\n" +
+	"\rMetadataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
+	"\acontentB\b\n" +
 	"\x06_indexB3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
@@ -592,7 +589,7 @@ func file_neurouter_v1_content_proto_rawDescGZIP() []byte {
 	return file_neurouter_v1_content_proto_rawDescData
 }
 
-var file_neurouter_v1_content_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_neurouter_v1_content_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_neurouter_v1_content_proto_goTypes = []any{
 	(*Image)(nil),             // 0: neurouter.v1.Image
 	(*ToolUse)(nil),           // 1: neurouter.v1.ToolUse
@@ -600,18 +597,20 @@ var file_neurouter_v1_content_proto_goTypes = []any{
 	(*Content)(nil),           // 3: neurouter.v1.Content
 	(*ToolUse_Input)(nil),     // 4: neurouter.v1.ToolUse.Input
 	(*ToolResult_Output)(nil), // 5: neurouter.v1.ToolResult.Output
+	nil,                       // 6: neurouter.v1.Content.MetadataEntry
 }
 var file_neurouter_v1_content_proto_depIdxs = []int32{
 	4, // 0: neurouter.v1.ToolUse.inputs:type_name -> neurouter.v1.ToolUse.Input
 	5, // 1: neurouter.v1.ToolResult.outputs:type_name -> neurouter.v1.ToolResult.Output
-	0, // 2: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
-	1, // 3: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
-	2, // 4: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	6, // 2: neurouter.v1.Content.metadata:type_name -> neurouter.v1.Content.MetadataEntry
+	0, // 3: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
+	1, // 4: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
+	2, // 5: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_content_proto_init() }
@@ -625,7 +624,6 @@ func file_neurouter_v1_content_proto_init() {
 	}
 	file_neurouter_v1_content_proto_msgTypes[3].OneofWrappers = []any{
 		(*Content_Text)(nil),
-		(*Content_Reasoning)(nil),
 		(*Content_Image)(nil),
 		(*Content_ToolUse)(nil),
 		(*Content_ToolResult)(nil),
@@ -642,7 +640,7 @@ func file_neurouter_v1_content_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_content_proto_rawDesc), len(file_neurouter_v1_content_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -57,13 +57,17 @@ message ToolResult {
 
 // Multi-modality content
 message Content {
-  optional string id = 1;
-  optional uint32 index = 2;
+  // The index of current content
+  optional uint32 index = 1;
+  // Additional metadata for the content
+  map<string, string> metadata = 2;
+  // Whether the content is for reasoning
+  bool reasoning = 3;
+
   oneof content {
     string text = 10;
-    string reasoning = 11;
-    Image image = 12;
-    ToolUse tool_use = 13;
-    ToolResult tool_result = 14;
+    Image image = 11;
+    ToolUse tool_use = 12;
+    ToolResult tool_result = 13;
   }
 }

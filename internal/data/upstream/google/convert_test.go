@@ -365,7 +365,8 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 		So(msg, ShouldNotBeNil)
 		So(msg.Role, ShouldEqual, v1.Role_MODEL)
 		So(msg.Contents, ShouldHaveLength, 1)
-		So(msg.Contents[0].GetReasoning(), ShouldEqual, "thinking...")
+		So(msg.Contents[0].Reasoning, ShouldBeTrue)
+		So(msg.Contents[0].GetText(), ShouldEqual, "thinking...")
 	})
 
 	Convey("convertMessageFromGoogle should skip thought without text", t, func() {

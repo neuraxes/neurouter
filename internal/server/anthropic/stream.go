@@ -128,33 +128,35 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 				s.contentType = runtimeType
 			}
 
-			switch content := content.Content.(type) {
+			switch c := content.Content.(type) {
 			case *v1.Content_Text:
-				if !s.contentBlockStarted {
-					s.contentBlockStarted = true
-					s.sendContentBlockStartEvent("text")
+				if content.Reasoning {
+					if !s.contentBlockStarted {
+						s.contentBlockStarted = true
+						s.sendContentBlockStartEvent("thinking")
+					}
+					event := anthropic.ContentBlockDeltaEvent{
+						Index: s.contentIndex,
+						Delta: anthropic.RawContentBlockDeltaUnion{
+							Type: "thinking_delta",
+							Text: c.Text,
+						},
+					}
+					s.sendJsonEvent("content_block_delta", event)
+				} else {
+					if !s.contentBlockStarted {
+						s.contentBlockStarted = true
+						s.sendContentBlockStartEvent("text")
+					}
+					event := anthropic.ContentBlockDeltaEvent{
+						Index: s.contentIndex,
+						Delta: anthropic.RawContentBlockDeltaUnion{
+							Type: "text_delta",
+							Text: c.Text,
+						},
+					}
+					s.sendJsonEvent("content_block_delta", event)
 				}
-				event := anthropic.ContentBlockDeltaEvent{
-					Index: s.contentIndex,
-					Delta: anthropic.RawContentBlockDeltaUnion{
-						Type: "text_delta",
-						Text: content.Text,
-					},
-				}
-				s.sendJsonEvent("content_block_delta", event)
-			case *v1.Content_Reasoning:
-				if !s.contentBlockStarted {
-					s.contentBlockStarted = true
-					s.sendContentBlockStartEvent("thinking")
-				}
-				event := anthropic.ContentBlockDeltaEvent{
-					Index: s.contentIndex,
-					Delta: anthropic.RawContentBlockDeltaUnion{
-						Type: "thinking_delta",
-						Text: content.Reasoning,
-					},
-				}
-				s.sendJsonEvent("content_block_delta", event)
 			case *v1.Content_ToolUse:
 				if !s.contentBlockStarted {
 					s.contentBlockStarted = true
@@ -162,18 +164,18 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 						Index: s.contentIndex,
 						ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
 							Type: "tool_use",
-							ID:   content.ToolUse.GetId(),
-							Name: content.ToolUse.GetName(),
+							ID:   c.ToolUse.GetId(),
+							Name: c.ToolUse.GetName(),
 						},
 					}
 					s.sendJsonEvent("content_block_start", event)
 				}
-				if len(content.ToolUse.Inputs) > 0 {
+				if len(c.ToolUse.Inputs) > 0 {
 					event := anthropic.ContentBlockDeltaEvent{
 						Index: s.contentIndex,
 						Delta: anthropic.RawContentBlockDeltaUnion{
 							Type:        "input_json_delta",
-							PartialJSON: content.ToolUse.GetTextualInput(),
+							PartialJSON: c.ToolUse.GetTextualInput(),
 						},
 					}
 					s.sendJsonEvent("content_block_delta", event)

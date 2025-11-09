@@ -15,6 +15,7 @@
 package google
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"strings"
 
@@ -168,6 +169,12 @@ func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 	var parts []*genai.Part
 	for _, content := range msg.Contents {
 		if part := convertContentToGoogle(content); part != nil {
+			if thoughtSignature := content.Metadata["thoughtSignature"]; thoughtSignature != "" {
+				sig, err := base64.StdEncoding.DecodeString(thoughtSignature)
+				if err == nil {
+					part.ThoughtSignature = sig
+				}
+			}
 			parts = append(parts, part)
 		}
 	}
@@ -195,18 +202,9 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	}
 
 	for _, part := range content.Parts {
-		if part.Thought {
-			if part.Text != "" {
-				message.Contents = append(message.Contents, &v1.Content{
-					Content: &v1.Content_Reasoning{
-						Reasoning: part.Text,
-					},
-				})
-				continue
-			}
-		}
 		if part.Text != "" {
 			message.Contents = append(message.Contents, &v1.Content{
+				Reasoning: part.Thought,
 				Content: &v1.Content_Text{
 					Text: part.Text,
 				},
@@ -218,7 +216,7 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 			if err != nil {
 				continue
 			}
-			message.Contents = append(message.Contents, &v1.Content{
+			content := &v1.Content{
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Id:   part.FunctionCall.Name,
@@ -232,7 +230,13 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 						},
 					},
 				},
-			})
+			}
+			if len(part.ThoughtSignature) > 0 {
+				content.Metadata = map[string]string{
+					"thoughtSignature": base64.StdEncoding.EncodeToString(part.ThoughtSignature),
+				}
+			}
+			message.Contents = append(message.Contents, content)
 		}
 	}
 

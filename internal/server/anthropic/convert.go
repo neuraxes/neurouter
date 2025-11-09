@@ -208,18 +208,20 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 		for _, content := range resp.Message.Contents {
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
-				if c.Text != "" {
-					anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
-						Type: "text",
-						Text: c.Text,
-					})
-				}
-			case *v1.Content_Reasoning:
-				if c.Reasoning != "" {
-					anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
-						Type:     "thinking",
-						Thinking: c.Reasoning,
-					})
+				if content.Reasoning {
+					if c.Text != "" {
+						anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
+							Type:     "thinking",
+							Thinking: c.Text,
+						})
+					}
+				} else {
+					if c.Text != "" {
+						anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
+							Type: "text",
+							Text: c.Text,
+						})
+					}
 				}
 			case *v1.Content_ToolUse:
 				f := c.ToolUse

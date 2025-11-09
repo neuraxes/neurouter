@@ -196,6 +196,10 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 			for _, content := range message.Contents {
 				switch c := content.GetContent().(type) {
 				case *v1.Content_Text:
+					// Reasoning content should be ignored if it has the reasoning flag
+					if content.Reasoning {
+						continue
+					}
 					m.Content.OfArrayOfContentParts = append(
 						m.Content.OfArrayOfContentParts,
 						openai.ChatCompletionAssistantMessageParamContentArrayOfContentPartUnion{
@@ -204,8 +208,6 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 							},
 						},
 					)
-				case *v1.Content_Reasoning:
-					// Reasoning content should be ignored
 				case *v1.Content_ToolUse:
 					// Tool calls will be processed later
 				default:
@@ -304,8 +306,9 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 			rc := gjson.Parse(reasoningContent.Raw()).String()
 			if rc != "" {
 				message.Contents = append(message.Contents, &v1.Content{
-					Content: &v1.Content_Reasoning{
-						Reasoning: rc,
+					Reasoning: true,
+					Content: &v1.Content_Text{
+						Text: rc,
 					},
 				})
 			}
@@ -359,8 +362,9 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp 
 				rc := gjson.Parse(reasoningContent.Raw()).String()
 				if rc != "" {
 					contents = append(contents, &v1.Content{
-						Content: &v1.Content_Reasoning{
-							Reasoning: rc,
+						Reasoning: true,
+						Content: &v1.Content_Text{
+							Text: rc,
 						},
 					})
 				}

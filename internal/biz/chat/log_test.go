@@ -50,8 +50,9 @@ func TestPrintChat(t *testing.T) {
 					Role: v1.Role_USER,
 					Contents: []*v1.Content{
 						{
-							Content: &v1.Content_Reasoning{
-								Reasoning: "Reasoning...",
+							Reasoning: true,
+							Content: &v1.Content_Text{
+								Text: "Reasoning...",
 							},
 						},
 						{
