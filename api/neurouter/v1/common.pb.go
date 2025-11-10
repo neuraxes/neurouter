@@ -230,6 +230,7 @@ type GenerationConfig struct {
 	//
 	//	*GenerationConfig_PresetGrammar
 	//	*GenerationConfig_GbnfGrammar
+	//	*GenerationConfig_Schema
 	//	*GenerationConfig_JsonSchema
 	Grammar       isGenerationConfig_Grammar `protobuf_oneof:"grammar"`
 	unknownFields protoimpl.UnknownFields
@@ -349,6 +350,15 @@ func (x *GenerationConfig) GetGbnfGrammar() string {
 	return ""
 }
 
+func (x *GenerationConfig) GetSchema() *Schema {
+	if x != nil {
+		if x, ok := x.Grammar.(*GenerationConfig_Schema); ok {
+			return x.Schema
+		}
+	}
+	return nil
+}
+
 func (x *GenerationConfig) GetJsonSchema() string {
 	if x != nil {
 		if x, ok := x.Grammar.(*GenerationConfig_JsonSchema); ok {
@@ -382,14 +392,21 @@ type GenerationConfig_GbnfGrammar struct {
 	GbnfGrammar string `protobuf:"bytes,61,opt,name=gbnf_grammar,json=gbnfGrammar,proto3,oneof"`
 }
 
+type GenerationConfig_Schema struct {
+	// The schema definition.
+	Schema *Schema `protobuf:"bytes,62,opt,name=schema,proto3,oneof"`
+}
+
 type GenerationConfig_JsonSchema struct {
 	// The JSON schema definition.
-	JsonSchema string `protobuf:"bytes,62,opt,name=json_schema,json=jsonSchema,proto3,oneof"`
+	JsonSchema string `protobuf:"bytes,63,opt,name=json_schema,json=jsonSchema,proto3,oneof"`
 }
 
 func (*GenerationConfig_PresetGrammar) isGenerationConfig_Grammar() {}
 
 func (*GenerationConfig_GbnfGrammar) isGenerationConfig_Grammar() {}
+
+func (*GenerationConfig_Schema) isGenerationConfig_Grammar() {}
 
 func (*GenerationConfig_JsonSchema) isGenerationConfig_Grammar() {}
 
@@ -711,7 +728,7 @@ var File_neurouter_v1_common_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\n" +
-	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\"\x84\x04\n" +
+	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\"\xb4\x04\n" +
 	"\x10GenerationConfig\x12\"\n" +
 	"\n" +
 	"max_tokens\x18\x01 \x01(\x03H\x02R\tmaxTokens\x88\x01\x01\x12%\n" +
@@ -722,8 +739,9 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x10presence_penalty\x18\x06 \x01(\x02H\aR\x0fpresencePenalty\x88\x01\x01\x12)\n" +
 	"\x0fpreset_template\x182 \x01(\tH\x00R\x0epresetTemplate\x12'\n" +
 	"\x0epreset_grammar\x18< \x01(\tH\x01R\rpresetGrammar\x12#\n" +
-	"\fgbnf_grammar\x18= \x01(\tH\x01R\vgbnfGrammar\x12!\n" +
-	"\vjson_schema\x18> \x01(\tH\x01R\n" +
+	"\fgbnf_grammar\x18= \x01(\tH\x01R\vgbnfGrammar\x12.\n" +
+	"\x06schema\x18> \x01(\v2\x14.neurouter.v1.SchemaH\x01R\x06schema\x12!\n" +
+	"\vjson_schema\x18? \x01(\tH\x01R\n" +
 	"jsonSchemaB\n" +
 	"\n" +
 	"\btemplateB\t\n" +
@@ -812,18 +830,19 @@ var file_neurouter_v1_common_proto_goTypes = []any{
 	(*Tool_Function)(nil),    // 9: neurouter.v1.Tool.Function
 }
 var file_neurouter_v1_common_proto_depIdxs = []int32{
-	7, // 0: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
-	2, // 1: neurouter.v1.Schema.type:type_name -> neurouter.v1.Schema.Type
-	5, // 2: neurouter.v1.Schema.items:type_name -> neurouter.v1.Schema
-	8, // 3: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
-	9, // 4: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
-	5, // 5: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
-	5, // 6: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	5, // 0: neurouter.v1.GenerationConfig.schema:type_name -> neurouter.v1.Schema
+	7, // 1: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
+	2, // 2: neurouter.v1.Schema.type:type_name -> neurouter.v1.Schema.Type
+	5, // 3: neurouter.v1.Schema.items:type_name -> neurouter.v1.Schema
+	8, // 4: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
+	9, // 5: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
+	5, // 6: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
+	5, // 7: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_common_proto_init() }
@@ -835,6 +854,7 @@ func file_neurouter_v1_common_proto_init() {
 		(*GenerationConfig_PresetTemplate)(nil),
 		(*GenerationConfig_PresetGrammar)(nil),
 		(*GenerationConfig_GbnfGrammar)(nil),
+		(*GenerationConfig_Schema)(nil),
 		(*GenerationConfig_JsonSchema)(nil),
 	}
 	file_neurouter_v1_common_proto_msgTypes[3].OneofWrappers = []any{

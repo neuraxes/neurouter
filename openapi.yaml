@@ -70,6 +70,48 @@ paths:
                   description: The GGML BNF grammar definition.
                   schema:
                     type: string
+                - name: config.schema.type
+                  in: query
+                  schema:
+                    type: integer
+                    format: enum
+                - name: config.schema.description
+                  in: query
+                  schema:
+                    type: string
+                - name: config.schema.items.type
+                  in: query
+                  schema:
+                    type: integer
+                    format: enum
+                - name: config.schema.items.description
+                  in: query
+                  schema:
+                    type: string
+                - name: config.schema.items.items.required
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: config.schema.items.items.enum
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: config.schema.items.required
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: config.schema.items.enum
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
                 - name: config.jsonSchema
                   in: query
                   description: The JSON schema definition.
@@ -134,14 +176,19 @@ components:
         neurouter.v1.Content:
             type: object
             properties:
-                id:
-                    type: string
                 index:
                     type: integer
+                    description: The index of current content
                     format: uint32
-                text:
-                    type: string
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: Additional metadata for the content
                 reasoning:
+                    type: boolean
+                    description: Whether the content is for reasoning
+                text:
                     type: string
                 image:
                     $ref: '#/components/schemas/neurouter.v1.Image'

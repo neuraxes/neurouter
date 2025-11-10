@@ -70,10 +70,6 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 			lastText := lastContent.Content.(*v1.Content_Text)
 			lastText.Text += c.Text
 
-		case *v1.Content_Reasoning:
-			lastThinking := lastContent.Content.(*v1.Content_Reasoning)
-			lastThinking.Reasoning += c.Reasoning
-
 		case *v1.Content_ToolUse:
 			if c.ToolUse.Id != "" {
 				// A new function call, append as new content

@@ -84,6 +84,8 @@ message OpenAIConfig {
 
 message GoogleConfig {
   string api_key = 1;
+  // Whether to put the system prompt into messages (as user message)
+  bool system_as_user = 2;
 }
 
 message AnthropicConfig {

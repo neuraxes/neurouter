@@ -118,6 +118,11 @@ func inferImageType(data []byte) string {
 }
 
 func convertContentToGoogle(content *v1.Content) *genai.Part {
+	if content.Reasoning {
+		// Reasoning content should be ignored
+		return nil
+	}
+
 	switch c := content.Content.(type) {
 	case *v1.Content_Text:
 		return genai.NewPartFromText(c.Text)
@@ -195,6 +200,24 @@ func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 	}
 }
 
+func (r *upstream) convertSystemInstructionToGoogle(messages []*v1.Message) (content *genai.Content) {
+	if r.config.SystemAsUser {
+		return
+	}
+	content = &genai.Content{}
+	for _, msg := range messages {
+		if msg.Role == v1.Role_SYSTEM {
+			for _, c := range msg.Contents {
+				part := convertContentToGoogle(c)
+				if part != nil {
+					content.Parts = append(content.Parts, part)
+				}
+			}
+		}
+	}
+	return
+}
+
 func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	message := &v1.Message{
 		Id:   uuid.NewString(),
@@ -202,21 +225,21 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	}
 
 	for _, part := range content.Parts {
+		var content *v1.Content
+
 		if part.Text != "" {
-			message.Contents = append(message.Contents, &v1.Content{
+			content = &v1.Content{
 				Reasoning: part.Thought,
 				Content: &v1.Content_Text{
 					Text: part.Text,
 				},
-			})
-			continue
-		}
-		if part.FunctionCall != nil {
+			}
+		} else if part.FunctionCall != nil {
 			args, err := json.Marshal(part.FunctionCall.Args)
 			if err != nil {
 				continue
 			}
-			content := &v1.Content{
+			content = &v1.Content{
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Id:   part.FunctionCall.Name,
@@ -231,13 +254,19 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 					},
 				},
 			}
-			if len(part.ThoughtSignature) > 0 {
-				content.Metadata = map[string]string{
-					"thoughtSignature": base64.StdEncoding.EncodeToString(part.ThoughtSignature),
-				}
-			}
-			message.Contents = append(message.Contents, content)
 		}
+
+		if content == nil {
+			continue
+		}
+
+		if len(part.ThoughtSignature) > 0 {
+			content.Metadata = map[string]string{
+				"thoughtSignature": base64.StdEncoding.EncodeToString(part.ThoughtSignature),
+			}
+		}
+
+		message.Contents = append(message.Contents, content)
 	}
 
 	return message

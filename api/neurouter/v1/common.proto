@@ -41,8 +41,10 @@ message GenerationConfig {
     string preset_grammar = 60;
     // The GGML BNF grammar definition.
     string gbnf_grammar = 61;
+    // The schema definition.
+    Schema schema = 62;
     // The JSON schema definition.
-    string json_schema = 62;
+    string json_schema = 63;
   }
 }
 

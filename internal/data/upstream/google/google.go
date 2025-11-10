@@ -23,6 +23,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"google.golang.org/genai"
 
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -66,7 +67,8 @@ func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Cli
 
 func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	config := &genai.GenerateContentConfig{
-		Tools: convertToolsToGoogle(req.Tools),
+		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
+		Tools:             convertToolsToGoogle(req.Tools),
 		ThinkingConfig: &genai.ThinkingConfig{
 			IncludeThoughts: true,
 		},
@@ -75,6 +77,11 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 
 	var messages []*genai.Content
 	for _, msg := range req.Messages {
+		if msg.Role == v1.Role_SYSTEM {
+			if !r.config.SystemAsUser {
+				continue
+			}
+		}
 		messages = append(messages, convertMessageToGoogle(msg))
 	}
 
@@ -116,8 +123,7 @@ func (c *googleChatStreamClient) Recv() (*entity.ChatResp, error) {
 	}
 	resp.Message.Id = googleResp.ResponseID
 
-	// Only send for last chunk
-	if googleResp.UsageMetadata != nil && googleResp.UsageMetadata.CandidatesTokenCount != 0 {
+	if googleResp.UsageMetadata != nil {
 		resp.Statistics = convertStatisticsFromGoogle(googleResp.UsageMetadata)
 	}
 
@@ -131,7 +137,8 @@ func (c *googleChatStreamClient) Close() error {
 
 func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
 	config := &genai.GenerateContentConfig{
-		Tools: convertToolsToGoogle(req.Tools),
+		Tools:             convertToolsToGoogle(req.Tools),
+		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
 		ThinkingConfig: &genai.ThinkingConfig{
 			IncludeThoughts: true,
 		},
@@ -140,6 +147,11 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 
 	var messages []*genai.Content
 	for _, msg := range req.Messages {
+		if msg.Role == v1.Role_SYSTEM {
+			if !r.config.SystemAsUser {
+				continue
+			}
+		}
 		messages = append(messages, convertMessageToGoogle(msg))
 	}
 
