@@ -237,11 +237,18 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 }
 
 func convertToolParametersToOpenAI(parameters *v1.Schema) openai.FunctionParameters {
-	return map[string]any{
-		"type":       parameters.Type,
-		"properties": parameters.Properties,
-		"required":   parameters.Required,
+	params := map[string]any{
+		"type": parameters.Type,
 	}
+	if parameters.Properties != nil {
+		params["properties"] = parameters.Properties
+	} else if parameters.Type == v1.Schema_TYPE_OBJECT {
+		params["properties"] = map[string]any{}
+	}
+	if parameters.Required != nil {
+		params["required"] = parameters.Required
+	}
+	return params
 }
 
 // convertRequestToOpenAI converts an internal request to a request that can be sent to the OpenAI API.
@@ -338,27 +345,28 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 }
 
 // convertChunkFromOpenAI converts an OpenAI chat completion chunk to an internal response.
-func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp {
+func (c *openAIChatStreamClient) convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp {
 	resp := &entity.ChatResp{
 		Id:    chunk.ID,
 		Model: chunk.Model,
 	}
 
 	if len(chunk.Choices) > 0 {
-		c := chunk.Choices[0]
+		msg := chunk.Choices[0]
 		var contents []*v1.Content
+		var metadata map[string]string
 
-		if c.Delta.Content != "" {
+		if msg.Delta.Content != "" {
 			contents = append(contents, &v1.Content{
 				Content: &v1.Content_Text{
-					Text: c.Delta.Content,
+					Text: msg.Delta.Content,
 				},
 			})
 		}
 
 		// Support reasoning content from DeepSeek
-		if c.Delta.JSON.ExtraFields != nil {
-			if reasoningContent, ok := c.Delta.JSON.ExtraFields["reasoning_content"]; ok {
+		if msg.Delta.JSON.ExtraFields != nil {
+			if reasoningContent, ok := msg.Delta.JSON.ExtraFields["reasoning_content"]; ok {
 				rc := gjson.Parse(reasoningContent.Raw()).String()
 				if rc != "" {
 					contents = append(contents, &v1.Content{
@@ -371,7 +379,7 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp 
 			}
 		}
 
-		for _, toolCall := range c.Delta.ToolCalls {
+		for _, toolCall := range msg.Delta.ToolCalls {
 			contents = append(contents, &v1.Content{
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
@@ -389,13 +397,25 @@ func convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp 
 			})
 		}
 
+		if msg.FinishReason != "" {
+			metadata = map[string]string{
+				"finish_reason": string(msg.FinishReason),
+			}
+		}
+
 		resp.Message = &v1.Message{
+			Id:       c.messageID,
 			Role:     v1.Role_MODEL,
 			Contents: contents,
+			Metadata: metadata,
 		}
 	}
 
 	resp.Statistics = convertStatisticsFromOpenAI(&chunk.Usage)
+
+	if resp.Message == nil && resp.Statistics == nil {
+		return nil
+	}
 
 	return resp
 }

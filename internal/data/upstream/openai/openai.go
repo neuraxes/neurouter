@@ -90,7 +90,8 @@ type openAIChatStreamClient struct {
 	messageID string
 }
 
-func (c openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
+func (c *openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
+next:
 	if !c.upstream.Next() {
 		if err = c.upstream.Err(); err != nil {
 			return
@@ -100,7 +101,11 @@ func (c openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 	}
 
 	chunk := c.upstream.Current()
-	resp = convertChunkFromOpenAI(&chunk)
+	resp = c.convertChunkFromOpenAI(&chunk)
+	if resp == nil {
+		goto next
+	}
+
 	if resp.Message != nil {
 		resp.Message.Id = c.messageID
 	}
@@ -108,7 +113,7 @@ func (c openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
 	return
 }
 
-func (c openAIChatStreamClient) Close() error {
+func (c *openAIChatStreamClient) Close() error {
 	return c.upstream.Close()
 }
 

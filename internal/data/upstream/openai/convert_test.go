@@ -751,7 +751,7 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 				},
 			}
 
-			resp := convertChunkFromOpenAI(chunk)
+			resp := (&openAIChatStreamClient{}).convertChunkFromOpenAI(chunk)
 			So(resp.Id, ShouldEqual, "chatcmpl-1")
 			So(resp.Message.Id, ShouldBeEmpty)
 			So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello")
@@ -773,7 +773,7 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 				},
 			}
 
-			resp := convertChunkFromOpenAI(chunk)
+			resp := (&openAIChatStreamClient{}).convertChunkFromOpenAI(chunk)
 			So(resp.Statistics.Usage.InputTokens, ShouldEqual, 5)
 			So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 10)
 		})
@@ -799,7 +799,7 @@ func TestConvertChunkFromOpenAI(t *testing.T) {
 				},
 			}
 
-			resp := convertChunkFromOpenAI(chunk)
+			resp := (&openAIChatStreamClient{}).convertChunkFromOpenAI(chunk)
 			So(resp.Id, ShouldEqual, "chatcmpl-1")
 			So(resp.Message.Id, ShouldBeEmpty)
 			So(resp.Message.Contents, ShouldHaveLength, 1)

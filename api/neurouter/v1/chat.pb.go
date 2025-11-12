@@ -94,7 +94,9 @@ type Message struct {
 	// The optional name of the message sender
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	// The multi-modality content
-	Contents      []*Content `protobuf:"bytes,4,rep,name=contents,proto3" json:"contents,omitempty"`
+	Contents []*Content `protobuf:"bytes,4,rep,name=contents,proto3" json:"contents,omitempty"`
+	// Additional metadata for the message
+	Metadata      map[string]string `protobuf:"bytes,5,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -153,6 +155,13 @@ func (x *Message) GetName() string {
 func (x *Message) GetContents() []*Content {
 	if x != nil {
 		return x.Contents
+	}
+	return nil
+}
+
+func (x *Message) GetMetadata() map[string]string {
+	if x != nil {
+		return x.Metadata
 	}
 	return nil
 }
@@ -314,12 +323,16 @@ var File_neurouter_v1_chat_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\n" +
-	"\x17neurouter/v1/chat.proto\x12\fneurouter.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x19neurouter/v1/common.proto\x1a\x1aneurouter/v1/content.proto\"\x88\x01\n" +
+	"\x17neurouter/v1/chat.proto\x12\fneurouter.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x19neurouter/v1/common.proto\x1a\x1aneurouter/v1/content.proto\"\x86\x02\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12&\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x12.neurouter.v1.RoleR\x04role\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x121\n" +
-	"\bcontents\x18\x04 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"\xc4\x01\n" +
+	"\bcontents\x18\x04 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\x12?\n" +
+	"\bmetadata\x18\x05 \x03(\v2#.neurouter.v1.Message.MetadataEntryR\bmetadata\x1a;\n" +
+	"\rMetadataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc4\x01\n" +
 	"\aChatReq\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x126\n" +
@@ -357,34 +370,36 @@ func file_neurouter_v1_chat_proto_rawDescGZIP() []byte {
 }
 
 var file_neurouter_v1_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_neurouter_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_neurouter_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_neurouter_v1_chat_proto_goTypes = []any{
 	(Role)(0),                // 0: neurouter.v1.Role
 	(*Message)(nil),          // 1: neurouter.v1.Message
 	(*ChatReq)(nil),          // 2: neurouter.v1.ChatReq
 	(*ChatResp)(nil),         // 3: neurouter.v1.ChatResp
-	(*Content)(nil),          // 4: neurouter.v1.Content
-	(*GenerationConfig)(nil), // 5: neurouter.v1.GenerationConfig
-	(*Tool)(nil),             // 6: neurouter.v1.Tool
-	(*Statistics)(nil),       // 7: neurouter.v1.Statistics
+	nil,                      // 4: neurouter.v1.Message.MetadataEntry
+	(*Content)(nil),          // 5: neurouter.v1.Content
+	(*GenerationConfig)(nil), // 6: neurouter.v1.GenerationConfig
+	(*Tool)(nil),             // 7: neurouter.v1.Tool
+	(*Statistics)(nil),       // 8: neurouter.v1.Statistics
 }
 var file_neurouter_v1_chat_proto_depIdxs = []int32{
-	0, // 0: neurouter.v1.Message.role:type_name -> neurouter.v1.Role
-	4, // 1: neurouter.v1.Message.contents:type_name -> neurouter.v1.Content
-	5, // 2: neurouter.v1.ChatReq.config:type_name -> neurouter.v1.GenerationConfig
-	1, // 3: neurouter.v1.ChatReq.messages:type_name -> neurouter.v1.Message
-	6, // 4: neurouter.v1.ChatReq.tools:type_name -> neurouter.v1.Tool
-	1, // 5: neurouter.v1.ChatResp.message:type_name -> neurouter.v1.Message
-	7, // 6: neurouter.v1.ChatResp.statistics:type_name -> neurouter.v1.Statistics
-	2, // 7: neurouter.v1.Chat.Chat:input_type -> neurouter.v1.ChatReq
-	2, // 8: neurouter.v1.Chat.ChatStream:input_type -> neurouter.v1.ChatReq
-	3, // 9: neurouter.v1.Chat.Chat:output_type -> neurouter.v1.ChatResp
-	3, // 10: neurouter.v1.Chat.ChatStream:output_type -> neurouter.v1.ChatResp
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	0,  // 0: neurouter.v1.Message.role:type_name -> neurouter.v1.Role
+	5,  // 1: neurouter.v1.Message.contents:type_name -> neurouter.v1.Content
+	4,  // 2: neurouter.v1.Message.metadata:type_name -> neurouter.v1.Message.MetadataEntry
+	6,  // 3: neurouter.v1.ChatReq.config:type_name -> neurouter.v1.GenerationConfig
+	1,  // 4: neurouter.v1.ChatReq.messages:type_name -> neurouter.v1.Message
+	7,  // 5: neurouter.v1.ChatReq.tools:type_name -> neurouter.v1.Tool
+	1,  // 6: neurouter.v1.ChatResp.message:type_name -> neurouter.v1.Message
+	8,  // 7: neurouter.v1.ChatResp.statistics:type_name -> neurouter.v1.Statistics
+	2,  // 8: neurouter.v1.Chat.Chat:input_type -> neurouter.v1.ChatReq
+	2,  // 9: neurouter.v1.Chat.ChatStream:input_type -> neurouter.v1.ChatReq
+	3,  // 10: neurouter.v1.Chat.Chat:output_type -> neurouter.v1.ChatResp
+	3,  // 11: neurouter.v1.Chat.ChatStream:output_type -> neurouter.v1.ChatResp
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_chat_proto_init() }
@@ -400,7 +415,7 @@ func file_neurouter_v1_chat_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_chat_proto_rawDesc), len(file_neurouter_v1_chat_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

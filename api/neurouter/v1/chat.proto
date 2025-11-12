@@ -46,6 +46,8 @@ message Message {
   string name = 3;
   // The multi-modality content
   repeated Content contents = 4;
+  // Additional metadata for the message
+  map<string, string> metadata = 5;
 }
 
 message ChatReq {
