@@ -25,7 +25,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-func convertGenerationConfigToOpenAI(config *v1.GenerationConfig, req *openai.ChatCompletionNewParams) {
+func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatCompletionNewParams) {
 	if config == nil {
 		return
 	}
@@ -46,7 +46,7 @@ func convertGenerationConfigToOpenAI(config *v1.GenerationConfig, req *openai.Ch
 	}
 }
 
-func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatCompletionMessageParamUnion {
+func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.ChatCompletionMessageParamUnion {
 	plainText := ""
 	isPlainText := true
 
@@ -236,7 +236,7 @@ func (r *upstream) convertMessageToOpenAI(message *v1.Message) []openai.ChatComp
 	}
 }
 
-func convertToolParametersToOpenAI(parameters *v1.Schema) openai.FunctionParameters {
+func convertToolParametersToOpenAIChat(parameters *v1.Schema) openai.FunctionParameters {
 	params := map[string]any{
 		"type": parameters.Type,
 	}
@@ -251,18 +251,17 @@ func convertToolParametersToOpenAI(parameters *v1.Schema) openai.FunctionParamet
 	return params
 }
 
-// convertRequestToOpenAI converts an internal request to a request that can be sent to the OpenAI API.
-func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatCompletionNewParams {
+func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCompletionNewParams {
 	openAIReq := openai.ChatCompletionNewParams{
 		Model: req.Model,
 	}
 
 	if req.Config != nil {
-		convertGenerationConfigToOpenAI(req.Config, &openAIReq)
+		convertConfigToOpenAIChat(req.Config, &openAIReq)
 	}
 
 	for _, message := range req.Messages {
-		m := r.convertMessageToOpenAI(message)
+		m := r.convertMessageToOpenAIChat(message)
 		if m != nil {
 			openAIReq.Messages = append(openAIReq.Messages, m...)
 		}
@@ -275,7 +274,7 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 			case *v1.Tool_Function_:
 				ot := openai.FunctionDefinitionParam{
 					Name:       t.Function.Name,
-					Parameters: convertToolParametersToOpenAI(t.Function.Parameters),
+					Parameters: convertToolParametersToOpenAIChat(t.Function.Parameters),
 				}
 				if t.Function.Description != "" {
 					ot.Description = openai.Opt(t.Function.Description)
@@ -291,9 +290,24 @@ func (r *upstream) convertRequestToOpenAI(req *entity.ChatReq) openai.ChatComple
 	return openAIReq
 }
 
-// convertMessageFromOpenAI converts an OpenAI chat completion message to an internal message.
+func convertStatusFromOpenAIChat(finishReason string) v1.ChatStatus {
+	switch finishReason {
+	case "stop":
+		return v1.ChatStatus_CHAT_COMPLETED
+	case "length":
+		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+	case "tool_calls", "function_call":
+		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+	case "content_filter":
+		return v1.ChatStatus_CHAT_REFUSED
+	default:
+		return v1.ChatStatus_CHAT_IN_PROGRESS
+	}
+}
+
+// convertMessageFromOpenAIChat converts an OpenAI chat completion message to an internal message.
 // The message ID will be generated using UUID.
-func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
+func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
 	message := &v1.Message{
 		Id:   uuid.NewString(),
 		Role: v1.Role_MODEL,
@@ -307,10 +321,14 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 		})
 	}
 
-	// Support reasoning content from DeepSeek
+	// Support reasoning
 	if openAIMessage.JSON.ExtraFields != nil {
-		if reasoningContent, ok := openAIMessage.JSON.ExtraFields["reasoning_content"]; ok {
-			rc := gjson.Parse(reasoningContent.Raw()).String()
+		reasoning, ok := openAIMessage.JSON.ExtraFields["reasoning_content"] // DeepSeek
+		if !ok {
+			reasoning, ok = openAIMessage.JSON.ExtraFields["reasoning"] // OpenRouter
+		}
+		if ok {
+			rc := gjson.Parse(reasoning.Raw()).String()
 			if rc != "" {
 				message.Contents = append(message.Contents, &v1.Content{
 					Reasoning: true,
@@ -344,8 +362,22 @@ func (r *upstream) convertMessageFromOpenAI(openAIMessage *openai.ChatCompletion
 	return message
 }
 
-// convertChunkFromOpenAI converts an OpenAI chat completion chunk to an internal response.
-func (c *openAIChatStreamClient) convertChunkFromOpenAI(chunk *openai.ChatCompletionChunk) *entity.ChatResp {
+func (r *upstream) convertResponseFromOpenAIChat(openAIResp *openai.ChatCompletion) (resp *entity.ChatResp) {
+	resp = &entity.ChatResp{
+		Id:         openAIResp.ID,
+		Model:      openAIResp.Model,
+		Statistics: convertStatisticsFromOpenAI(&openAIResp.Usage),
+	}
+
+	if len(openAIResp.Choices) > 0 {
+		resp.Status = convertStatusFromOpenAIChat(openAIResp.Choices[0].FinishReason)
+		resp.Message = r.convertMessageFromOpenAIChat(&openAIResp.Choices[0].Message)
+	}
+
+	return
+}
+
+func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCompletionChunk) *entity.ChatResp {
 	resp := &entity.ChatResp{
 		Id:    chunk.ID,
 		Model: chunk.Model,
@@ -354,7 +386,6 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAI(chunk *openai.ChatComple
 	if len(chunk.Choices) > 0 {
 		msg := chunk.Choices[0]
 		var contents []*v1.Content
-		var metadata map[string]string
 
 		if msg.Delta.Content != "" {
 			contents = append(contents, &v1.Content{
@@ -366,8 +397,8 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAI(chunk *openai.ChatComple
 
 		// Support reasoning content from DeepSeek
 		if msg.Delta.JSON.ExtraFields != nil {
-			if reasoningContent, ok := msg.Delta.JSON.ExtraFields["reasoning_content"]; ok {
-				rc := gjson.Parse(reasoningContent.Raw()).String()
+			if reasoning, ok := msg.Delta.JSON.ExtraFields["reasoning_content"]; ok {
+				rc := gjson.Parse(reasoning.Raw()).String()
 				if rc != "" {
 					contents = append(contents, &v1.Content{
 						Reasoning: true,
@@ -397,17 +428,11 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAI(chunk *openai.ChatComple
 			})
 		}
 
-		if msg.FinishReason != "" {
-			metadata = map[string]string{
-				"finish_reason": string(msg.FinishReason),
-			}
-		}
-
+		resp.Status = convertStatusFromOpenAIChat(msg.FinishReason)
 		resp.Message = &v1.Message{
 			Id:       c.messageID,
 			Role:     v1.Role_MODEL,
 			Contents: contents,
-			Metadata: metadata,
 		}
 	}
 

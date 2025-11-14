@@ -1,9 +1,10 @@
 package openai
 
 import (
+	"k8s.io/utils/ptr"
+
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
-	"k8s.io/utils/ptr"
 )
 
 var mockChatReq = &entity.ChatReq{
@@ -246,8 +247,9 @@ var mockChatCompletionResponseBody = `{
 }`
 
 var mockChatResp = &entity.ChatResp{
-	Id:    "chatcmpl-vcH3X0yomLBqyz4Ox0he",
-	Model: "gpt-4o-mini",
+	Id:     "chatcmpl-vcH3X0yomLBqyz4Ox0he",
+	Model:  "gpt-4o-mini",
+	Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
 	Message: &v1.Message{
 		Id:   "mock_message_id",
 		Role: v1.Role_MODEL,
@@ -580,14 +582,12 @@ var mockChatStreamResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
+		Id:     "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
+		Model:  "gpt-4o-mini",
+		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
 		Message: &v1.Message{
 			Id:   "mock_message_id",
 			Role: v1.Role_MODEL,
-			Metadata: map[string]string{
-				"finish_reason": "tool_calls",
-			},
 		},
 	},
 	{

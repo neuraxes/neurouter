@@ -165,6 +165,10 @@ components:
                 model:
                     type: string
                     description: The model used to generate the response
+                status:
+                    type: integer
+                    description: The status of the response
+                    format: enum
                 message:
                     allOf:
                         - $ref: '#/components/schemas/neurouter.v1.Message'
@@ -180,14 +184,14 @@ components:
                     type: integer
                     description: The index of current content
                     format: uint32
+                reasoning:
+                    type: boolean
+                    description: Whether the content is for reasoning
                 metadata:
                     type: object
                     additionalProperties:
                         type: string
                     description: Additional metadata for the content
-                reasoning:
-                    type: boolean
-                    description: Whether the content is for reasoning
                 text:
                     type: string
                 image:
@@ -248,14 +252,14 @@ components:
                     type: integer
                     description: The role of the message sender
                     format: enum
-                name:
-                    type: string
-                    description: The optional name of the message sender
                 contents:
                     type: array
                     items:
                         $ref: '#/components/schemas/neurouter.v1.Content'
                     description: The multi-modality content
+                name:
+                    type: string
+                    description: The optional name of the message sender
         neurouter.v1.ModelSpec:
             type: object
             properties:

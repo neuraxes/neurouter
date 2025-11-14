@@ -66,22 +66,16 @@ func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, client option.HTTPCl
 }
 
 func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	openAIReq := r.convertRequestToOpenAI(req)
+	openAIReq := r.convertRequestToOpenAIChat(req)
 
 	openAIResp, err := r.client.Chat.Completions.New(ctx, openAIReq)
 	if err != nil {
 		return
 	}
 
-	resp = &entity.ChatResp{
-		Id:         openAIResp.ID,
-		Model:      openAIResp.Model,
-		Message:    r.convertMessageFromOpenAI(&openAIResp.Choices[0].Message),
-		Statistics: convertStatisticsFromOpenAI(&openAIResp.Usage),
-	}
+	resp = r.convertResponseFromOpenAIChat(openAIResp)
 
 	return
-
 }
 
 type openAIChatStreamClient struct {
@@ -101,7 +95,7 @@ next:
 	}
 
 	chunk := c.upstream.Current()
-	resp = c.convertChunkFromOpenAI(&chunk)
+	resp = c.convertChunkFromOpenAIChat(&chunk)
 	if resp == nil {
 		goto next
 	}
@@ -118,7 +112,7 @@ func (c *openAIChatStreamClient) Close() error {
 }
 
 func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
-	openAIReq := r.convertRequestToOpenAI(req)
+	openAIReq := r.convertRequestToOpenAIChat(req)
 	openAIReq.StreamOptions.IncludeUsage = openai.Opt(true)
 	stream := r.client.Chat.Completions.NewStreaming(ctx, openAIReq)
 

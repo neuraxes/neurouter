@@ -16,6 +16,7 @@ package anthropic
 
 import (
 	"encoding/json"
+	"math"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/google/uuid"
@@ -34,10 +35,10 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 		req.MaxTokens = *config.MaxTokens
 	}
 	if config.Temperature != nil {
-		req.Temperature = anthropic.Opt(float64(*config.Temperature))
+		req.Temperature = anthropic.Opt(math.Round(float64(*config.Temperature)*100) / 100)
 	}
 	if config.TopP != nil {
-		req.TopP = anthropic.Opt(float64(*config.TopP))
+		req.TopP = anthropic.Opt(math.Round(float64(*config.TopP)*100) / 100)
 	}
 	if config.TopK != nil {
 		req.TopK = anthropic.Opt(*config.TopK)

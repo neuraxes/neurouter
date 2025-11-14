@@ -59,11 +59,10 @@ message ToolResult {
 message Content {
   // The index of current content
   optional uint32 index = 1;
-  // Additional metadata for the content
-  map<string, string> metadata = 2;
   // Whether the content is for reasoning
-  bool reasoning = 3;
-
+  bool reasoning = 2;
+  // Additional metadata for the content
+  map<string, string> metadata = 9;
   oneof content {
     string text = 10;
     Image image = 11;

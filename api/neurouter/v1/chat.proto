@@ -37,17 +37,30 @@ enum Role {
   MODEL = 2;
 }
 
+enum ChatStatus {
+  // The model is generating the response
+  CHAT_IN_PROGRESS = 0;
+  // The model turn has been successfully completed
+  CHAT_COMPLETED = 1;
+  // The generation has been refused
+  CHAT_REFUSED = 2;
+  // The generation has been cancelled
+  CHAT_CANCELLED = 3;
+  // The generation stopped due to exceeding token limit
+  CHAT_REACHED_TOKEN_LIMIT = 5;
+  // The generation stopped due to pending tool uses
+  CHAT_PENDING_TOOL_USE = 4;
+}
+
 message Message {
   // The unique identifier of the message
   string id = 1;
   // The role of the message sender
   Role role = 2;
-  // The optional name of the message sender
-  string name = 3;
   // The multi-modality content
   repeated Content contents = 4;
-  // Additional metadata for the message
-  map<string, string> metadata = 5;
+  // The optional name of the message sender
+  string name = 5;
 }
 
 message ChatReq {
@@ -68,8 +81,10 @@ message ChatResp {
   string id = 1;
   // The model used to generate the response
   string model = 2;
+  // The status of the response
+  ChatStatus status = 3;
   // The generated message
-  Message message = 3;
+  Message message = 4;
   // The statistics for the generation
-  Statistics statistics = 4;
+  Statistics statistics = 5;
 }
