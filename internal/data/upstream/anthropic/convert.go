@@ -19,7 +19,6 @@ import (
 	"math"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/google/uuid"
 	"github.com/tidwall/gjson"
 	"k8s.io/utils/ptr"
 
@@ -27,12 +26,30 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
+// convertStatusFromAnthropic maps Anthropic stop reasons to internal chat status.
+func convertStatusFromAnthropic(stopReason anthropic.StopReason) v1.ChatStatus {
+	switch stopReason {
+	case anthropic.StopReasonToolUse:
+		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+	case anthropic.StopReasonEndTurn, anthropic.StopReasonStopSequence:
+		return v1.ChatStatus_CHAT_COMPLETED
+	case anthropic.StopReasonMaxTokens, anthropic.StopReasonModelContextWindowExceeded:
+		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+	case anthropic.StopReasonRefusal:
+		return v1.ChatStatus_CHAT_REFUSED
+	default:
+		return v1.ChatStatus_CHAT_IN_PROGRESS
+	}
+}
+
 func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfig, req *anthropic.MessageNewParams) {
 	if config == nil {
 		return
 	}
-	if config.MaxTokens != nil {
+	if config.MaxTokens != nil && *config.MaxTokens > 0 {
 		req.MaxTokens = *config.MaxTokens
+	} else {
+		req.MaxTokens = 8192
 	}
 	if config.Temperature != nil {
 		req.Temperature = anthropic.Opt(math.Round(float64(*config.Temperature)*100) / 100)
@@ -187,14 +204,13 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 	return params
 }
 
-// convertContentsFromAnthropic converts Anthropic contents to a newurouter message.
-func convertContentsFromAnthropic(contents []anthropic.ContentBlockUnion) *v1.Message {
+func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 	message := &v1.Message{
-		Id:   uuid.NewString(),
+		Id:   msg.ID,
 		Role: v1.Role_MODEL,
 	}
 
-	for _, content := range contents {
+	for _, content := range msg.Content {
 		switch content.Type {
 		case "thinking":
 			message.Contents = append(message.Contents, &v1.Content{
@@ -335,7 +351,7 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		}
 		return resp
 	case "message_delta":
-		if chunk.Usage.InputTokens != 0 || chunk.Usage.OutputTokens != 0 {
+		if chunk.Usage.InputTokens != 0 || chunk.Usage.OutputTokens != 0 || chunk.Delta.StopReason != "" {
 			resp := c.newResp()
 			resp.Message = nil
 			resp.Statistics = &v1.Statistics{
@@ -344,6 +360,9 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 					OutputTokens:      uint32(chunk.Usage.OutputTokens),
 					CachedInputTokens: uint32(chunk.Usage.CacheReadInputTokens),
 				},
+			}
+			if chunk.Delta.StopReason != "" {
+				resp.Status = convertStatusFromAnthropic(chunk.Delta.StopReason)
 			}
 			return resp
 		}

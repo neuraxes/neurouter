@@ -28,6 +28,20 @@ import (
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
+func TestConvertStatusFromAnthropic(t *testing.T) {
+	Convey("Given various anthropic stop reasons", t, func() {
+		So(convertStatusFromAnthropic(anthropic.StopReasonToolUse), ShouldEqual, v1.ChatStatus_CHAT_PENDING_TOOL_USE)
+		So(convertStatusFromAnthropic(anthropic.StopReasonEndTurn), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
+		So(convertStatusFromAnthropic(anthropic.StopReasonStopSequence), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
+		So(convertStatusFromAnthropic(anthropic.StopReasonMaxTokens), ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
+		So(convertStatusFromAnthropic(anthropic.StopReasonModelContextWindowExceeded), ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
+		So(convertStatusFromAnthropic(anthropic.StopReasonRefusal), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
+		So(convertStatusFromAnthropic(anthropic.StopReasonPauseTurn), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+		So(convertStatusFromAnthropic(anthropic.StopReason("")), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+		So(convertStatusFromAnthropic(anthropic.StopReason("unknown_reason")), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+	})
+}
+
 func TestConvertSystemToAnthropic(t *testing.T) {
 	Convey("Given messages with system/user roles", t, func() {
 		repo := &upstream{
@@ -290,22 +304,25 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 
 func TestConvertContentsFromAnthropic(t *testing.T) {
 	Convey("Given anthropic content blocks", t, func() {
-		blocks := []anthropic.ContentBlockUnion{
-			{
-				Type:     "thinking",
-				Thinking: "think",
-			},
-			{
-				Type: "text",
-				Text: "answer",
+		anthropicMessage := &anthropic.Message{
+			ID: "msg-123",
+			Content: []anthropic.ContentBlockUnion{
+				{
+					Type:     "thinking",
+					Thinking: "think",
+				},
+				{
+					Type: "text",
+					Text: "answer",
+				},
 			},
 		}
 
-		msg := convertContentsFromAnthropic(blocks)
+		msg := convertMessageFromAnthropic(anthropicMessage)
 
 		Convey("Then they are mapped to message with thinking and text", func() {
 			So(msg, ShouldNotBeNil)
-			So(msg.Id, ShouldHaveLength, 36)
+			So(msg.Id, ShouldEqual, "msg-123")
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(len(msg.Contents), ShouldEqual, 2)
 			So(msg.Contents[0].Reasoning, ShouldBeTrue)

@@ -2,7 +2,9 @@ package anthropic
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -11,9 +13,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
-	"k8s.io/utils/ptr"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/conf"
 )
@@ -29,123 +29,6 @@ func (m *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	}
 	return nil, errors.New("DoFunc is not set")
 }
-
-const mockChatCompletionResp = `{
-    "id": "14bfe852-1643-486f-a6fb-1e64b253986a",
-    "type": "message",
-    "role": "assistant",
-    "model": "claude-3-7-sonnet-latest",
-    "content": [
-        {
-            "type": "thinking",
-            "thinking": "Hmm, the user just said \"Hello!\" - a simple and friendly greeting. No complex queries or specific requests here. \n\nSince it's a casual opening, a warm and welcoming response would be appropriate. Can mirror their cheerful tone while keeping it concise. \n\nThe response should acknowledge the greeting, express enthusiasm about helping, and leave the conversation open-ended for them to continue. No need for lengthy explanations or assumptions about their needs at this stage.",
-            "signature": "14bfe852-1643-486f-a6fb-1e64b253986a"
-        },
-        {
-            "type": "text",
-            "text": "Hello! 😊 How are you doing today? Is there anything I can help you with or would you like to chat about something in particular?"
-        }
-    ],
-    "stop_reason": "end_turn",
-    "usage": {
-        "input_tokens": 6,
-        "cache_creation_input_tokens": 0,
-        "cache_read_input_tokens": 1,
-        "output_tokens": 120,
-        "service_tier": "standard"
-    }
-}`
-
-const mockChatCompletionStreamResp = `event: message_start
-data: {"type":"message_start","message":{"id":"887bb5af-ed3d-4980-8dc8-2a457f57ba39","type":"message","role":"assistant","model":"claude-3-7-sonnet-latest","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":6,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0,"service_tier":"standard"}}}
-
-event: content_block_start
-data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}}
-
-event: ping
-data: {"type":"ping"}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"This is a simple greeting, so no complex analysis is needed."}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" \n\n"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" I should respond in a warm and welcoming manner to match their energy"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"."}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"887bb5af-ed3d-4980-8dc8-2a457f57ba39"}}
-
-event: content_block_stop
-data: {"type":"content_block_stop","index":0}
-
-event: content_block_start
-data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Hello there! 👋 It"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"'s"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" great to see"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" you"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"!"}}
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" 😊"}}
-
-event: content_block_stop
-data: {"type":"content_block_stop","index":1}
-
-event: message_delta
-data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":167}}
-
-event: message_stop
-data: {"type":"message_stop"}
-
-`
-
-const mockChatCompletionStreamWithToolResp = `event: message_start
-data: {"type": "message_start", "message": {"id": "msg_2025110101035835cf6f2bd30e4b12", "type": "message", "role": "assistant", "model": "claude-3-7-sonnet-latest", "content": [], "stop_reason": null, "stop_sequence": null, "usage": {"input_tokens": 0, "output_tokens": 0}}}
-
-event: ping
-data: {"type": "ping"}
-
-event: content_block_start
-data: {"type": "content_block_start", "index": 0, "content_block": {"type": "text", "text": ""}}
-
-event: content_block_delta
-data: {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "I'll check the current weather in San Francisco for you.\n"}}
-
-event: content_block_stop
-data: {"type": "content_block_stop", "index": 0}
-
-event: content_block_start
-data: {"type": "content_block_start", "index": 1, "content_block": {"type": "tool_use", "id": "call_gf0dxtb9rrt", "name": "get_weather", "input": {}}}
-
-event: content_block_delta
-data: {"type": "content_block_delta", "index": 1, "delta": {"type": "input_json_delta", "partial_json": "{\"location\":\"San Francisco\"}"}}
-
-event: content_block_stop
-data: {"type": "content_block_stop", "index": 1}
-
-event: message_delta
-data: {"type": "message_delta", "delta": {"stop_reason": "tool_use", "stop_sequence": null}, "usage": {"input_tokens": 463, "output_tokens": 31, "cache_read_input_tokens": 32}}
-
-event: message_stop
-data: {"type": "message_stop"}
-
-`
 
 func TestNewAnthropicUpstream(t *testing.T) {
 	Convey("Given a configuration and logger", t, func() {
@@ -195,14 +78,6 @@ func TestChat(t *testing.T) {
 		repo, err := newAnthropicUpstreamWithClient(config, mockClient, log.DefaultLogger)
 		So(err, ShouldBeNil)
 
-		req := &entity.ChatReq{
-			Id:    "test-req-id",
-			Model: "claude-3-opus-20240229",
-			Messages: []*v1.Message{
-				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "Hello"}}}},
-			},
-		}
-
 		Convey("When Chat is called and the request is successful", func() {
 			mockClient.DoFunc = func(httpReq *http.Request) (*http.Response, error) {
 				So(httpReq.Method, ShouldEqual, http.MethodPost)
@@ -210,34 +85,37 @@ func TestChat(t *testing.T) {
 				So(httpReq.Header.Get("x-api-key"), ShouldEqual, "test-key")
 				So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
 
+				body, err := io.ReadAll(httpReq.Body)
+				So(err, ShouldBeNil)
+
+				var reqMap map[string]any
+				err = json.Unmarshal(body, &reqMap)
+				So(err, ShouldBeNil)
+
+				var expectedMap map[string]any
+				err = json.Unmarshal([]byte(mockMessagesRequetBody), &expectedMap)
+				So(err, ShouldBeNil)
+
+				So(reqMap, ShouldResemble, expectedMap)
+
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Header: http.Header{
 						"Content-Type": []string{"application/json"},
 					},
-					Body: io.NopCloser(strings.NewReader(mockChatCompletionResp)),
+					Body: io.NopCloser(strings.NewReader(mockMessagesResponseBody)),
 				}, nil
 			}
 
-			resp, err := repo.Chat(context.Background(), req)
+			resp, err := repo.Chat(context.Background(), mockChatReq)
 
 			Convey("Then it should return a valid response and no error", func() {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
-				So(resp.Id, ShouldEqual, "test-req-id")
-				So(resp.Model, ShouldEqual, "claude-3-7-sonnet-latest")
-				So(resp.Message, ShouldNotBeNil)
-				So(resp.Message.Id, ShouldHaveLength, 36)
-				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
-				So(resp.Message.Contents, ShouldHaveLength, 2)
-				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
-				So(resp.Message.Contents[0].Metadata["signature"], ShouldEqual, "14bfe852-1643-486f-a6fb-1e64b253986a")
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hmm, the user just said \"Hello!\" - a simple and friendly greeting. No complex queries or specific requests here. \n\nSince it's a casual opening, a warm and welcoming response would be appropriate. Can mirror their cheerful tone while keeping it concise. \n\nThe response should acknowledge the greeting, express enthusiasm about helping, and leave the conversation open-ended for them to continue. No need for lengthy explanations or assumptions about their needs at this stage.")
-				So(resp.Message.Contents[1].GetText(), ShouldEqual, "Hello! 😊 How are you doing today? Is there anything I can help you with or would you like to chat about something in particular?")
-				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 6)
-				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 120)
-				So(resp.Statistics.Usage.CachedInputTokens, ShouldEqual, 1)
+				fmt.Println()
+				fmt.Println(resp)
+				fmt.Println(mockChatResp)
+				So(proto.Equal(resp, mockChatResp), ShouldBeTrue)
 			})
 		})
 
@@ -246,7 +124,7 @@ func TestChat(t *testing.T) {
 				return nil, errors.New("network error")
 			}
 
-			_, err := repo.Chat(context.Background(), req)
+			_, err := repo.Chat(context.Background(), mockChatReq)
 
 			Convey("Then it should return an error", func() {
 				So(err, ShouldNotBeNil)
@@ -254,155 +132,6 @@ func TestChat(t *testing.T) {
 			})
 		})
 	})
-}
-
-var mockChatStreamResp = []*entity.ChatResp{
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](0),
-				Metadata: map[string]string{
-					"signature": "",
-				},
-				Reasoning: true,
-				Content:   &v1.Content_Text{Text: "This is a simple greeting, so no complex analysis is needed."},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](0),
-				Metadata: map[string]string{
-					"signature": "",
-				},
-				Reasoning: true,
-				Content:   &v1.Content_Text{Text: " \n\n"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](0),
-				Metadata: map[string]string{
-					"signature": "",
-				},
-				Reasoning: true,
-				Content:   &v1.Content_Text{Text: " I should respond in a warm and welcoming manner to match their energy"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](0),
-				Metadata: map[string]string{
-					"signature": "",
-				},
-				Reasoning: true,
-				Content:   &v1.Content_Text{Text: "."},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](1),
-				Content: &v1.Content_Text{Text: "Hello there! 👋 It"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](1),
-				Content: &v1.Content_Text{Text: "'s"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](1),
-				Content: &v1.Content_Text{Text: " great to see"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](1),
-				Content: &v1.Content_Text{Text: " you"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](1),
-				Content: &v1.Content_Text{Text: "!"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Message: &v1.Message{
-			Id:   "887bb5af-ed3d-4980-8dc8-2a457f57ba39",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](1),
-				Content: &v1.Content_Text{Text: " 😊"},
-			}},
-		},
-	},
-	{
-		Id:    "test-stream-req-id",
-		Model: "claude-3-7-sonnet-latest",
-		Statistics: &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
-				InputTokens:  6,
-				OutputTokens: 167,
-			},
-		},
-	},
 }
 
 func TestChatStream(t *testing.T) {
@@ -415,30 +144,36 @@ func TestChatStream(t *testing.T) {
 		repo, err := newAnthropicUpstreamWithClient(config, mockClient, log.DefaultLogger)
 		So(err, ShouldBeNil)
 
-		req := &entity.ChatReq{
-			Id:    "test-stream-req-id",
-			Model: "claude-3-opus-20240229",
-			Messages: []*v1.Message{
-				{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "Hello"}}}},
-			},
-		}
-
 		Convey("When ChatStream is called and the request is successful", func() {
 			mockClient.DoFunc = func(httpReq *http.Request) (*http.Response, error) {
 				So(httpReq.Method, ShouldEqual, http.MethodPost)
 				So(httpReq.URL.String(), ShouldEqual, "https://api.anthropic.com/v1/messages")
 				So(httpReq.Header.Get("x-api-key"), ShouldEqual, "test-key")
+				So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
+
+				body, err := io.ReadAll(httpReq.Body)
+				So(err, ShouldBeNil)
+
+				var reqMap map[string]any
+				err = json.Unmarshal(body, &reqMap)
+				So(err, ShouldBeNil)
+
+				var expectedMap map[string]any
+				err = json.Unmarshal([]byte(mockMessagesStreamRequetBody), &expectedMap)
+				So(err, ShouldBeNil)
+
+				So(reqMap, ShouldResemble, expectedMap)
 
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Header: http.Header{
 						"Content-Type": []string{"text/event-stream"},
 					},
-					Body: io.NopCloser(strings.NewReader(mockChatCompletionStreamResp)),
+					Body: io.NopCloser(strings.NewReader(mockMessagesStreamResponseBody)),
 				}, nil
 			}
 
-			streamClient, err := repo.ChatStream(context.Background(), req)
+			streamClient, err := repo.ChatStream(context.Background(), mockChatReq)
 
 			Convey("Then it should return a stream client and no error", func() {
 				So(err, ShouldBeNil)
@@ -469,7 +204,7 @@ func TestChatStream(t *testing.T) {
 				return nil, errors.New("network error")
 			}
 
-			streamClient, err := repo.ChatStream(context.Background(), req)
+			streamClient, err := repo.ChatStream(context.Background(), mockChatReq)
 
 			Convey("Then it should return an error on Recv", func() {
 				So(err, ShouldBeNil)

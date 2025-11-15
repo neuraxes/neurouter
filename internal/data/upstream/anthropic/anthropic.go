@@ -78,8 +78,9 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	resp = &entity.ChatResp{
 		Id:         req.Id,
 		Model:      string(anthropicResp.Model),
-		Message:    convertContentsFromAnthropic(anthropicResp.Content),
+		Message:    convertMessageFromAnthropic(anthropicResp),
 		Statistics: convertStatisticsFromAnthropic(&anthropicResp.Usage),
+		Status:     convertStatusFromAnthropic(anthropicResp.StopReason),
 	}
 
 	return
