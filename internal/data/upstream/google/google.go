@@ -69,9 +69,6 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	config := &genai.GenerateContentConfig{
 		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
 		Tools:             convertToolsToGoogle(req.Tools),
-		ThinkingConfig: &genai.ThinkingConfig{
-			IncludeThoughts: true,
-		},
 	}
 	convertGenerationConfigToGoogle(req.Config, config)
 
@@ -139,9 +136,6 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 	config := &genai.GenerateContentConfig{
 		Tools:             convertToolsToGoogle(req.Tools),
 		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
-		ThinkingConfig: &genai.ThinkingConfig{
-			IncludeThoughts: true,
-		},
 	}
 	convertGenerationConfigToGoogle(req.Config, config)
 

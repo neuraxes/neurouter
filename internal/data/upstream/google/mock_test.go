@@ -11,6 +11,9 @@ var mockChatReq = &entity.ChatReq{
 	Model: "gemini-2.5-flash",
 	Config: &v1.GenerationConfig{
 		Temperature: ptr.To[float32](0),
+		ReasoningConfig: &v1.ReasoningConfig{
+			Enabled: true,
+		},
 	},
 	Messages: []*v1.Message{
 		{

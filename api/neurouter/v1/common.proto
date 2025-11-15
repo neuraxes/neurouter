@@ -18,6 +18,13 @@ package neurouter.v1;
 
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
+message ReasoningConfig {
+  // Whether to enable reasoning.
+  bool enabled = 1;
+  // The token budget for reasoning.
+  uint32 token_budget = 2;
+}
+
 message GenerationConfig {
   // The maximum number of tokens that can be generated.
   optional int64 max_tokens = 1;
@@ -31,6 +38,8 @@ message GenerationConfig {
   optional float frequency_penalty = 5;
   // Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
   optional float presence_penalty = 6;
+  // Configuration for reasoning.
+  optional ReasoningConfig reasoning_config = 7;
 
   oneof template {
     string preset_template = 50;

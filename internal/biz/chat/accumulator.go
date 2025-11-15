@@ -60,7 +60,7 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 	// Accumulate contents
 	for _, content := range message.Contents {
 		lastContent := a.lastContent()
-		if lastContent == nil || reflect.TypeOf(lastContent.Content) != reflect.TypeOf(content.Content) {
+		if lastContent == nil || reflect.TypeOf(lastContent.Content) != reflect.TypeOf(content.Content) || lastContent.Reasoning != content.Reasoning {
 			a.resp.Message.Contents = append(a.resp.Message.Contents, content)
 			continue
 		}
@@ -79,7 +79,13 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 			lastFunctionCall := lastContent.Content.(*v1.Content_ToolUse)
 			lastFunctionCall.ToolUse.Id += c.ToolUse.Id
 			lastFunctionCall.ToolUse.Name += c.ToolUse.Name
-			lastFunctionCall.ToolUse.Inputs[0].Input.(*v1.ToolUse_Input_Text).Text += c.ToolUse.GetTextualInput()
+			if len(c.ToolUse.Inputs) > 0 {
+				if len(lastFunctionCall.ToolUse.Inputs) > 0 {
+					lastFunctionCall.ToolUse.Inputs[0].Input.(*v1.ToolUse_Input_Text).Text += c.ToolUse.GetTextualInput()
+				} else {
+					lastFunctionCall.ToolUse.Inputs = append(lastFunctionCall.ToolUse.Inputs, c.ToolUse.Inputs...)
+				}
+			}
 		}
 	}
 }

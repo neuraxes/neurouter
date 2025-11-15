@@ -223,7 +223,7 @@ func (x *Message) GetName() string {
 
 type ChatReq struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The unique identifier of the chat
+	// The unique identifier of the chat session
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The requested model to use
 	Model string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
@@ -304,7 +304,7 @@ func (x *ChatReq) GetTools() []*Tool {
 
 type ChatResp struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The unique identifier of the chat
+	// The unique identifier of the chat session
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The model used to generate the response
 	Model string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`

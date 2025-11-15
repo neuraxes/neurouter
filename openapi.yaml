@@ -14,7 +14,7 @@ paths:
             parameters:
                 - name: id
                   in: query
-                  description: The unique identifier of the chat
+                  description: The unique identifier of the chat session
                   schema:
                     type: string
                 - name: model
@@ -56,6 +56,17 @@ paths:
                   schema:
                     type: number
                     format: float
+                - name: config.reasoningConfig.enabled
+                  in: query
+                  description: Whether to enable reasoning.
+                  schema:
+                    type: boolean
+                - name: config.reasoningConfig.tokenBudget
+                  in: query
+                  description: The token budget for reasoning.
+                  schema:
+                    type: integer
+                    format: uint32
                 - name: config.presetTemplate
                   in: query
                   schema:
@@ -161,7 +172,7 @@ components:
             properties:
                 id:
                     type: string
-                    description: The unique identifier of the chat
+                    description: The unique identifier of the chat session
                 model:
                     type: string
                     description: The model used to generate the response

@@ -42,6 +42,15 @@ func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *
 	if config.TopK != nil {
 		googleConfig.TopK = ptr.To(float32(*config.TopK))
 	}
+	if c := config.ReasoningConfig; c != nil {
+		gc := &genai.ThinkingConfig{
+			IncludeThoughts: c.Enabled,
+		}
+		if c.TokenBudget != 0 {
+			gc.ThinkingBudget = ptr.To(int32(c.TokenBudget))
+		}
+		googleConfig.ThinkingConfig = gc
+	}
 }
 
 func convertFunctionParametersToGoogle(params *v1.Schema) *genai.Schema {

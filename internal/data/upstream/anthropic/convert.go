@@ -43,6 +43,15 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 	if config.TopK != nil {
 		req.TopK = anthropic.Opt(*config.TopK)
 	}
+	if c := config.ReasoningConfig; c != nil && c.Enabled {
+		budgetTokens := int64(1024)
+		if c.TokenBudget > 1024 {
+			budgetTokens = int64(c.TokenBudget)
+		}
+		req.Thinking.OfEnabled = &anthropic.ThinkingConfigEnabledParam{
+			BudgetTokens: budgetTokens,
+		}
+	}
 }
 
 // convertSystemToAnthropic converts system messages to Anthropic format.
