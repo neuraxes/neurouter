@@ -26,9 +26,13 @@ type ChatStreamServer interface {
 	Send(*entity.ChatResp) error
 }
 
+type Repo interface {
+}
+
 // ChatRepo defines the interface for chat operations.
 // It supports both synchronous chat and streaming chat interactions.
 type ChatRepo interface {
+	Repo
 	// Chat performs a synchronous chat interaction.
 	Chat(context.Context, *entity.ChatReq) (*entity.ChatResp, error)
 	// ChatStream initiates a streaming chat interaction.
@@ -37,6 +41,7 @@ type ChatRepo interface {
 
 // EmbeddingRepo defines the interface for embedding operations.
 type EmbeddingRepo interface {
+	Repo
 	// Embed performs a synchronous embedding operation.
 	Embed(context.Context, *entity.EmbedReq) (*entity.EmbedResp, error)
 }

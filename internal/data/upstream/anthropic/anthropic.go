@@ -38,7 +38,7 @@ func NewAnthropicChatRepoFactory() repository.UpstreamFactory[conf.AnthropicConf
 	return newAnthropicUpstream
 }
 
-func newAnthropicUpstream(config *conf.AnthropicConfig, logger log.Logger) (repository.ChatRepo, error) {
+func newAnthropicUpstream(config *conf.AnthropicConfig, logger log.Logger) (repository.Repo, error) {
 	return newAnthropicUpstreamWithClient(config, nil, logger)
 }
 

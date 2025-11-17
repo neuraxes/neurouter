@@ -38,7 +38,7 @@ func NewGoogleFactory() repository.UpstreamFactory[conf.GoogleConfig] {
 	return newGoogleUpstream
 }
 
-func newGoogleUpstream(config *conf.GoogleConfig, logger log.Logger) (repo repository.ChatRepo, err error) {
+func newGoogleUpstream(config *conf.GoogleConfig, logger log.Logger) (repo repository.Repo, err error) {
 	return newGoogleUpstreamWithClient(config, nil, logger)
 }
 

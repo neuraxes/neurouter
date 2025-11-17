@@ -15,10 +15,17 @@
 package chat
 
 import (
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
+type Model interface {
+	Config() *conf.Model
+	ChatRepo() repository.ChatRepo
+	RecordUsage(stats *v1.Statistics)
+}
+
 type Elector interface {
-	ElectForChat(uri string) (repo repository.ChatRepo, model *conf.Model, err error)
+	ElectForChat(uri string) (Model, error)
 }

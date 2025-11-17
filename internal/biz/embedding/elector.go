@@ -19,6 +19,11 @@ import (
 	"github.com/neuraxes/neurouter/internal/conf"
 )
 
+type Model interface {
+	Config() *conf.Model
+	EmbeddingRepo() repository.EmbeddingRepo
+}
+
 type Elector interface {
-	ElectForEmbedding(uri string) (repo repository.EmbeddingRepo, model *conf.Model, err error)
+	ElectForEmbedding(uri string) (Model, error)
 }

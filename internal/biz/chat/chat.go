@@ -42,37 +42,43 @@ func NewChatUseCase(elector Elector, logger log.Logger) UseCase {
 }
 
 func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	repo, m, err := uc.elector.ElectForChat(req.Model)
+	model, err := uc.elector.ElectForChat(req.Model)
 	if err != nil {
 		return
 	}
 
-	if m.UpstreamId != "" {
-		req.Model = m.UpstreamId
+	cfg := model.Config()
+	if cfg.UpstreamId != "" {
+		req.Model = cfg.UpstreamId
 	} else {
-		req.Model = m.Id
+		req.Model = cfg.Id
 	}
 
-	resp, err = repo.Chat(ctx, req)
+	resp, err = model.ChatRepo().Chat(ctx, req)
+	if err != nil {
+		return
+	}
 
+	model.RecordUsage(resp.Statistics)
 	uc.printChat(req, resp)
 	return
 }
 
 func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, server repository.ChatStreamServer) error {
-	repo, m, err := uc.elector.ElectForChat(req.Model)
+	model, err := uc.elector.ElectForChat(req.Model)
 	if err != nil {
 		return err
 	}
 
-	if m.UpstreamId != "" {
-		req.Model = m.UpstreamId
+	cfg := model.Config()
+	if cfg.UpstreamId != "" {
+		req.Model = cfg.UpstreamId
 	} else {
-		req.Model = m.Id
+		req.Model = cfg.Id
 	}
 
 	accumulator := NewChatRespAccumulator()
-	for resp, err := range repo.ChatStream(ctx, req) {
+	for resp, err := range model.ChatRepo().ChatStream(ctx, req) {
 		if err != nil {
 			return err
 		}
@@ -88,6 +94,8 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, serv
 		}
 	}
 
-	uc.printChat(req, accumulator.Resp())
+	finalResp := accumulator.Resp()
+	model.RecordUsage(finalResp.Statistics)
+	uc.printChat(req, finalResp)
 	return nil
 }

@@ -39,7 +39,7 @@ func NewNeurouterFactory() repository.UpstreamFactory[conf.NeurouterConfig] {
 	return newNeurouterUpstream
 }
 
-func newNeurouterUpstream(config *conf.NeurouterConfig, logger log.Logger) (repository.ChatRepo, error) {
+func newNeurouterUpstream(config *conf.NeurouterConfig, logger log.Logger) (repository.Repo, error) {
 	conn, err := grpc.DialInsecure(
 		context.Background(),
 		grpc.WithEndpoint(config.Endpoint),

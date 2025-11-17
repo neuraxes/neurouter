@@ -18,9 +18,13 @@ import (
 	"context"
 	"slices"
 
+	"sync/atomic"
+
 	"github.com/go-kratos/kratos/v2/log"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/chat"
+	embedbiz "github.com/neuraxes/neurouter/internal/biz/embedding"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -31,8 +35,24 @@ type UseCase interface {
 }
 
 type model struct {
-	config *conf.Model
-	repo   repository.ChatRepo
+	config            *conf.Model
+	chatRepo          repository.ChatRepo
+	embeddingRepo     repository.EmbeddingRepo
+	inputTokens       atomic.Uint64
+	outputTokens      atomic.Uint64
+	cachedInputTokens atomic.Uint64
+}
+
+func (m *model) Config() *conf.Model                     { return m.config }
+func (m *model) ChatRepo() repository.ChatRepo           { return m.chatRepo }
+func (m *model) EmbeddingRepo() repository.EmbeddingRepo { return m.embeddingRepo }
+func (m *model) RecordUsage(stats *v1.Statistics) {
+	if stats == nil || stats.Usage == nil {
+		return
+	}
+	m.inputTokens.Add(uint64(stats.Usage.InputTokens))
+	m.outputTokens.Add(uint64(stats.Usage.OutputTokens))
+	m.cachedInputTokens.Add(uint64(stats.Usage.CachedInputTokens))
 }
 
 type UseCaseImpl struct {
@@ -54,7 +74,7 @@ func NewModelUseCase(
 	if c != nil {
 		for _, config := range c.Configs {
 			var (
-				repo repository.ChatRepo
+				repo repository.Repo
 				err  error
 			)
 
@@ -75,9 +95,12 @@ func NewModelUseCase(
 			}
 
 			for _, m := range config.GetModels() {
+				chatRepo, _ := repo.(repository.ChatRepo)
+				embeddingRepo, _ := repo.(repository.EmbeddingRepo)
 				models = append(models, &model{
-					config: m,
-					repo:   repo,
+					config:        m,
+					chatRepo:      chatRepo,
+					embeddingRepo: embeddingRepo,
 				})
 			}
 		}
@@ -89,50 +112,46 @@ func NewModelUseCase(
 	}
 }
 
-func (uc *UseCaseImpl) ElectForChat(uri string) (repo repository.ChatRepo, model *conf.Model, err error) {
+func (uc *UseCaseImpl) ElectForChat(uri string) (chat.Model, error) {
+	var selected *model
 	for _, m := range uc.models {
-		if !slices.Contains(m.config.Capabilities, conf.Capability_CAPABILITY_CHAT) {
+		if m.chatRepo == nil || !slices.Contains(m.config.Capabilities, conf.Capability_CAPABILITY_CHAT) {
 			continue
 		}
-		repo = m.repo
-		model = m.config
+		selected = m
 		if m.config.Id == uri {
 			uc.log.Infof("using model: %s", m.config.Id)
-			return
+			return m, nil
 		}
 	}
 
-	if model != nil {
-		uc.log.Infof("fallback to model: %s", model.Id)
-		return
+	if selected != nil {
+		uc.log.Infof("fallback to model: %s", selected.config.Id)
+		return selected, nil
 	}
 
-	err = v1.ErrorNoUpstream("no upstream found")
-	return
+	return nil, v1.ErrorNoUpstream("no upstream found")
 }
 
-func (uc *UseCaseImpl) ElectForEmbedding(uri string) (repo repository.EmbeddingRepo, model *conf.Model, err error) {
+func (uc *UseCaseImpl) ElectForEmbedding(uri string) (embedbiz.Model, error) {
+	var selected *model
 	for _, m := range uc.models {
-		if !slices.Contains(m.config.Capabilities, conf.Capability_CAPABILITY_EMBEDDING) {
+		if m.embeddingRepo == nil || !slices.Contains(m.config.Capabilities, conf.Capability_CAPABILITY_EMBEDDING) {
 			continue
 		}
-		if r, ok := m.repo.(repository.EmbeddingRepo); ok {
-			repo = r
-			model = m.config
-		}
+		selected = m
 		if m.config.Id == uri {
 			uc.log.Infof("using model: %s", m.config.Name)
-			return
+			return m, nil
 		}
 	}
 
-	if model != nil {
-		uc.log.Infof("fallback to model: %s", model.Name)
-		return
+	if selected != nil {
+		uc.log.Infof("fallback to model: %s", selected.config.Name)
+		return selected, nil
 	}
 
-	err = v1.ErrorNoUpstream("no upstream found")
-	return
+	return nil, v1.ErrorNoUpstream("no upstream found")
 }
 
 func (uc *UseCaseImpl) ListAvailableModels(ctx context.Context) ([]*entity.ModelSpec, error) {

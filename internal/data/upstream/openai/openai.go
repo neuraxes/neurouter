@@ -39,7 +39,7 @@ func NewOpenAIFactory() repository.UpstreamFactory[conf.OpenAIConfig] {
 	return newOpenAIUpstream
 }
 
-func newOpenAIUpstream(config *conf.OpenAIConfig, logger log.Logger) (repository.ChatRepo, error) {
+func newOpenAIUpstream(config *conf.OpenAIConfig, logger log.Logger) (repository.Repo, error) {
 	return newOpenAIUpstreamWithClient(config, nil, logger)
 }
 

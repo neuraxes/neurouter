@@ -26,5 +26,5 @@ type UpstreamConfig interface {
 	conf.NeurouterConfig | conf.OpenAIConfig | conf.GoogleConfig | conf.AnthropicConfig
 }
 
-// UpstreamFactory is a generic factory function type for creating ChatRepo instances.
-type UpstreamFactory[T UpstreamConfig] func(config *T, logger log.Logger) (ChatRepo, error)
+// UpstreamFactory is a generic factory function type for creating Repo instances.
+type UpstreamFactory[T UpstreamConfig] func(config *T, logger log.Logger) (Repo, error)
