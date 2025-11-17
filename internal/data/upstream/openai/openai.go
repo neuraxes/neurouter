@@ -16,7 +16,7 @@ package openai
 
 import (
 	"context"
-	"io"
+	"iter"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
@@ -84,42 +84,45 @@ type openAIChatStreamClient struct {
 	messageID string
 }
 
-func (c *openAIChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
-next:
-	if !c.upstream.Next() {
-		if err = c.upstream.Err(); err != nil {
-			return
+func (c *openAIChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
+	return func(yield func(*entity.ChatResp, error) bool) {
+		defer c.upstream.Close()
+		for {
+		next:
+			if !c.upstream.Next() {
+				if err := c.upstream.Err(); err != nil {
+					yield(nil, err)
+				}
+				return
+			}
+
+			chunk := c.upstream.Current()
+			resp := c.convertChunkFromOpenAIChat(&chunk)
+			if resp == nil {
+				goto next
+			}
+
+			if resp.Message != nil {
+				resp.Message.Id = c.messageID
+			}
+
+			if !yield(resp, nil) {
+				return
+			}
 		}
-		err = io.EOF
-		return
 	}
-
-	chunk := c.upstream.Current()
-	resp = c.convertChunkFromOpenAIChat(&chunk)
-	if resp == nil {
-		goto next
-	}
-
-	if resp.Message != nil {
-		resp.Message.Id = c.messageID
-	}
-
-	return
 }
 
-func (c *openAIChatStreamClient) Close() error {
-	return c.upstream.Close()
-}
-
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
 	openAIReq := r.convertRequestToOpenAIChat(req)
 	openAIReq.StreamOptions.IncludeUsage = openai.Opt(true)
 	stream := r.client.Chat.Completions.NewStreaming(ctx, openAIReq)
 
-	client = &openAIChatStreamClient{
+	client := &openAIChatStreamClient{
 		req:       req,
 		upstream:  stream,
 		messageID: uuid.NewString(),
 	}
-	return
+
+	return client.AsSeq()
 }

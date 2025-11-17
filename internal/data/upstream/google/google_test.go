@@ -117,19 +117,13 @@ func TestChatStream(t *testing.T) {
 				}, nil
 			}
 
-			streamClient, err := repo.ChatStream(context.Background(), mockChatReq)
+			seq := repo.ChatStream(context.Background(), mockChatReq)
 
-			Convey("Then it should return a stream client and no error", func() {
-				So(err, ShouldBeNil)
-				So(streamClient, ShouldNotBeNil)
-				defer streamClient.Close()
+			Convey("Then it should return a sequence and no error", func() {
+				So(seq, ShouldNotBeNil)
 
 				var responses []*entity.ChatResp
-				for {
-					resp, err := streamClient.Recv()
-					if err == io.EOF {
-						break
-					}
+				for resp, err := range seq {
 					So(err, ShouldBeNil)
 					So(resp, ShouldNotBeNil)
 

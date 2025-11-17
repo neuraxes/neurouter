@@ -16,7 +16,7 @@ package anthropic
 
 import (
 	"context"
-	"io"
+	"iter"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -94,37 +94,40 @@ type anthropicChatStreamClient struct {
 	inputTokens uint32
 }
 
-func (c *anthropicChatStreamClient) Recv() (resp *entity.ChatResp, err error) {
-next:
-	if !c.upstream.Next() {
-		if err = c.upstream.Err(); err != nil {
-			return
+func (c *anthropicChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
+	return func(yield func(*entity.ChatResp, error) bool) {
+		defer c.upstream.Close()
+		for {
+		next:
+			if !c.upstream.Next() {
+				if err := c.upstream.Err(); err != nil {
+					yield(nil, err)
+				}
+				return
+			}
+
+			chunk := c.upstream.Current()
+			resp := c.convertChunkFromAnthropic(&chunk)
+			if resp == nil {
+				// The chunk is ignored, jump to the next one.
+				goto next
+			}
+
+			if !yield(resp, nil) {
+				return
+			}
 		}
-		err = io.EOF
-		return
 	}
-
-	chunk := c.upstream.Current()
-	resp = c.convertChunkFromAnthropic(&chunk)
-	if resp == nil {
-		// The chunk is ignored, jump to the next one.
-		goto next
-	}
-
-	return
 }
 
-func (c *anthropicChatStreamClient) Close() error {
-	return c.upstream.Close()
-}
-
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (client repository.ChatStreamClient, err error) {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
 	anthropicReq := r.convertRequestToAnthropic(req)
 	stream := r.client.Messages.NewStreaming(ctx, anthropicReq)
 
-	client = &anthropicChatStreamClient{
+	client := &anthropicChatStreamClient{
 		req:      req,
 		upstream: stream,
 	}
-	return
+
+	return client.AsSeq()
 }

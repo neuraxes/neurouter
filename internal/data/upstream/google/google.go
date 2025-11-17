@@ -16,7 +16,6 @@ package google
 
 import (
 	"context"
-	"io"
 	"iter"
 	"net/http"
 
@@ -99,40 +98,37 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 }
 
 type googleChatStreamClient struct {
-	req  *entity.ChatReq
-	next func() (*genai.GenerateContentResponse, error, bool)
-	stop func()
+	req *entity.ChatReq
+	it  iter.Seq2[*genai.GenerateContentResponse, error]
 }
 
-func (c *googleChatStreamClient) Recv() (*entity.ChatResp, error) {
-	googleResp, err, ok := c.next()
-	if !ok {
-		return nil, io.EOF
-	}
-	if err != nil {
-		return nil, err
-	}
+func (c *googleChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
+	return func(yield func(*entity.ChatResp, error) bool) {
+		for googleResp, err := range c.it {
+			if err != nil {
+				yield(nil, err)
+				return
+			}
 
-	resp := &entity.ChatResp{
-		Id:      c.req.Id,
-		Model:   c.req.Model,
-		Message: convertMessageFromGoogle(googleResp.Candidates[0].Content),
-	}
-	resp.Message.Id = googleResp.ResponseID
+			resp := &entity.ChatResp{
+				Id:      c.req.Id,
+				Model:   c.req.Model,
+				Message: convertMessageFromGoogle(googleResp.Candidates[0].Content),
+			}
+			resp.Message.Id = googleResp.ResponseID
 
-	if googleResp.UsageMetadata != nil {
-		resp.Statistics = convertStatisticsFromGoogle(googleResp.UsageMetadata)
-	}
+			if googleResp.UsageMetadata != nil {
+				resp.Statistics = convertStatisticsFromGoogle(googleResp.UsageMetadata)
+			}
 
-	return resp, nil
+			if !yield(resp, nil) {
+				return
+			}
+		}
+	}
 }
 
-func (c *googleChatStreamClient) Close() error {
-	c.stop()
-	return nil
-}
-
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
 	config := &genai.GenerateContentConfig{
 		Tools:             convertToolsToGoogle(req.Tools),
 		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
@@ -151,14 +147,12 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (reposit
 
 	it := r.client.Models.GenerateContentStream(ctx, req.Model, messages, config)
 
-	// Adapt iterator to stream client
-	next, stop := iter.Pull2(it)
+	client := &googleChatStreamClient{
+		req: req,
+		it:  it,
+	}
 
-	return &googleChatStreamClient{
-		req:  req,
-		next: next,
-		stop: stop,
-	}, nil
+	return client.AsSeq()
 }
 
 func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entity.EmbedResp, err error) {

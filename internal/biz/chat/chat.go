@@ -17,7 +17,6 @@ package chat
 import (
 	"context"
 	"errors"
-	"io"
 
 	"github.com/go-kratos/kratos/v2/log"
 
@@ -72,18 +71,9 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, serv
 		req.Model = m.Id
 	}
 
-	client, err := repo.ChatStream(ctx, req)
-	if err != nil {
-		return err
-	}
-	defer client.Close()
-
 	accumulator := NewChatRespAccumulator()
-	for {
-		resp, err := client.Recv()
-		if err == io.EOF {
-			break
-		} else if err != nil {
+	for resp, err := range repo.ChatStream(ctx, req) {
+		if err != nil {
 			return err
 		}
 

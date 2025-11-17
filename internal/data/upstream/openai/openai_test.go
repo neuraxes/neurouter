@@ -184,19 +184,13 @@ func TestChatStream(t *testing.T) {
 				}, nil
 			}
 
-			streamClient, err := repo.ChatStream(context.Background(), mockChatReq)
+			seq := repo.ChatStream(context.Background(), mockChatReq)
 
-			Convey("Then it should return a stream client and no error", func() {
-				So(err, ShouldBeNil)
-				So(streamClient, ShouldNotBeNil)
-				defer streamClient.Close()
+			Convey("Then it should return a sequence and no error", func() {
+				So(seq, ShouldNotBeNil)
 
 				var responses []*entity.ChatResp
-				for {
-					resp, err := streamClient.Recv()
-					if err == io.EOF {
-						break
-					}
+				for resp, err := range seq {
 					So(err, ShouldBeNil)
 					So(resp, ShouldNotBeNil)
 					So(resp.Message.Id, ShouldHaveLength, 36)
@@ -221,15 +215,16 @@ func TestChatStream(t *testing.T) {
 				return nil, errors.New("network error")
 			}
 
-			streamClient, err := repo.ChatStream(context.Background(), mockChatReq)
+			seq := repo.ChatStream(context.Background(), mockChatReq)
 
 			Convey("Then it should return an error", func() {
-				// OpenAI client always returns a stream client even on error
-				So(err, ShouldBeNil)
-				// The error is returned on Recv()
-				resp, err := streamClient.Recv()
-				So(resp, ShouldBeNil)
-				So(err.Error(), ShouldContainSubstring, "network error")
+				So(seq, ShouldNotBeNil)
+
+				for resp, err := range seq {
+					So(resp, ShouldBeNil)
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldContainSubstring, "network error")
+				}
 			})
 		})
 	})

@@ -16,6 +16,8 @@ package neurouter
 
 import (
 	"context"
+	"io"
+	"iter"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
@@ -62,27 +64,38 @@ type neurouterChatStreamClient struct {
 	stream v1.Chat_ChatStreamClient
 }
 
-func (c *neurouterChatStreamClient) Recv() (*entity.ChatResp, error) {
-	resp, err := c.stream.Recv()
-	if err != nil {
-		return nil, err
+func (c *neurouterChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
+	return func(yield func(*entity.ChatResp, error) bool) {
+		for {
+			resp, err := c.stream.Recv()
+			if err != nil {
+				if err == io.EOF {
+					return
+				}
+				yield(nil, err)
+				return
+			}
+
+			if !yield(resp, nil) {
+				return
+			}
+		}
 	}
-	return resp, nil
 }
 
-func (c *neurouterChatStreamClient) Close() error {
-	return nil
-}
-
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) (repository.ChatStreamClient, error) {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
 	stream, err := r.chatClient.ChatStream(ctx, req)
 	if err != nil {
-		return nil, err
+		return func(yield func(*entity.ChatResp, error) bool) {
+			yield(nil, err)
+		}
 	}
 
-	return &neurouterChatStreamClient{
+	client := &neurouterChatStreamClient{
 		stream: stream,
-	}, nil
+	}
+
+	return client.AsSeq()
 }
 
 func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (*entity.EmbedResp, error) {

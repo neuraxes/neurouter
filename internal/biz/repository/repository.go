@@ -16,6 +16,7 @@ package repository
 
 import (
 	"context"
+	"iter"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
@@ -25,19 +26,13 @@ type ChatStreamServer interface {
 	Send(*entity.ChatResp) error
 }
 
-// ChatStreamClient defines the client-side interface for receiving chat responses.
-type ChatStreamClient interface {
-	Recv() (*entity.ChatResp, error)
-	Close() error
-}
-
 // ChatRepo defines the interface for chat operations.
 // It supports both synchronous chat and streaming chat interactions.
 type ChatRepo interface {
 	// Chat performs a synchronous chat interaction.
 	Chat(context.Context, *entity.ChatReq) (*entity.ChatResp, error)
 	// ChatStream initiates a streaming chat interaction.
-	ChatStream(context.Context, *entity.ChatReq) (ChatStreamClient, error)
+	ChatStream(context.Context, *entity.ChatReq) iter.Seq2[*entity.ChatResp, error]
 }
 
 // EmbeddingRepo defines the interface for embedding operations.
