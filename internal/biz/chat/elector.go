@@ -15,6 +15,8 @@
 package chat
 
 import (
+	"context"
+
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 )
@@ -26,5 +28,5 @@ type Model interface {
 }
 
 type Elector interface {
-	ElectForChat(req *v1.ChatReq) (Model, error)
+	ElectForChat(ctx context.Context, req *v1.ChatReq) (Model, error)
 }

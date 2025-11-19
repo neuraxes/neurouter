@@ -15,6 +15,8 @@
 package embedding
 
 import (
+	"context"
+
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 )
@@ -25,5 +27,5 @@ type Model interface {
 }
 
 type Elector interface {
-	ElectForEmbedding(req *v1.EmbedReq) (Model, error)
+	ElectForEmbedding(ctx context.Context, req *v1.EmbedReq) (Model, error)
 }

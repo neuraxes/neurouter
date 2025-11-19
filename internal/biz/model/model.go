@@ -16,10 +16,10 @@ package model
 
 import (
 	"context"
-
 	"sync/atomic"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"golang.org/x/sync/semaphore"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -39,11 +39,20 @@ type model struct {
 	inputTokens       atomic.Uint64
 	outputTokens      atomic.Uint64
 	cachedInputTokens atomic.Uint64
+	upstreamSem       *semaphore.Weighted // nil means unlimited
+	modelSem          *semaphore.Weighted // nil means unlimited
 }
 
 type UseCaseImpl struct {
 	models []*model
 	log    *log.Helper
+}
+
+func newSem(limit uint64) *semaphore.Weighted {
+	if limit > 0 {
+		return semaphore.NewWeighted(int64(limit))
+	}
+	return nil
 }
 
 func NewModelUseCase(
@@ -80,14 +89,23 @@ func NewModelUseCase(
 				continue
 			}
 
+			// Create upstream semaphore once (shared across all models in this upstream)
+			upstreamSem := newSem(config.GetScheduling().GetConcurrencyLimit())
+
 			for _, modelConfig := range config.GetModels() {
 				chatRepo, _ := repo.(repository.ChatRepo)
 				embeddingRepo, _ := repo.(repository.EmbeddingRepo)
+
+				// Create model semaphore (specific to this model)
+				modelSem := newSem(modelConfig.GetScheduling().GetConcurrencyLimit())
+
 				models = append(models, &model{
 					config:         modelConfig,
 					upstreamConfig: config,
 					chatRepo:       chatRepo,
 					embeddingRepo:  embeddingRepo,
+					upstreamSem:    upstreamSem,
+					modelSem:       modelSem,
 				})
 			}
 		}
