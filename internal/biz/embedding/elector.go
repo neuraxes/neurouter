@@ -15,15 +15,15 @@
 package embedding
 
 import (
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
-	"github.com/neuraxes/neurouter/internal/conf"
 )
 
 type Model interface {
-	Config() *conf.Model
 	EmbeddingRepo() repository.EmbeddingRepo
+	Close()
 }
 
 type Elector interface {
-	ElectForEmbedding(uri string) (Model, error)
+	ElectForEmbedding(req *v1.EmbedReq) (Model, error)
 }

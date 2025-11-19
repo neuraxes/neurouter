@@ -41,16 +41,9 @@ func NewUseCase(elector Elector, logger log.Logger) UseCase {
 
 // Embed creates embeddings for the given contents using the specified model.
 func (uc *useCase) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entity.EmbedResp, err error) {
-	model, err := uc.elector.ElectForEmbedding(req.Model)
+	model, err := uc.elector.ElectForEmbedding(req)
 	if err != nil {
 		return
-	}
-
-	cfg := model.Config()
-	if cfg.UpstreamId != "" {
-		req.Model = cfg.UpstreamId
-	} else {
-		req.Model = cfg.Id
 	}
 
 	return model.EmbeddingRepo().Embed(ctx, req)

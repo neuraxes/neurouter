@@ -191,10 +191,71 @@ func (x *Upstream) GetConfigs() []*UpstreamConfig {
 	return nil
 }
 
+type UpstreamScheduling struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	TpmLimit         uint64                 `protobuf:"varint,1,opt,name=tpm_limit,json=tpmLimit,proto3" json:"tpm_limit,omitempty"`
+	RpmLimit         uint64                 `protobuf:"varint,2,opt,name=rpm_limit,json=rpmLimit,proto3" json:"rpm_limit,omitempty"`
+	ConcurrencyLimit uint64                 `protobuf:"varint,3,opt,name=concurrency_limit,json=concurrencyLimit,proto3" json:"concurrency_limit,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *UpstreamScheduling) Reset() {
+	*x = UpstreamScheduling{}
+	mi := &file_conf_upstream_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpstreamScheduling) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpstreamScheduling) ProtoMessage() {}
+
+func (x *UpstreamScheduling) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_upstream_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpstreamScheduling.ProtoReflect.Descriptor instead.
+func (*UpstreamScheduling) Descriptor() ([]byte, []int) {
+	return file_conf_upstream_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *UpstreamScheduling) GetTpmLimit() uint64 {
+	if x != nil {
+		return x.TpmLimit
+	}
+	return 0
+}
+
+func (x *UpstreamScheduling) GetRpmLimit() uint64 {
+	if x != nil {
+		return x.RpmLimit
+	}
+	return 0
+}
+
+func (x *UpstreamScheduling) GetConcurrencyLimit() uint64 {
+	if x != nil {
+		return x.ConcurrencyLimit
+	}
+	return 0
+}
+
 type UpstreamConfig struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Models []*Model               `protobuf:"bytes,2,rep,name=models,proto3" json:"models,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Models     []*Model               `protobuf:"bytes,2,rep,name=models,proto3" json:"models,omitempty"`
+	Scheduling *UpstreamScheduling    `protobuf:"bytes,3,opt,name=scheduling,proto3" json:"scheduling,omitempty"`
 	// Types that are valid to be assigned to Config:
 	//
 	//	*UpstreamConfig_Neurouter
@@ -208,7 +269,7 @@ type UpstreamConfig struct {
 
 func (x *UpstreamConfig) Reset() {
 	*x = UpstreamConfig{}
-	mi := &file_conf_upstream_proto_msgTypes[1]
+	mi := &file_conf_upstream_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -220,7 +281,7 @@ func (x *UpstreamConfig) String() string {
 func (*UpstreamConfig) ProtoMessage() {}
 
 func (x *UpstreamConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_upstream_proto_msgTypes[1]
+	mi := &file_conf_upstream_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -233,7 +294,7 @@ func (x *UpstreamConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpstreamConfig.ProtoReflect.Descriptor instead.
 func (*UpstreamConfig) Descriptor() ([]byte, []int) {
-	return file_conf_upstream_proto_rawDescGZIP(), []int{1}
+	return file_conf_upstream_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *UpstreamConfig) GetName() string {
@@ -246,6 +307,13 @@ func (x *UpstreamConfig) GetName() string {
 func (x *UpstreamConfig) GetModels() []*Model {
 	if x != nil {
 		return x.Models
+	}
+	return nil
+}
+
+func (x *UpstreamConfig) GetScheduling() *UpstreamScheduling {
+	if x != nil {
+		return x.Scheduling
 	}
 	return nil
 }
@@ -321,6 +389,66 @@ func (*UpstreamConfig_Google) isUpstreamConfig_Config() {}
 
 func (*UpstreamConfig_Anthropic) isUpstreamConfig_Config() {}
 
+type ModelScheduling struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	TpmLimit         uint64                 `protobuf:"varint,1,opt,name=tpm_limit,json=tpmLimit,proto3" json:"tpm_limit,omitempty"`
+	RpmLimit         uint64                 `protobuf:"varint,2,opt,name=rpm_limit,json=rpmLimit,proto3" json:"rpm_limit,omitempty"`
+	ConcurrencyLimit uint64                 `protobuf:"varint,3,opt,name=concurrency_limit,json=concurrencyLimit,proto3" json:"concurrency_limit,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ModelScheduling) Reset() {
+	*x = ModelScheduling{}
+	mi := &file_conf_upstream_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelScheduling) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelScheduling) ProtoMessage() {}
+
+func (x *ModelScheduling) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_upstream_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelScheduling.ProtoReflect.Descriptor instead.
+func (*ModelScheduling) Descriptor() ([]byte, []int) {
+	return file_conf_upstream_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ModelScheduling) GetTpmLimit() uint64 {
+	if x != nil {
+		return x.TpmLimit
+	}
+	return 0
+}
+
+func (x *ModelScheduling) GetRpmLimit() uint64 {
+	if x != nil {
+		return x.RpmLimit
+	}
+	return 0
+}
+
+func (x *ModelScheduling) GetConcurrencyLimit() uint64 {
+	if x != nil {
+		return x.ConcurrencyLimit
+	}
+	return 0
+}
+
 type Model struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The unique identifier of the model.
@@ -336,14 +464,16 @@ type Model struct {
 	// The modalities supported by the model.
 	Modalities []Modality `protobuf:"varint,6,rep,packed,name=modalities,proto3,enum=neurouter.config.v1.Modality" json:"modalities,omitempty"`
 	// The capabilities of the model.
-	Capabilities  []Capability `protobuf:"varint,7,rep,packed,name=capabilities,proto3,enum=neurouter.config.v1.Capability" json:"capabilities,omitempty"`
+	Capabilities []Capability `protobuf:"varint,7,rep,packed,name=capabilities,proto3,enum=neurouter.config.v1.Capability" json:"capabilities,omitempty"`
+	// Scheduling configs specific to this model.
+	Scheduling    *ModelScheduling `protobuf:"bytes,8,opt,name=scheduling,proto3" json:"scheduling,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Model) Reset() {
 	*x = Model{}
-	mi := &file_conf_upstream_proto_msgTypes[2]
+	mi := &file_conf_upstream_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -355,7 +485,7 @@ func (x *Model) String() string {
 func (*Model) ProtoMessage() {}
 
 func (x *Model) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_upstream_proto_msgTypes[2]
+	mi := &file_conf_upstream_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -368,7 +498,7 @@ func (x *Model) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Model.ProtoReflect.Descriptor instead.
 func (*Model) Descriptor() ([]byte, []int) {
-	return file_conf_upstream_proto_rawDescGZIP(), []int{2}
+	return file_conf_upstream_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Model) GetId() string {
@@ -420,6 +550,13 @@ func (x *Model) GetCapabilities() []Capability {
 	return nil
 }
 
+func (x *Model) GetScheduling() *ModelScheduling {
+	if x != nil {
+		return x.Scheduling
+	}
+	return nil
+}
+
 type NeurouterConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Endpoint      string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
@@ -429,7 +566,7 @@ type NeurouterConfig struct {
 
 func (x *NeurouterConfig) Reset() {
 	*x = NeurouterConfig{}
-	mi := &file_conf_upstream_proto_msgTypes[3]
+	mi := &file_conf_upstream_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -441,7 +578,7 @@ func (x *NeurouterConfig) String() string {
 func (*NeurouterConfig) ProtoMessage() {}
 
 func (x *NeurouterConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_upstream_proto_msgTypes[3]
+	mi := &file_conf_upstream_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -454,7 +591,7 @@ func (x *NeurouterConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NeurouterConfig.ProtoReflect.Descriptor instead.
 func (*NeurouterConfig) Descriptor() ([]byte, []int) {
-	return file_conf_upstream_proto_rawDescGZIP(), []int{3}
+	return file_conf_upstream_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *NeurouterConfig) GetEndpoint() string {
@@ -479,7 +616,7 @@ type OpenAIConfig struct {
 
 func (x *OpenAIConfig) Reset() {
 	*x = OpenAIConfig{}
-	mi := &file_conf_upstream_proto_msgTypes[4]
+	mi := &file_conf_upstream_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -491,7 +628,7 @@ func (x *OpenAIConfig) String() string {
 func (*OpenAIConfig) ProtoMessage() {}
 
 func (x *OpenAIConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_upstream_proto_msgTypes[4]
+	mi := &file_conf_upstream_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -504,7 +641,7 @@ func (x *OpenAIConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpenAIConfig.ProtoReflect.Descriptor instead.
 func (*OpenAIConfig) Descriptor() ([]byte, []int) {
-	return file_conf_upstream_proto_rawDescGZIP(), []int{4}
+	return file_conf_upstream_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *OpenAIConfig) GetApiKey() string {
@@ -567,7 +704,7 @@ type GoogleConfig struct {
 
 func (x *GoogleConfig) Reset() {
 	*x = GoogleConfig{}
-	mi := &file_conf_upstream_proto_msgTypes[5]
+	mi := &file_conf_upstream_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -579,7 +716,7 @@ func (x *GoogleConfig) String() string {
 func (*GoogleConfig) ProtoMessage() {}
 
 func (x *GoogleConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_upstream_proto_msgTypes[5]
+	mi := &file_conf_upstream_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -592,7 +729,7 @@ func (x *GoogleConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GoogleConfig.ProtoReflect.Descriptor instead.
 func (*GoogleConfig) Descriptor() ([]byte, []int) {
-	return file_conf_upstream_proto_rawDescGZIP(), []int{5}
+	return file_conf_upstream_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GoogleConfig) GetApiKey() string {
@@ -622,7 +759,7 @@ type AnthropicConfig struct {
 
 func (x *AnthropicConfig) Reset() {
 	*x = AnthropicConfig{}
-	mi := &file_conf_upstream_proto_msgTypes[6]
+	mi := &file_conf_upstream_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -634,7 +771,7 @@ func (x *AnthropicConfig) String() string {
 func (*AnthropicConfig) ProtoMessage() {}
 
 func (x *AnthropicConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_upstream_proto_msgTypes[6]
+	mi := &file_conf_upstream_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -647,7 +784,7 @@ func (x *AnthropicConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnthropicConfig.ProtoReflect.Descriptor instead.
 func (*AnthropicConfig) Descriptor() ([]byte, []int) {
-	return file_conf_upstream_proto_rawDescGZIP(), []int{6}
+	return file_conf_upstream_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AnthropicConfig) GetApiKey() string {
@@ -684,15 +821,26 @@ const file_conf_upstream_proto_rawDesc = "" +
 	"\n" +
 	"\x13conf/upstream.proto\x12\x13neurouter.config.v1\"I\n" +
 	"\bUpstream\x12=\n" +
-	"\aconfigs\x18\x01 \x03(\v2#.neurouter.config.v1.UpstreamConfigR\aconfigs\"\xe9\x02\n" +
+	"\aconfigs\x18\x01 \x03(\v2#.neurouter.config.v1.UpstreamConfigR\aconfigs\"{\n" +
+	"\x12UpstreamScheduling\x12\x1b\n" +
+	"\ttpm_limit\x18\x01 \x01(\x04R\btpmLimit\x12\x1b\n" +
+	"\trpm_limit\x18\x02 \x01(\x04R\brpmLimit\x12+\n" +
+	"\x11concurrency_limit\x18\x03 \x01(\x04R\x10concurrencyLimit\"\xb2\x03\n" +
 	"\x0eUpstreamConfig\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x122\n" +
-	"\x06models\x18\x02 \x03(\v2\x1a.neurouter.config.v1.ModelR\x06models\x12D\n" +
+	"\x06models\x18\x02 \x03(\v2\x1a.neurouter.config.v1.ModelR\x06models\x12G\n" +
+	"\n" +
+	"scheduling\x18\x03 \x01(\v2'.neurouter.config.v1.UpstreamSchedulingR\n" +
+	"scheduling\x12D\n" +
 	"\tneurouter\x18d \x01(\v2$.neurouter.config.v1.NeurouterConfigH\x00R\tneurouter\x12<\n" +
 	"\aopen_ai\x18e \x01(\v2!.neurouter.config.v1.OpenAIConfigH\x00R\x06openAi\x12;\n" +
 	"\x06google\x18f \x01(\v2!.neurouter.config.v1.GoogleConfigH\x00R\x06google\x12D\n" +
 	"\tanthropic\x18g \x01(\v2$.neurouter.config.v1.AnthropicConfigH\x00R\tanthropicB\b\n" +
-	"\x06config\"\x80\x02\n" +
+	"\x06config\"x\n" +
+	"\x0fModelScheduling\x12\x1b\n" +
+	"\ttpm_limit\x18\x01 \x01(\x04R\btpmLimit\x12\x1b\n" +
+	"\trpm_limit\x18\x02 \x01(\x04R\brpmLimit\x12+\n" +
+	"\x11concurrency_limit\x18\x03 \x01(\x04R\x10concurrencyLimit\"\xc6\x02\n" +
 	"\x05Model\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vupstream_id\x18\x02 \x01(\tR\n" +
@@ -703,7 +851,10 @@ const file_conf_upstream_proto_rawDesc = "" +
 	"\n" +
 	"modalities\x18\x06 \x03(\x0e2\x1d.neurouter.config.v1.ModalityR\n" +
 	"modalities\x12C\n" +
-	"\fcapabilities\x18\a \x03(\x0e2\x1f.neurouter.config.v1.CapabilityR\fcapabilities\"-\n" +
+	"\fcapabilities\x18\a \x03(\x0e2\x1f.neurouter.config.v1.CapabilityR\fcapabilities\x12D\n" +
+	"\n" +
+	"scheduling\x18\b \x01(\v2$.neurouter.config.v1.ModelSchedulingR\n" +
+	"scheduling\"-\n" +
 	"\x0fNeurouterConfig\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\"\x9d\x03\n" +
 	"\fOpenAIConfig\x12\x17\n" +
@@ -750,32 +901,36 @@ func file_conf_upstream_proto_rawDescGZIP() []byte {
 }
 
 var file_conf_upstream_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_conf_upstream_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_conf_upstream_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_conf_upstream_proto_goTypes = []any{
-	(Modality)(0),           // 0: neurouter.config.v1.Modality
-	(Capability)(0),         // 1: neurouter.config.v1.Capability
-	(*Upstream)(nil),        // 2: neurouter.config.v1.Upstream
-	(*UpstreamConfig)(nil),  // 3: neurouter.config.v1.UpstreamConfig
-	(*Model)(nil),           // 4: neurouter.config.v1.Model
-	(*NeurouterConfig)(nil), // 5: neurouter.config.v1.NeurouterConfig
-	(*OpenAIConfig)(nil),    // 6: neurouter.config.v1.OpenAIConfig
-	(*GoogleConfig)(nil),    // 7: neurouter.config.v1.GoogleConfig
-	(*AnthropicConfig)(nil), // 8: neurouter.config.v1.AnthropicConfig
+	(Modality)(0),              // 0: neurouter.config.v1.Modality
+	(Capability)(0),            // 1: neurouter.config.v1.Capability
+	(*Upstream)(nil),           // 2: neurouter.config.v1.Upstream
+	(*UpstreamScheduling)(nil), // 3: neurouter.config.v1.UpstreamScheduling
+	(*UpstreamConfig)(nil),     // 4: neurouter.config.v1.UpstreamConfig
+	(*ModelScheduling)(nil),    // 5: neurouter.config.v1.ModelScheduling
+	(*Model)(nil),              // 6: neurouter.config.v1.Model
+	(*NeurouterConfig)(nil),    // 7: neurouter.config.v1.NeurouterConfig
+	(*OpenAIConfig)(nil),       // 8: neurouter.config.v1.OpenAIConfig
+	(*GoogleConfig)(nil),       // 9: neurouter.config.v1.GoogleConfig
+	(*AnthropicConfig)(nil),    // 10: neurouter.config.v1.AnthropicConfig
 }
 var file_conf_upstream_proto_depIdxs = []int32{
-	3, // 0: neurouter.config.v1.Upstream.configs:type_name -> neurouter.config.v1.UpstreamConfig
-	4, // 1: neurouter.config.v1.UpstreamConfig.models:type_name -> neurouter.config.v1.Model
-	5, // 2: neurouter.config.v1.UpstreamConfig.neurouter:type_name -> neurouter.config.v1.NeurouterConfig
-	6, // 3: neurouter.config.v1.UpstreamConfig.open_ai:type_name -> neurouter.config.v1.OpenAIConfig
-	7, // 4: neurouter.config.v1.UpstreamConfig.google:type_name -> neurouter.config.v1.GoogleConfig
-	8, // 5: neurouter.config.v1.UpstreamConfig.anthropic:type_name -> neurouter.config.v1.AnthropicConfig
-	0, // 6: neurouter.config.v1.Model.modalities:type_name -> neurouter.config.v1.Modality
-	1, // 7: neurouter.config.v1.Model.capabilities:type_name -> neurouter.config.v1.Capability
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	4,  // 0: neurouter.config.v1.Upstream.configs:type_name -> neurouter.config.v1.UpstreamConfig
+	6,  // 1: neurouter.config.v1.UpstreamConfig.models:type_name -> neurouter.config.v1.Model
+	3,  // 2: neurouter.config.v1.UpstreamConfig.scheduling:type_name -> neurouter.config.v1.UpstreamScheduling
+	7,  // 3: neurouter.config.v1.UpstreamConfig.neurouter:type_name -> neurouter.config.v1.NeurouterConfig
+	8,  // 4: neurouter.config.v1.UpstreamConfig.open_ai:type_name -> neurouter.config.v1.OpenAIConfig
+	9,  // 5: neurouter.config.v1.UpstreamConfig.google:type_name -> neurouter.config.v1.GoogleConfig
+	10, // 6: neurouter.config.v1.UpstreamConfig.anthropic:type_name -> neurouter.config.v1.AnthropicConfig
+	0,  // 7: neurouter.config.v1.Model.modalities:type_name -> neurouter.config.v1.Modality
+	1,  // 8: neurouter.config.v1.Model.capabilities:type_name -> neurouter.config.v1.Capability
+	5,  // 9: neurouter.config.v1.Model.scheduling:type_name -> neurouter.config.v1.ModelScheduling
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_conf_upstream_proto_init() }
@@ -783,7 +938,7 @@ func file_conf_upstream_proto_init() {
 	if File_conf_upstream_proto != nil {
 		return
 	}
-	file_conf_upstream_proto_msgTypes[1].OneofWrappers = []any{
+	file_conf_upstream_proto_msgTypes[2].OneofWrappers = []any{
 		(*UpstreamConfig_Neurouter)(nil),
 		(*UpstreamConfig_OpenAi)(nil),
 		(*UpstreamConfig_Google)(nil),
@@ -795,7 +950,7 @@ func file_conf_upstream_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_upstream_proto_rawDesc), len(file_conf_upstream_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

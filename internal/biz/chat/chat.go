@@ -42,16 +42,9 @@ func NewChatUseCase(elector Elector, logger log.Logger) UseCase {
 }
 
 func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	model, err := uc.elector.ElectForChat(req.Model)
+	model, err := uc.elector.ElectForChat(req)
 	if err != nil {
 		return
-	}
-
-	cfg := model.Config()
-	if cfg.UpstreamId != "" {
-		req.Model = cfg.UpstreamId
-	} else {
-		req.Model = cfg.Id
 	}
 
 	resp, err = model.ChatRepo().Chat(ctx, req)
@@ -65,16 +58,9 @@ func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatReq) (resp *ent
 }
 
 func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, server repository.ChatStreamServer) error {
-	model, err := uc.elector.ElectForChat(req.Model)
+	model, err := uc.elector.ElectForChat(req)
 	if err != nil {
 		return err
-	}
-
-	cfg := model.Config()
-	if cfg.UpstreamId != "" {
-		req.Model = cfg.UpstreamId
-	} else {
-		req.Model = cfg.Id
 	}
 
 	accumulator := NewChatRespAccumulator()

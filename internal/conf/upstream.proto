@@ -22,9 +22,19 @@ message Upstream {
   repeated UpstreamConfig configs = 1;
 }
 
+message UpstreamScheduling {
+  uint64 tpm_limit = 1;
+  uint64 rpm_limit = 2;
+  uint64 concurrency_limit = 3;
+}
+
 message UpstreamConfig {
+  // The unique name of the upstream.
   string name = 1;
+  // The models provided by this upstream.
   repeated Model models = 2;
+  // Scheduling configs for this upstream.
+  UpstreamScheduling scheduling = 3;
   oneof config {
     NeurouterConfig neurouter = 100;
     OpenAIConfig open_ai = 101;
@@ -51,6 +61,12 @@ enum Capability {
   CAPABILITY_TOOL_USE = 4;
 }
 
+message ModelScheduling {
+  uint64 tpm_limit = 1;
+  uint64 rpm_limit = 2;
+  uint64 concurrency_limit = 3;
+}
+
 message Model {
   // The unique identifier of the model.
   string id = 1;
@@ -66,6 +82,8 @@ message Model {
   repeated Modality modalities = 6;
   // The capabilities of the model.
   repeated Capability capabilities = 7;
+  // Scheduling configs for this model.
+  ModelScheduling scheduling = 8;
 }
 
 message NeurouterConfig {
