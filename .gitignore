@@ -36,3 +36,10 @@ bin/
 .vscode/
 .idea/
 *.swp
+
+# AI
+.claude
+.gemini
+.github/agents
+.github/prompts
+.specify

@@ -22,3 +22,15 @@ func IsNoUpstream(err error) bool {
 func ErrorNoUpstream(format string, args ...interface{}) *errors.Error {
 	return errors.New(500, ErrorReason_NO_UPSTREAM.String(), fmt.Sprintf(format, args...))
 }
+
+func IsTokenQuotaExhausted(err error) bool {
+	if err == nil {
+		return false
+	}
+	e := errors.FromError(err)
+	return e.Reason == ErrorReason_TOKEN_QUOTA_EXHAUSTED.String() && e.Code == 429
+}
+
+func ErrorTokenQuotaExhausted(format string, args ...interface{}) *errors.Error {
+	return errors.New(429, ErrorReason_TOKEN_QUOTA_EXHAUSTED.String(), fmt.Sprintf(format, args...))
+}
