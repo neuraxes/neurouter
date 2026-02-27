@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -112,9 +111,6 @@ func TestChat(t *testing.T) {
 			Convey("Then it should return a valid response and no error", func() {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
-				fmt.Println()
-				fmt.Println(resp)
-				fmt.Println(mockChatResp)
 				So(proto.Equal(resp, mockChatResp), ShouldBeTrue)
 			})
 		})

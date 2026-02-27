@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
@@ -30,13 +29,23 @@ func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.G
 		config.MaxTokens = &req.MaxTokens
 	}
 	if req.Temperature.Valid() {
-		config.Temperature = ptr.To(float32(req.Temperature.Value))
+		config.Temperature = new(float32(req.Temperature.Value))
 	}
 	if req.TopP.Valid() {
-		config.TopP = ptr.To(float32(req.TopP.Value))
+		config.TopP = new(float32(req.TopP.Value))
 	}
 	if req.TopK.Valid() {
 		config.TopK = &req.TopK.Value
+	}
+	if req.Thinking.OfEnabled != nil || req.Thinking.OfAdaptive != nil {
+		config.ReasoningConfig = &v1.ReasoningConfig{Enabled: true}
+		if req.Thinking.OfEnabled != nil {
+			config.ReasoningConfig.TokenBudget = uint32(req.Thinking.OfEnabled.BudgetTokens)
+		}
+	} else if req.Thinking.OfDisabled != nil {
+		config.ReasoningConfig = &v1.ReasoningConfig{
+			Enabled: false,
+		}
 	}
 	return config
 }
@@ -99,6 +108,7 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 				contents = append(contents, &v1.Content{
 					Content: &v1.Content_Image{
 						Image: &v1.Image{
+							MimeType: string(content.OfImage.Source.OfBase64.MediaType),
 							Source: &v1.Image_Data{
 								Data: data,
 							},
@@ -106,6 +116,24 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 					},
 				})
 			}
+		case content.OfThinking != nil:
+			contents = append(contents, &v1.Content{
+				Reasoning: true,
+				Metadata: map[string]string{
+					"signature": content.OfThinking.Signature,
+				},
+				Content: &v1.Content_Text{
+					Text: content.OfThinking.Thinking,
+				},
+			})
+		case content.OfRedactedThinking != nil:
+			contents = append(contents, &v1.Content{
+				Reasoning: true,
+				Metadata: map[string]string{
+					"redacted_thinking": content.OfRedactedThinking.Data,
+				},
+				Content: &v1.Content_Text{Text: ""},
+			})
 		case content.OfToolUse != nil:
 			var args []byte
 			if content.OfToolUse.Input != nil {
@@ -172,8 +200,14 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 		switch {
 		case tool.OfTool != nil:
 			var parameters *v1.Schema
-			j, _ := json.Marshal(tool.OfTool.InputSchema)
-			_ = json.Unmarshal(j, &parameters)
+			j, err := json.Marshal(tool.OfTool.InputSchema)
+			if err != nil {
+				continue
+			}
+			err = json.Unmarshal(j, &parameters)
+			if err != nil {
+				continue
+			}
 
 			t.Tool = &v1.Tool_Function_{
 				Function: &v1.Tool_Function{
@@ -196,12 +230,29 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 	}
 }
 
+// convertStatusToAnthropic maps internal chat status to Anthropic stop reason.
+func convertStatusToAnthropic(status v1.ChatStatus) anthropic.StopReason {
+	switch status {
+	case v1.ChatStatus_CHAT_COMPLETED:
+		return anthropic.StopReasonEndTurn
+	case v1.ChatStatus_CHAT_REFUSED:
+		return anthropic.StopReasonRefusal
+	case v1.ChatStatus_CHAT_PENDING_TOOL_USE:
+		return anthropic.StopReasonToolUse
+	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
+		return anthropic.StopReasonMaxTokens
+	default:
+		return anthropic.StopReasonEndTurn
+	}
+}
+
 func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 	anthropicResp := &anthropic.Message{
-		Type:  "message",
-		ID:    resp.Message.Id,
-		Model: anthropic.Model(resp.Model),
-		Role:  "assistant",
+		Type:       "message",
+		ID:         resp.Message.Id,
+		Model:      anthropic.Model(resp.Model),
+		Role:       "assistant",
+		StopReason: convertStatusToAnthropic(resp.Status),
 	}
 
 	if resp.Message != nil {
@@ -209,10 +260,18 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
 				if content.Reasoning {
-					if c.Text != "" {
+					if content.Metadata["redacted_thinking"] != "" {
+						// Redacted thinking block
 						anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
-							Type:     "thinking",
-							Thinking: c.Text,
+							Type: "redacted_thinking",
+							Data: content.Metadata["redacted_thinking"],
+						})
+					} else {
+						// Thinking block
+						anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
+							Type:      "thinking",
+							Thinking:  c.Text,
+							Signature: content.Metadata["signature"],
 						})
 					}
 				} else {

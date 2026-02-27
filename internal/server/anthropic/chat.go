@@ -58,6 +58,9 @@ func handleMessageCompletion(httpCtx http.Context, svc v1.ChatServer) (err error
 		})
 
 		_, err = m(httpCtx, req)
+		if err != nil {
+			return err
+		}
 	} else {
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 			return svc.Chat(ctx, req.(*v1.ChatReq))

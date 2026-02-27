@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/genai"
-	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
@@ -40,14 +39,14 @@ func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *
 		googleConfig.TopP = config.TopP
 	}
 	if config.TopK != nil {
-		googleConfig.TopK = ptr.To(float32(*config.TopK))
+		googleConfig.TopK = new(float32(*config.TopK))
 	}
 	if c := config.ReasoningConfig; c != nil {
 		gc := &genai.ThinkingConfig{
 			IncludeThoughts: c.Enabled,
 		}
 		if c.TokenBudget != 0 {
-			gc.ThinkingBudget = ptr.To(int32(c.TokenBudget))
+			gc.ThinkingBudget = new(int32(c.TokenBudget))
 		}
 		googleConfig.ThinkingConfig = gc
 	}

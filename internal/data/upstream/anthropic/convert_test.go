@@ -34,11 +34,149 @@ func TestConvertStatusFromAnthropic(t *testing.T) {
 		So(convertStatusFromAnthropic(anthropic.StopReasonEndTurn), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
 		So(convertStatusFromAnthropic(anthropic.StopReasonStopSequence), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
 		So(convertStatusFromAnthropic(anthropic.StopReasonMaxTokens), ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
-		So(convertStatusFromAnthropic(anthropic.StopReasonModelContextWindowExceeded), ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
 		So(convertStatusFromAnthropic(anthropic.StopReasonRefusal), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
 		So(convertStatusFromAnthropic(anthropic.StopReasonPauseTurn), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
 		So(convertStatusFromAnthropic(anthropic.StopReason("")), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
 		So(convertStatusFromAnthropic(anthropic.StopReason("unknown_reason")), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+	})
+}
+
+func TestConvertGenerationConfigToAnthropic(t *testing.T) {
+	Convey("Given a generation config converter", t, func() {
+		repo := &upstream{
+			config: &conf.AnthropicConfig{},
+			log:    log.NewHelper(log.DefaultLogger),
+		}
+
+		Convey("When config is nil", func() {
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(nil, req)
+
+			Convey("Then maxTokens should not be set", func() {
+				So(req.MaxTokens, ShouldEqual, 0)
+			})
+		})
+
+		Convey("When config has maxTokens set", func() {
+			config := &v1.GenerationConfig{MaxTokens: new(int64(4096))}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then maxTokens should be applied", func() {
+				So(req.MaxTokens, ShouldEqual, 4096)
+			})
+		})
+
+		Convey("When config has no maxTokens or zero maxTokens", func() {
+			config := &v1.GenerationConfig{}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then default maxTokens 8192 should be used", func() {
+				So(req.MaxTokens, ShouldEqual, 8192)
+			})
+		})
+
+		Convey("When config has temperature", func() {
+			config := &v1.GenerationConfig{Temperature: new(float32(0.756))}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then temperature should be rounded to 2 decimal places", func() {
+				So(req.Temperature.Value, ShouldEqual, 0.76)
+			})
+		})
+
+		Convey("When config has topP", func() {
+			config := &v1.GenerationConfig{TopP: new(float32(0.956))}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then topP should be rounded to 2 decimal places", func() {
+				So(req.TopP.Value, ShouldEqual, 0.96)
+			})
+		})
+
+		Convey("When config has topK", func() {
+			config := &v1.GenerationConfig{TopK: new(int64(50))}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then topK should be applied", func() {
+				So(req.TopK.Value, ShouldEqual, 50)
+			})
+		})
+
+		Convey("When config has reasoning enabled with default budget", func() {
+			config := &v1.GenerationConfig{
+				ReasoningConfig: &v1.ReasoningConfig{
+					Enabled: true,
+				},
+			}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then thinking should be enabled with default budget 1024", func() {
+				So(req.Thinking.OfEnabled, ShouldNotBeNil)
+				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 1024)
+			})
+		})
+
+		Convey("When config has reasoning enabled with custom budget", func() {
+			config := &v1.GenerationConfig{
+				ReasoningConfig: &v1.ReasoningConfig{
+					Enabled:     true,
+					TokenBudget: 2048,
+				},
+			}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then thinking should be enabled with custom budget", func() {
+				So(req.Thinking.OfEnabled, ShouldNotBeNil)
+				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 2048)
+			})
+		})
+
+		Convey("When config has reasoning enabled with budget below minimum", func() {
+			config := &v1.GenerationConfig{
+				ReasoningConfig: &v1.ReasoningConfig{
+					Enabled:     true,
+					TokenBudget: 512,
+				},
+			}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then thinking should use minimum budget 1024", func() {
+				So(req.Thinking.OfEnabled, ShouldNotBeNil)
+				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 1024)
+			})
+		})
+
+		Convey("When config has all parameters set", func() {
+			config := &v1.GenerationConfig{
+				MaxTokens:   new(int64(4096)),
+				Temperature: new(float32(0.75)),
+				TopP:        new(float32(0.95)),
+				TopK:        new(int64(40)),
+				ReasoningConfig: &v1.ReasoningConfig{
+					Enabled:     true,
+					TokenBudget: 2048,
+				},
+			}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then all parameters should be applied", func() {
+				So(req.MaxTokens, ShouldEqual, 4096)
+				So(req.Temperature.Value, ShouldEqual, 0.75)
+				So(req.TopP.Value, ShouldEqual, 0.95)
+				So(req.TopK.Value, ShouldEqual, 40)
+				So(req.Thinking.OfEnabled, ShouldNotBeNil)
+				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 2048)
+			})
+		})
 	})
 }
 
@@ -134,6 +272,28 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 			})
 		})
 
+		Convey("When converting a message with redacted thinking content", func() {
+			msg := &v1.Message{
+				Role: v1.Role_MODEL,
+				Contents: []*v1.Content{
+					{
+						Reasoning: true,
+						Metadata:  map[string]string{"redacted_thinking": "opaque-data"},
+						Content:   &v1.Content_Text{Text: ""},
+					},
+				},
+			}
+			result := repo.convertMessageToAnthropic(msg)
+
+			Convey("Then it should create an assistant message with redacted thinking block", func() {
+				So(string(result.Role), ShouldEqual, "assistant")
+				So(result.Content, ShouldHaveLength, 1)
+				redacted := result.Content[0].OfRedactedThinking
+				So(redacted, ShouldNotBeNil)
+				So(redacted.Data, ShouldEqual, "opaque-data")
+			})
+		})
+
 		Convey("When converting a message with image content", func() {
 			msg := &v1.Message{
 				Role: v1.Role_USER,
@@ -154,6 +314,31 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 				So(imageBlock, ShouldNotBeNil)
 				So(imageBlock.Source.OfURL, ShouldNotBeNil)
 				So(imageBlock.Source.OfURL.URL, ShouldEqual, "https://example.com/image.jpg")
+			})
+		})
+
+		Convey("When converting a message with base64 image content", func() {
+			msg := &v1.Message{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{Content: &v1.Content_Image{
+						Image: &v1.Image{
+							MimeType: "image/png",
+							Source:   &v1.Image_Data{Data: []byte("aW1hZ2VkYXRh")},
+						},
+					}},
+				},
+			}
+			result := repo.convertMessageToAnthropic(msg)
+
+			Convey("Then it should create a message with base64 image block", func() {
+				So(string(result.Role), ShouldEqual, "user")
+				So(result.Content, ShouldHaveLength, 1)
+				imageBlock := result.Content[0].OfImage
+				So(imageBlock, ShouldNotBeNil)
+				So(imageBlock.Source.OfBase64, ShouldNotBeNil)
+				So(imageBlock.Source.OfBase64.MediaType, ShouldEqual, anthropic.Base64ImageSourceMediaType("image/png"))
+				So(imageBlock.Source.OfBase64.Data, ShouldEqual, "YVcxaFoyVmtZWFJo")
 			})
 		})
 
@@ -198,6 +383,34 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 			Convey("Then it should create a message with no content blocks", func() {
 				So(string(result.Role), ShouldEqual, "user")
 				So(result.Content, ShouldHaveLength, 0)
+			})
+		})
+
+		Convey("When converting a message with tool_use that has invalid JSON input", func() {
+			msg := &v1.Message{
+				Role: v1.Role_MODEL,
+				Contents: []*v1.Content{
+					{Content: &v1.Content_ToolUse{
+						ToolUse: &v1.ToolUse{
+							Id:   "tool-1",
+							Name: "my_tool",
+							Inputs: []*v1.ToolUse_Input{{
+								Input: &v1.ToolUse_Input_Text{Text: "not-valid-json"},
+							}},
+						},
+					}},
+				},
+			}
+			result := repo.convertMessageToAnthropic(msg)
+
+			Convey("Then it should still create a tool_use block with string fallback", func() {
+				So(string(result.Role), ShouldEqual, "assistant")
+				So(result.Content, ShouldHaveLength, 1)
+				toolUse := result.Content[0].OfToolUse
+				So(toolUse, ShouldNotBeNil)
+				So(toolUse.ID, ShouldEqual, "tool-1")
+				So(toolUse.Name, ShouldEqual, "my_tool")
+				So(toolUse.Input, ShouldEqual, "not-valid-json")
 			})
 		})
 	})
@@ -330,6 +543,47 @@ func TestConvertContentsFromAnthropic(t *testing.T) {
 			So(msg.Contents[1].GetText(), ShouldEqual, "answer")
 		})
 	})
+
+	Convey("Given anthropic content blocks with redacted_thinking", t, func() {
+		anthropicMessage := &anthropic.Message{
+			ID: "msg-456",
+			Content: []anthropic.ContentBlockUnion{
+				{
+					Type:      "thinking",
+					Thinking:  "visible thought",
+					Signature: "sig-abc",
+				},
+				{
+					Type: "redacted_thinking",
+					Data: "opaque-encrypted-data",
+				},
+				{
+					Type: "text",
+					Text: "final answer",
+				},
+			},
+		}
+
+		msg := convertMessageFromAnthropic(anthropicMessage)
+
+		Convey("Then thinking, redacted_thinking, and text are all mapped", func() {
+			So(msg, ShouldNotBeNil)
+			So(len(msg.Contents), ShouldEqual, 3)
+
+			// thinking block
+			So(msg.Contents[0].Reasoning, ShouldBeTrue)
+			So(msg.Contents[0].GetText(), ShouldEqual, "visible thought")
+			So(msg.Contents[0].Metadata["signature"], ShouldEqual, "sig-abc")
+
+			// redacted_thinking block
+			So(msg.Contents[1].Reasoning, ShouldBeTrue)
+			So(msg.Contents[1].GetText(), ShouldEqual, "")
+			So(msg.Contents[1].Metadata["redacted_thinking"], ShouldEqual, "opaque-encrypted-data")
+
+			// text block
+			So(msg.Contents[2].GetText(), ShouldEqual, "final answer")
+		})
+	})
 }
 
 func TestConvertChunkFromAnthropic(t *testing.T) {
@@ -351,6 +605,50 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			})
 		})
 
+		Convey("When receiving content_block_start with text", func() {
+			chunk := &anthropic.MessageStreamEventUnion{
+				Type: "content_block_start",
+				ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
+					Type: "text",
+					Text: "Hello",
+				},
+				Index: 0,
+			}
+			resp := client.convertChunkFromAnthropic(chunk)
+			Convey("Then a text content is emitted", func() {
+				So(resp, ShouldNotBeNil)
+				So(resp.Message, ShouldNotBeNil)
+				So(resp.Message.Contents[0], ShouldNotBeNil)
+				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
+				So(*resp.Message.Contents[0].Index, ShouldEqual, 0)
+				So(resp.Message.Contents[0].Reasoning, ShouldBeFalse)
+				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello")
+			})
+		})
+
+		Convey("When receiving content_block_start with thinking", func() {
+			chunk := &anthropic.MessageStreamEventUnion{
+				Type: "content_block_start",
+				ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
+					Type:      "thinking",
+					Thinking:  "Let me analyze this...",
+					Signature: "sig-abc",
+				},
+				Index: 1,
+			}
+			resp := client.convertChunkFromAnthropic(chunk)
+			Convey("Then a thinking content is emitted", func() {
+				So(resp, ShouldNotBeNil)
+				So(resp.Message, ShouldNotBeNil)
+				So(resp.Message.Contents[0], ShouldNotBeNil)
+				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
+				So(*resp.Message.Contents[0].Index, ShouldEqual, 1)
+				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
+				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Let me analyze this...")
+				So(resp.Message.Contents[0].Metadata["signature"], ShouldEqual, "sig-abc")
+			})
+		})
+
 		Convey("When receiving content_block_start with tool_use", func() {
 			chunk := &anthropic.MessageStreamEventUnion{
 				Type: "content_block_start",
@@ -366,10 +664,30 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 				So(resp.Id, ShouldEqual, "req-1")
 				So(resp.Message, ShouldNotBeNil)
 				So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
-				fc := resp.Message.Contents[0].GetToolUse()
-				So(fc, ShouldNotBeNil)
-				So(fc.Id, ShouldEqual, "tool-1")
-				So(fc.Name, ShouldEqual, "get_weather")
+				So(resp.Message.Contents[0].GetToolUse(), ShouldNotBeNil)
+				So(resp.Message.Contents[0].GetToolUse().Id, ShouldEqual, "tool-1")
+				So(resp.Message.Contents[0].GetToolUse().Name, ShouldEqual, "get_weather")
+			})
+		})
+
+		Convey("When receiving content_block_start with redacted_thinking", func() {
+			chunk := &anthropic.MessageStreamEventUnion{
+				Type: "content_block_start",
+				ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
+					Type: "redacted_thinking",
+					Data: "opaque-data-123",
+				},
+				Index: 2,
+			}
+			resp := client.convertChunkFromAnthropic(chunk)
+			Convey("Then a redacted thinking content is emitted", func() {
+				So(resp, ShouldNotBeNil)
+				So(resp.Message.Contents[0], ShouldNotBeNil)
+				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
+				So(*resp.Message.Contents[0].Index, ShouldEqual, 2)
+				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
+				So(resp.Message.Contents[0].GetText(), ShouldEqual, "")
+				So(resp.Message.Contents[0].Metadata["redacted_thinking"], ShouldEqual, "opaque-data-123")
 			})
 		})
 
@@ -380,6 +698,15 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			So(r1, ShouldNotBeNil)
 			So(r1.Message.Contents[0].Reasoning, ShouldBeTrue)
 			So(r1.Message.Contents[0].GetText(), ShouldEqual, "let me think")
+			So(r1.Message.Contents[0].Metadata, ShouldBeNil)
+
+			// signature_delta
+			d1s := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "signature_delta", Signature: "sig-xyz"}}
+			r1s := client.convertChunkFromAnthropic(d1s)
+			So(r1s, ShouldNotBeNil)
+			So(r1s.Message.Contents[0].Reasoning, ShouldBeTrue)
+			So(r1s.Message.Contents[0].Metadata["signature"], ShouldEqual, "sig-xyz")
+			So(r1s.Message.Contents[0].GetText(), ShouldEqual, "")
 
 			// text_delta
 			d2 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "text_delta", Text: "hello"}}

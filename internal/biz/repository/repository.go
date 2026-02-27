@@ -26,8 +26,7 @@ type ChatStreamServer interface {
 	Send(*entity.ChatResp) error
 }
 
-type Repo interface {
-}
+type Repo any
 
 // ChatRepo defines the interface for chat operations.
 // It supports both synchronous chat and streaming chat interactions.

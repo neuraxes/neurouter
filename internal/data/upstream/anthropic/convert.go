@@ -15,12 +15,12 @@
 package anthropic
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"math"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/tidwall/gjson"
-	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -33,7 +33,7 @@ func convertStatusFromAnthropic(stopReason anthropic.StopReason) v1.ChatStatus {
 		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
 	case anthropic.StopReasonEndTurn, anthropic.StopReasonStopSequence:
 		return v1.ChatStatus_CHAT_COMPLETED
-	case anthropic.StopReasonMaxTokens, anthropic.StopReasonModelContextWindowExceeded:
+	case anthropic.StopReasonMaxTokens:
 		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
 	case anthropic.StopReasonRefusal:
 		return v1.ChatStatus_CHAT_REFUSED
@@ -97,17 +97,30 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 		switch c := content.GetContent().(type) {
 		case *v1.Content_Text:
 			if content.Reasoning {
-				signature := content.Metadata["signature"]
-				parts = append(parts, anthropic.NewThinkingBlock(signature, c.Text))
+				if content.Metadata["redacted_thinking"] != "" {
+					// Redacted thinking block: encrypted data stored in metadata
+					parts = append(parts, anthropic.NewRedactedThinkingBlock(content.Metadata["redacted_thinking"]))
+				} else {
+					signature := content.Metadata["signature"]
+					parts = append(parts, anthropic.NewThinkingBlock(signature, c.Text))
+				}
 			} else {
 				parts = append(parts, anthropic.NewTextBlock(c.Text))
 			}
 		case *v1.Content_Image:
-			parts = append(parts, anthropic.NewImageBlock(
-				anthropic.URLImageSourceParam{
-					URL: c.Image.GetUrl(),
-				},
-			))
+			switch src := c.Image.Source.(type) {
+			case *v1.Image_Url:
+				parts = append(parts, anthropic.NewImageBlock(
+					anthropic.URLImageSourceParam{
+						URL: src.Url,
+					},
+				))
+			case *v1.Image_Data:
+				parts = append(parts, anthropic.NewImageBlockBase64(
+					c.Image.MimeType,
+					base64.StdEncoding.EncodeToString(src.Data),
+				))
+			}
 		case *v1.Content_ToolUse:
 			textualInput := c.ToolUse.GetTextualInput()
 
@@ -116,7 +129,6 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 			if err != nil {
 				// Fallback to string
 				input = textualInput
-				continue
 			}
 
 			parts = append(parts, anthropic.NewToolUseBlock(
@@ -222,6 +234,14 @@ func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 					Text: content.Thinking,
 				},
 			})
+		case "redacted_thinking":
+			message.Contents = append(message.Contents, &v1.Content{
+				Metadata: map[string]string{
+					"redacted_thinking": content.Data,
+				},
+				Reasoning: true,
+				Content:   &v1.Content_Text{Text: ""},
+			})
 		case "text":
 			message.Contents = append(message.Contents, &v1.Content{
 				Content: &v1.Content_Text{
@@ -276,30 +296,40 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 			if chunk.ContentBlock.Text != "" {
 				resp = c.newResp()
 				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-					Index: ptr.To(uint32(chunk.Index)),
+					Index: new(uint32(chunk.Index)),
 					Content: &v1.Content_Text{
 						Text: chunk.ContentBlock.Text,
 					},
 				})
 			}
 		case "thinking":
-			if chunk.ContentBlock.Thinking != "" {
+			if chunk.ContentBlock.Thinking != "" || chunk.ContentBlock.Signature != "" {
 				resp = c.newResp()
 				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-					Index: ptr.To(uint32(chunk.Index)),
+					Index:     new(uint32(chunk.Index)),
+					Reasoning: true,
 					Metadata: map[string]string{
 						"signature": chunk.ContentBlock.Signature,
 					},
-					Reasoning: true,
 					Content: &v1.Content_Text{
 						Text: chunk.ContentBlock.Thinking,
 					},
 				})
 			}
+		case "redacted_thinking":
+			resp = c.newResp()
+			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+				Index:     new(uint32(chunk.Index)),
+				Reasoning: true,
+				Metadata: map[string]string{
+					"redacted_thinking": chunk.ContentBlock.Data,
+				},
+				Content: &v1.Content_Text{Text: ""},
+			})
 		case "tool_use":
 			resp = c.newResp()
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: ptr.To(uint32(chunk.Index)),
+				Index: new(uint32(chunk.Index)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Id:   chunk.ContentBlock.ID,
@@ -315,25 +345,33 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		switch chunk.Delta.Type {
 		case "thinking_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: ptr.To(uint32(chunk.Index)),
-				Metadata: map[string]string{
-					"signature": chunk.Delta.Signature,
-				},
+				Index:     new(uint32(chunk.Index)),
 				Reasoning: true,
 				Content: &v1.Content_Text{
 					Text: chunk.Delta.Thinking,
 				},
 			})
+		case "signature_delta":
+			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
+				Index:     new(uint32(chunk.Index)),
+				Reasoning: true,
+				Metadata: map[string]string{
+					"signature": chunk.Delta.Signature,
+				},
+				Content: &v1.Content_Text{
+					Text: "",
+				},
+			})
 		case "text_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: ptr.To(uint32(chunk.Index)),
+				Index: new(uint32(chunk.Index)),
 				Content: &v1.Content_Text{
 					Text: chunk.Delta.Text,
 				},
 			})
 		case "input_json_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: ptr.To(uint32(chunk.Index)),
+				Index: new(uint32(chunk.Index)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Inputs: []*v1.ToolUse_Input{

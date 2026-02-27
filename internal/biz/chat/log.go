@@ -113,18 +113,12 @@ const chatPrettyPrintTmpl = `
 {{- end}}
 `
 
-var (
-	chatPrettyPrintCompiledTmpl *template.Template
+var chatPrettyPrintCompiledTmpl = template.Must(
+	template.New("chat").Funcs(template.FuncMap{
+		"formatContent": formatContent,
+		"formatSchema":  formatSchema,
+	}).Parse(chatPrettyPrintTmpl),
 )
-
-func init() {
-	chatPrettyPrintCompiledTmpl = template.Must(
-		template.New("chat").Funcs(template.FuncMap{
-			"formatContent": formatContent,
-			"formatSchema":  formatSchema,
-		}).Parse(chatPrettyPrintTmpl),
-	)
-}
 
 func formatContent(content *v1.Content) string {
 	sb := strings.Builder{}

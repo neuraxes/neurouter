@@ -37,4 +37,7 @@ func RegisterOpenAIHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v
 	r.GET("/models", func(ctx http.Context) error {
 		return handleListModels(ctx, modelSvc)
 	})
+	r.GET("/v1/models", func(ctx http.Context) error {
+		return handleListModels(ctx, modelSvc)
+	})
 }

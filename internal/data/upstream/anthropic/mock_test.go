@@ -31,7 +31,12 @@ var mockChatReq = &entity.ChatReq{
 			Contents: []*v1.Content{
 				{
 					Content: &v1.Content_Text{
-						Text: "hi, how are you? and how is the weather yesterday in shanghai?",
+						Text: "hi, how are you?",
+					},
+				},
+				{
+					Content: &v1.Content_Text{
+						Text: "and how is the weather yesterday in shanghai?",
 					},
 				},
 			},
@@ -130,7 +135,11 @@ var mockMessagesRequetBody = `{
         {
             "content": [
                 {
-                    "text": "hi, how are you? and how is the weather yesterday in shanghai?",
+                    "text": "hi, how are you?",
+                    "type": "text"
+                },
+				{
+                    "text": "and how is the weather yesterday in shanghai?",
                     "type": "text"
                 }
             ],
@@ -284,7 +293,11 @@ var mockMessagesStreamRequetBody = `{
         {
             "content": [
                 {
-                    "text": "hi, how are you? and how is the weather yesterday in shanghai?",
+                    "text": "hi, how are you?",
+                    "type": "text"
+                },
+				{
+                    "text": "and how is the weather yesterday in shanghai?",
                     "type": "text"
                 }
             ],
@@ -377,15 +390,7 @@ data: {"type":"content_block_start","index":0,"content_block":{"type":"text","te
 
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Now"}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" let me get the weather for Shanghai yesterday"}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" (2025-11-10):"}}
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"OK~ "}}
 
 
 event: content_block_stop
@@ -393,31 +398,51 @@ data: {"type":"content_block_stop","index":0}
 
 
 event: content_block_start
-data: {"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_016VE91YZYshFFPSevawmcDH","name":"get_weather","input":{}}}
+data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}}
 
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Now"}}
 
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"city\": \"Shanghai\""}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" let me get the weather for Shanghai yesterday"}}
 
 
 event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":", \"date\": "}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\"2025-11-10"}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\"}"}}
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" (2025-11-10):"}}
 
 
 event: content_block_stop
 data: {"type":"content_block_stop","index":1}
+
+
+event: content_block_start
+data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"toolu_016VE91YZYshFFPSevawmcDH","name":"get_weather","input":{}}}
+
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":""}}
+
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"city\": \"Shanghai\""}}
+
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":", \"date\": "}}
+
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"2025-11-10"}}
+
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"}"}}
+
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":2}
 
 
 event: message_delta
@@ -437,9 +462,8 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:    ptr.To[uint32](0),
-				Metadata: map[string]string{},
-				Content:  &v1.Content_Text{Text: "Now"},
+				Index:   new(uint32(0)),
+				Content: &v1.Content_Text{Text: "OK~ "},
 			}},
 		},
 	},
@@ -450,7 +474,19 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](0),
+				Index:   new(uint32(1)),
+				Content: &v1.Content_Text{Text: "Now"},
+			}},
+		},
+	},
+	{
+		Id:    "mock_chat_id",
+		Model: "claude-haiku-4-5-20251001",
+		Message: &v1.Message{
+			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Index:   new(uint32(1)),
 				Content: &v1.Content_Text{Text: " let me get the weather for Shanghai yesterday"},
 			}},
 		},
@@ -462,7 +498,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:   ptr.To[uint32](0),
+				Index:   new(uint32(1)),
 				Content: &v1.Content_Text{Text: " (2025-11-10):"},
 			}},
 		},
@@ -474,7 +510,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](1),
+				Index: new(uint32(2)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Id:   "toolu_016VE91YZYshFFPSevawmcDH",
@@ -491,7 +527,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](1),
+				Index: new(uint32(2)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Inputs: []*v1.ToolUse_Input{
@@ -513,7 +549,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](1),
+				Index: new(uint32(2)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Inputs: []*v1.ToolUse_Input{
@@ -535,7 +571,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](1),
+				Index: new(uint32(2)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Inputs: []*v1.ToolUse_Input{
@@ -557,7 +593,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](1),
+				Index: new(uint32(2)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Inputs: []*v1.ToolUse_Input{
@@ -579,7 +615,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index: ptr.To[uint32](1),
+				Index: new(uint32(2)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Inputs: []*v1.ToolUse_Input{
