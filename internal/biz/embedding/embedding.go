@@ -47,5 +47,12 @@ func (uc *useCase) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entit
 	}
 	defer model.Close()
 
-	return model.EmbeddingRepo().Embed(ctx, req)
+	resp, err = model.EmbeddingRepo().Embed(ctx, req)
+	if err != nil {
+		return
+	}
+
+	// TODO: record the actual token usage
+	model.RecordUsage(0)
+	return
 }

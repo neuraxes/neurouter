@@ -19,7 +19,6 @@ import (
 	"sync/atomic"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"golang.org/x/sync/semaphore"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -39,20 +38,13 @@ type model struct {
 	inputTokens       atomic.Uint64
 	outputTokens      atomic.Uint64
 	cachedInputTokens atomic.Uint64
-	upstreamSem       *semaphore.Weighted // nil means unlimited
-	modelSem          *semaphore.Weighted // nil means unlimited
+	upstreamLimiters  *limiterGroup // shared across models in same upstream
+	modelLimiters     *limiterGroup // specific to this model
 }
 
 type UseCaseImpl struct {
 	models []*model
 	log    *log.Helper
-}
-
-func newSem(limit uint64) *semaphore.Weighted {
-	if limit > 0 {
-		return semaphore.NewWeighted(int64(limit))
-	}
-	return nil
 }
 
 func NewModelUseCase(
@@ -89,23 +81,37 @@ func NewModelUseCase(
 				continue
 			}
 
-			// Create upstream semaphore once (shared across all models in this upstream)
-			upstreamSem := newSem(config.GetScheduling().GetConcurrencyLimit())
+			// Create upstream limiter group once (shared across all models in this upstream)
+			us := config.GetScheduling()
+			upstreamLimiters := newLimiterGroup(
+				us.GetConcurrencyLimit(),
+				us.GetRpmLimit(),
+				us.GetRpdLimit(),
+				us.GetTpmLimit(),
+				us.GetTpdLimit(),
+			)
 
 			for _, modelConfig := range config.GetModels() {
 				chatRepo, _ := repo.(repository.ChatRepo)
 				embeddingRepo, _ := repo.(repository.EmbeddingRepo)
 
-				// Create model semaphore (specific to this model)
-				modelSem := newSem(modelConfig.GetScheduling().GetConcurrencyLimit())
+				// Create model limiter group (specific to this model)
+				ms := modelConfig.GetScheduling()
+				modelLimiters := newLimiterGroup(
+					ms.GetConcurrencyLimit(),
+					ms.GetRpmLimit(),
+					ms.GetRpdLimit(),
+					ms.GetTpmLimit(),
+					ms.GetTpdLimit(),
+				)
 
 				models = append(models, &model{
-					config:         modelConfig,
-					upstreamConfig: config,
-					chatRepo:       chatRepo,
-					embeddingRepo:  embeddingRepo,
-					upstreamSem:    upstreamSem,
-					modelSem:       modelSem,
+					config:           modelConfig,
+					upstreamConfig:   config,
+					chatRepo:         chatRepo,
+					embeddingRepo:    embeddingRepo,
+					upstreamLimiters: upstreamLimiters,
+					modelLimiters:    modelLimiters,
 				})
 			}
 		}

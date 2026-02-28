@@ -146,10 +146,10 @@ func parseSSEEvents(sseData string) []sseEvent {
 	var currentEvent, currentData string
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.HasPrefix(line, "event: ") {
-			currentEvent = strings.TrimPrefix(line, "event: ")
-		} else if strings.HasPrefix(line, "data: ") {
-			currentData = strings.TrimPrefix(line, "data: ")
+		if after, ok := strings.CutPrefix(line, "event: "); ok {
+			currentEvent = after
+		} else if after, ok := strings.CutPrefix(line, "data: "); ok {
+			currentData = after
 		} else if line == "" && currentEvent != "" {
 			events = append(events, sseEvent{event: currentEvent, data: currentData})
 			currentEvent = ""

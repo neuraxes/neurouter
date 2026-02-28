@@ -12,21 +12,41 @@ import (
 
 type embeddingModel struct {
 	*model
+	reservations    *reservationSet
+	estimatedTokens int64
 }
 
 func (m *embeddingModel) EmbeddingRepo() repository.EmbeddingRepo { return m.embeddingRepo }
 
+func (m *embeddingModel) RecordUsage(actualTokens int64) {
+	// If upstream doesn't provide usage info, fall back to estimated tokens
+	if actualTokens == 0 {
+		actualTokens = m.estimatedTokens
+	}
+	// Complete reservations with actual token usage
+	m.reservations.complete(actualTokens)
+}
+
 func (m *embeddingModel) Close() {
-	// Release in reverse order
-	if m.modelSem != nil {
-		m.modelSem.Release(1)
+	m.reservations.cancel()
+}
+
+// estimateEmbeddingTokens provides a rough token estimate for an embedding request.
+// Uses ~4 characters per token heuristic.
+func estimateEmbeddingTokens(req *v1.EmbedReq) int64 {
+	totalChars := 0
+	for _, c := range req.Contents {
+		totalChars += len(c.GetText())
 	}
-	if m.upstreamSem != nil {
-		m.upstreamSem.Release(1)
+	if totalChars == 0 {
+		return 0
 	}
+	return int64(totalChars/4) + 1
 }
 
 func (uc *UseCaseImpl) ElectForEmbedding(ctx context.Context, req *v1.EmbedReq) (embedding.Model, error) {
+	estimatedTokens := estimateEmbeddingTokens(req) // Estimate input tokens roughly: ~4 chars per token
+
 	// Collect all available candidates
 	var allCandidates []*model
 	var matchingCandidates []*model
@@ -42,18 +62,19 @@ func (uc *UseCaseImpl) ElectForEmbedding(ctx context.Context, req *v1.EmbedReq) 
 	}
 
 	var selected *model
+	var rs *reservationSet
 	var err error
 
 	// If there are matching models, randomly select from them
 	if len(matchingCandidates) > 0 {
-		selected, err = electFromCandidates(ctx, matchingCandidates)
+		selected, rs, err = electFromCandidates(ctx, matchingCandidates, estimatedTokens)
 		if err != nil {
 			return nil, err
 		}
 		uc.log.Infof("using model: %s-%s", selected.upstreamConfig.Name, selected.config.Id)
 	} else if len(allCandidates) > 0 {
 		// No matching models, randomly select from all candidates
-		selected, err = electFromCandidates(ctx, allCandidates)
+		selected, rs, err = electFromCandidates(ctx, allCandidates, estimatedTokens)
 		if err != nil {
 			return nil, err
 		}
@@ -69,5 +90,9 @@ func (uc *UseCaseImpl) ElectForEmbedding(ctx context.Context, req *v1.EmbedReq) 
 		req.Model = selected.config.Id
 	}
 
-	return &embeddingModel{selected}, nil
+	return &embeddingModel{
+		model:           selected,
+		reservations:    rs,
+		estimatedTokens: estimatedTokens,
+	}, nil
 }

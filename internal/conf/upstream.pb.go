@@ -194,8 +194,10 @@ func (x *Upstream) GetConfigs() []*UpstreamConfig {
 type UpstreamScheduling struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	TpmLimit         uint64                 `protobuf:"varint,1,opt,name=tpm_limit,json=tpmLimit,proto3" json:"tpm_limit,omitempty"`
-	RpmLimit         uint64                 `protobuf:"varint,2,opt,name=rpm_limit,json=rpmLimit,proto3" json:"rpm_limit,omitempty"`
-	ConcurrencyLimit uint64                 `protobuf:"varint,3,opt,name=concurrency_limit,json=concurrencyLimit,proto3" json:"concurrency_limit,omitempty"`
+	TpdLimit         uint64                 `protobuf:"varint,2,opt,name=tpd_limit,json=tpdLimit,proto3" json:"tpd_limit,omitempty"`
+	RpmLimit         uint64                 `protobuf:"varint,3,opt,name=rpm_limit,json=rpmLimit,proto3" json:"rpm_limit,omitempty"`
+	RpdLimit         uint64                 `protobuf:"varint,4,opt,name=rpd_limit,json=rpdLimit,proto3" json:"rpd_limit,omitempty"`
+	ConcurrencyLimit uint64                 `protobuf:"varint,5,opt,name=concurrency_limit,json=concurrencyLimit,proto3" json:"concurrency_limit,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -237,9 +239,23 @@ func (x *UpstreamScheduling) GetTpmLimit() uint64 {
 	return 0
 }
 
+func (x *UpstreamScheduling) GetTpdLimit() uint64 {
+	if x != nil {
+		return x.TpdLimit
+	}
+	return 0
+}
+
 func (x *UpstreamScheduling) GetRpmLimit() uint64 {
 	if x != nil {
 		return x.RpmLimit
+	}
+	return 0
+}
+
+func (x *UpstreamScheduling) GetRpdLimit() uint64 {
+	if x != nil {
+		return x.RpdLimit
 	}
 	return 0
 }
@@ -395,8 +411,10 @@ func (*UpstreamConfig_Anthropic) isUpstreamConfig_Config() {}
 type ModelScheduling struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	TpmLimit         uint64                 `protobuf:"varint,1,opt,name=tpm_limit,json=tpmLimit,proto3" json:"tpm_limit,omitempty"`
-	RpmLimit         uint64                 `protobuf:"varint,2,opt,name=rpm_limit,json=rpmLimit,proto3" json:"rpm_limit,omitempty"`
-	ConcurrencyLimit uint64                 `protobuf:"varint,3,opt,name=concurrency_limit,json=concurrencyLimit,proto3" json:"concurrency_limit,omitempty"`
+	TpdLimit         uint64                 `protobuf:"varint,2,opt,name=tpd_limit,json=tpdLimit,proto3" json:"tpd_limit,omitempty"`
+	RpmLimit         uint64                 `protobuf:"varint,3,opt,name=rpm_limit,json=rpmLimit,proto3" json:"rpm_limit,omitempty"`
+	RpdLimit         uint64                 `protobuf:"varint,4,opt,name=rpd_limit,json=rpdLimit,proto3" json:"rpd_limit,omitempty"`
+	ConcurrencyLimit uint64                 `protobuf:"varint,5,opt,name=concurrency_limit,json=concurrencyLimit,proto3" json:"concurrency_limit,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -438,9 +456,23 @@ func (x *ModelScheduling) GetTpmLimit() uint64 {
 	return 0
 }
 
+func (x *ModelScheduling) GetTpdLimit() uint64 {
+	if x != nil {
+		return x.TpdLimit
+	}
+	return 0
+}
+
 func (x *ModelScheduling) GetRpmLimit() uint64 {
 	if x != nil {
 		return x.RpmLimit
+	}
+	return 0
+}
+
+func (x *ModelScheduling) GetRpdLimit() uint64 {
+	if x != nil {
+		return x.RpdLimit
 	}
 	return 0
 }
@@ -824,11 +856,13 @@ const file_conf_upstream_proto_rawDesc = "" +
 	"\n" +
 	"\x13conf/upstream.proto\x12\x13neurouter.config.v1\"I\n" +
 	"\bUpstream\x12=\n" +
-	"\aconfigs\x18\x01 \x03(\v2#.neurouter.config.v1.UpstreamConfigR\aconfigs\"{\n" +
+	"\aconfigs\x18\x01 \x03(\v2#.neurouter.config.v1.UpstreamConfigR\aconfigs\"\xb5\x01\n" +
 	"\x12UpstreamScheduling\x12\x1b\n" +
 	"\ttpm_limit\x18\x01 \x01(\x04R\btpmLimit\x12\x1b\n" +
-	"\trpm_limit\x18\x02 \x01(\x04R\brpmLimit\x12+\n" +
-	"\x11concurrency_limit\x18\x03 \x01(\x04R\x10concurrencyLimit\"\xb2\x03\n" +
+	"\ttpd_limit\x18\x02 \x01(\x04R\btpdLimit\x12\x1b\n" +
+	"\trpm_limit\x18\x03 \x01(\x04R\brpmLimit\x12\x1b\n" +
+	"\trpd_limit\x18\x04 \x01(\x04R\brpdLimit\x12+\n" +
+	"\x11concurrency_limit\x18\x05 \x01(\x04R\x10concurrencyLimit\"\xb2\x03\n" +
 	"\x0eUpstreamConfig\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x122\n" +
 	"\x06models\x18\x02 \x03(\v2\x1a.neurouter.config.v1.ModelR\x06models\x12G\n" +
@@ -839,11 +873,13 @@ const file_conf_upstream_proto_rawDesc = "" +
 	"\aopen_ai\x18e \x01(\v2!.neurouter.config.v1.OpenAIConfigH\x00R\x06openAi\x12;\n" +
 	"\x06google\x18f \x01(\v2!.neurouter.config.v1.GoogleConfigH\x00R\x06google\x12D\n" +
 	"\tanthropic\x18g \x01(\v2$.neurouter.config.v1.AnthropicConfigH\x00R\tanthropicB\b\n" +
-	"\x06config\"x\n" +
+	"\x06config\"\xb2\x01\n" +
 	"\x0fModelScheduling\x12\x1b\n" +
 	"\ttpm_limit\x18\x01 \x01(\x04R\btpmLimit\x12\x1b\n" +
-	"\trpm_limit\x18\x02 \x01(\x04R\brpmLimit\x12+\n" +
-	"\x11concurrency_limit\x18\x03 \x01(\x04R\x10concurrencyLimit\"\xc8\x02\n" +
+	"\ttpd_limit\x18\x02 \x01(\x04R\btpdLimit\x12\x1b\n" +
+	"\trpm_limit\x18\x03 \x01(\x04R\brpmLimit\x12\x1b\n" +
+	"\trpd_limit\x18\x04 \x01(\x04R\brpdLimit\x12+\n" +
+	"\x11concurrency_limit\x18\x05 \x01(\x04R\x10concurrencyLimit\"\xc8\x02\n" +
 	"\x05Model\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vupstream_id\x18\x02 \x01(\tR\n" +

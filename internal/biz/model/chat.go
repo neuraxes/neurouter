@@ -12,29 +12,74 @@ import (
 
 type chatModel struct {
 	*model
+	reservations    *reservationSet
+	estimatedTokens int64
 }
 
 func (m *chatModel) ChatRepo() repository.ChatRepo { return m.chatRepo }
 func (m *chatModel) RecordUsage(stats *v1.Statistics) {
-	if stats == nil || stats.Usage == nil {
-		return
+	actualTokens := m.estimatedTokens // Default to estimated tokens
+
+	if stats != nil && stats.Usage != nil {
+		m.inputTokens.Add(uint64(stats.Usage.InputTokens))
+		m.outputTokens.Add(uint64(stats.Usage.OutputTokens))
+		m.cachedInputTokens.Add(uint64(stats.Usage.CachedInputTokens))
+
+		tokenUsage := int64(stats.Usage.InputTokens + stats.Usage.OutputTokens)
+		// If upstream provides usage info, use actual tokens
+		if tokenUsage > 0 {
+			actualTokens = tokenUsage
+		}
 	}
-	m.inputTokens.Add(uint64(stats.Usage.InputTokens))
-	m.outputTokens.Add(uint64(stats.Usage.OutputTokens))
-	m.cachedInputTokens.Add(uint64(stats.Usage.CachedInputTokens))
+
+	// Complete reservations with actual or estimated token usage
+	m.reservations.complete(actualTokens)
 }
 
 func (m *chatModel) Close() {
-	// Release in reverse order
-	if m.modelSem != nil {
-		m.modelSem.Release(1)
+	m.reservations.cancel()
+}
+
+// estimateTokens provides a rough token estimate for a chat request.
+// Uses ~4 characters per token heuristic for text.
+// Images are assigned a fixed token count of 768 tokens per image.
+func estimateTokens(req *v1.ChatReq) int64 {
+	totalChars := 0
+	imageCount := 0
+
+	for _, msg := range req.Messages {
+		for _, c := range msg.Contents {
+			switch content := c.Content.(type) {
+			case *v1.Content_Image:
+				imageCount++
+			case *v1.Content_Text:
+				totalChars += len(content.Text)
+			case *v1.Content_ToolUse:
+				totalChars += len(content.ToolUse.Name)
+				for _, input := range content.ToolUse.Inputs {
+					totalChars += len(input.GetText())
+				}
+			case *v1.Content_ToolResult:
+				for _, output := range content.ToolResult.Outputs {
+					totalChars += len(output.GetText())
+				}
+			}
+		}
 	}
-	if m.upstreamSem != nil {
-		m.upstreamSem.Release(1)
+
+	textTokens := int64(totalChars / 4)
+	if totalChars > 0 {
+		textTokens++
 	}
+	imageTokens := int64(imageCount * 768)
+
+	return textTokens + imageTokens
 }
 
 func (uc *UseCaseImpl) ElectForChat(ctx context.Context, req *v1.ChatReq) (chat.Model, error) {
+	estimatedTokens := estimateTokens(req) // Estimate input tokens roughly: ~4 chars per token
+	estimatedTokens += 512                 // Add some buffer for output tokens
+
 	// Collect all available candidates
 	var allCandidates []*model
 	var matchingCandidates []*model
@@ -50,22 +95,23 @@ func (uc *UseCaseImpl) ElectForChat(ctx context.Context, req *v1.ChatReq) (chat.
 	}
 
 	var selected *model
+	var rs *reservationSet
 	var err error
 
 	// If there are matching models, randomly select from them
 	if len(matchingCandidates) > 0 {
-		selected, err = electFromCandidates(ctx, matchingCandidates)
+		selected, rs, err = electFromCandidates(ctx, matchingCandidates, estimatedTokens)
 		if err != nil {
 			return nil, err
 		}
-		uc.log.Infof("using model: %s-%s", selected.upstreamConfig.Name, selected.config.Id)
+		uc.log.Infof("using model: %s:%s", selected.upstreamConfig.Name, selected.config.Id)
 	} else if len(allCandidates) > 0 {
 		// No matching models, randomly select from all candidates
-		selected, err = electFromCandidates(ctx, allCandidates)
+		selected, rs, err = electFromCandidates(ctx, allCandidates, estimatedTokens)
 		if err != nil {
 			return nil, err
 		}
-		uc.log.Infof("fallback to model: %s-%s (requested: %s)", selected.upstreamConfig.Name, selected.config.Id, req.Model)
+		uc.log.Infof("fallback to model: %s:%s (requested: %s)", selected.upstreamConfig.Name, selected.config.Id, req.Model)
 	} else {
 		return nil, v1.ErrorNoUpstream("no upstream found")
 	}
@@ -77,5 +123,9 @@ func (uc *UseCaseImpl) ElectForChat(ctx context.Context, req *v1.ChatReq) (chat.
 		req.Model = selected.config.Id
 	}
 
-	return &chatModel{selected}, nil
+	return &chatModel{
+		model:           selected,
+		reservations:    rs,
+		estimatedTokens: estimatedTokens,
+	}, nil
 }

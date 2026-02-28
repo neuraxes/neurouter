@@ -24,4 +24,5 @@ enum ErrorReason {
   option (errors.default_code) = 500;
 
   NO_UPSTREAM = 0;
+  TOKEN_QUOTA_EXHAUSTED = 1 [(errors.code) = 429];
 }

@@ -280,7 +280,7 @@ components:
                 name:
                     type: string
                     description: The display name of the model.
-                from:
+                owner:
                     type: string
                     description: The entity that owns the model.
                 provider:
