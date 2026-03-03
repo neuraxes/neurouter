@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/google/uuid"
 	"google.golang.org/genai"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
@@ -223,12 +222,43 @@ func (r *upstream) convertSystemInstructionToGoogle(messages []*v1.Message) (con
 			}
 		}
 	}
+	if len(content.Parts) == 0 {
+		return nil
+	}
 	return
+}
+
+// convertStatusFromGoogle maps Google FinishReason to internal ChatStatus.
+// It also checks the content to determine if there are pending function calls.
+func convertStatusFromGoogle(reason genai.FinishReason, content *genai.Content) v1.ChatStatus {
+	// Check if the response contains function calls (tool use)
+	if reason == genai.FinishReasonStop && content != nil {
+		for _, part := range content.Parts {
+			if part.FunctionCall != nil {
+				return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+			}
+		}
+	}
+
+	switch reason {
+	case genai.FinishReasonStop:
+		return v1.ChatStatus_CHAT_COMPLETED
+	case genai.FinishReasonMaxTokens:
+		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+	case genai.FinishReasonSafety,
+		genai.FinishReasonBlocklist,
+		genai.FinishReasonProhibitedContent,
+		genai.FinishReasonSPII,
+		genai.FinishReasonImageSafety,
+		genai.FinishReasonImageProhibitedContent:
+		return v1.ChatStatus_CHAT_REFUSED
+	default:
+		return v1.ChatStatus_CHAT_IN_PROGRESS
+	}
 }
 
 func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	message := &v1.Message{
-		Id:   uuid.NewString(),
 		Role: v1.Role_MODEL,
 	}
 

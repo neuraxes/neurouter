@@ -16,6 +16,7 @@ package google
 
 import (
 	"context"
+	"errors"
 	"iter"
 	"net/http"
 
@@ -64,31 +65,40 @@ func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Cli
 	return
 }
 
-func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	config := &genai.GenerateContentConfig{
+// buildGoogleRequest constructs the request to Google API.
+func (r *upstream) buildGoogleRequest(req *entity.ChatReq) (messages []*genai.Content, config *genai.GenerateContentConfig) {
+	config = &genai.GenerateContentConfig{
 		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
 		Tools:             convertToolsToGoogle(req.Tools),
 	}
 	convertGenerationConfigToGoogle(req.Config, config)
 
-	var messages []*genai.Content
 	for _, msg := range req.Messages {
-		if msg.Role == v1.Role_SYSTEM {
-			if !r.config.SystemAsUser {
-				continue
-			}
+		if msg.Role == v1.Role_SYSTEM && !r.config.SystemAsUser {
+			continue
 		}
 		messages = append(messages, convertMessageToGoogle(msg))
 	}
+	return
+}
+
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+	messages, config := r.buildGoogleRequest(req)
 
 	googleResp, err := r.client.Models.GenerateContent(ctx, req.Model, messages, config)
 	if err != nil {
 		return
 	}
 
+	if len(googleResp.Candidates) == 0 || googleResp.Candidates[0].Content == nil {
+		err = errors.New("no candidates in response")
+		return
+	}
+
 	resp = &entity.ChatResp{
 		Id:         req.Id,
 		Model:      googleResp.ModelVersion,
+		Status:     convertStatusFromGoogle(googleResp.Candidates[0].FinishReason, googleResp.Candidates[0].Content),
 		Message:    convertMessageFromGoogle(googleResp.Candidates[0].Content),
 		Statistics: convertStatisticsFromGoogle(googleResp.UsageMetadata),
 	}
@@ -110,9 +120,14 @@ func (c *googleChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
 				return
 			}
 
+			if len(googleResp.Candidates) == 0 || googleResp.Candidates[0].Content == nil {
+				continue
+			}
+
 			resp := &entity.ChatResp{
 				Id:      c.req.Id,
 				Model:   c.req.Model,
+				Status:  convertStatusFromGoogle(googleResp.Candidates[0].FinishReason, googleResp.Candidates[0].Content),
 				Message: convertMessageFromGoogle(googleResp.Candidates[0].Content),
 			}
 			resp.Message.Id = googleResp.ResponseID
@@ -129,21 +144,7 @@ func (c *googleChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
 }
 
 func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
-	config := &genai.GenerateContentConfig{
-		Tools:             convertToolsToGoogle(req.Tools),
-		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
-	}
-	convertGenerationConfigToGoogle(req.Config, config)
-
-	var messages []*genai.Content
-	for _, msg := range req.Messages {
-		if msg.Role == v1.Role_SYSTEM {
-			if !r.config.SystemAsUser {
-				continue
-			}
-		}
-		messages = append(messages, convertMessageToGoogle(msg))
-	}
+	messages, config := r.buildGoogleRequest(req)
 
 	it := r.client.Models.GenerateContentStream(ctx, req.Model, messages, config)
 

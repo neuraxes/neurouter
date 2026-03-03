@@ -263,8 +263,9 @@ const mockGenerateContentResponseBody = `{
 }`
 
 var mockChatResp = &entity.ChatResp{
-	Id:    "mock_chat_id",
-	Model: "gemini-2.5-flash",
+	Id:     "mock_chat_id",
+	Model:  "gemini-2.5-flash",
+	Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
 	Message: &v1.Message{
 		Id:   "gC8Saaa0BOmL2roP5LPX4Q4",
 		Role: v1.Role_MODEL,
@@ -387,8 +388,9 @@ var mockStreamChatResp = []*entity.ChatResp{
 		},
 	},
 	{
-		Id:    "mock_chat_id",
-		Model: "gemini-2.5-flash",
+		Id:     "mock_chat_id",
+		Model:  "gemini-2.5-flash",
+		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
 		Message: &v1.Message{
 			Id:   "HTESab3lIJWe0-kP6_Wh4Ao",
 			Role: v1.Role_MODEL,

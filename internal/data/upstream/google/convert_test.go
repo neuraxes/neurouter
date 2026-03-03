@@ -18,10 +18,12 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/genai"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/conf"
 )
 
 func TestConvertFunctionParametersToGoogle(t *testing.T) {
@@ -340,6 +342,100 @@ func TestConvertMessageToGoogle(t *testing.T) {
 		So(result.Role, ShouldEqual, "model")
 		So(result.Parts, ShouldHaveLength, 1)
 		So(result.Parts[0].Text, ShouldEqual, "model")
+	})
+}
+
+func TestConvertSystemInstructionToGoogle(t *testing.T) {
+	Convey("Given an upstream with SystemAsUser=true", t, func() {
+		r := &upstream{
+			config: &conf.GoogleConfig{SystemAsUser: true},
+			log:    log.NewHelper(log.DefaultLogger),
+		}
+		messages := []*v1.Message{
+			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "sys"}}}},
+		}
+		result := r.convertSystemInstructionToGoogle(messages)
+		So(result, ShouldBeNil)
+	})
+
+	Convey("Given an upstream with SystemAsUser=false and system messages", t, func() {
+		r := &upstream{
+			config: &conf.GoogleConfig{SystemAsUser: false},
+			log:    log.NewHelper(log.DefaultLogger),
+		}
+		messages := []*v1.Message{
+			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "sys prompt"}}}},
+			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "hi"}}}},
+		}
+		result := r.convertSystemInstructionToGoogle(messages)
+		So(result, ShouldNotBeNil)
+		So(result.Parts, ShouldHaveLength, 1)
+		So(result.Parts[0].Text, ShouldEqual, "sys prompt")
+	})
+
+	Convey("Given an upstream with SystemAsUser=false and no system messages", t, func() {
+		r := &upstream{
+			config: &conf.GoogleConfig{SystemAsUser: false},
+			log:    log.NewHelper(log.DefaultLogger),
+		}
+		messages := []*v1.Message{
+			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "hi"}}}},
+		}
+		result := r.convertSystemInstructionToGoogle(messages)
+		So(result, ShouldBeNil)
+	})
+}
+
+func TestConvertStatusFromGoogle(t *testing.T) {
+	Convey("Given various Google finish reasons without function calls", t, func() {
+		So(convertStatusFromGoogle(genai.FinishReasonStop, nil), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
+		So(convertStatusFromGoogle(genai.FinishReasonMaxTokens, nil), ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
+		So(convertStatusFromGoogle(genai.FinishReasonSafety, nil), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
+		So(convertStatusFromGoogle(genai.FinishReasonBlocklist, nil), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
+		So(convertStatusFromGoogle(genai.FinishReasonProhibitedContent, nil), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
+		So(convertStatusFromGoogle(genai.FinishReasonSPII, nil), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
+		So(convertStatusFromGoogle(genai.FinishReasonRecitation, nil), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+		So(convertStatusFromGoogle(genai.FinishReasonUnspecified, nil), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+		So(convertStatusFromGoogle(genai.FinishReason(""), nil), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+		So(convertStatusFromGoogle(genai.FinishReason("unknown"), nil), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+	})
+
+	Convey("Given STOP finish reason with function call in content", t, func() {
+		content := &genai.Content{
+			Parts: []*genai.Part{
+				{
+					FunctionCall: &genai.FunctionCall{
+						Name: "get_weather",
+						Args: map[string]any{"city": "Shanghai"},
+					},
+				},
+			},
+		}
+		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_PENDING_TOOL_USE)
+	})
+
+	Convey("Given STOP finish reason with text content only", t, func() {
+		content := &genai.Content{
+			Parts: []*genai.Part{
+				{Text: "Hello world"},
+			},
+		}
+		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
+	})
+
+	Convey("Given STOP finish reason with mixed content including function call", t, func() {
+		content := &genai.Content{
+			Parts: []*genai.Part{
+				{Text: "Let me check the weather for you."},
+				{
+					FunctionCall: &genai.FunctionCall{
+						Name: "get_weather",
+						Args: map[string]any{"city": "Beijing"},
+					},
+				},
+			},
+		}
+		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_PENDING_TOOL_USE)
 	})
 }
 
