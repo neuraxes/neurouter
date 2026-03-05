@@ -191,108 +191,68 @@ func convertChatReqFromOpenAI(req *openai.ChatCompletionRequest) *v1.ChatReq {
 	}
 }
 
+// convertStatusToOpenAI maps internal chat status to OpenAI finish reason.
+func convertStatusToOpenAI(status v1.ChatStatus) openai.FinishReason {
+	switch status {
+	case v1.ChatStatus_CHAT_COMPLETED:
+		return openai.FinishReasonStop
+	case v1.ChatStatus_CHAT_REFUSED:
+		return openai.FinishReasonContentFilter
+	case v1.ChatStatus_CHAT_PENDING_TOOL_USE:
+		return openai.FinishReasonToolCalls
+	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
+		return openai.FinishReasonLength
+	default:
+		return ""
+	}
+}
+
 // convertChatRespToOpenAI converts a chat completion response from Router API to OpenAI API
 func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
 	openAIResp := &openai.ChatCompletionResponse{
-		ID: resp.Message.Id,
+		ID:     resp.Id,
+		Object: "chat.completion",
+		Model:  resp.Model,
 	}
 
 	if resp.Message != nil {
-		// If the message contains only ToolResult contents, map them to OpenAI 'tool' messages
-		if len(resp.Message.Contents) > 0 {
-			var toolResults []*v1.ToolResult
-			hasNonToolResult := false
-			for _, content := range resp.Message.Contents {
-				switch c := content.Content.(type) {
-				case *v1.Content_ToolResult:
-					toolResults = append(toolResults, c.ToolResult)
-				case *v1.Content_Text, *v1.Content_Image, *v1.Content_ToolUse:
-					hasNonToolResult = true
-				}
-			}
-
-			// If only ToolResults exist, return tool messages (one choice per tool result)
-			if len(toolResults) > 0 && !hasNonToolResult {
-				choices := make([]openai.ChatCompletionChoice, 0, len(toolResults))
-				for idx, tr := range toolResults {
-					msg := openai.ChatCompletionMessage{
-						Role:       openai.ChatMessageRoleTool,
-						ToolCallID: tr.Id,
-					}
-
-					// Build content from outputs
-					if len(tr.Outputs) == 1 {
-						msg.Content = tr.GetTextualOutput()
-					} else if len(tr.Outputs) > 1 {
-						var parts []openai.ChatMessagePart
-						for _, out := range tr.Outputs {
-							switch o := out.Output.(type) {
-							case *v1.ToolResult_Output_Text:
-								parts = append(parts, openai.ChatMessagePart{
-									Type: openai.ChatMessagePartTypeText,
-									Text: o.Text,
-								})
-							}
-						}
-						msg.MultiContent = parts
-					}
-
-					choices = append(choices, openai.ChatCompletionChoice{Index: idx, Message: msg})
-				}
-				openAIResp.Choices = choices
-				return openAIResp
-			}
-		}
-
-		// Default: build assistant message with text/image/tool calls
 		message := openai.ChatCompletionMessage{Role: openai.ChatMessageRoleAssistant}
-		if len(resp.Message.Contents) > 0 {
-			if len(resp.Message.Contents) == 1 && resp.Message.Contents[0].GetText() != "" {
-				message.Content = resp.Message.Contents[0].GetText()
-			} else {
-				var multiContent []openai.ChatMessagePart
-				var toolCalls []openai.ToolCall
-				for _, content := range resp.Message.Contents {
-					switch c := content.Content.(type) {
-					case *v1.Content_Text:
-						multiContent = append(multiContent, openai.ChatMessagePart{
-							Type: openai.ChatMessagePartTypeText,
-							Text: c.Text,
-						})
-					case *v1.Content_Image:
-						multiContent = append(multiContent, openai.ChatMessagePart{
-							Type: openai.ChatMessagePartTypeImageURL,
-							ImageURL: &openai.ChatMessageImageURL{
-								URL: c.Image.GetUrl(),
-							},
-						})
-					case *v1.Content_ToolUse:
-						f := c.ToolUse
-						toolCalls = append(toolCalls, openai.ToolCall{
-							ID:   f.Id,
-							Type: openai.ToolTypeFunction,
-							Function: openai.FunctionCall{
-								Name:      f.Name,
-								Arguments: f.GetTextualInput(),
-							},
-						})
-					}
+
+		for _, content := range resp.Message.Contents {
+			switch c := content.Content.(type) {
+			case *v1.Content_Text:
+				if content.Reasoning {
+					message.ReasoningContent = c.Text
+				} else {
+					message.Content += c.Text
 				}
-				message.MultiContent = multiContent
-				message.ToolCalls = toolCalls
+			case *v1.Content_ToolUse:
+				message.ToolCalls = append(message.ToolCalls, openai.ToolCall{
+					ID:   c.ToolUse.Id,
+					Type: openai.ToolTypeFunction,
+					Function: openai.FunctionCall{
+						Name:      c.ToolUse.Name,
+						Arguments: c.ToolUse.GetTextualInput(),
+					},
+				})
 			}
 		}
 
 		openAIResp.Choices = []openai.ChatCompletionChoice{
 			{
-				Message: message,
+				Message:      message,
+				FinishReason: convertStatusToOpenAI(resp.Status),
 			},
 		}
 	}
 
-	if resp.Statistics != nil {
+	if resp.Statistics != nil && resp.Statistics.Usage != nil {
 		openAIResp.Usage.PromptTokens = int(resp.Statistics.Usage.InputTokens)
 		openAIResp.Usage.CompletionTokens = int(resp.Statistics.Usage.OutputTokens)
+		openAIResp.Usage.TotalTokens = openAIResp.Usage.PromptTokens + openAIResp.Usage.CompletionTokens
+		openAIResp.Usage.PromptTokensDetails = &openai.PromptTokensDetails{
+			CachedTokens: int(resp.Statistics.Usage.CachedInputTokens),
+		}
 	}
 
 	return openAIResp
@@ -327,6 +287,7 @@ func convertEmbeddingReqFromOpenAI(req *openai.EmbeddingRequest) *v1.EmbedReq {
 func convertEmbeddingRespToOpenAI(resp *v1.EmbedResp) *openai.EmbeddingResponse {
 	return &openai.EmbeddingResponse{
 		Object: "list",
+		Model:  openai.EmbeddingModel(resp.Model),
 		Data: []openai.Embedding{
 			{
 				Index:     0,

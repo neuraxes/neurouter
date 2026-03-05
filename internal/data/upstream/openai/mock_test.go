@@ -1,8 +1,6 @@
 package openai
 
 import (
-	"k8s.io/utils/ptr"
-
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
@@ -11,7 +9,7 @@ var mockChatReq = &entity.ChatReq{
 	Id:    "mock_chat_id",
 	Model: "gpt-4o-mini",
 	Config: &v1.GenerationConfig{
-		Temperature: ptr.To[float32](0),
+		Temperature: new(float32(0)),
 	},
 	Messages: []*v1.Message{
 		{
@@ -503,6 +501,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
+					Index: new(uint32(0)),
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
 							Id:   "call_CzJFKEw26rJ6McvhRnMq1Izg",
@@ -526,6 +525,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
+					Index: new(uint32(0)),
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
 							Inputs: []*v1.ToolUse_Input{
@@ -547,6 +547,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
+					Index: new(uint32(0)),
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
 							Inputs: []*v1.ToolUse_Input{
@@ -568,6 +569,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
+					Index: new(uint32(0)),
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
 							Inputs: []*v1.ToolUse_Input{

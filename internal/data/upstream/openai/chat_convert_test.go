@@ -609,7 +609,63 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 			So(param.TopP.Value, ShouldAlmostEqual, 0.9, 0.000001)
 			So(param.FrequencyPenalty.Value, ShouldEqual, 1.0)
 			So(param.PresencePenalty.Value, ShouldEqual, 1.0)
-			So(param.ResponseFormat, ShouldNotBeNil)
+			So(param.ResponseFormat.OfJSONObject, ShouldNotBeNil)
+		})
+
+		Convey("with json_schema grammar", func() {
+			req := &entity.ChatReq{
+				Model: "gpt-4",
+				Config: &v1.GenerationConfig{
+					Grammar: &v1.GenerationConfig_JsonSchema{
+						JsonSchema: `{"type":"object","properties":{"name":{"type":"string"}}}`,
+					},
+				},
+			}
+
+			param := repo.convertRequestToOpenAIChat(req)
+			So(param.ResponseFormat.OfJSONSchema, ShouldNotBeNil)
+			So(param.ResponseFormat.OfJSONSchema.JSONSchema.Name, ShouldEqual, "custom_schema")
+			schema := param.ResponseFormat.OfJSONSchema.JSONSchema.Schema.(map[string]any)
+			So(schema["type"], ShouldEqual, "object")
+		})
+
+		Convey("with schema grammar", func() {
+			req := &entity.ChatReq{
+				Model: "gpt-4",
+				Config: &v1.GenerationConfig{
+					Grammar: &v1.GenerationConfig_Schema{
+						Schema: &v1.Schema{
+							Type: v1.Schema_TYPE_OBJECT,
+							Properties: map[string]*v1.Schema{
+								"name": {Type: v1.Schema_TYPE_STRING},
+							},
+							Required: []string{"name"},
+						},
+					},
+				},
+			}
+
+			param := repo.convertRequestToOpenAIChat(req)
+			So(param.ResponseFormat.OfJSONSchema, ShouldNotBeNil)
+			So(param.ResponseFormat.OfJSONSchema.JSONSchema.Name, ShouldEqual, "custom_schema")
+			schemaMap := param.ResponseFormat.OfJSONSchema.JSONSchema.Schema.(openai.FunctionParameters)
+			So(schemaMap["type"], ShouldEqual, v1.Schema_TYPE_OBJECT)
+			So(schemaMap["required"], ShouldResemble, []string{"name"})
+		})
+
+		Convey("with gbnf grammar (ignored by OpenAI)", func() {
+			req := &entity.ChatReq{
+				Model: "gpt-4",
+				Config: &v1.GenerationConfig{
+					Grammar: &v1.GenerationConfig_GbnfGrammar{
+						GbnfGrammar: `root ::= "hello"`,
+					},
+				},
+			}
+
+			param := repo.convertRequestToOpenAIChat(req)
+			So(param.ResponseFormat.OfJSONObject, ShouldBeNil)
+			So(param.ResponseFormat.OfJSONSchema, ShouldBeNil)
 		})
 
 		Convey("with tools", func() {
@@ -689,7 +745,7 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 			msg := repo.convertMessageFromOpenAIChat(openAIMsg)
 			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
-			So(msg.Contents[0].GetText(), ShouldEqual, "Hello world")
+			So(msg.Contents[0].GetText(), ShouldEqual, " Hello world ")
 		})
 
 		Convey("with tool calls", func() {
@@ -788,8 +844,9 @@ func TestConvertChunkFromOpenAIChat(t *testing.T) {
 						Delta: openai.ChatCompletionChunkChoiceDelta{
 							ToolCalls: []openai.ChatCompletionChunkChoiceDeltaToolCall{
 								{
-									ID:   "tool-1",
-									Type: "function",
+									Index: 1,
+									ID:    "tool-1",
+									Type:  "function",
 									Function: openai.ChatCompletionChunkChoiceDeltaToolCallFunction{
 										Name:      "my_func",
 										Arguments: "{\"foo\":1}",
@@ -805,6 +862,8 @@ func TestConvertChunkFromOpenAIChat(t *testing.T) {
 			So(resp.Id, ShouldEqual, "chatcmpl-1")
 			So(resp.Message.Id, ShouldBeEmpty)
 			So(resp.Message.Contents, ShouldHaveLength, 1)
+			So(resp.Message.Contents[0].Index, ShouldNotBeNil)
+			So(*resp.Message.Contents[0].Index, ShouldEqual, 1)
 			functionCall := resp.Message.Contents[0].GetToolUse()
 			So(functionCall.GetId(), ShouldEqual, "tool-1")
 			So(functionCall.GetName(), ShouldEqual, "my_func")

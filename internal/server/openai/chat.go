@@ -37,6 +37,9 @@ func (c *chatStreamServer) Context() context.Context {
 
 func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 	chunk := &openai.ChatCompletionStreamResponse{
+		ID:      resp.Id,
+		Object:  "chat.completion.chunk",
+		Model:   resp.Model,
 		Choices: []openai.ChatCompletionStreamChoice{},
 	}
 
@@ -58,24 +61,30 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 				})
 			}
 		}
-		chunk.ID = resp.Message.Id
 		chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
 			Delta: openai.ChatCompletionStreamChoiceDelta{
 				Role:      openai.ChatMessageRoleAssistant,
 				Content:   content,
 				ToolCalls: toolCalls,
 			},
+			FinishReason: convertStatusToOpenAI(resp.Status),
 		})
 	}
 
-	if resp.Statistics != nil {
+	if resp.Statistics != nil && resp.Statistics.Usage != nil {
 		chunk.Usage = &openai.Usage{
 			PromptTokens:     int(resp.Statistics.Usage.InputTokens),
 			CompletionTokens: int(resp.Statistics.Usage.OutputTokens),
+			TotalTokens:      int(resp.Statistics.Usage.InputTokens) + int(resp.Statistics.Usage.OutputTokens),
+			PromptTokensDetails: &openai.PromptTokensDetails{
+				CachedTokens: int(resp.Statistics.Usage.CachedInputTokens),
+			},
 		}
-		chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
-			FinishReason: openai.FinishReasonStop,
-		})
+		if len(chunk.Choices) == 0 {
+			chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
+				FinishReason: convertStatusToOpenAI(resp.Status),
+			})
+		}
 	}
 
 	chunkJson, err := json.Marshal(chunk)
@@ -105,11 +114,20 @@ func handleChatCompletion(httpCtx http.Context, svc v1.ChatServer) (err error) {
 	req := convertChatReqFromOpenAI(&openAIReq)
 
 	if openAIReq.Stream {
+		httpCtx.Response().Header().Set("Content-Type", "text/event-stream")
+		httpCtx.Response().Header().Set("Cache-Control", "no-cache")
+		httpCtx.Response().Header().Set("Connection", "keep-alive")
+
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-			return nil, svc.ChatStream(req.(*v1.ChatReq), &chatStreamServer{
+			err := svc.ChatStream(req.(*v1.ChatReq), &chatStreamServer{
 				ctx:     ctx,
 				httpCtx: httpCtx,
 			})
+			if err == nil {
+				httpCtx.Response().Write([]byte("data: [DONE]\n\n"))
+				httpCtx.Response().(http.Flusher).Flush()
+			}
+			return nil, err
 		})
 		_, err = m(httpCtx, req)
 	} else {

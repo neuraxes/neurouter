@@ -38,6 +38,7 @@ func handleListModels(httpCtx http.Context, svc v1.ModelServer) error {
 	for _, model := range resp.Models {
 		openaiResp.Models = append(openaiResp.Models, openai.Model{
 			ID:      model.Id,
+			Object:  "model",
 			OwnedBy: model.Owner,
 		})
 	}

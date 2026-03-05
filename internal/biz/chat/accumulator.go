@@ -27,21 +27,42 @@ func (a *ChatRespAccumulator) Accumulate(resp *v1.ChatResp) {
 
 	a.resp.Id = resp.Id
 	a.resp.Model = resp.Model
+	a.resp.Status = resp.Status
 
-	// Accumulate message content
 	a.accumulateMessage(resp.Message)
-
-	// Accumulate statistics
 	a.accumulateStatistics(resp.Statistics)
 }
 
 func (a *ChatRespAccumulator) lastContent() *v1.Content {
 	contents := a.resp.GetMessage().GetContents()
-	contentLen := len(contents)
-	if contentLen == 0 {
+	length := len(contents)
+	if length == 0 {
 		return nil
 	}
-	return contents[contentLen-1]
+	return contents[length-1]
+}
+
+func shouldMergeContent(last, current *v1.Content) bool {
+	if last == nil || current == nil {
+		return false
+	}
+
+	// Different content types should not merge
+	if reflect.TypeOf(last.Content) != reflect.TypeOf(current.Content) {
+		return false
+	}
+
+	// Reasoning and non-reasoning should not merge
+	if last.Reasoning != current.Reasoning {
+		return false
+	}
+
+	// Check if content indices are the same
+	if last.Index == nil || current.Index == nil {
+		return last.Index == nil && current.Index == nil
+	}
+
+	return *last.Index == *current.Index
 }
 
 func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
@@ -60,7 +81,7 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 	// Accumulate contents
 	for _, content := range message.Contents {
 		lastContent := a.lastContent()
-		if lastContent == nil || reflect.TypeOf(lastContent.Content) != reflect.TypeOf(content.Content) || lastContent.Reasoning != content.Reasoning {
+		if !shouldMergeContent(lastContent, content) {
 			a.resp.Message.Contents = append(a.resp.Message.Contents, content)
 			continue
 		}
@@ -76,16 +97,22 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 				a.resp.Message.Contents = append(a.resp.Message.Contents, content)
 				continue
 			}
+
 			lastFunctionCall := lastContent.Content.(*v1.Content_ToolUse)
 			lastFunctionCall.ToolUse.Id += c.ToolUse.Id
 			lastFunctionCall.ToolUse.Name += c.ToolUse.Name
 			if len(c.ToolUse.Inputs) > 0 {
+				// TODO: Merge inputs more intelligently based on input index and types
 				if len(lastFunctionCall.ToolUse.Inputs) > 0 {
 					lastFunctionCall.ToolUse.Inputs[0].Input.(*v1.ToolUse_Input_Text).Text += c.ToolUse.GetTextualInput()
 				} else {
 					lastFunctionCall.ToolUse.Inputs = append(lastFunctionCall.ToolUse.Inputs, c.ToolUse.Inputs...)
 				}
 			}
+
+		default:
+			// Types without merge logic (e.g., Image) are appended as new content
+			a.resp.Message.Contents = append(a.resp.Message.Contents, content)
 		}
 	}
 }
@@ -104,7 +131,8 @@ func (a *ChatRespAccumulator) accumulateStatistics(statistics *v1.Statistics) {
 			a.resp.Statistics.Usage = &v1.Statistics_Usage{}
 		}
 
-		a.resp.Statistics.Usage.InputTokens = statistics.Usage.InputTokens
+		a.resp.Statistics.Usage.InputTokens += statistics.Usage.InputTokens
 		a.resp.Statistics.Usage.OutputTokens += statistics.Usage.OutputTokens
+		a.resp.Statistics.Usage.CachedInputTokens += statistics.Usage.CachedInputTokens
 	}
 }

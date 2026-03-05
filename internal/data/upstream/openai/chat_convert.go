@@ -15,6 +15,7 @@
 package openai
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/google/uuid"
@@ -43,6 +44,40 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 	}
 	if config.PresencePenalty != nil {
 		req.PresencePenalty = openai.Opt(float64(*config.PresencePenalty))
+	}
+
+	// Convert grammar to OpenAI response format
+	switch g := config.Grammar.(type) {
+	case *v1.GenerationConfig_PresetGrammar:
+		if g.PresetGrammar == "json_object" {
+			req.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+				OfJSONObject: &openai.ResponseFormatJSONObjectParam{
+					Type: "json_object",
+				},
+			}
+		}
+	case *v1.GenerationConfig_JsonSchema:
+		var schema map[string]any
+		if err := json.Unmarshal([]byte(g.JsonSchema), &schema); err == nil {
+			req.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+				OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+					JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+						Name:   "custom_schema",
+						Schema: schema,
+					},
+				},
+			}
+		}
+	case *v1.GenerationConfig_Schema:
+		schemaMap := convertToolParametersToOpenAIChat(g.Schema)
+		req.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+				JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+					Name:   "custom_schema",
+					Schema: schemaMap,
+				},
+			},
+		}
 	}
 }
 
@@ -316,7 +351,7 @@ func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatComple
 	if openAIMessage.Content != "" {
 		message.Contents = append(message.Contents, &v1.Content{
 			Content: &v1.Content_Text{
-				Text: strings.TrimSpace(openAIMessage.Content),
+				Text: openAIMessage.Content,
 			},
 		})
 	}
@@ -395,9 +430,13 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 			})
 		}
 
-		// Support reasoning content from DeepSeek
+		// Support reasoning content from DeepSeek / OpenRouter
 		if msg.Delta.JSON.ExtraFields != nil {
-			if reasoning, ok := msg.Delta.JSON.ExtraFields["reasoning_content"]; ok {
+			reasoning, ok := msg.Delta.JSON.ExtraFields["reasoning_content"] // DeepSeek
+			if !ok {
+				reasoning, ok = msg.Delta.JSON.ExtraFields["reasoning"] // OpenRouter
+			}
+			if ok {
 				rc := gjson.Parse(reasoning.Raw()).String()
 				if rc != "" {
 					contents = append(contents, &v1.Content{
@@ -412,6 +451,7 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 
 		for _, toolCall := range msg.Delta.ToolCalls {
 			contents = append(contents, &v1.Content{
+				Index: new(uint32(toolCall.Index)),
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
 						Id:   toolCall.ID,
