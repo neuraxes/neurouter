@@ -88,6 +88,8 @@ message Model {
   repeated Capability capabilities = 7;
   // Scheduling configs for this model.
   ModelScheduling scheduling = 8;
+  // The context length (max tokens) supported by the model.
+  uint32 context_length = 9;
 }
 
 message NeurouterConfig {

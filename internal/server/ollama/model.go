@@ -74,6 +74,11 @@ func handleShowModel(ctx http.Context, svc v1.ModelServer) error {
 				ModelInfo: map[string]any{},
 			}
 
+			if contextLength := uint64(model.ContextLength); contextLength != 0 {
+				detail.ModelInfo["general.architecture"] = "general"
+				detail.ModelInfo["general.context_length"] = contextLength
+			}
+
 			for _, c := range model.Capabilities {
 				switch c {
 				case v1.Capability_CAPABILITY_EMBEDDING:

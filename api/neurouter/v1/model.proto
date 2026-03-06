@@ -42,6 +42,8 @@ message ModelSpec {
   repeated Modality modalities = 5;
   // The capabilities of the model.
   repeated Capability capabilities = 6;
+  // The context length (max tokens) supported by the model.
+  uint32 context_length = 7;
 }
 
 message ListModelReq {

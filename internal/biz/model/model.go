@@ -138,12 +138,13 @@ func (uc *UseCaseImpl) ListAvailableModels(ctx context.Context) ([]*entity.Model
 		}
 
 		models = append(models, &entity.ModelSpec{
-			Id:           m.config.Id,
-			Name:         m.config.Name,
-			Owner:        m.config.Owner,
-			Provider:     m.config.Provider,
-			Modalities:   modalities,
-			Capabilities: capabilities,
+			Id:            m.config.Id,
+			Name:          m.config.Name,
+			Owner:         m.config.Owner,
+			Provider:      m.config.Provider,
+			Modalities:    modalities,
+			Capabilities:  capabilities,
+			ContextLength: m.config.ContextLength,
 		})
 	}
 
