@@ -83,14 +83,14 @@ func (r *upstream) convertSystemToAnthropic(messages []*v1.Message) []anthropic.
 			case *v1.Content_Text:
 				parts = append(parts, anthropic.TextBlockParam{Text: c.Text})
 			default:
-				r.log.Errorf("unsupport content: %v", c)
+				r.log.Errorf("unsupported content: %v", c)
 			}
 		}
 	}
 	return parts
 }
 
-// convertMessageToAnthropic converts a newurouter message to Anthropic format.
+// convertMessageToAnthropic converts a neurouter message to Anthropic format.
 func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.MessageParam {
 	var parts []anthropic.ContentBlockParamUnion
 	for _, content := range message.Contents {
@@ -174,7 +174,7 @@ func (r *upstream) convertInputSchemaToAnthropic(params *v1.Schema) (schema anth
 	return
 }
 
-// convertRequestToAnthropic converts a newurouter request to Anthropic format.
+// convertRequestToAnthropic converts a neurouter request to Anthropic format.
 func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.MessageNewParams {
 	params := anthropic.MessageNewParams{
 		Model: anthropic.Model(req.Model),
@@ -207,7 +207,7 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 				}
 				tools = append(tools, anthropic.ToolUnionParam{OfTool: at})
 			default:
-				r.log.Errorf("unsupport tool: %v", t)
+				r.log.Errorf("unsupported tool: %v", t)
 			}
 		}
 		params.Tools = tools

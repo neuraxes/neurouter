@@ -15,12 +15,38 @@
 package openai
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"strings"
 
 	"github.com/sashabaranov/go-openai"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
+
+func convertImageFromOpenAIURL(u string) *v1.Image {
+	img := &v1.Image{}
+
+	// data:<mime>;base64,<data>
+	if strings.HasPrefix(u, "data:") {
+		meta, data, ok := strings.Cut(u[len("data:"):], ",")
+		if ok {
+			if mime, _, _ := strings.Cut(meta, ";"); mime != "" {
+				img.MimeType = mime
+			}
+
+			if strings.HasSuffix(meta, ";base64") {
+				if b, err := base64.StdEncoding.DecodeString(data); err == nil {
+					img.Source = &v1.Image_Data{Data: b}
+					return img
+				}
+			}
+		}
+	}
+
+	img.Source = &v1.Image_Url{Url: u}
+	return img
+}
 
 func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Message {
 	var role v1.Role
@@ -86,11 +112,7 @@ func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Mes
 				case openai.ChatMessagePartTypeImageURL:
 					contents = append(contents, &v1.Content{
 						Content: &v1.Content_Image{
-							Image: &v1.Image{
-								Source: &v1.Image_Url{
-									Url: content.ImageURL.URL,
-								},
-							},
+							Image: convertImageFromOpenAIURL(content.ImageURL.URL),
 						},
 					})
 				}

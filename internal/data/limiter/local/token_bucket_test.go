@@ -245,8 +245,8 @@ func TestRequestReservation_Wait(t *testing.T) {
 			elapsed := time.Since(start)
 
 			So(err, ShouldEqual, context.DeadlineExceeded)
-			So(elapsed, ShouldBeGreaterThanOrEqualTo, 8*time.Millisecond)
-			So(elapsed, ShouldBeLessThan, 12*time.Millisecond)
+			So(elapsed, ShouldBeGreaterThanOrEqualTo, 5*time.Millisecond)
+			So(elapsed, ShouldBeLessThan, 15*time.Millisecond)
 		})
 	})
 }

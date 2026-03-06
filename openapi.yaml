@@ -298,6 +298,10 @@ components:
                         type: integer
                         format: enum
                     description: The capabilities of the model.
+                contextLength:
+                    type: integer
+                    description: The context length (max tokens) supported by the model.
+                    format: uint32
         neurouter.v1.Statistics:
             type: object
             properties:

@@ -79,6 +79,13 @@ func handleShowModel(ctx http.Context, svc v1.ModelServer) error {
 				detail.ModelInfo["general.context_length"] = contextLength
 			}
 
+			for _, m := range model.Modalities {
+				switch m {
+				case v1.Modality_MODALITY_IMAGE:
+					detail.Capabilities = append(detail.Capabilities, "vision")
+				}
+			}
+
 			for _, c := range model.Capabilities {
 				switch c {
 				case v1.Capability_CAPABILITY_EMBEDDING:
