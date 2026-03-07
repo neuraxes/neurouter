@@ -23,7 +23,7 @@ import (
 
 type Model interface {
 	ChatRepo() repository.ChatRepo
-	RecordUsage(stats *v1.Statistics)
+	RecordUsage(ctx context.Context, stats *v1.Statistics)
 	Close()
 }
 

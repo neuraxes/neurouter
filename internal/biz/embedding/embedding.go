@@ -53,6 +53,6 @@ func (uc *useCase) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entit
 	}
 
 	// TODO: record the actual token usage
-	model.RecordUsage(0)
+	model.RecordUsage(ctx, 0)
 	return
 }

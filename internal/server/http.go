@@ -19,6 +19,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -51,6 +52,9 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	openai.RegisterOpenAIHTTPServer(srv, svc, svc, svc)
 	ollama.RegisterOllamaHTTPServer(srv, svc, svc)
 	anthropic.RegisterAnthropicHTTPServer(srv, svc)
+
+	// Register /metrics endpoint directly on mux, bypassing Kratos middleware (including JWT)
+	srv.Handle("/metrics", promhttp.Handler())
 
 	if j := jwtAuth(); j != nil {
 		srv.Use("/*", j)

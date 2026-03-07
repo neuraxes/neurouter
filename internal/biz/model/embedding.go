@@ -18,11 +18,20 @@ type embeddingModel struct {
 
 func (m *embeddingModel) EmbeddingRepo() repository.EmbeddingRepo { return m.embeddingRepo }
 
-func (m *embeddingModel) RecordUsage(actualTokens int64) {
+func (m *embeddingModel) RecordUsage(ctx context.Context, actualTokens int64) {
 	// If upstream doesn't provide usage info, fall back to estimated tokens
 	if actualTokens == 0 {
 		actualTokens = m.estimatedTokens
 	}
+
+	m.metrics.recordTokenUsage(
+		ctx,
+		m.upstreamConfig.Name,
+		m.config.Id,
+		actualTokens, 0, 0,
+	)
+	m.metrics.recordRequest(ctx, m.upstreamConfig.Name, m.config.Id)
+
 	// Complete reservations with actual token usage
 	m.reservations.complete(actualTokens)
 }

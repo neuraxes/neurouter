@@ -19,6 +19,7 @@ import (
 	"sync/atomic"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"go.opentelemetry.io/otel/metric"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -35,16 +36,18 @@ type model struct {
 	upstreamConfig    *conf.UpstreamConfig
 	chatRepo          repository.ChatRepo
 	embeddingRepo     repository.EmbeddingRepo
-	inputTokens       atomic.Uint64
-	outputTokens      atomic.Uint64
-	cachedInputTokens atomic.Uint64
+	inputTokens       atomic.Int64
+	outputTokens      atomic.Int64
+	cachedInputTokens atomic.Int64
 	upstreamLimiters  *limiterGroup // shared across models in same upstream
 	modelLimiters     *limiterGroup // specific to this model
+	metrics           *metrics
 }
 
 type UseCaseImpl struct {
-	models []*model
-	log    *log.Helper
+	models  []*model
+	metrics *metrics
+	log     *log.Helper
 }
 
 func NewModelUseCase(
@@ -53,9 +56,15 @@ func NewModelUseCase(
 	googleFactory repository.UpstreamFactory[conf.GoogleConfig],
 	neurouterFactory repository.UpstreamFactory[conf.NeurouterConfig],
 	openAIFactory repository.UpstreamFactory[conf.OpenAIConfig],
+	meterProvider metric.MeterProvider,
 	logger log.Logger,
 ) *UseCaseImpl {
 	logHelper := log.NewHelper(logger)
+	metrics, err := newMetrics(meterProvider)
+	if err != nil {
+		logHelper.Errorf("failed to create metrics: %v", err)
+	}
+
 	var models []*model
 
 	if c != nil {
@@ -112,14 +121,16 @@ func NewModelUseCase(
 					embeddingRepo:    embeddingRepo,
 					upstreamLimiters: upstreamLimiters,
 					modelLimiters:    modelLimiters,
+					metrics:          metrics,
 				})
 			}
 		}
 	}
 
 	return &UseCaseImpl{
-		models: models,
-		log:    log.NewHelper(logger),
+		models:  models,
+		metrics: metrics,
+		log:     logHelper,
 	}
 }
 

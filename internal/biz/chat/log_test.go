@@ -89,7 +89,7 @@ func TestPrintChat(t *testing.T) {
 							Description: "Get the weather",
 							Parameters: &v1.Schema{
 								Properties: map[string]*v1.Schema{
-									"location": &v1.Schema{
+									"location": {
 										Type: v1.Schema_TYPE_STRING,
 									},
 								},

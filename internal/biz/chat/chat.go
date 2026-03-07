@@ -53,7 +53,7 @@ func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatReq) (resp *ent
 		return
 	}
 
-	model.RecordUsage(resp.Statistics)
+	model.RecordUsage(ctx, resp.Statistics)
 	uc.printChat(req, resp)
 	return
 }
@@ -83,7 +83,7 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, serv
 	}
 
 	finalResp := accumulator.Resp()
-	model.RecordUsage(finalResp.Statistics)
+	model.RecordUsage(ctx, finalResp.Statistics)
 	uc.printChat(req, finalResp)
 	return nil
 }

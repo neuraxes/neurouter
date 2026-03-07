@@ -23,7 +23,7 @@ import (
 
 type Model interface {
 	EmbeddingRepo() repository.EmbeddingRepo
-	RecordUsage(actualTokens int64)
+	RecordUsage(ctx context.Context, actualTokens int64)
 	Close()
 }
 

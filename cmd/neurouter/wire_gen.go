@@ -33,7 +33,11 @@ func wireApp(confServer *conf.Server, data *conf.Data, upstream *conf.Upstream, 
 	repositoryUpstreamFactory := google.NewGoogleFactory()
 	upstreamFactory2 := neurouter.NewNeurouterFactory()
 	upstreamFactory3 := openai.NewOpenAIFactory()
-	useCaseImpl := model.NewModelUseCase(upstream, upstreamFactory, repositoryUpstreamFactory, upstreamFactory2, upstreamFactory3, logger)
+	meterProvider, cleanup, err := server.NewMeterProvider()
+	if err != nil {
+		return nil, nil, err
+	}
+	useCaseImpl := model.NewModelUseCase(upstream, upstreamFactory, repositoryUpstreamFactory, upstreamFactory2, upstreamFactory3, meterProvider, logger)
 	useCase := chat.NewChatUseCase(useCaseImpl, logger)
 	embeddingUseCase := embedding.NewUseCase(useCaseImpl, logger)
 	routerService := service.NewRouterService(useCase, useCaseImpl, embeddingUseCase, logger)
@@ -41,5 +45,6 @@ func wireApp(confServer *conf.Server, data *conf.Data, upstream *conf.Upstream, 
 	httpServer := server.NewHTTPServer(confServer, routerService, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
+		cleanup()
 	}, nil
 }
