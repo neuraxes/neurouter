@@ -649,11 +649,12 @@ type OpenAIConfig struct {
 	state                           protoimpl.MessageState `protogen:"open.v1"`
 	ApiKey                          string                 `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
 	BaseUrl                         string                 `protobuf:"bytes,2,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
-	PreferStringContentForSystem    bool                   `protobuf:"varint,3,opt,name=prefer_string_content_for_system,json=preferStringContentForSystem,proto3" json:"prefer_string_content_for_system,omitempty"`
-	PreferStringContentForUser      bool                   `protobuf:"varint,4,opt,name=prefer_string_content_for_user,json=preferStringContentForUser,proto3" json:"prefer_string_content_for_user,omitempty"`
-	PreferStringContentForAssistant bool                   `protobuf:"varint,5,opt,name=prefer_string_content_for_assistant,json=preferStringContentForAssistant,proto3" json:"prefer_string_content_for_assistant,omitempty"`
-	PreferStringContentForTool      bool                   `protobuf:"varint,6,opt,name=prefer_string_content_for_tool,json=preferStringContentForTool,proto3" json:"prefer_string_content_for_tool,omitempty"`
-	PreferSinglePartContent         bool                   `protobuf:"varint,7,opt,name=prefer_single_part_content,json=preferSinglePartContent,proto3" json:"prefer_single_part_content,omitempty"`
+	Headers                         map[string]string      `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PreferStringContentForSystem    bool                   `protobuf:"varint,4,opt,name=prefer_string_content_for_system,json=preferStringContentForSystem,proto3" json:"prefer_string_content_for_system,omitempty"`
+	PreferStringContentForUser      bool                   `protobuf:"varint,5,opt,name=prefer_string_content_for_user,json=preferStringContentForUser,proto3" json:"prefer_string_content_for_user,omitempty"`
+	PreferStringContentForAssistant bool                   `protobuf:"varint,6,opt,name=prefer_string_content_for_assistant,json=preferStringContentForAssistant,proto3" json:"prefer_string_content_for_assistant,omitempty"`
+	PreferStringContentForTool      bool                   `protobuf:"varint,7,opt,name=prefer_string_content_for_tool,json=preferStringContentForTool,proto3" json:"prefer_string_content_for_tool,omitempty"`
+	PreferSinglePartContent         bool                   `protobuf:"varint,8,opt,name=prefer_single_part_content,json=preferSinglePartContent,proto3" json:"prefer_single_part_content,omitempty"`
 	unknownFields                   protoimpl.UnknownFields
 	sizeCache                       protoimpl.SizeCache
 }
@@ -700,6 +701,13 @@ func (x *OpenAIConfig) GetBaseUrl() string {
 		return x.BaseUrl
 	}
 	return ""
+}
+
+func (x *OpenAIConfig) GetHeaders() map[string]string {
+	if x != nil {
+		return x.Headers
+	}
+	return nil
 }
 
 func (x *OpenAIConfig) GetPreferStringContentForSystem() bool {
@@ -795,8 +803,9 @@ type AnthropicConfig struct {
 	ApiKey    string                 `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
 	AuthToken string                 `protobuf:"bytes,2,opt,name=auth_token,json=authToken,proto3" json:"auth_token,omitempty"`
 	BaseUrl   string                 `protobuf:"bytes,3,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
+	Headers   map[string]string      `protobuf:"bytes,4,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Whether to put the system prompt into messages (as user message)
-	SystemAsUser  bool `protobuf:"varint,4,opt,name=system_as_user,json=systemAsUser,proto3" json:"system_as_user,omitempty"`
+	SystemAsUser  bool `protobuf:"varint,5,opt,name=system_as_user,json=systemAsUser,proto3" json:"system_as_user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -852,6 +861,13 @@ func (x *AnthropicConfig) GetBaseUrl() string {
 	return ""
 }
 
+func (x *AnthropicConfig) GetHeaders() map[string]string {
+	if x != nil {
+		return x.Headers
+	}
+	return nil
+}
+
 func (x *AnthropicConfig) GetSystemAsUser() bool {
 	if x != nil {
 		return x.SystemAsUser
@@ -905,24 +921,32 @@ const file_conf_upstream_proto_rawDesc = "" +
 	"scheduling\x12%\n" +
 	"\x0econtext_length\x18\t \x01(\rR\rcontextLength\"-\n" +
 	"\x0fNeurouterConfig\x12\x1a\n" +
-	"\bendpoint\x18\x01 \x01(\tR\bendpoint\"\x9d\x03\n" +
+	"\bendpoint\x18\x01 \x01(\tR\bendpoint\"\xa3\x04\n" +
 	"\fOpenAIConfig\x12\x17\n" +
 	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x19\n" +
-	"\bbase_url\x18\x02 \x01(\tR\abaseUrl\x12F\n" +
-	" prefer_string_content_for_system\x18\x03 \x01(\bR\x1cpreferStringContentForSystem\x12B\n" +
-	"\x1eprefer_string_content_for_user\x18\x04 \x01(\bR\x1apreferStringContentForUser\x12L\n" +
-	"#prefer_string_content_for_assistant\x18\x05 \x01(\bR\x1fpreferStringContentForAssistant\x12B\n" +
-	"\x1eprefer_string_content_for_tool\x18\x06 \x01(\bR\x1apreferStringContentForTool\x12;\n" +
-	"\x1aprefer_single_part_content\x18\a \x01(\bR\x17preferSinglePartContent\"M\n" +
+	"\bbase_url\x18\x02 \x01(\tR\abaseUrl\x12H\n" +
+	"\aheaders\x18\x03 \x03(\v2..neurouter.config.v1.OpenAIConfig.HeadersEntryR\aheaders\x12F\n" +
+	" prefer_string_content_for_system\x18\x04 \x01(\bR\x1cpreferStringContentForSystem\x12B\n" +
+	"\x1eprefer_string_content_for_user\x18\x05 \x01(\bR\x1apreferStringContentForUser\x12L\n" +
+	"#prefer_string_content_for_assistant\x18\x06 \x01(\bR\x1fpreferStringContentForAssistant\x12B\n" +
+	"\x1eprefer_string_content_for_tool\x18\a \x01(\bR\x1apreferStringContentForTool\x12;\n" +
+	"\x1aprefer_single_part_content\x18\b \x01(\bR\x17preferSinglePartContent\x1a:\n" +
+	"\fHeadersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"M\n" +
 	"\fGoogleConfig\x12\x17\n" +
 	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12$\n" +
-	"\x0esystem_as_user\x18\x02 \x01(\bR\fsystemAsUser\"\x8a\x01\n" +
+	"\x0esystem_as_user\x18\x02 \x01(\bR\fsystemAsUser\"\x93\x02\n" +
 	"\x0fAnthropicConfig\x12\x17\n" +
 	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x1d\n" +
 	"\n" +
 	"auth_token\x18\x02 \x01(\tR\tauthToken\x12\x19\n" +
-	"\bbase_url\x18\x03 \x01(\tR\abaseUrl\x12$\n" +
-	"\x0esystem_as_user\x18\x04 \x01(\bR\fsystemAsUser*s\n" +
+	"\bbase_url\x18\x03 \x01(\tR\abaseUrl\x12K\n" +
+	"\aheaders\x18\x04 \x03(\v21.neurouter.config.v1.AnthropicConfig.HeadersEntryR\aheaders\x12$\n" +
+	"\x0esystem_as_user\x18\x05 \x01(\bR\fsystemAsUser\x1a:\n" +
+	"\fHeadersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*s\n" +
 	"\bModality\x12\x18\n" +
 	"\x14MODALITY_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rMODALITY_TEXT\x10\x01\x12\x12\n" +
@@ -950,7 +974,7 @@ func file_conf_upstream_proto_rawDescGZIP() []byte {
 }
 
 var file_conf_upstream_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_conf_upstream_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_conf_upstream_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_conf_upstream_proto_goTypes = []any{
 	(Modality)(0),              // 0: neurouter.config.v1.Modality
 	(Capability)(0),            // 1: neurouter.config.v1.Capability
@@ -963,6 +987,8 @@ var file_conf_upstream_proto_goTypes = []any{
 	(*OpenAIConfig)(nil),       // 8: neurouter.config.v1.OpenAIConfig
 	(*GoogleConfig)(nil),       // 9: neurouter.config.v1.GoogleConfig
 	(*AnthropicConfig)(nil),    // 10: neurouter.config.v1.AnthropicConfig
+	nil,                        // 11: neurouter.config.v1.OpenAIConfig.HeadersEntry
+	nil,                        // 12: neurouter.config.v1.AnthropicConfig.HeadersEntry
 }
 var file_conf_upstream_proto_depIdxs = []int32{
 	4,  // 0: neurouter.config.v1.Upstream.configs:type_name -> neurouter.config.v1.UpstreamConfig
@@ -975,11 +1001,13 @@ var file_conf_upstream_proto_depIdxs = []int32{
 	0,  // 7: neurouter.config.v1.Model.modalities:type_name -> neurouter.config.v1.Modality
 	1,  // 8: neurouter.config.v1.Model.capabilities:type_name -> neurouter.config.v1.Capability
 	5,  // 9: neurouter.config.v1.Model.scheduling:type_name -> neurouter.config.v1.ModelScheduling
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	11, // 10: neurouter.config.v1.OpenAIConfig.headers:type_name -> neurouter.config.v1.OpenAIConfig.HeadersEntry
+	12, // 11: neurouter.config.v1.AnthropicConfig.headers:type_name -> neurouter.config.v1.AnthropicConfig.HeadersEntry
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_conf_upstream_proto_init() }
@@ -999,7 +1027,7 @@ func file_conf_upstream_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_upstream_proto_rawDesc), len(file_conf_upstream_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

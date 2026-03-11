@@ -43,7 +43,7 @@ func newAnthropicUpstream(config *conf.AnthropicConfig, logger log.Logger) (repo
 }
 
 func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient option.HTTPClient, logger log.Logger) (repo repository.ChatRepo, err error) {
-	options := []option.RequestOption{}
+	var options []option.RequestOption
 	if config.ApiKey != "" {
 		options = append(options, option.WithAPIKey(config.ApiKey))
 	}
@@ -53,15 +53,16 @@ func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient opt
 	if config.BaseUrl != "" {
 		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
+	for k, v := range config.Headers {
+		options = append(options, option.WithHeader(k, v))
+	}
 	if httpClient != nil {
 		options = append(options, option.WithHTTPClient(httpClient))
 	}
 
-	client := anthropic.NewClient(options...)
-
 	repo = &upstream{
 		config: config,
-		client: &client,
+		client: new(anthropic.NewClient(options...)),
 		log:    log.NewHelper(logger),
 	}
 	return
@@ -106,8 +107,7 @@ func (c *anthropicChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
 				return
 			}
 
-			chunk := c.upstream.Current()
-			resp := c.convertChunkFromAnthropic(&chunk)
+			resp := c.convertChunkFromAnthropic(new(c.upstream.Current()))
 			if resp == nil {
 				// The chunk is ignored, jump to the next one.
 				goto next

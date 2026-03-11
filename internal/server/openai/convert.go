@@ -150,11 +150,9 @@ func convertChatReqFromOpenAI(req *openai.ChatCompletionRequest) *v1.ChatReq {
 	config := &v1.GenerationConfig{}
 
 	if req.MaxCompletionTokens != 0 {
-		maxTokens := int64(req.MaxCompletionTokens)
-		config.MaxTokens = &maxTokens
+		config.MaxTokens = new(int64(req.MaxCompletionTokens))
 	} else if req.MaxTokens != 0 {
-		maxTokens := int64(req.MaxTokens)
-		config.MaxTokens = &maxTokens
+		config.MaxTokens = new(int64(req.MaxTokens))
 	}
 	if req.Temperature != 0 {
 		config.Temperature = &req.Temperature

@@ -99,11 +99,12 @@ message NeurouterConfig {
 message OpenAIConfig {
   string api_key = 1;
   string base_url = 2;
-  bool prefer_string_content_for_system = 3;
-  bool prefer_string_content_for_user = 4;
-  bool prefer_string_content_for_assistant = 5;
-  bool prefer_string_content_for_tool = 6;
-  bool prefer_single_part_content = 7;
+  map<string, string> headers = 3;
+  bool prefer_string_content_for_system = 4;
+  bool prefer_string_content_for_user = 5;
+  bool prefer_string_content_for_assistant = 6;
+  bool prefer_string_content_for_tool = 7;
+  bool prefer_single_part_content = 8;
 }
 
 message GoogleConfig {
@@ -116,6 +117,8 @@ message AnthropicConfig {
   string api_key = 1;
   string auth_token = 2;
   string base_url = 3;
+  map<string, string> headers = 4;
   // Whether to put the system prompt into messages (as user message)
-  bool system_as_user = 4;
+  bool system_as_user = 5;
+
 }

@@ -51,15 +51,16 @@ func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, client option.HTTPCl
 	if config.BaseUrl != "" {
 		options = append(options, option.WithBaseURL(config.BaseUrl))
 	}
+	for k, v := range config.Headers {
+		options = append(options, option.WithHeader(k, v))
+	}
 	if client != nil {
 		options = append(options, option.WithHTTPClient(client))
 	}
 
-	openaiClient := openai.NewClient(options...)
-
 	repo = &upstream{
 		config: config,
-		client: &openaiClient,
+		client: new(openai.NewClient(options...)),
 		log:    log.NewHelper(logger),
 	}
 	return repo, nil
@@ -96,8 +97,7 @@ func (c *openAIChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
 				return
 			}
 
-			chunk := c.upstream.Current()
-			resp := c.convertChunkFromOpenAIChat(&chunk)
+			resp := c.convertChunkFromOpenAIChat(new(c.upstream.Current()))
 			if resp == nil {
 				goto next
 			}

@@ -169,8 +169,12 @@ func (r *upstream) convertInputSchemaToAnthropic(params *v1.Schema) (schema anth
 	if params == nil {
 		return
 	}
-	schema.Properties = params.Properties
-	schema.Required = params.Required
+	if params.Properties != nil {
+		schema.Properties = params.Properties
+	}
+	if params.Required != nil {
+		schema.Required = params.Required
+	}
 	return
 }
 
