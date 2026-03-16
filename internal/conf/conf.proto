@@ -29,9 +29,15 @@ message Bootstrap {
 
 message Server {
   message HTTP {
+    message CORS {
+      repeated string allowed_origins = 1;
+      repeated string allowed_methods = 2;
+      repeated string allowed_headers = 3;
+    }
     string network = 1;
     string addr = 2;
     google.protobuf.Duration timeout = 3;
+    CORS cors = 4;
   }
   message GRPC {
     string network = 1;

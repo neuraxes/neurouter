@@ -21,6 +21,7 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/gorilla/handlers"
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/conf"
 	"github.com/neuraxes/neurouter/internal/server/anthropic"
@@ -29,12 +30,37 @@ import (
 	"github.com/neuraxes/neurouter/internal/service"
 )
 
+func newCORSFilter(cors *conf.Server_HTTP_CORS) http.FilterFunc {
+	if cors == nil {
+		return nil
+	}
+
+	options := make([]handlers.CORSOption, 0, 3)
+	if len(cors.GetAllowedOrigins()) > 0 {
+		options = append(options, handlers.AllowedOrigins(cors.GetAllowedOrigins()))
+	}
+	if len(cors.GetAllowedMethods()) > 0 {
+		options = append(options, handlers.AllowedMethods(cors.GetAllowedMethods()))
+	}
+	if len(cors.GetAllowedHeaders()) > 0 {
+		options = append(options, handlers.AllowedHeaders(cors.GetAllowedHeaders()))
+	}
+	if len(options) == 0 {
+		return nil
+	}
+
+	return handlers.CORS(options...)
+}
+
 func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
 			logging.Server(logger),
 		),
+	}
+	if filter := newCORSFilter(c.Http.Cors); filter != nil {
+		opts = append(opts, http.Filter(filter))
 	}
 	if c.Http.Network != "" {
 		opts = append(opts, http.Network(c.Http.Network))

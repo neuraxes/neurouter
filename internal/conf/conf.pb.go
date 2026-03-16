@@ -189,6 +189,7 @@ type Server_HTTP struct {
 	Network       string                 `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"`
 	Addr          string                 `protobuf:"bytes,2,opt,name=addr,proto3" json:"addr,omitempty"`
 	Timeout       *durationpb.Duration   `protobuf:"bytes,3,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	Cors          *Server_HTTP_CORS      `protobuf:"bytes,4,opt,name=cors,proto3" json:"cors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -240,6 +241,13 @@ func (x *Server_HTTP) GetAddr() string {
 func (x *Server_HTTP) GetTimeout() *durationpb.Duration {
 	if x != nil {
 		return x.Timeout
+	}
+	return nil
+}
+
+func (x *Server_HTTP) GetCors() *Server_HTTP_CORS {
+	if x != nil {
+		return x.Cors
 	}
 	return nil
 }
@@ -304,6 +312,66 @@ func (x *Server_GRPC) GetTimeout() *durationpb.Duration {
 	return nil
 }
 
+type Server_HTTP_CORS struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	AllowedOrigins []string               `protobuf:"bytes,1,rep,name=allowed_origins,json=allowedOrigins,proto3" json:"allowed_origins,omitempty"`
+	AllowedMethods []string               `protobuf:"bytes,2,rep,name=allowed_methods,json=allowedMethods,proto3" json:"allowed_methods,omitempty"`
+	AllowedHeaders []string               `protobuf:"bytes,3,rep,name=allowed_headers,json=allowedHeaders,proto3" json:"allowed_headers,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Server_HTTP_CORS) Reset() {
+	*x = Server_HTTP_CORS{}
+	mi := &file_conf_conf_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Server_HTTP_CORS) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Server_HTTP_CORS) ProtoMessage() {}
+
+func (x *Server_HTTP_CORS) ProtoReflect() protoreflect.Message {
+	mi := &file_conf_conf_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Server_HTTP_CORS.ProtoReflect.Descriptor instead.
+func (*Server_HTTP_CORS) Descriptor() ([]byte, []int) {
+	return file_conf_conf_proto_rawDescGZIP(), []int{1, 0, 0}
+}
+
+func (x *Server_HTTP_CORS) GetAllowedOrigins() []string {
+	if x != nil {
+		return x.AllowedOrigins
+	}
+	return nil
+}
+
+func (x *Server_HTTP_CORS) GetAllowedMethods() []string {
+	if x != nil {
+		return x.AllowedMethods
+	}
+	return nil
+}
+
+func (x *Server_HTTP_CORS) GetAllowedHeaders() []string {
+	if x != nil {
+		return x.AllowedHeaders
+	}
+	return nil
+}
+
 var File_conf_conf_proto protoreflect.FileDescriptor
 
 const file_conf_conf_proto_rawDesc = "" +
@@ -312,14 +380,19 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\tBootstrap\x123\n" +
 	"\x06server\x18\x01 \x01(\v2\x1b.neurouter.config.v1.ServerR\x06server\x12-\n" +
 	"\x04data\x18\x02 \x01(\v2\x19.neurouter.config.v1.DataR\x04data\x129\n" +
-	"\bupstream\x18\x03 \x01(\v2\x1d.neurouter.config.v1.UpstreamR\bupstream\"\xca\x02\n" +
+	"\bupstream\x18\x03 \x01(\v2\x1d.neurouter.config.v1.UpstreamR\bupstream\"\x8a\x04\n" +
 	"\x06Server\x124\n" +
 	"\x04http\x18\x01 \x01(\v2 .neurouter.config.v1.Server.HTTPR\x04http\x124\n" +
-	"\x04grpc\x18\x02 \x01(\v2 .neurouter.config.v1.Server.GRPCR\x04grpc\x1ai\n" +
+	"\x04grpc\x18\x02 \x01(\v2 .neurouter.config.v1.Server.GRPCR\x04grpc\x1a\xa8\x02\n" +
 	"\x04HTTP\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x1ai\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\x129\n" +
+	"\x04cors\x18\x04 \x01(\v2%.neurouter.config.v1.Server.HTTP.CORSR\x04cors\x1a\x81\x01\n" +
+	"\x04CORS\x12'\n" +
+	"\x0fallowed_origins\x18\x01 \x03(\tR\x0eallowedOrigins\x12'\n" +
+	"\x0fallowed_methods\x18\x02 \x03(\tR\x0eallowedMethods\x12'\n" +
+	"\x0fallowed_headers\x18\x03 \x03(\tR\x0eallowedHeaders\x1ai\n" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
@@ -338,29 +411,31 @@ func file_conf_conf_proto_rawDescGZIP() []byte {
 	return file_conf_conf_proto_rawDescData
 }
 
-var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_conf_conf_proto_goTypes = []any{
 	(*Bootstrap)(nil),           // 0: neurouter.config.v1.Bootstrap
 	(*Server)(nil),              // 1: neurouter.config.v1.Server
 	(*Data)(nil),                // 2: neurouter.config.v1.Data
 	(*Server_HTTP)(nil),         // 3: neurouter.config.v1.Server.HTTP
 	(*Server_GRPC)(nil),         // 4: neurouter.config.v1.Server.GRPC
-	(*Upstream)(nil),            // 5: neurouter.config.v1.Upstream
-	(*durationpb.Duration)(nil), // 6: google.protobuf.Duration
+	(*Server_HTTP_CORS)(nil),    // 5: neurouter.config.v1.Server.HTTP.CORS
+	(*Upstream)(nil),            // 6: neurouter.config.v1.Upstream
+	(*durationpb.Duration)(nil), // 7: google.protobuf.Duration
 }
 var file_conf_conf_proto_depIdxs = []int32{
 	1, // 0: neurouter.config.v1.Bootstrap.server:type_name -> neurouter.config.v1.Server
 	2, // 1: neurouter.config.v1.Bootstrap.data:type_name -> neurouter.config.v1.Data
-	5, // 2: neurouter.config.v1.Bootstrap.upstream:type_name -> neurouter.config.v1.Upstream
+	6, // 2: neurouter.config.v1.Bootstrap.upstream:type_name -> neurouter.config.v1.Upstream
 	3, // 3: neurouter.config.v1.Server.http:type_name -> neurouter.config.v1.Server.HTTP
 	4, // 4: neurouter.config.v1.Server.grpc:type_name -> neurouter.config.v1.Server.GRPC
-	6, // 5: neurouter.config.v1.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	6, // 6: neurouter.config.v1.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	7, // 5: neurouter.config.v1.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	5, // 6: neurouter.config.v1.Server.HTTP.cors:type_name -> neurouter.config.v1.Server.HTTP.CORS
+	7, // 7: neurouter.config.v1.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_conf_conf_proto_init() }
@@ -375,7 +450,7 @@ func file_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_conf_proto_rawDesc), len(file_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

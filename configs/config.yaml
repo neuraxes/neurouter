@@ -2,6 +2,22 @@ server:
   http:
     addr: 0.0.0.0:8000
     timeout: 600s
+    cors:
+      allowed_origins:
+        - "*"
+      allowed_methods:
+        - "GET"
+        - "POST"
+      allowed_headers:
+        - "authorization"
+        - "content-type"
+        - "x-stainless-arch"
+        - "x-stainless-lang"
+        - "x-stainless-os"
+        - "x-stainless-package-version"
+        - "x-stainless-retry-count"
+        - "x-stainless-runtime"
+        - "x-stainless-runtime-version"
   grpc:
     addr: 0.0.0.0:9000
     timeout: 600s
