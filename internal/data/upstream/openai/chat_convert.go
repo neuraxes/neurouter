@@ -468,12 +468,15 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 			})
 		}
 
-		resp.Status = convertStatusFromOpenAIChat(msg.FinishReason)
+		c.status = convertStatusFromOpenAIChat(msg.FinishReason)
+		resp.Status = c.status
 		resp.Message = &v1.Message{
 			Id:       c.messageID,
 			Role:     v1.Role_MODEL,
 			Contents: contents,
 		}
+	} else {
+		resp.Status = c.status // Keep previous status
 	}
 
 	resp.Statistics = convertStatisticsFromOpenAI(&chunk.Usage)

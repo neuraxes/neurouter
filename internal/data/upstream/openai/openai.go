@@ -24,6 +24,7 @@ import (
 	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/packages/ssestream"
 
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -83,6 +84,7 @@ type openAIChatStreamClient struct {
 	req       *entity.ChatReq
 	upstream  *ssestream.Stream[openai.ChatCompletionChunk]
 	messageID string
+	status    v1.ChatStatus
 }
 
 func (c *openAIChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {

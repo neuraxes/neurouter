@@ -43,7 +43,7 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 		Choices: []openai.ChatCompletionStreamChoice{},
 	}
 
-	if resp.Message != nil && len(resp.Message.Contents) > 0 {
+	if resp.Message != nil {
 		var content string
 		var toolCalls []openai.ToolCall
 		for _, c := range resp.Message.Contents {
