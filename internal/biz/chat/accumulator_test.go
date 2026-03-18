@@ -169,6 +169,93 @@ func TestChatRespAccumulator(t *testing.T) {
 				So(resp.Message.Contents[0].GetText(), ShouldEqual, "first")
 				So(resp.Message.Contents[1].GetText(), ShouldEqual, "second")
 			})
+
+			Convey("Reasoning signature metadata is accumulated", func() {
+				acc := NewChatRespAccumulator()
+				idx := uint32(0)
+				acc.Accumulate(&v1.ChatResp{
+					Message: &v1.Message{
+						Role: v1.Role_MODEL,
+						Contents: []*v1.Content{
+							{
+								Index:     &idx,
+								Reasoning: true,
+								Content:   &v1.Content_Text{Text: "think-"},
+							},
+						},
+					},
+				})
+				acc.Accumulate(&v1.ChatResp{
+					Message: &v1.Message{
+						Role: v1.Role_MODEL,
+						Contents: []*v1.Content{
+							{
+								Index:     &idx,
+								Reasoning: true,
+								Metadata: map[string]string{
+									"signature": "sig-",
+								},
+								Content: &v1.Content_Text{Text: "ing"},
+							},
+						},
+					},
+				})
+				acc.Accumulate(&v1.ChatResp{
+					Message: &v1.Message{
+						Role: v1.Role_MODEL,
+						Contents: []*v1.Content{
+							{
+								Index:     &idx,
+								Reasoning: true,
+								Metadata: map[string]string{
+									"signature": "nature",
+								},
+								Content: &v1.Content_Text{Text: "-done"},
+							},
+						},
+					},
+				})
+
+				resp := acc.Resp()
+				So(len(resp.Message.Contents), ShouldEqual, 1)
+				So(resp.Message.Contents[0].GetText(), ShouldEqual, "think-ing-done")
+				So(resp.Message.Contents[0].Metadata["signature"], ShouldEqual, "sig-nature")
+			})
+
+			Convey("Text metadata key is initialized when missing", func() {
+				acc := NewChatRespAccumulator()
+				idx := uint32(1)
+				acc.Accumulate(&v1.ChatResp{
+					Message: &v1.Message{
+						Role: v1.Role_MODEL,
+						Contents: []*v1.Content{
+							{
+								Index:   &idx,
+								Content: &v1.Content_Text{Text: "hello"},
+							},
+						},
+					},
+				})
+				acc.Accumulate(&v1.ChatResp{
+					Message: &v1.Message{
+						Role: v1.Role_MODEL,
+						Contents: []*v1.Content{
+							{
+								Index: &idx,
+								Metadata: map[string]string{
+									"trace_id": "abc",
+								},
+								Content: &v1.Content_Text{Text: " world"},
+							},
+						},
+					},
+				})
+
+				resp := acc.Resp()
+				So(len(resp.Message.Contents), ShouldEqual, 1)
+				So(resp.Message.Contents[0].GetText(), ShouldEqual, "hello world")
+				So(resp.Message.Contents[0].Metadata["trace_id"], ShouldEqual, "abc")
+			})
 		})
 
 		Convey("Accumulate tool use content", func() {

@@ -10,6 +10,20 @@ type ChatRespAccumulator struct {
 	resp *v1.ChatResp
 }
 
+func mergeContentMetadata(last, current *v1.Content) {
+	if last == nil || current == nil || len(current.Metadata) == 0 {
+		return
+	}
+
+	if last.Metadata == nil {
+		last.Metadata = make(map[string]string, len(current.Metadata))
+	}
+
+	for key, value := range current.Metadata {
+		last.Metadata[key] += value
+	}
+}
+
 func NewChatRespAccumulator() *ChatRespAccumulator {
 	return &ChatRespAccumulator{
 		resp: &v1.ChatResp{},
@@ -90,6 +104,7 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 		case *v1.Content_Text:
 			lastText := lastContent.Content.(*v1.Content_Text)
 			lastText.Text += c.Text
+			mergeContentMetadata(lastContent, content)
 
 		case *v1.Content_ToolUse:
 			if c.ToolUse.Id != "" {
