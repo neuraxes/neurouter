@@ -47,6 +47,14 @@ func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.G
 			Enabled: false,
 		}
 	}
+	if len(req.OutputConfig.Format.Schema) > 0 {
+		jsonSchema, err := json.Marshal(req.OutputConfig.Format.Schema)
+		if err == nil {
+			config.Grammar = &v1.GenerationConfig_JsonSchema{
+				JsonSchema: string(jsonSchema),
+			}
+		}
+	}
 	return config
 }
 
@@ -222,11 +230,19 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 		tools = append(tools, t)
 	}
 
+	var metadata map[string]string
+	if req.Metadata.UserID.Valid() {
+		metadata = map[string]string{
+			"user_id": req.Metadata.UserID.Value,
+		}
+	}
+
 	return &v1.ChatReq{
 		Model:    string(req.Model),
 		Config:   convertGenerationConfigFromAnthropic(req),
 		Messages: messages,
 		Tools:    tools,
+		Metadata: metadata,
 	}
 }
 

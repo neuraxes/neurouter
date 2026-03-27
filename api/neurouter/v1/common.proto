@@ -98,10 +98,34 @@ message Schema {
 
   Type type = 1;
   string description = 2;
-  Schema items = 3;
-  map<string, Schema> properties = 4;
-  repeated string required = 5;
-  repeated string enum = 6;
+
+  // The minimum for number
+  int32 minimum = 3;
+  // The maximum for number
+  int32 maximum = 4;
+
+  // The regex pattern for string
+  string pattern = 5;
+  // The minimum length for string
+  int32 minLength = 6;
+  // The maximum length for string
+  int32 maxLength = 7;
+
+  // The schema for array items
+  Schema items = 8;
+  // The minimum number of items for array
+  int32 minItems = 9;
+  // The maximum number of items for array
+  int32 maxItems = 10;
+
+  // The schema for object keys
+  Schema propertyNames = 11;
+  // The schema for object values
+  map<string, Schema> properties = 12;
+  // The required properties for object
+  repeated string required = 13;
+
+  repeated string enum = 14;
 }
 
 message Tool {

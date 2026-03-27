@@ -90,6 +90,35 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: config.schema.minimum
+                  in: query
+                  description: The minimum for number
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.maximum
+                  in: query
+                  description: The maximum for number
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.pattern
+                  in: query
+                  description: The regex pattern for string
+                  schema:
+                    type: string
+                - name: config.schema.minLength
+                  in: query
+                  description: The minimum length for string
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.maxLength
+                  in: query
+                  description: The maximum length for string
+                  schema:
+                    type: integer
+                    format: int32
                 - name: config.schema.items.type
                   in: query
                   schema:
@@ -99,25 +128,80 @@ paths:
                   in: query
                   schema:
                     type: string
-                - name: config.schema.items.items.required
+                - name: config.schema.items.minimum
+                  in: query
+                  description: The minimum for number
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.items.maximum
+                  in: query
+                  description: The maximum for number
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.items.pattern
+                  in: query
+                  description: The regex pattern for string
+                  schema:
+                    type: string
+                - name: config.schema.items.minLength
+                  in: query
+                  description: The minimum length for string
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.items.maxLength
+                  in: query
+                  description: The maximum length for string
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.items.items.minItems
+                  in: query
+                  description: The minimum number of items for array
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.items.items.maxItems
+                  in: query
+                  description: The maximum number of items for array
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.items.items.propertyNames.minItems
+                  in: query
+                  description: The minimum number of items for array
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.items.items.propertyNames.maxItems
+                  in: query
+                  description: The maximum number of items for array
+                  schema:
+                    type: integer
+                    format: int32
+                - name: config.schema.items.items.propertyNames.propertyNames.required
+                  in: query
+                  description: The required properties for object
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: config.schema.items.items.propertyNames.propertyNames.enum
                   in: query
                   schema:
                     type: array
                     items:
                         type: string
-                - name: config.schema.items.items.enum
+                - name: config.schema.items.items.propertyNames.required
                   in: query
+                  description: The required properties for object
                   schema:
                     type: array
                     items:
                         type: string
-                - name: config.schema.items.required
-                  in: query
-                  schema:
-                    type: array
-                    items:
-                        type: string
-                - name: config.schema.items.enum
+                - name: config.schema.items.items.propertyNames.enum
                   in: query
                   schema:
                     type: array

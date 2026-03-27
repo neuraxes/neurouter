@@ -152,6 +152,57 @@ func TestConvertGenerationConfigFromAnthropic(t *testing.T) {
 				So(config.ReasoningConfig.TokenBudget, ShouldEqual, 1024)
 			})
 		})
+
+		Convey("When OutputConfig has JSON schema format", func() {
+			req := &anthropic.MessageNewParams{
+				OutputConfig: anthropic.OutputConfigParam{
+					Format: anthropic.JSONOutputFormatParam{
+						Schema: map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"name": map[string]any{"type": "string"},
+								"age":  map[string]any{"type": "integer"},
+							},
+							"required": []string{"name"},
+						},
+					},
+				},
+			}
+			config := convertGenerationConfigFromAnthropic(req)
+
+			Convey("Then Grammar should be set as JsonSchema", func() {
+				So(config.Grammar, ShouldNotBeNil)
+				jsonSchema, ok := config.Grammar.(*v1.GenerationConfig_JsonSchema)
+				So(ok, ShouldBeTrue)
+				So(jsonSchema.JsonSchema, ShouldNotBeEmpty)
+				So(jsonSchema.JsonSchema, ShouldContainSubstring, `"type":"object"`)
+				So(jsonSchema.JsonSchema, ShouldContainSubstring, `"name":{"type":"string"}`)
+			})
+		})
+
+		Convey("When OutputConfig has empty schema", func() {
+			req := &anthropic.MessageNewParams{
+				OutputConfig: anthropic.OutputConfigParam{
+					Format: anthropic.JSONOutputFormatParam{
+						Schema: map[string]any{},
+					},
+				},
+			}
+			config := convertGenerationConfigFromAnthropic(req)
+
+			Convey("Then Grammar should remain nil", func() {
+				So(config.Grammar, ShouldBeNil)
+			})
+		})
+
+		Convey("When OutputConfig has no schema", func() {
+			req := &anthropic.MessageNewParams{}
+			config := convertGenerationConfigFromAnthropic(req)
+
+			Convey("Then Grammar should be nil", func() {
+				So(config.Grammar, ShouldBeNil)
+			})
+		})
 	})
 }
 

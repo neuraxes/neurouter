@@ -74,6 +74,8 @@ message ChatReq {
   repeated Message messages = 4;
   // The tools available for the model to use
   repeated Tool tools = 5;
+  // Additional metadata for the request
+  map<string, string> metadata = 15;
 }
 
 message ChatResp {

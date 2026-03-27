@@ -69,6 +69,20 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 			BudgetTokens: budgetTokens,
 		}
 	}
+	switch g := config.Grammar.(type) {
+	case *v1.GenerationConfig_JsonSchema:
+		var schema map[string]any
+		if err := json.Unmarshal([]byte(g.JsonSchema), &schema); err == nil {
+			req.OutputConfig.Format.Schema = schema
+		}
+	case *v1.GenerationConfig_Schema:
+		if data, err := json.Marshal(g.Schema); err == nil {
+			var schema map[string]any
+			if err := json.Unmarshal(data, &schema); err == nil {
+				req.OutputConfig.Format.Schema = schema
+			}
+		}
+	}
 }
 
 // convertSystemToAnthropic converts system messages to Anthropic format.
@@ -215,6 +229,12 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 			}
 		}
 		params.Tools = tools
+	}
+
+	if req.Metadata != nil {
+		if userID, ok := req.Metadata["user_id"]; ok {
+			params.Metadata.UserID = anthropic.Opt(userID)
+		}
 	}
 
 	return params

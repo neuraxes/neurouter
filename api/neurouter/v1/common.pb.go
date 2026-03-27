@@ -518,13 +518,32 @@ func (x *Statistics) GetUsage() *Statistics_Usage {
 }
 
 type Schema struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Type          Schema_Type            `protobuf:"varint,1,opt,name=type,proto3,enum=neurouter.v1.Schema_Type" json:"type,omitempty"`
-	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Items         *Schema                `protobuf:"bytes,3,opt,name=items,proto3" json:"items,omitempty"`
-	Properties    map[string]*Schema     `protobuf:"bytes,4,rep,name=properties,proto3" json:"properties,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Required      []string               `protobuf:"bytes,5,rep,name=required,proto3" json:"required,omitempty"`
-	Enum          []string               `protobuf:"bytes,6,rep,name=enum,proto3" json:"enum,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Type        Schema_Type            `protobuf:"varint,1,opt,name=type,proto3,enum=neurouter.v1.Schema_Type" json:"type,omitempty"`
+	Description string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	// The minimum for number
+	Minimum int32 `protobuf:"varint,3,opt,name=minimum,proto3" json:"minimum,omitempty"`
+	// The maximum for number
+	Maximum int32 `protobuf:"varint,4,opt,name=maximum,proto3" json:"maximum,omitempty"`
+	// The regex pattern for string
+	Pattern string `protobuf:"bytes,5,opt,name=pattern,proto3" json:"pattern,omitempty"`
+	// The minimum length for string
+	MinLength int32 `protobuf:"varint,6,opt,name=minLength,proto3" json:"minLength,omitempty"`
+	// The maximum length for string
+	MaxLength int32 `protobuf:"varint,7,opt,name=maxLength,proto3" json:"maxLength,omitempty"`
+	// The schema for array items
+	Items *Schema `protobuf:"bytes,8,opt,name=items,proto3" json:"items,omitempty"`
+	// The minimum number of items for array
+	MinItems int32 `protobuf:"varint,9,opt,name=minItems,proto3" json:"minItems,omitempty"`
+	// The maximum number of items for array
+	MaxItems int32 `protobuf:"varint,10,opt,name=maxItems,proto3" json:"maxItems,omitempty"`
+	// The schema for object keys
+	PropertyNames *Schema `protobuf:"bytes,11,opt,name=propertyNames,proto3" json:"propertyNames,omitempty"`
+	// The schema for object values
+	Properties map[string]*Schema `protobuf:"bytes,12,rep,name=properties,proto3" json:"properties,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// The required properties for object
+	Required      []string `protobuf:"bytes,13,rep,name=required,proto3" json:"required,omitempty"`
+	Enum          []string `protobuf:"bytes,14,rep,name=enum,proto3" json:"enum,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -573,9 +592,65 @@ func (x *Schema) GetDescription() string {
 	return ""
 }
 
+func (x *Schema) GetMinimum() int32 {
+	if x != nil {
+		return x.Minimum
+	}
+	return 0
+}
+
+func (x *Schema) GetMaximum() int32 {
+	if x != nil {
+		return x.Maximum
+	}
+	return 0
+}
+
+func (x *Schema) GetPattern() string {
+	if x != nil {
+		return x.Pattern
+	}
+	return ""
+}
+
+func (x *Schema) GetMinLength() int32 {
+	if x != nil {
+		return x.MinLength
+	}
+	return 0
+}
+
+func (x *Schema) GetMaxLength() int32 {
+	if x != nil {
+		return x.MaxLength
+	}
+	return 0
+}
+
 func (x *Schema) GetItems() *Schema {
 	if x != nil {
 		return x.Items
+	}
+	return nil
+}
+
+func (x *Schema) GetMinItems() int32 {
+	if x != nil {
+		return x.MinItems
+	}
+	return 0
+}
+
+func (x *Schema) GetMaxItems() int32 {
+	if x != nil {
+		return x.MaxItems
+	}
+	return 0
+}
+
+func (x *Schema) GetPropertyNames() *Schema {
+	if x != nil {
+		return x.PropertyNames
 	}
 	return nil
 }
@@ -826,16 +901,25 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x05Usage\x12!\n" +
 	"\finput_tokens\x18\x01 \x01(\rR\vinputTokens\x12#\n" +
 	"\routput_tokens\x18\x02 \x01(\rR\foutputTokens\x12.\n" +
-	"\x13cached_input_tokens\x18\x03 \x01(\rR\x11cachedInputTokens\"\xd6\x03\n" +
+	"\x13cached_input_tokens\x18\x03 \x01(\rR\x11cachedInputTokens\"\xd4\x05\n" +
 	"\x06Schema\x12-\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x19.neurouter.v1.Schema.TypeR\x04type\x12 \n" +
-	"\vdescription\x18\x02 \x01(\tR\vdescription\x12*\n" +
-	"\x05items\x18\x03 \x01(\v2\x14.neurouter.v1.SchemaR\x05items\x12D\n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x18\n" +
+	"\aminimum\x18\x03 \x01(\x05R\aminimum\x12\x18\n" +
+	"\amaximum\x18\x04 \x01(\x05R\amaximum\x12\x18\n" +
+	"\apattern\x18\x05 \x01(\tR\apattern\x12\x1c\n" +
+	"\tminLength\x18\x06 \x01(\x05R\tminLength\x12\x1c\n" +
+	"\tmaxLength\x18\a \x01(\x05R\tmaxLength\x12*\n" +
+	"\x05items\x18\b \x01(\v2\x14.neurouter.v1.SchemaR\x05items\x12\x1a\n" +
+	"\bminItems\x18\t \x01(\x05R\bminItems\x12\x1a\n" +
+	"\bmaxItems\x18\n" +
+	" \x01(\x05R\bmaxItems\x12:\n" +
+	"\rpropertyNames\x18\v \x01(\v2\x14.neurouter.v1.SchemaR\rpropertyNames\x12D\n" +
 	"\n" +
-	"properties\x18\x04 \x03(\v2$.neurouter.v1.Schema.PropertiesEntryR\n" +
+	"properties\x18\f \x03(\v2$.neurouter.v1.Schema.PropertiesEntryR\n" +
 	"properties\x12\x1a\n" +
-	"\brequired\x18\x05 \x03(\tR\brequired\x12\x12\n" +
-	"\x04enum\x18\x06 \x03(\tR\x04enum\x1aS\n" +
+	"\brequired\x18\r \x03(\tR\brequired\x12\x12\n" +
+	"\x04enum\x18\x0e \x03(\tR\x04enum\x1aS\n" +
 	"\x0fPropertiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
 	"\x05value\x18\x02 \x01(\v2\x14.neurouter.v1.SchemaR\x05value:\x028\x01\"\x83\x01\n" +
@@ -904,15 +988,16 @@ var file_neurouter_v1_common_proto_depIdxs = []int32{
 	8,  // 2: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
 	2,  // 3: neurouter.v1.Schema.type:type_name -> neurouter.v1.Schema.Type
 	6,  // 4: neurouter.v1.Schema.items:type_name -> neurouter.v1.Schema
-	9,  // 5: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
-	10, // 6: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
-	6,  // 7: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
-	6,  // 8: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
-	9,  // [9:9] is the sub-list for method output_type
-	9,  // [9:9] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	6,  // 5: neurouter.v1.Schema.propertyNames:type_name -> neurouter.v1.Schema
+	9,  // 6: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
+	10, // 7: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
+	6,  // 8: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
+	6,  // 9: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_common_proto_init() }

@@ -177,6 +177,73 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 2048)
 			})
 		})
+
+		Convey("When config has json_schema grammar", func() {
+			config := &v1.GenerationConfig{
+				Grammar: &v1.GenerationConfig_JsonSchema{
+					JsonSchema: `{"type":"object","properties":{"name":{"type":"string"},"age":{"type":"integer"}},"required":["name"]}`,
+				},
+			}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then OutputConfig.Format.Schema should be set", func() {
+				expectedSchema := map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"age":  map[string]any{"type": "integer"},
+					},
+					"required": []any{"name"},
+				}
+				So(req.OutputConfig.Format.Schema, ShouldResemble, expectedSchema)
+			})
+		})
+
+		Convey("When config has proto schema grammar", func() {
+			config := &v1.GenerationConfig{
+				Grammar: &v1.GenerationConfig_Schema{
+					Schema: &v1.Schema{
+						Type: v1.Schema_TYPE_OBJECT,
+						Properties: map[string]*v1.Schema{
+							"city": {Type: v1.Schema_TYPE_STRING, Description: "City name"},
+							"temp": {Type: v1.Schema_TYPE_NUMBER},
+						},
+						Required: []string{"city"},
+					},
+				},
+			}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then OutputConfig.Format.Schema should be set from proto schema", func() {
+				So(req.OutputConfig.Format.Schema, ShouldNotBeNil)
+				So(req.OutputConfig.Format.Schema["type"], ShouldEqual, "object")
+				props, ok := req.OutputConfig.Format.Schema["properties"].(map[string]any)
+				So(ok, ShouldBeTrue)
+				cityProp, ok := props["city"].(map[string]any)
+				So(ok, ShouldBeTrue)
+				So(cityProp["type"], ShouldEqual, "string")
+				So(cityProp["description"], ShouldEqual, "City name")
+				required, ok := req.OutputConfig.Format.Schema["required"].([]any)
+				So(ok, ShouldBeTrue)
+				So(required, ShouldContain, "city")
+			})
+		})
+
+		Convey("When config has invalid json_schema grammar", func() {
+			config := &v1.GenerationConfig{
+				Grammar: &v1.GenerationConfig_JsonSchema{
+					JsonSchema: `{invalid json`,
+				},
+			}
+			req := &anthropic.MessageNewParams{}
+			repo.convertGenerationConfigToAnthropic(config, req)
+
+			Convey("Then OutputConfig.Format.Schema should remain nil", func() {
+				So(req.OutputConfig.Format.Schema, ShouldBeNil)
+			})
+		})
 	})
 }
 
