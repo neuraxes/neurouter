@@ -421,6 +421,8 @@ components:
                     format: uint32
                 text:
                     type: string
+                image:
+                    $ref: '#/components/schemas/neurouter.v1.Image'
         neurouter.v1.ToolUse:
             type: object
             properties:

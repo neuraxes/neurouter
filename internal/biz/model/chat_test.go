@@ -126,6 +126,25 @@ func TestEstimateTokens(t *testing.T) {
 			}
 			So(estimateTokens(req), ShouldEqual, (11/4 + 1))
 		})
+
+		Convey("with tool result image should count image tokens", func() {
+			req := &v1.ChatReq{
+				Messages: []*v1.Message{
+					{
+						Contents: []*v1.Content{
+							{
+								Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+									Outputs: []*v1.ToolResult_Output{
+										{Output: &v1.ToolResult_Output_Image{Image: &v1.Image{}}},
+									},
+								}},
+							},
+						},
+					},
+				},
+			}
+			So(estimateTokens(req), ShouldEqual, 768)
+		})
 	})
 }
 

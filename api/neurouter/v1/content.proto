@@ -48,6 +48,7 @@ message ToolResult {
     optional uint32 index = 1;
     oneof output {
       string text = 10;
+      Image image = 11;
     }
   }
 

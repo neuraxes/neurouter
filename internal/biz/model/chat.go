@@ -76,7 +76,12 @@ func estimateTokens(req *v1.ChatReq) int64 {
 				}
 			case *v1.Content_ToolResult:
 				for _, output := range content.ToolResult.Outputs {
-					totalChars += len(output.GetText())
+					switch output.Output.(type) {
+					case *v1.ToolResult_Output_Text:
+						totalChars += len(output.GetText())
+					case *v1.ToolResult_Output_Image:
+						imageCount++
+					}
 				}
 			}
 		}

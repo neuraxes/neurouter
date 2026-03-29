@@ -87,6 +87,12 @@ func convertChatMessageFromOpenAI(message *openai.ChatCompletionMessage) *v1.Mes
 							Text: content.Text,
 						},
 					})
+				case openai.ChatMessagePartTypeImageURL:
+					tr.ToolResult.Outputs = append(tr.ToolResult.Outputs, &v1.ToolResult_Output{
+						Output: &v1.ToolResult_Output_Image{
+							Image: convertImageFromOpenAIURL(content.ImageURL.URL),
+						},
+					})
 				}
 			}
 		}

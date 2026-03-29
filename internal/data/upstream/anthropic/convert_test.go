@@ -480,6 +480,72 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 				So(toolUse.Input, ShouldEqual, "not-valid-json")
 			})
 		})
+
+		Convey("When converting a message with tool_result image URL", func() {
+			msg := &v1.Message{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+						Id: "tool-1",
+						Outputs: []*v1.ToolResult_Output{
+							{Output: &v1.ToolResult_Output_Image{
+								Image: &v1.Image{
+									Source: &v1.Image_Url{Url: "https://example.com/tool-result.png"},
+								},
+							}},
+						},
+					}}},
+				},
+			}
+			result := repo.convertMessageToAnthropic(msg)
+
+			Convey("Then it should create a tool_result block with image URL", func() {
+				So(string(result.Role), ShouldEqual, "user")
+				So(result.Content, ShouldHaveLength, 1)
+				toolResult := result.Content[0].OfToolResult
+				So(toolResult, ShouldNotBeNil)
+				So(toolResult.ToolUseID, ShouldEqual, "tool-1")
+				So(toolResult.Content, ShouldHaveLength, 1)
+				imageBlock := toolResult.Content[0].OfImage
+				So(imageBlock, ShouldNotBeNil)
+				So(imageBlock.Source.OfURL, ShouldNotBeNil)
+				So(imageBlock.Source.OfURL.URL, ShouldEqual, "https://example.com/tool-result.png")
+			})
+		})
+
+		Convey("When converting a message with tool_result base64 image", func() {
+			msg := &v1.Message{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+						Id: "tool-1",
+						Outputs: []*v1.ToolResult_Output{
+							{Output: &v1.ToolResult_Output_Image{
+								Image: &v1.Image{
+									MimeType: "image/png",
+									Source:   &v1.Image_Data{Data: []byte("imagedata")},
+								},
+							}},
+						},
+					}}},
+				},
+			}
+			result := repo.convertMessageToAnthropic(msg)
+
+			Convey("Then it should create a tool_result block with base64 image", func() {
+				So(string(result.Role), ShouldEqual, "user")
+				So(result.Content, ShouldHaveLength, 1)
+				toolResult := result.Content[0].OfToolResult
+				So(toolResult, ShouldNotBeNil)
+				So(toolResult.ToolUseID, ShouldEqual, "tool-1")
+				So(toolResult.Content, ShouldHaveLength, 1)
+				imageBlock := toolResult.Content[0].OfImage
+				So(imageBlock, ShouldNotBeNil)
+				So(imageBlock.Source.OfBase64, ShouldNotBeNil)
+				So(imageBlock.Source.OfBase64.MediaType, ShouldEqual, anthropic.Base64ImageSourceMediaType("image/png"))
+				So(imageBlock.Source.OfBase64.Data, ShouldEqual, "aW1hZ2VkYXRh")
+			})
+		})
 	})
 }
 

@@ -401,6 +401,82 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 			})
 		})
 
+		Convey("When converting a message with tool_result image URL", func() {
+			msg := &anthropic.MessageParam{
+				Role: anthropic.MessageParamRoleUser,
+				Content: []anthropic.ContentBlockParamUnion{
+					{
+						OfToolResult: &anthropic.ToolResultBlockParam{
+							ToolUseID: "tool-1",
+							Content: []anthropic.ToolResultBlockParamContentUnion{
+								{
+									OfImage: &anthropic.ImageBlockParam{
+										Source: anthropic.ImageBlockParamSourceUnion{
+											OfURL: &anthropic.URLImageSourceParam{
+												URL: "https://example.com/tool-result.png",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			result := convertMessageFromAnthropic(msg)
+
+			Convey("Then it should create a ToolResult image URL output", func() {
+				So(result.Contents, ShouldHaveLength, 1)
+				tr := result.Contents[0].GetToolResult()
+				So(tr, ShouldNotBeNil)
+				So(tr.Outputs, ShouldHaveLength, 1)
+				img := tr.Outputs[0].GetImage()
+				So(img, ShouldNotBeNil)
+				urlSrc, ok := img.Source.(*v1.Image_Url)
+				So(ok, ShouldBeTrue)
+				So(urlSrc.Url, ShouldEqual, "https://example.com/tool-result.png")
+			})
+		})
+
+		Convey("When converting a message with tool_result image", func() {
+			msg := &anthropic.MessageParam{
+				Role: anthropic.MessageParamRoleUser,
+				Content: []anthropic.ContentBlockParamUnion{
+					{
+						OfToolResult: &anthropic.ToolResultBlockParam{
+							ToolUseID: "tool-1",
+							Content: []anthropic.ToolResultBlockParamContentUnion{
+								{
+									OfImage: &anthropic.ImageBlockParam{
+										Source: anthropic.ImageBlockParamSourceUnion{
+											OfBase64: &anthropic.Base64ImageSourceParam{
+												Data:      "aW1hZ2VkYXRh",
+												MediaType: anthropic.Base64ImageSourceMediaTypeImagePNG,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			result := convertMessageFromAnthropic(msg)
+
+			Convey("Then it should create a ToolResult image output", func() {
+				So(result.Contents, ShouldHaveLength, 1)
+				tr := result.Contents[0].GetToolResult()
+				So(tr, ShouldNotBeNil)
+				So(tr.Outputs, ShouldHaveLength, 1)
+				img := tr.Outputs[0].GetImage()
+				So(img, ShouldNotBeNil)
+				So(img.MimeType, ShouldEqual, "image/png")
+				dataSrc, ok := img.Source.(*v1.Image_Data)
+				So(ok, ShouldBeTrue)
+				So(string(dataSrc.Data), ShouldEqual, "imagedata")
+			})
+		})
+
 		Convey("When converting a message with mixed thinking, text, and tool_use", func() {
 			msg := &anthropic.MessageParam{
 				Role: anthropic.MessageParamRoleAssistant,

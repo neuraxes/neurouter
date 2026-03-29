@@ -78,6 +78,38 @@ func TestPrintChat(t *testing.T) {
 								},
 							},
 						},
+						{
+							Content: &v1.Content_ToolResult{
+								ToolResult: &v1.ToolResult{
+									Id: "tool-result-1",
+									Outputs: []*v1.ToolResult_Output{
+										{
+											Output: &v1.ToolResult_Output_Text{
+												Text: "tool_output_text",
+											},
+										},
+										{
+											Output: &v1.ToolResult_Output_Image{
+												Image: &v1.Image{
+													Source: &v1.Image_Url{
+														Url: "http://example.com/tool_output.png",
+													},
+												},
+											},
+										},
+										{
+											Output: &v1.ToolResult_Output_Image{
+												Image: &v1.Image{
+													Source: &v1.Image_Data{
+														Data: []byte("tool output image data"),
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},

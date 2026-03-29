@@ -146,8 +146,25 @@ func formatContent(content *v1.Content) string {
 		sb.WriteString("\n</content_tool_use>")
 	case *v1.Content_ToolResult:
 		sb.WriteString(fmt.Sprintf(`<content_tool_result id="%s">`, c.ToolResult.Id))
-		sb.WriteString("\n")
-		sb.WriteString(c.ToolResult.GetTextualOutput())
+		for _, output := range c.ToolResult.Outputs {
+			switch o := output.Output.(type) {
+			case *v1.ToolResult_Output_Text:
+				sb.WriteString("\n<tool_output_text>\n")
+				sb.WriteString(o.Text)
+				sb.WriteString("\n</tool_output_text>")
+			case *v1.ToolResult_Output_Image:
+				switch src := o.Image.Source.(type) {
+				case *v1.Image_Url:
+					sb.WriteString("\n<tool_output_image_url>")
+					sb.WriteString(src.Url)
+					sb.WriteString("</tool_output_image_url>")
+				case *v1.Image_Data:
+					sb.WriteString("\n<tool_output_image_data>")
+					sb.WriteString(fmt.Sprintf("%d bytes", len(src.Data)))
+					sb.WriteString("</tool_output_image_data>")
+				}
+			}
+		}
 		sb.WriteString("\n</content_tool_result>")
 	}
 

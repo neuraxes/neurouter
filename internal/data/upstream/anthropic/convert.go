@@ -161,6 +161,30 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 							Text: o.Text,
 						},
 					})
+				case *v1.ToolResult_Output_Image:
+					switch src := o.Image.Source.(type) {
+					case *v1.Image_Url:
+						outputs = append(outputs, anthropic.ToolResultBlockParamContentUnion{
+							OfImage: &anthropic.ImageBlockParam{
+								Source: anthropic.ImageBlockParamSourceUnion{
+									OfURL: &anthropic.URLImageSourceParam{
+										URL: src.Url,
+									},
+								},
+							},
+						})
+					case *v1.Image_Data:
+						outputs = append(outputs, anthropic.ToolResultBlockParamContentUnion{
+							OfImage: &anthropic.ImageBlockParam{
+								Source: anthropic.ImageBlockParamSourceUnion{
+									OfBase64: &anthropic.Base64ImageSourceParam{
+										Data:      base64.StdEncoding.EncodeToString(src.Data),
+										MediaType: anthropic.Base64ImageSourceMediaType(o.Image.MimeType),
+									},
+								},
+							},
+						})
+					}
 				}
 			}
 

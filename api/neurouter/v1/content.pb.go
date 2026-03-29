@@ -462,6 +462,7 @@ type ToolResult_Output struct {
 	// Types that are valid to be assigned to Output:
 	//
 	//	*ToolResult_Output_Text
+	//	*ToolResult_Output_Image
 	Output        isToolResult_Output_Output `protobuf_oneof:"output"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -520,6 +521,15 @@ func (x *ToolResult_Output) GetText() string {
 	return ""
 }
 
+func (x *ToolResult_Output) GetImage() *Image {
+	if x != nil {
+		if x, ok := x.Output.(*ToolResult_Output_Image); ok {
+			return x.Image
+		}
+	}
+	return nil
+}
+
 type isToolResult_Output_Output interface {
 	isToolResult_Output_Output()
 }
@@ -528,7 +538,13 @@ type ToolResult_Output_Text struct {
 	Text string `protobuf:"bytes,10,opt,name=text,proto3,oneof"`
 }
 
+type ToolResult_Output_Image struct {
+	Image *Image `protobuf:"bytes,11,opt,name=image,proto3,oneof"`
+}
+
 func (*ToolResult_Output_Text) isToolResult_Output_Output() {}
+
+func (*ToolResult_Output_Image) isToolResult_Output_Output() {}
 
 var File_neurouter_v1_content_proto protoreflect.FileDescriptor
 
@@ -550,15 +566,16 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	"\x04text\x18\n" +
 	" \x01(\tH\x00R\x04textB\a\n" +
 	"\x05inputB\b\n" +
-	"\x06_index\"\xa6\x01\n" +
+	"\x06_index\"\xd3\x01\n" +
 	"\n" +
 	"ToolResult\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
-	"\aoutputs\x18\x02 \x03(\v2\x1f.neurouter.v1.ToolResult.OutputR\aoutputs\x1aM\n" +
+	"\aoutputs\x18\x02 \x03(\v2\x1f.neurouter.v1.ToolResult.OutputR\aoutputs\x1az\n" +
 	"\x06Output\x12\x19\n" +
 	"\x05index\x18\x01 \x01(\rH\x01R\x05index\x88\x01\x01\x12\x14\n" +
 	"\x04text\x18\n" +
-	" \x01(\tH\x00R\x04textB\b\n" +
+	" \x01(\tH\x00R\x04text\x12+\n" +
+	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05imageB\b\n" +
 	"\x06outputB\b\n" +
 	"\x06_index\"\x89\x03\n" +
 	"\aContent\x12\x19\n" +
@@ -606,11 +623,12 @@ var file_neurouter_v1_content_proto_depIdxs = []int32{
 	0, // 3: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
 	1, // 4: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
 	2, // 5: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	0, // 6: neurouter.v1.ToolResult.Output.image:type_name -> neurouter.v1.Image
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_content_proto_init() }
@@ -633,6 +651,7 @@ func file_neurouter_v1_content_proto_init() {
 	}
 	file_neurouter_v1_content_proto_msgTypes[5].OneofWrappers = []any{
 		(*ToolResult_Output_Text)(nil),
+		(*ToolResult_Output_Image)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

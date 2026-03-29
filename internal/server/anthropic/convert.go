@@ -174,6 +174,34 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 							Text: output.OfText.Text,
 						},
 					})
+				case output.OfImage != nil:
+					switch {
+					case output.OfImage.Source.OfURL != nil:
+						tr.Outputs = append(tr.Outputs, &v1.ToolResult_Output{
+							Output: &v1.ToolResult_Output_Image{
+								Image: &v1.Image{
+									Source: &v1.Image_Url{
+										Url: output.OfImage.Source.OfURL.URL,
+									},
+								},
+							},
+						})
+					case output.OfImage.Source.OfBase64 != nil:
+						data, err := base64.StdEncoding.DecodeString(output.OfImage.Source.OfBase64.Data)
+						if err != nil {
+							continue
+						}
+						tr.Outputs = append(tr.Outputs, &v1.ToolResult_Output{
+							Output: &v1.ToolResult_Output_Image{
+								Image: &v1.Image{
+									MimeType: string(output.OfImage.Source.OfBase64.MediaType),
+									Source: &v1.Image_Data{
+										Data: data,
+									},
+								},
+							},
+						})
+					}
 				}
 			}
 			contents = append(contents, &v1.Content{
