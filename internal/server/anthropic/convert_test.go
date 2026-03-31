@@ -85,9 +85,9 @@ func TestConvertGenerationConfigFromAnthropic(t *testing.T) {
 			}
 			config := convertGenerationConfigFromAnthropic(req)
 
-			Convey("Then ReasoningConfig should be set", func() {
+			Convey("Then ReasoningConfig should be set with unspecified effort", func() {
 				So(config.ReasoningConfig, ShouldNotBeNil)
-				So(config.ReasoningConfig.Enabled, ShouldBeTrue)
+				So(config.ReasoningConfig.Effort, ShouldEqual, v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED)
 				So(config.ReasoningConfig.TokenBudget, ShouldEqual, 2048)
 			})
 		})
@@ -109,23 +109,26 @@ func TestConvertGenerationConfigFromAnthropic(t *testing.T) {
 			}
 			config := convertGenerationConfigFromAnthropic(req)
 
-			Convey("Then ReasoningConfig should be set with Enabled false", func() {
+			Convey("Then ReasoningConfig should be set with NONE effort", func() {
 				So(config.ReasoningConfig, ShouldNotBeNil)
-				So(config.ReasoningConfig.Enabled, ShouldBeFalse)
+				So(config.ReasoningConfig.Effort, ShouldEqual, v1.ReasoningEffort_REASONING_EFFORT_NONE)
 			})
 		})
 
-		Convey("When Thinking is adaptive", func() {
+		Convey("When Thinking is adaptive with effort", func() {
 			req := &anthropic.MessageNewParams{
 				Thinking: anthropic.ThinkingConfigParamUnion{
 					OfAdaptive: &anthropic.ThinkingConfigAdaptiveParam{},
 				},
+				OutputConfig: anthropic.OutputConfigParam{
+					Effort: anthropic.OutputConfigEffortMedium,
+				},
 			}
 			config := convertGenerationConfigFromAnthropic(req)
 
-			Convey("Then ReasoningConfig should be set with Enabled true", func() {
+			Convey("Then ReasoningConfig should be set with MEDIUM effort", func() {
 				So(config.ReasoningConfig, ShouldNotBeNil)
-				So(config.ReasoningConfig.Enabled, ShouldBeTrue)
+				So(config.ReasoningConfig.Effort, ShouldEqual, v1.ReasoningEffort_REASONING_EFFORT_MEDIUM)
 			})
 		})
 
@@ -148,7 +151,7 @@ func TestConvertGenerationConfigFromAnthropic(t *testing.T) {
 				So(*config.Temperature, ShouldAlmostEqual, 0.5, 0.01)
 				So(*config.TopP, ShouldAlmostEqual, 0.9, 0.01)
 				So(*config.TopK, ShouldEqual, 40)
-				So(config.ReasoningConfig.Enabled, ShouldBeTrue)
+				So(config.ReasoningConfig.Effort, ShouldEqual, v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED)
 				So(config.ReasoningConfig.TokenBudget, ShouldEqual, 1024)
 			})
 		})
@@ -565,7 +568,7 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 				So(result.Config, ShouldNotBeNil)
 				So(*result.Config.MaxTokens, ShouldEqual, 4096)
 				So(result.Config.ReasoningConfig, ShouldNotBeNil)
-				So(result.Config.ReasoningConfig.Enabled, ShouldBeTrue)
+				So(result.Config.ReasoningConfig.Effort, ShouldEqual, v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED)
 				So(result.Config.ReasoningConfig.TokenBudget, ShouldEqual, 1024)
 			})
 

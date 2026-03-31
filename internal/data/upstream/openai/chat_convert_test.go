@@ -643,9 +643,9 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 			param := repo.convertRequestToOpenAIChat(req)
 			So(param.ResponseFormat.OfJSONSchema, ShouldNotBeNil)
 			So(param.ResponseFormat.OfJSONSchema.JSONSchema.Name, ShouldEqual, "custom_schema")
-			schemaMap := param.ResponseFormat.OfJSONSchema.JSONSchema.Schema.(openai.FunctionParameters)
-			So(schemaMap["type"], ShouldEqual, v1.Schema_TYPE_OBJECT)
-			So(schemaMap["required"], ShouldResemble, []string{"name"})
+			schemaMap := param.ResponseFormat.OfJSONSchema.JSONSchema.Schema.(*v1.Schema)
+			So(schemaMap.Type, ShouldEqual, v1.Schema_TYPE_OBJECT)
+			So(schemaMap.Required, ShouldResemble, []string{"name"})
 		})
 
 		Convey("with gbnf grammar (ignored by OpenAI)", func() {
@@ -691,10 +691,11 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 			So(fn.Name, ShouldEqual, "test_function")
 			So(fn.Description.Value, ShouldEqual, "Test function description")
 			paramValue := fn.Parameters
-			So(paramValue["type"], ShouldEqual, v1.Schema_TYPE_OBJECT)
-			So(paramValue["required"], ShouldResemble, []string{"prop1"})
-			props := paramValue["properties"].(map[string]*v1.Schema)
-			So(props["prop1"].Type, ShouldEqual, v1.Schema_TYPE_STRING)
+			So(paramValue["type"], ShouldEqual, "object")
+			So(paramValue["required"], ShouldResemble, []any{"prop1"})
+			props := paramValue["properties"].(map[string]any)
+			prop1 := props["prop1"].(map[string]any)
+			So(prop1["type"], ShouldEqual, "string")
 		})
 
 		Convey("with nil config", func() {

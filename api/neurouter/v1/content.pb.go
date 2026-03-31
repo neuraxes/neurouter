@@ -243,10 +243,12 @@ func (x *ToolResult) GetOutputs() []*ToolResult_Output {
 // Multi-modality content
 type Content struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// The unique identifier of the content
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The index of current content
-	Index *uint32 `protobuf:"varint,1,opt,name=index,proto3,oneof" json:"index,omitempty"`
+	Index *uint32 `protobuf:"varint,2,opt,name=index,proto3,oneof" json:"index,omitempty"`
 	// Whether the content is for reasoning
-	Reasoning bool `protobuf:"varint,2,opt,name=reasoning,proto3" json:"reasoning,omitempty"`
+	Reasoning bool `protobuf:"varint,3,opt,name=reasoning,proto3" json:"reasoning,omitempty"`
 	// Additional metadata for the content
 	Metadata map[string]string `protobuf:"bytes,9,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Types that are valid to be assigned to Content:
@@ -288,6 +290,13 @@ func (x *Content) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Content.ProtoReflect.Descriptor instead.
 func (*Content) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Content) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
 }
 
 func (x *Content) GetIndex() uint32 {
@@ -577,10 +586,11 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	" \x01(\tH\x00R\x04text\x12+\n" +
 	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05imageB\b\n" +
 	"\x06outputB\b\n" +
-	"\x06_index\"\x89\x03\n" +
-	"\aContent\x12\x19\n" +
-	"\x05index\x18\x01 \x01(\rH\x01R\x05index\x88\x01\x01\x12\x1c\n" +
-	"\treasoning\x18\x02 \x01(\bR\treasoning\x12?\n" +
+	"\x06_index\"\x99\x03\n" +
+	"\aContent\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
+	"\x05index\x18\x02 \x01(\rH\x01R\x05index\x88\x01\x01\x12\x1c\n" +
+	"\treasoning\x18\x03 \x01(\bR\treasoning\x12?\n" +
 	"\bmetadata\x18\t \x03(\v2#.neurouter.v1.Content.MetadataEntryR\bmetadata\x12\x14\n" +
 	"\x04text\x18\n" +
 	" \x01(\tH\x00R\x04text\x12+\n" +

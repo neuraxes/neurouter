@@ -58,10 +58,12 @@ message ToolResult {
 
 // Multi-modality content
 message Content {
+  // The unique identifier of the content
+  string id = 1;
   // The index of current content
-  optional uint32 index = 1;
+  optional uint32 index = 2;
   // Whether the content is for reasoning
-  bool reasoning = 2;
+  bool reasoning = 3;
   // Additional metadata for the content
   map<string, string> metadata = 9;
   oneof content {

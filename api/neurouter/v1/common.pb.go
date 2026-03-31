@@ -35,6 +35,67 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ReasoningEffort int32
+
+const (
+	ReasoningEffort_REASONING_EFFORT_UNSPECIFIED ReasoningEffort = 0
+	ReasoningEffort_REASONING_EFFORT_NONE        ReasoningEffort = 1
+	ReasoningEffort_REASONING_EFFORT_MINIMAL     ReasoningEffort = 2
+	ReasoningEffort_REASONING_EFFORT_LOW         ReasoningEffort = 3
+	ReasoningEffort_REASONING_EFFORT_MEDIUM      ReasoningEffort = 4
+	ReasoningEffort_REASONING_EFFORT_HIGH        ReasoningEffort = 5
+	ReasoningEffort_REASONING_EFFORT_MAX         ReasoningEffort = 6
+)
+
+// Enum value maps for ReasoningEffort.
+var (
+	ReasoningEffort_name = map[int32]string{
+		0: "REASONING_EFFORT_UNSPECIFIED",
+		1: "REASONING_EFFORT_NONE",
+		2: "REASONING_EFFORT_MINIMAL",
+		3: "REASONING_EFFORT_LOW",
+		4: "REASONING_EFFORT_MEDIUM",
+		5: "REASONING_EFFORT_HIGH",
+		6: "REASONING_EFFORT_MAX",
+	}
+	ReasoningEffort_value = map[string]int32{
+		"REASONING_EFFORT_UNSPECIFIED": 0,
+		"REASONING_EFFORT_NONE":        1,
+		"REASONING_EFFORT_MINIMAL":     2,
+		"REASONING_EFFORT_LOW":         3,
+		"REASONING_EFFORT_MEDIUM":      4,
+		"REASONING_EFFORT_HIGH":        5,
+		"REASONING_EFFORT_MAX":         6,
+	}
+)
+
+func (x ReasoningEffort) Enum() *ReasoningEffort {
+	p := new(ReasoningEffort)
+	*p = x
+	return p
+}
+
+func (x ReasoningEffort) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ReasoningEffort) Descriptor() protoreflect.EnumDescriptor {
+	return file_neurouter_v1_common_proto_enumTypes[0].Descriptor()
+}
+
+func (ReasoningEffort) Type() protoreflect.EnumType {
+	return &file_neurouter_v1_common_proto_enumTypes[0]
+}
+
+func (x ReasoningEffort) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ReasoningEffort.Descriptor instead.
+func (ReasoningEffort) EnumDescriptor() ([]byte, []int) {
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{0}
+}
+
 // Modality defines the types of input/output the model can handle.
 type Modality int32
 
@@ -75,11 +136,11 @@ func (x Modality) String() string {
 }
 
 func (Modality) Descriptor() protoreflect.EnumDescriptor {
-	return file_neurouter_v1_common_proto_enumTypes[0].Descriptor()
+	return file_neurouter_v1_common_proto_enumTypes[1].Descriptor()
 }
 
 func (Modality) Type() protoreflect.EnumType {
-	return &file_neurouter_v1_common_proto_enumTypes[0]
+	return &file_neurouter_v1_common_proto_enumTypes[1]
 }
 
 func (x Modality) Number() protoreflect.EnumNumber {
@@ -88,7 +149,7 @@ func (x Modality) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Modality.Descriptor instead.
 func (Modality) EnumDescriptor() ([]byte, []int) {
-	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{0}
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{1}
 }
 
 // Capability defines what the model can do.
@@ -131,11 +192,11 @@ func (x Capability) String() string {
 }
 
 func (Capability) Descriptor() protoreflect.EnumDescriptor {
-	return file_neurouter_v1_common_proto_enumTypes[1].Descriptor()
+	return file_neurouter_v1_common_proto_enumTypes[2].Descriptor()
 }
 
 func (Capability) Type() protoreflect.EnumType {
-	return &file_neurouter_v1_common_proto_enumTypes[1]
+	return &file_neurouter_v1_common_proto_enumTypes[2]
 }
 
 func (x Capability) Number() protoreflect.EnumNumber {
@@ -144,7 +205,7 @@ func (x Capability) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Capability.Descriptor instead.
 func (Capability) EnumDescriptor() ([]byte, []int) {
-	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{1}
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{2}
 }
 
 type Schema_Type int32
@@ -192,11 +253,11 @@ func (x Schema_Type) String() string {
 }
 
 func (Schema_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_neurouter_v1_common_proto_enumTypes[2].Descriptor()
+	return file_neurouter_v1_common_proto_enumTypes[3].Descriptor()
 }
 
 func (Schema_Type) Type() protoreflect.EnumType {
-	return &file_neurouter_v1_common_proto_enumTypes[2]
+	return &file_neurouter_v1_common_proto_enumTypes[3]
 }
 
 func (x Schema_Type) Number() protoreflect.EnumNumber {
@@ -210,8 +271,8 @@ func (Schema_Type) EnumDescriptor() ([]byte, []int) {
 
 type ReasoningConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Whether to enable reasoning.
-	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// The effort level for reasoning.
+	Effort ReasoningEffort `protobuf:"varint,1,opt,name=effort,proto3,enum=neurouter.v1.ReasoningEffort" json:"effort,omitempty"`
 	// The token budget for reasoning.
 	TokenBudget   uint32 `protobuf:"varint,2,opt,name=token_budget,json=tokenBudget,proto3" json:"token_budget,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -248,11 +309,11 @@ func (*ReasoningConfig) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *ReasoningConfig) GetEnabled() bool {
+func (x *ReasoningConfig) GetEffort() ReasoningEffort {
 	if x != nil {
-		return x.Enabled
+		return x.Effort
 	}
-	return false
+	return ReasoningEffort_REASONING_EFFORT_UNSPECIFIED
 }
 
 func (x *ReasoningConfig) GetTokenBudget() uint32 {
@@ -866,9 +927,9 @@ var File_neurouter_v1_common_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\n" +
-	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\"N\n" +
-	"\x0fReasoningConfig\x12\x18\n" +
-	"\aenabled\x18\x01 \x01(\bR\aenabled\x12!\n" +
+	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\"k\n" +
+	"\x0fReasoningConfig\x125\n" +
+	"\x06effort\x18\x01 \x01(\x0e2\x1d.neurouter.v1.ReasoningEffortR\x06effort\x12!\n" +
 	"\ftoken_budget\x18\x02 \x01(\rR\vtokenBudget\"\x98\x05\n" +
 	"\x10GenerationConfig\x12\"\n" +
 	"\n" +
@@ -940,7 +1001,15 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\n" +
 	"parameters\x18\x03 \x01(\v2\x14.neurouter.v1.SchemaR\n" +
 	"parametersB\x06\n" +
-	"\x04tool*s\n" +
+	"\x04tool*\xd8\x01\n" +
+	"\x0fReasoningEffort\x12 \n" +
+	"\x1cREASONING_EFFORT_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15REASONING_EFFORT_NONE\x10\x01\x12\x1c\n" +
+	"\x18REASONING_EFFORT_MINIMAL\x10\x02\x12\x18\n" +
+	"\x14REASONING_EFFORT_LOW\x10\x03\x12\x1b\n" +
+	"\x17REASONING_EFFORT_MEDIUM\x10\x04\x12\x19\n" +
+	"\x15REASONING_EFFORT_HIGH\x10\x05\x12\x18\n" +
+	"\x14REASONING_EFFORT_MAX\x10\x06*s\n" +
 	"\bModality\x12\x18\n" +
 	"\x14MODALITY_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rMODALITY_TEXT\x10\x01\x12\x12\n" +
@@ -967,37 +1036,39 @@ func file_neurouter_v1_common_proto_rawDescGZIP() []byte {
 	return file_neurouter_v1_common_proto_rawDescData
 }
 
-var file_neurouter_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_neurouter_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_neurouter_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_neurouter_v1_common_proto_goTypes = []any{
-	(Modality)(0),            // 0: neurouter.v1.Modality
-	(Capability)(0),          // 1: neurouter.v1.Capability
-	(Schema_Type)(0),         // 2: neurouter.v1.Schema.Type
-	(*ReasoningConfig)(nil),  // 3: neurouter.v1.ReasoningConfig
-	(*GenerationConfig)(nil), // 4: neurouter.v1.GenerationConfig
-	(*Statistics)(nil),       // 5: neurouter.v1.Statistics
-	(*Schema)(nil),           // 6: neurouter.v1.Schema
-	(*Tool)(nil),             // 7: neurouter.v1.Tool
-	(*Statistics_Usage)(nil), // 8: neurouter.v1.Statistics.Usage
-	nil,                      // 9: neurouter.v1.Schema.PropertiesEntry
-	(*Tool_Function)(nil),    // 10: neurouter.v1.Tool.Function
+	(ReasoningEffort)(0),     // 0: neurouter.v1.ReasoningEffort
+	(Modality)(0),            // 1: neurouter.v1.Modality
+	(Capability)(0),          // 2: neurouter.v1.Capability
+	(Schema_Type)(0),         // 3: neurouter.v1.Schema.Type
+	(*ReasoningConfig)(nil),  // 4: neurouter.v1.ReasoningConfig
+	(*GenerationConfig)(nil), // 5: neurouter.v1.GenerationConfig
+	(*Statistics)(nil),       // 6: neurouter.v1.Statistics
+	(*Schema)(nil),           // 7: neurouter.v1.Schema
+	(*Tool)(nil),             // 8: neurouter.v1.Tool
+	(*Statistics_Usage)(nil), // 9: neurouter.v1.Statistics.Usage
+	nil,                      // 10: neurouter.v1.Schema.PropertiesEntry
+	(*Tool_Function)(nil),    // 11: neurouter.v1.Tool.Function
 }
 var file_neurouter_v1_common_proto_depIdxs = []int32{
-	3,  // 0: neurouter.v1.GenerationConfig.reasoning_config:type_name -> neurouter.v1.ReasoningConfig
-	6,  // 1: neurouter.v1.GenerationConfig.schema:type_name -> neurouter.v1.Schema
-	8,  // 2: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
-	2,  // 3: neurouter.v1.Schema.type:type_name -> neurouter.v1.Schema.Type
-	6,  // 4: neurouter.v1.Schema.items:type_name -> neurouter.v1.Schema
-	6,  // 5: neurouter.v1.Schema.propertyNames:type_name -> neurouter.v1.Schema
-	9,  // 6: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
-	10, // 7: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
-	6,  // 8: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
-	6,  // 9: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	0,  // 0: neurouter.v1.ReasoningConfig.effort:type_name -> neurouter.v1.ReasoningEffort
+	4,  // 1: neurouter.v1.GenerationConfig.reasoning_config:type_name -> neurouter.v1.ReasoningConfig
+	7,  // 2: neurouter.v1.GenerationConfig.schema:type_name -> neurouter.v1.Schema
+	9,  // 3: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
+	3,  // 4: neurouter.v1.Schema.type:type_name -> neurouter.v1.Schema.Type
+	7,  // 5: neurouter.v1.Schema.items:type_name -> neurouter.v1.Schema
+	7,  // 6: neurouter.v1.Schema.propertyNames:type_name -> neurouter.v1.Schema
+	10, // 7: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
+	11, // 8: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
+	7,  // 9: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
+	7,  // 10: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_common_proto_init() }
@@ -1020,7 +1091,7 @@ func file_neurouter_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_common_proto_rawDesc), len(file_neurouter_v1_common_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,

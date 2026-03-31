@@ -42,6 +42,21 @@ func convertStatusFromAnthropic(stopReason anthropic.StopReason) v1.ChatStatus {
 	}
 }
 
+func convertEffortToAnthropic(effort v1.ReasoningEffort) anthropic.OutputConfigEffort {
+	switch effort {
+	case v1.ReasoningEffort_REASONING_EFFORT_MINIMAL, v1.ReasoningEffort_REASONING_EFFORT_LOW:
+		return anthropic.OutputConfigEffortLow
+	case v1.ReasoningEffort_REASONING_EFFORT_MEDIUM:
+		return anthropic.OutputConfigEffortMedium
+	case v1.ReasoningEffort_REASONING_EFFORT_HIGH:
+		return anthropic.OutputConfigEffortHigh
+	case v1.ReasoningEffort_REASONING_EFFORT_MAX:
+		return anthropic.OutputConfigEffortMax
+	default:
+		return ""
+	}
+}
+
 func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfig, req *anthropic.MessageNewParams) {
 	if config == nil {
 		return
@@ -60,13 +75,18 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 	if config.TopK != nil {
 		req.TopK = anthropic.Opt(*config.TopK)
 	}
-	if c := config.ReasoningConfig; c != nil && c.Enabled {
-		budgetTokens := int64(1024)
-		if c.TokenBudget > 1024 {
-			budgetTokens = int64(c.TokenBudget)
-		}
-		req.Thinking.OfEnabled = &anthropic.ThinkingConfigEnabledParam{
-			BudgetTokens: budgetTokens,
+	if c := config.ReasoningConfig; c != nil && c.Effort != v1.ReasoningEffort_REASONING_EFFORT_NONE {
+		if c.TokenBudget > 0 {
+			budgetTokens := int64(1024)
+			if c.TokenBudget > 1024 {
+				budgetTokens = int64(c.TokenBudget)
+			}
+			req.Thinking.OfEnabled = &anthropic.ThinkingConfigEnabledParam{
+				BudgetTokens: budgetTokens,
+			}
+		} else {
+			req.Thinking.OfAdaptive = &anthropic.ThinkingConfigAdaptiveParam{}
+			req.OutputConfig.Effort = convertEffortToAnthropic(c.Effort)
 		}
 	}
 	switch g := config.Grammar.(type) {

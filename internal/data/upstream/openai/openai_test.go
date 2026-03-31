@@ -81,7 +81,7 @@ func TestNewOpenAIUpstream(t *testing.T) {
 }
 
 func TestChat(t *testing.T) {
-	Convey("Given a upstream with a mock HTTP client", t, func() {
+	Convey("Given a upstream with a mock HTTP client for chat completion", t, func() {
 		config := &conf.OpenAIConfig{
 			BaseUrl: "https://api.openai.com/v1/",
 			ApiKey:  "test-key",
@@ -127,6 +127,68 @@ func TestChat(t *testing.T) {
 				So(len(resp.Message.Id), ShouldEqual, 36)
 				resp.Message.Id = "mock_message_id"
 				So(proto.Equal(resp, mockChatResp), ShouldBeTrue)
+			})
+		})
+
+		Convey("When the API call fails", func() {
+			mockClient.DoFunc = func(httpReq *http.Request) (*http.Response, error) {
+				return nil, errors.New("network error")
+			}
+
+			_, err := repo.Chat(context.Background(), mockChatReq)
+
+			Convey("Then it should return an error", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "network error")
+			})
+		})
+	})
+
+	Convey("Given a upstream with a mock HTTP client for responses", t, func() {
+		config := &conf.OpenAIConfig{
+			BaseUrl:         "https://api.openai.com/v1/",
+			ApiKey:          "test-key",
+			UseResponsesApi: true,
+		}
+		mockClient := &mockHTTPClient{}
+		repo, err := newOpenAIUpstreamWithClient(config, mockClient, log.DefaultLogger)
+		So(err, ShouldBeNil)
+
+		Convey("When Chat is called and the request is successful", func() {
+			mockClient.DoFunc = func(httpReq *http.Request) (*http.Response, error) {
+				So(httpReq.Method, ShouldEqual, http.MethodPost)
+				So(httpReq.URL.String(), ShouldEqual, "https://api.openai.com/v1/responses")
+				So(httpReq.Header.Get("Authorization"), ShouldEqual, "Bearer test-key")
+				So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
+
+				body, err := io.ReadAll(httpReq.Body)
+				So(err, ShouldBeNil)
+
+				var reqMap map[string]any
+				err = json.Unmarshal(body, &reqMap)
+				So(err, ShouldBeNil)
+
+				var expectedMap map[string]any
+				err = json.Unmarshal([]byte(mockResponsesRequestBody), &expectedMap)
+				So(err, ShouldBeNil)
+
+				So(reqMap, ShouldResemble, expectedMap)
+
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header: http.Header{
+						"Content-Type": []string{"application/json"},
+					},
+					Body: io.NopCloser(strings.NewReader(mockResponsesResponseBody)),
+				}, nil
+			}
+
+			resp, err := repo.Chat(context.Background(), mockChatReq)
+
+			Convey("Then it should return a valid response and no error", func() {
+				So(err, ShouldBeNil)
+				So(resp, ShouldNotBeNil)
+				So(proto.Equal(resp, mockResponsesResp), ShouldBeTrue)
 			})
 		})
 

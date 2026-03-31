@@ -107,25 +107,25 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 			})
 		})
 
-		Convey("When config has reasoning enabled with default budget", func() {
+		Convey("When config has reasoning effort without budget", func() {
 			config := &v1.GenerationConfig{
 				ReasoningConfig: &v1.ReasoningConfig{
-					Enabled: true,
+					Effort: v1.ReasoningEffort_REASONING_EFFORT_HIGH,
 				},
 			}
 			req := &anthropic.MessageNewParams{}
 			repo.convertGenerationConfigToAnthropic(config, req)
 
-			Convey("Then thinking should be enabled with default budget 1024", func() {
-				So(req.Thinking.OfEnabled, ShouldNotBeNil)
-				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 1024)
+			Convey("Then thinking should be adaptive with effort", func() {
+				So(req.Thinking.OfAdaptive, ShouldNotBeNil)
+				So(req.OutputConfig.Effort, ShouldEqual, anthropic.OutputConfigEffortHigh)
 			})
 		})
 
-		Convey("When config has reasoning enabled with custom budget", func() {
+		Convey("When config has reasoning effort with custom budget", func() {
 			config := &v1.GenerationConfig{
 				ReasoningConfig: &v1.ReasoningConfig{
-					Enabled:     true,
+					Effort:      v1.ReasoningEffort_REASONING_EFFORT_HIGH,
 					TokenBudget: 2048,
 				},
 			}
@@ -135,13 +135,14 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 			Convey("Then thinking should be enabled with custom budget", func() {
 				So(req.Thinking.OfEnabled, ShouldNotBeNil)
 				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 2048)
+				So(req.OutputConfig.Effort, ShouldEqual, anthropic.OutputConfigEffort(""))
 			})
 		})
 
-		Convey("When config has reasoning enabled with budget below minimum", func() {
+		Convey("When config has reasoning effort with budget below minimum", func() {
 			config := &v1.GenerationConfig{
 				ReasoningConfig: &v1.ReasoningConfig{
-					Enabled:     true,
+					Effort:      v1.ReasoningEffort_REASONING_EFFORT_HIGH,
 					TokenBudget: 512,
 				},
 			}
@@ -151,6 +152,7 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 			Convey("Then thinking should use minimum budget 1024", func() {
 				So(req.Thinking.OfEnabled, ShouldNotBeNil)
 				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 1024)
+				So(req.OutputConfig.Effort, ShouldEqual, anthropic.OutputConfigEffort(""))
 			})
 		})
 
@@ -161,7 +163,7 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 				TopP:        new(float32(0.95)),
 				TopK:        new(int64(40)),
 				ReasoningConfig: &v1.ReasoningConfig{
-					Enabled:     true,
+					Effort:      v1.ReasoningEffort_REASONING_EFFORT_HIGH,
 					TokenBudget: 2048,
 				},
 			}
@@ -175,6 +177,7 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 				So(req.TopK.Value, ShouldEqual, 40)
 				So(req.Thinking.OfEnabled, ShouldNotBeNil)
 				So(req.Thinking.OfEnabled.BudgetTokens, ShouldEqual, 2048)
+				So(req.OutputConfig.Effort, ShouldEqual, anthropic.OutputConfigEffort(""))
 			})
 		})
 

@@ -23,6 +23,21 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
+func convertEffortFromAnthropic(effort anthropic.OutputConfigEffort) v1.ReasoningEffort {
+	switch effort {
+	case anthropic.OutputConfigEffortLow:
+		return v1.ReasoningEffort_REASONING_EFFORT_LOW
+	case anthropic.OutputConfigEffortMedium:
+		return v1.ReasoningEffort_REASONING_EFFORT_MEDIUM
+	case anthropic.OutputConfigEffortHigh:
+		return v1.ReasoningEffort_REASONING_EFFORT_HIGH
+	case anthropic.OutputConfigEffortMax:
+		return v1.ReasoningEffort_REASONING_EFFORT_MAX
+	default:
+		return v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED
+	}
+}
+
 func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.GenerationConfig {
 	config := &v1.GenerationConfig{}
 	if req.MaxTokens != 0 {
@@ -37,14 +52,17 @@ func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.G
 	if req.TopK.Valid() {
 		config.TopK = &req.TopK.Value
 	}
-	if req.Thinking.OfEnabled != nil || req.Thinking.OfAdaptive != nil {
-		config.ReasoningConfig = &v1.ReasoningConfig{Enabled: true}
-		if req.Thinking.OfEnabled != nil {
-			config.ReasoningConfig.TokenBudget = uint32(req.Thinking.OfEnabled.BudgetTokens)
+	if req.Thinking.OfEnabled != nil {
+		config.ReasoningConfig = &v1.ReasoningConfig{
+			TokenBudget: uint32(req.Thinking.OfEnabled.BudgetTokens),
 		}
 	} else if req.Thinking.OfDisabled != nil {
 		config.ReasoningConfig = &v1.ReasoningConfig{
-			Enabled: false,
+			Effort: v1.ReasoningEffort_REASONING_EFFORT_NONE,
+		}
+	} else if req.Thinking.OfAdaptive != nil {
+		config.ReasoningConfig = &v1.ReasoningConfig{
+			Effort: convertEffortFromAnthropic(req.OutputConfig.Effort),
 		}
 	}
 	if len(req.OutputConfig.Format.Schema) > 0 {

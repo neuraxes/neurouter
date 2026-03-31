@@ -23,6 +23,7 @@ import (
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/ssestream"
+	"github.com/openai/openai-go/v3/responses"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -67,7 +68,7 @@ func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, client option.HTTPCl
 	return repo, nil
 }
 
-func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) chatWithCompletion(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
 	openAIReq := r.convertRequestToOpenAIChat(req)
 
 	openAIResp, err := r.client.Chat.Completions.New(ctx, openAIReq)
@@ -78,6 +79,27 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 	resp = r.convertResponseFromOpenAIChat(openAIResp)
 
 	return
+}
+
+func (r *upstream) chatWithResponses(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+	openAIReq := r.convertRequestToOpenAIResponse(req)
+
+	openAIResp, err := r.client.Responses.New(ctx, openAIReq)
+	if err != nil {
+		return
+	}
+
+	resp = r.convertResponseFromOpenAIResponse(openAIResp)
+	resp.Id = req.Id // Use the request session ID since we don't persist session in OpenAI
+
+	return
+}
+
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+	if r.config.UseResponsesApi {
+		return r.chatWithResponses(ctx, req)
+	}
+	return r.chatWithCompletion(ctx, req)
 }
 
 type openAIChatStreamClient struct {
@@ -115,7 +137,7 @@ func (c *openAIChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
 	}
 }
 
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
+func (r *upstream) chatStreamWithCompletion(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
 	openAIReq := r.convertRequestToOpenAIChat(req)
 	openAIReq.StreamOptions.IncludeUsage = openai.Opt(true)
 	stream := r.client.Chat.Completions.NewStreaming(ctx, openAIReq)
@@ -127,4 +149,61 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq
 	}
 
 	return client.AsSeq()
+}
+
+type openAIResponseStreamClient struct {
+	req         *entity.ChatReq
+	upstream    *ssestream.Stream[responses.ResponseStreamEventUnion]
+	respModel   string
+	messageID   string
+	hasRefused  bool
+	hasToolCall bool
+}
+
+func (c *openAIResponseStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
+	return func(yield func(*entity.ChatResp, error) bool) {
+		defer c.upstream.Close()
+		for {
+		next:
+			if !c.upstream.Next() {
+				if err := c.upstream.Err(); err != nil {
+					yield(nil, err)
+				}
+				return
+			}
+
+			event := new(c.upstream.Current())
+			resp := c.convertStreamEventFromOpenAIResponse(event)
+			if resp == nil {
+				goto next
+			}
+
+			if resp.Message != nil {
+				resp.Message.Id = c.messageID
+			}
+
+			if !yield(resp, nil) {
+				return
+			}
+		}
+	}
+}
+
+func (r *upstream) chatStreamWithResponses(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
+	openAIReq := r.convertRequestToOpenAIResponse(req)
+	stream := r.client.Responses.NewStreaming(ctx, openAIReq)
+
+	client := &openAIResponseStreamClient{
+		req:      req,
+		upstream: stream,
+	}
+
+	return client.AsSeq()
+}
+
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
+	if r.config.UseResponsesApi {
+		return r.chatStreamWithResponses(ctx, req)
+	}
+	return r.chatStreamWithCompletion(ctx, req)
 }

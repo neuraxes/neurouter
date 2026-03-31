@@ -24,6 +24,21 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
+func convertEffortToGoogleThinkingLevel(effort v1.ReasoningEffort) genai.ThinkingLevel {
+	switch effort {
+	case v1.ReasoningEffort_REASONING_EFFORT_MINIMAL:
+		return genai.ThinkingLevelMinimal
+	case v1.ReasoningEffort_REASONING_EFFORT_LOW:
+		return genai.ThinkingLevelLow
+	case v1.ReasoningEffort_REASONING_EFFORT_MEDIUM:
+		return genai.ThinkingLevelMedium
+	case v1.ReasoningEffort_REASONING_EFFORT_HIGH, v1.ReasoningEffort_REASONING_EFFORT_MAX:
+		return genai.ThinkingLevelHigh
+	default:
+		return genai.ThinkingLevelUnspecified
+	}
+}
+
 func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *genai.GenerateContentConfig) {
 	if config == nil || googleConfig == nil {
 		return
@@ -40,9 +55,12 @@ func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *
 	if config.TopK != nil {
 		googleConfig.TopK = new(float32(*config.TopK))
 	}
-	if c := config.ReasoningConfig; c != nil {
+	if c := config.ReasoningConfig; c != nil && c.Effort != v1.ReasoningEffort_REASONING_EFFORT_NONE {
 		gc := &genai.ThinkingConfig{
-			IncludeThoughts: c.Enabled,
+			IncludeThoughts: true,
+		}
+		if c.Effort > v1.ReasoningEffort_REASONING_EFFORT_NONE {
+			gc.ThinkingLevel = convertEffortToGoogleThinkingLevel(c.Effort)
 		}
 		if c.TokenBudget != 0 {
 			gc.ThinkingBudget = new(int32(c.TokenBudget))

@@ -12,7 +12,7 @@ var mockChatReq = &entity.ChatReq{
 	Config: &v1.GenerationConfig{
 		Temperature: ptr.To[float32](0),
 		ReasoningConfig: &v1.ReasoningConfig{
-			Enabled: true,
+			Effort: v1.ReasoningEffort_REASONING_EFFORT_HIGH,
 		},
 	},
 	Messages: []*v1.Message{
@@ -169,7 +169,8 @@ const mockGenerateContentRequestBody = `{
     "generationConfig": {
         "temperature": 0,
         "thinkingConfig": {
-            "includeThoughts": true
+            "includeThoughts": true,
+            "thinkingLevel": "HIGH"
         }
     },
 	"systemInstruction": {

@@ -56,11 +56,12 @@ paths:
                   schema:
                     type: number
                     format: float
-                - name: config.reasoningConfig.enabled
+                - name: config.reasoningConfig.effort
                   in: query
-                  description: Whether to enable reasoning.
+                  description: The effort level for reasoning.
                   schema:
-                    type: boolean
+                    type: integer
+                    format: enum
                 - name: config.reasoningConfig.tokenBudget
                   in: query
                   description: The token budget for reasoning.
@@ -275,6 +276,9 @@ components:
         neurouter.v1.Content:
             type: object
             properties:
+                id:
+                    type: string
+                    description: The unique identifier of the content
                 index:
                     type: integer
                     description: The index of current content
@@ -355,6 +359,11 @@ components:
                 name:
                     type: string
                     description: The optional name of the message sender
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: Additional metadata for the message
         neurouter.v1.ModelSpec:
             type: object
             properties:

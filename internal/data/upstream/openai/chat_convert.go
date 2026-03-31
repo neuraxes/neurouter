@@ -46,6 +46,10 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 		req.PresencePenalty = openai.Opt(float64(*config.PresencePenalty))
 	}
 
+	if c := config.ReasoningConfig; c != nil && c.Effort > v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED {
+		req.ReasoningEffort = convertEffortToOpenAI(c.Effort)
+	}
+
 	// Convert grammar to OpenAI response format
 	switch g := config.Grammar.(type) {
 	case *v1.GenerationConfig_PresetGrammar:
@@ -67,12 +71,11 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 			}
 		}
 	case *v1.GenerationConfig_Schema:
-		schemaMap := convertToolParametersToOpenAIChat(g.Schema)
 		req.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
 			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
 				JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
 					Name:   "custom_schema",
-					Schema: schemaMap,
+					Schema: g.Schema,
 				},
 			},
 		}
@@ -157,7 +160,6 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 							r.log.Errorf("unsupported content for tool result: %v", c)
 						}
 					}
-
 				}
 
 				result = append(result, openai.ChatCompletionMessageParamUnion{OfTool: toolMsg})
@@ -251,16 +253,16 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
-		case *v1.Content_ToolUse:
-			m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallUnionParam{
-				OfFunction: &openai.ChatCompletionMessageFunctionToolCallParam{
-					ID: c.ToolUse.Id,
-					Function: openai.ChatCompletionMessageFunctionToolCallFunctionParam{
-						Name:      c.ToolUse.Name,
-						Arguments: c.ToolUse.GetTextualInput(),
+			case *v1.Content_ToolUse:
+				m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallUnionParam{
+					OfFunction: &openai.ChatCompletionMessageFunctionToolCallParam{
+						ID: c.ToolUse.Id,
+						Function: openai.ChatCompletionMessageFunctionToolCallFunctionParam{
+							Name:      c.ToolUse.Name,
+							Arguments: c.ToolUse.GetTextualInput(),
+						},
 					},
-				},
-			})
+				})
 			}
 		}
 
@@ -271,17 +273,17 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 	}
 }
 
-func convertToolParametersToOpenAIChat(parameters *v1.Schema) openai.FunctionParameters {
-	params := map[string]any{
-		"type": parameters.Type,
+func convertSchemaToMap(parameters *v1.Schema) openai.FunctionParameters {
+	data, err := json.Marshal(parameters)
+	if err != nil {
+		return nil
 	}
-	if parameters.Properties != nil {
-		params["properties"] = parameters.Properties
-	} else if parameters.Type == v1.Schema_TYPE_OBJECT {
+	var params openai.FunctionParameters
+	if err := json.Unmarshal(data, &params); err != nil {
+		return nil
+	}
+	if parameters.Type == v1.Schema_TYPE_OBJECT && params["properties"] == nil {
 		params["properties"] = map[string]any{}
-	}
-	if parameters.Required != nil {
-		params["required"] = parameters.Required
 	}
 	return params
 }
@@ -297,9 +299,7 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCo
 
 	for _, message := range req.Messages {
 		m := r.convertMessageToOpenAIChat(message)
-		if m != nil {
-			openAIReq.Messages = append(openAIReq.Messages, m...)
-		}
+		openAIReq.Messages = append(openAIReq.Messages, m...)
 	}
 
 	if req.Tools != nil {
@@ -309,7 +309,7 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCo
 			case *v1.Tool_Function_:
 				ot := openai.FunctionDefinitionParam{
 					Name:       t.Function.Name,
-					Parameters: convertToolParametersToOpenAIChat(t.Function.Parameters),
+					Parameters: convertSchemaToMap(t.Function.Parameters),
 				}
 				if t.Function.Description != "" {
 					ot.Description = openai.Opt(t.Function.Description)

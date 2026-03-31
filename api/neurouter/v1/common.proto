@@ -18,9 +18,19 @@ package neurouter.v1;
 
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
+enum ReasoningEffort {
+  REASONING_EFFORT_UNSPECIFIED = 0;
+  REASONING_EFFORT_NONE = 1;
+  REASONING_EFFORT_MINIMAL = 2;
+  REASONING_EFFORT_LOW = 3;
+  REASONING_EFFORT_MEDIUM = 4;
+  REASONING_EFFORT_HIGH = 5;
+  REASONING_EFFORT_MAX = 6;
+}
+
 message ReasoningConfig {
-  // Whether to enable reasoning.
-  bool enabled = 1;
+  // The effort level for reasoning.
+  ReasoningEffort effort = 1;
   // The token budget for reasoning.
   uint32 token_budget = 2;
 }

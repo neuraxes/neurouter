@@ -104,7 +104,6 @@ var mockChatReq = &v1.ChatReq{
 		MaxTokens:   ptr.To[int64](8192),
 		Temperature: ptr.To[float32](0),
 		ReasoningConfig: &v1.ReasoningConfig{
-			Enabled:     true,
 			TokenBudget: 1024,
 		},
 	},

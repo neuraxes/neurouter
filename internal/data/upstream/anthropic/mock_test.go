@@ -12,7 +12,7 @@ var mockChatReq = &entity.ChatReq{
 	Config: &v1.GenerationConfig{
 		Temperature: ptr.To[float32](0),
 		ReasoningConfig: &v1.ReasoningConfig{
-			Enabled: true,
+			Effort: v1.ReasoningEffort_REASONING_EFFORT_HIGH,
 		},
 	},
 	Messages: []*v1.Message{
@@ -178,6 +178,9 @@ var mockMessagesRequetBody = `{
         }
     ],
     "model": "claude-haiku-4-5-20251001-thinking",
+    "output_config": {
+        "effort": "high"
+    },
     "temperature": 0,
     "system": [
         {
@@ -186,8 +189,7 @@ var mockMessagesRequetBody = `{
         }
     ],
     "thinking": {
-        "budget_tokens": 1024,
-        "type": "enabled"
+        "type": "adaptive"
     },
     "tools": [
         {
@@ -336,6 +338,9 @@ var mockMessagesStreamRequetBody = `{
         }
     ],
     "model": "claude-haiku-4-5-20251001-thinking",
+    "output_config": {
+        "effort": "high"
+    },
 	"stream": true,
     "temperature": 0,
     "system": [
@@ -345,8 +350,7 @@ var mockMessagesStreamRequetBody = `{
         }
     ],
     "thinking": {
-        "budget_tokens": 1024,
-        "type": "enabled"
+        "type": "adaptive"
     },
     "tools": [
         {
