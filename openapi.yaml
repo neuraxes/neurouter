@@ -355,6 +355,11 @@ components:
                 name:
                     type: string
                     description: The optional name of the message sender
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: Additional metadata for the message
         neurouter.v1.ModelSpec:
             type: object
             properties:
