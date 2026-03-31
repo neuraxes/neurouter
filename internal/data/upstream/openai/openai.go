@@ -20,9 +20,9 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
-	"github.com/openai/openai-go/packages/ssestream"
+	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
+	"github.com/openai/openai-go/v3/packages/ssestream"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"

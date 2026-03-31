@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/v3"
 	. "github.com/smartystreets/goconvey/convey"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
@@ -368,12 +368,12 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 			result := params[0].OfAssistant
 			calls := result.ToolCalls
 			So(calls, ShouldHaveLength, 2)
-			So(calls[0].ID, ShouldEqual, "call-1")
-			So(calls[0].Function.Name, ShouldEqual, "search")
-			So(calls[0].Function.Arguments, ShouldEqual, `{"query":"weather"}`)
-			So(calls[1].ID, ShouldEqual, "call-2")
-			So(calls[1].Function.Name, ShouldEqual, "calculate")
-			So(calls[1].Function.Arguments, ShouldEqual, `{"expression":"1+1"}`)
+			So(calls[0].OfFunction.ID, ShouldEqual, "call-1")
+			So(calls[0].OfFunction.Function.Name, ShouldEqual, "search")
+			So(calls[0].OfFunction.Function.Arguments, ShouldEqual, `{"query":"weather"}`)
+			So(calls[1].OfFunction.ID, ShouldEqual, "call-2")
+			So(calls[1].OfFunction.Function.Name, ShouldEqual, "calculate")
+			So(calls[1].OfFunction.Function.Arguments, ShouldEqual, `{"expression":"1+1"}`)
 		})
 
 		Convey("with unsupported tool call type", func() {
@@ -687,9 +687,10 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 
 			param := repo.convertRequestToOpenAIChat(req)
 			So(param.Tools, ShouldHaveLength, 1)
-			So(param.Tools[0].Function.Name, ShouldEqual, "test_function")
-			So(param.Tools[0].Function.Description.Value, ShouldEqual, "Test function description")
-			paramValue := param.Tools[0].Function.Parameters
+			fn := param.Tools[0].OfFunction.Function
+			So(fn.Name, ShouldEqual, "test_function")
+			So(fn.Description.Value, ShouldEqual, "Test function description")
+			paramValue := fn.Parameters
 			So(paramValue["type"], ShouldEqual, v1.Schema_TYPE_OBJECT)
 			So(paramValue["required"], ShouldResemble, []string{"prop1"})
 			props := paramValue["properties"].(map[string]*v1.Schema)
@@ -745,11 +746,11 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 
 		Convey("with tool calls", func() {
 			openAIMsg := &openai.ChatCompletionMessage{
-				ToolCalls: []openai.ChatCompletionMessageToolCall{
+				ToolCalls: []openai.ChatCompletionMessageToolCallUnion{
 					{
 						ID:   "call-1",
 						Type: "function",
-						Function: openai.ChatCompletionMessageToolCallFunction{
+						Function: openai.ChatCompletionMessageFunctionToolCallFunction{
 							Name:      "test_function",
 							Arguments: `{"arg1":"value1"}`,
 						},

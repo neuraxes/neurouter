@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/v3"
 	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
@@ -51,9 +51,7 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 	case *v1.GenerationConfig_PresetGrammar:
 		if g.PresetGrammar == "json_object" {
 			req.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
-				OfJSONObject: &openai.ResponseFormatJSONObjectParam{
-					Type: "json_object",
-				},
+				OfJSONObject: &openai.ResponseFormatJSONObjectParam{},
 			}
 		}
 	case *v1.GenerationConfig_JsonSchema:
@@ -253,14 +251,16 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
-			case *v1.Content_ToolUse:
-				m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallParam{
+		case *v1.Content_ToolUse:
+			m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallUnionParam{
+				OfFunction: &openai.ChatCompletionMessageFunctionToolCallParam{
 					ID: c.ToolUse.Id,
-					Function: openai.ChatCompletionMessageToolCallFunctionParam{
+					Function: openai.ChatCompletionMessageFunctionToolCallFunctionParam{
 						Name:      c.ToolUse.Name,
 						Arguments: c.ToolUse.GetTextualInput(),
 					},
-				})
+				},
+			})
 			}
 		}
 
@@ -303,7 +303,7 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCo
 	}
 
 	if req.Tools != nil {
-		var tools []openai.ChatCompletionToolParam
+		var tools []openai.ChatCompletionToolUnionParam
 		for _, tool := range req.Tools {
 			switch t := tool.Tool.(type) {
 			case *v1.Tool_Function_:
@@ -314,7 +314,7 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCo
 				if t.Function.Description != "" {
 					ot.Description = openai.Opt(t.Function.Description)
 				}
-				tools = append(tools, openai.ChatCompletionToolParam{Function: ot})
+				tools = append(tools, openai.ChatCompletionFunctionTool(ot))
 			default:
 				r.log.Errorf("unsupported tool: %v", t)
 			}
