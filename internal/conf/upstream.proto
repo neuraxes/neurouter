@@ -20,6 +20,7 @@ option go_package = "github.com/neuraxes/neurouter/internal/conf;conf";
 
 message Upstream {
   repeated UpstreamConfig configs = 1;
+  repeated AliasConfig aliases = 2;
 }
 
 message UpstreamScheduling {
@@ -122,5 +123,14 @@ message AnthropicConfig {
   map<string, string> headers = 4;
   // Whether to put the system prompt into messages (as user message)
   bool system_as_user = 5;
+}
 
+message AliasConfig {
+  message ActualConfig {
+    string upstream = 1;
+    string model = 2;
+  }
+  string id = 1;
+  string name = 2;
+  ActualConfig actual = 3;
 }

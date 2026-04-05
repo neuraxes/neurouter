@@ -70,6 +70,17 @@ func (uc *UseCaseImpl) ElectForEmbedding(ctx context.Context, req *v1.EmbedReq) 
 		}
 	}
 
+	if a := uc.aliases[req.Model]; a != nil {
+		for _, m := range a.models {
+			if m.embeddingRepo == nil || !slices.Contains(m.config.Capabilities, conf.Capability_CAPABILITY_EMBEDDING) {
+				continue
+			}
+			if !slices.Contains(matchingCandidates, m) {
+				matchingCandidates = append(matchingCandidates, m)
+			}
+		}
+	}
+
 	var selected *model
 	var rs *reservationSet
 	var err error

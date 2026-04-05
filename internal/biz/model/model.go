@@ -45,8 +45,14 @@ type model struct {
 	metrics           *metrics
 }
 
+type alias struct {
+	config *conf.AliasConfig
+	models []*model
+}
+
 type UseCaseImpl struct {
 	models  []*model
+	aliases map[string]*alias
 	metrics *metrics
 	log     *log.Helper
 }
@@ -67,6 +73,7 @@ func NewModelUseCase(
 	}
 
 	var models []*model
+	aliases := make(map[string]*alias)
 
 	if c != nil {
 		for _, config := range c.Configs {
@@ -126,39 +133,76 @@ func NewModelUseCase(
 				})
 			}
 		}
+
+		for _, ac := range c.GetAliases() {
+			actual := ac.GetActual()
+			if actual == nil {
+				logHelper.Errorf("alias %q has no actual config, skipping", ac.GetId())
+				continue
+			}
+			var resolved []*model
+			for _, m := range models {
+				if m.config.Id != actual.GetModel() {
+					continue
+				}
+				if upstream := actual.GetUpstream(); upstream != "" && m.upstreamConfig.Name != upstream {
+					continue
+				}
+				resolved = append(resolved, m)
+			}
+			if len(resolved) == 0 {
+				logHelper.Errorf("alias %q: actual model %s:%s not found", ac.GetId(), actual.GetUpstream(), actual.GetModel())
+				continue
+			}
+			aliases[ac.GetId()] = &alias{config: ac, models: resolved}
+		}
 	}
 
 	return &UseCaseImpl{
 		models:  models,
+		aliases: aliases,
 		metrics: metrics,
 		log:     logHelper,
 	}
 }
 
+func modelSpecFromConfig(cfg *conf.Model) *entity.ModelSpec {
+	modalities := make([]v1.Modality, 0, len(cfg.Modalities))
+	for _, modality := range cfg.Modalities {
+		modalities = append(modalities, v1.Modality(modality))
+	}
+	capabilities := make([]v1.Capability, 0, len(cfg.Capabilities))
+	for _, capability := range cfg.Capabilities {
+		capabilities = append(capabilities, v1.Capability(capability))
+	}
+	return &entity.ModelSpec{
+		Id:            cfg.Id,
+		Name:          cfg.Name,
+		Owner:         cfg.Owner,
+		Provider:      cfg.Provider,
+		Modalities:    modalities,
+		Capabilities:  capabilities,
+		ContextLength: cfg.ContextLength,
+	}
+}
+
 func (uc *UseCaseImpl) ListAvailableModels(ctx context.Context) ([]*entity.ModelSpec, error) {
-	var models []*entity.ModelSpec
+	var specs []*entity.ModelSpec
 
 	for _, m := range uc.models {
-		modalities := make([]v1.Modality, 0, len(m.config.Modalities))
-		for _, modality := range m.config.Modalities {
-			modalities = append(modalities, v1.Modality(modality))
-		}
-
-		capabilities := make([]v1.Capability, 0, len(m.config.Capabilities))
-		for _, capability := range m.config.Capabilities {
-			capabilities = append(capabilities, v1.Capability(capability))
-		}
-
-		models = append(models, &entity.ModelSpec{
-			Id:            m.config.Id,
-			Name:          m.config.Name,
-			Owner:         m.config.Owner,
-			Provider:      m.config.Provider,
-			Modalities:    modalities,
-			Capabilities:  capabilities,
-			ContextLength: m.config.ContextLength,
-		})
+		specs = append(specs, modelSpecFromConfig(m.config))
 	}
 
-	return models, nil
+	// Add virtual models from aliases
+	for _, a := range uc.aliases {
+		actual := a.models[0]
+		spec := modelSpecFromConfig(actual.config)
+		spec.Id = a.config.Id
+		if a.config.Name != "" {
+			spec.Name = a.config.Name
+		}
+		specs = append(specs, spec)
+	}
+
+	return specs, nil
 }

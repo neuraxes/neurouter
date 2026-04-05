@@ -33,6 +33,7 @@ func TestNewModelUseCase(t *testing.T) {
 			uc := NewModelUseCase(nil, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(uc, ShouldNotBeNil)
 			So(uc.models, ShouldBeEmpty)
+			So(uc.aliases, ShouldBeEmpty)
 		})
 
 		Convey("with empty configs should return empty use case", func() {
@@ -42,6 +43,7 @@ func TestNewModelUseCase(t *testing.T) {
 			uc := NewModelUseCase(c, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(uc, ShouldNotBeNil)
 			So(uc.models, ShouldBeEmpty)
+			So(uc.aliases, ShouldBeEmpty)
 		})
 
 		Convey("with OpenAI config should create models", func() {

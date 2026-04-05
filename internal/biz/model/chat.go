@@ -117,6 +117,17 @@ func (uc *UseCaseImpl) ElectForChat(ctx context.Context, req *v1.ChatReq) (chat.
 		}
 	}
 
+	if a := uc.aliases[req.Model]; a != nil {
+		for _, m := range a.models {
+			if m.chatRepo == nil || !slices.Contains(m.config.Capabilities, conf.Capability_CAPABILITY_CHAT) {
+				continue
+			}
+			if !slices.Contains(matchingCandidates, m) {
+				matchingCandidates = append(matchingCandidates, m)
+			}
+		}
+	}
+
 	var selected *model
 	var rs *reservationSet
 	var err error
