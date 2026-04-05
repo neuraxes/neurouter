@@ -503,6 +503,7 @@ func TestChatRespAccumulator(t *testing.T) {
 							InputTokens:       100,
 							OutputTokens:      50,
 							CachedInputTokens: 20,
+							ReasoningTokens:   15,
 						},
 					},
 				})
@@ -510,9 +511,10 @@ func TestChatRespAccumulator(t *testing.T) {
 				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 100)
 				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 50)
 				So(resp.Statistics.Usage.CachedInputTokens, ShouldEqual, 20)
+				So(resp.Statistics.Usage.ReasoningTokens, ShouldEqual, 15)
 			})
 
-			Convey("Tokens accumulate across chunks", func() {
+			Convey("Tokens update by non-zero fields across chunks", func() {
 				acc := NewChatRespAccumulator()
 				acc.Accumulate(&v1.ChatResp{
 					Statistics: &v1.Statistics{
@@ -520,6 +522,17 @@ func TestChatRespAccumulator(t *testing.T) {
 							InputTokens:       100,
 							OutputTokens:      200,
 							CachedInputTokens: 300,
+							ReasoningTokens:   50,
+						},
+					},
+				})
+				acc.Accumulate(&v1.ChatResp{
+					Statistics: &v1.Statistics{
+						Usage: &v1.Statistics_Usage{
+							InputTokens:       0,
+							OutputTokens:      300,
+							CachedInputTokens: 0,
+							ReasoningTokens:   70,
 						},
 					},
 				})
@@ -527,16 +540,18 @@ func TestChatRespAccumulator(t *testing.T) {
 					Statistics: &v1.Statistics{
 						Usage: &v1.Statistics_Usage{
 							InputTokens:       200,
-							OutputTokens:      300,
+							OutputTokens:      0,
 							CachedInputTokens: 400,
+							ReasoningTokens:   0,
 						},
 					},
 				})
 
 				resp := acc.Resp()
-				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 300)
-				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 500)
-				So(resp.Statistics.Usage.CachedInputTokens, ShouldEqual, 700)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 200)
+				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 300)
+				So(resp.Statistics.Usage.CachedInputTokens, ShouldEqual, 400)
+				So(resp.Statistics.Usage.ReasoningTokens, ShouldEqual, 70)
 			})
 
 			Convey("Nil usage is skipped", func() {

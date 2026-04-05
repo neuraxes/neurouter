@@ -304,8 +304,9 @@ var mockChatResp = &entity.ChatResp{
 	},
 	Statistics: &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
-			InputTokens:  144,
-			OutputTokens: 148,
+			InputTokens:     144,
+			OutputTokens:    148,
+			ReasoningTokens: 102,
 		},
 	},
 }
@@ -337,8 +338,9 @@ var mockStreamChatResp = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				InputTokens:  391,
-				OutputTokens: 72,
+				InputTokens:     391,
+				OutputTokens:    72,
+				ReasoningTokens: 72,
 			},
 		},
 	},
@@ -359,8 +361,9 @@ var mockStreamChatResp = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				InputTokens:  391,
-				OutputTokens: 102,
+				InputTokens:     391,
+				OutputTokens:    102,
+				ReasoningTokens: 102,
 			},
 		},
 	},
@@ -383,8 +386,9 @@ var mockStreamChatResp = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				InputTokens:  391,
-				OutputTokens: 114,
+				InputTokens:     391,
+				OutputTokens:    114,
+				ReasoningTokens: 102,
 			},
 		},
 	},
@@ -415,8 +419,9 @@ var mockStreamChatResp = []*entity.ChatResp{
 		},
 		Statistics: &v1.Statistics{
 			Usage: &v1.Statistics_Usage{
-				InputTokens:  391,
-				OutputTokens: 145,
+				InputTokens:     391,
+				OutputTokens:    145,
+				ReasoningTokens: 102,
 			},
 		},
 	},

@@ -47,6 +47,7 @@ func TestNewMetrics(t *testing.T) {
 			So(m.inputTokens, ShouldNotBeNil)
 			So(m.outputTokens, ShouldNotBeNil)
 			So(m.cachedInputTokens, ShouldNotBeNil)
+			So(m.reasoningTokens, ShouldNotBeNil)
 			So(m.requests, ShouldNotBeNil)
 		})
 
@@ -57,6 +58,7 @@ func TestNewMetrics(t *testing.T) {
 			So(m.inputTokens, ShouldNotBeNil)
 			So(m.outputTokens, ShouldNotBeNil)
 			So(m.cachedInputTokens, ShouldNotBeNil)
+			So(m.reasoningTokens, ShouldNotBeNil)
 			So(m.requests, ShouldNotBeNil)
 		})
 	})
@@ -67,7 +69,7 @@ func TestMetrics_RecordTokenUsage(t *testing.T) {
 		Convey("should record token usage with correct attributes", func() {
 			m, reader := newTestMetrics()
 
-			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 50, 10)
+			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 50, 10, 20)
 
 			data := collectMetrics(reader)
 
@@ -89,26 +91,31 @@ func TestMetrics_RecordTokenUsage(t *testing.T) {
 			// Check cached input tokens
 			So(data["neurouter_cached_input_tokens_total"], ShouldHaveLength, 1)
 			So(data["neurouter_cached_input_tokens_total"][0].Value, ShouldEqual, 10)
+
+			// Check reasoning tokens
+			So(data["neurouter_reasoning_tokens_total"], ShouldHaveLength, 1)
+			So(data["neurouter_reasoning_tokens_total"][0].Value, ShouldEqual, 20)
 		})
 
 		Convey("should accumulate multiple recordings", func() {
 			m, reader := newTestMetrics()
 
-			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 50, 10)
-			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 200, 100, 20)
+			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 50, 10, 20)
+			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 200, 100, 20, 30)
 
 			data := collectMetrics(reader)
 			So(data["neurouter_input_tokens_total"], ShouldHaveLength, 1)
 			So(data["neurouter_input_tokens_total"][0].Value, ShouldEqual, 300)
 			So(data["neurouter_output_tokens_total"][0].Value, ShouldEqual, 150)
 			So(data["neurouter_cached_input_tokens_total"][0].Value, ShouldEqual, 30)
+			So(data["neurouter_reasoning_tokens_total"][0].Value, ShouldEqual, 50)
 		})
 
 		Convey("should separate metrics by upstream and model", func() {
 			m, reader := newTestMetrics()
 
-			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 50, 0)
-			m.recordTokenUsage(context.Background(), "anthropic", "claude-3", 200, 100, 0)
+			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 50, 0, 0)
+			m.recordTokenUsage(context.Background(), "anthropic", "claude-3", 200, 100, 0, 0)
 
 			data := collectMetrics(reader)
 			So(data["neurouter_input_tokens_total"], ShouldHaveLength, 2)
@@ -117,7 +124,7 @@ func TestMetrics_RecordTokenUsage(t *testing.T) {
 		Convey("should skip zero-value counters", func() {
 			m, reader := newTestMetrics()
 
-			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 0, 0)
+			m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 0, 0, 0)
 
 			data := collectMetrics(reader)
 			So(data["neurouter_input_tokens_total"], ShouldHaveLength, 1)
@@ -132,7 +139,7 @@ func TestMetrics_RecordTokenUsage(t *testing.T) {
 
 		Convey("should be nil-safe", func() {
 			var m *metrics
-			So(func() { m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 50, 10) }, ShouldNotPanic)
+			So(func() { m.recordTokenUsage(context.Background(), "openai", "gpt-4", 100, 50, 10, 20) }, ShouldNotPanic)
 		})
 	})
 }

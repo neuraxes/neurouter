@@ -513,6 +513,7 @@ func TestConvertStatisticsFromGoogle(t *testing.T) {
 		usage := &genai.GenerateContentResponseUsageMetadata{
 			PromptTokenCount:        100,
 			CandidatesTokenCount:    50,
+			ThoughtsTokenCount:      30,
 			CachedContentTokenCount: 25,
 		}
 
@@ -521,8 +522,9 @@ func TestConvertStatisticsFromGoogle(t *testing.T) {
 		So(stats, ShouldNotBeNil)
 		So(stats.Usage, ShouldNotBeNil)
 		So(stats.Usage.InputTokens, ShouldEqual, 100)
-		So(stats.Usage.OutputTokens, ShouldEqual, 50)
+		So(stats.Usage.OutputTokens, ShouldEqual, 80)
 		So(stats.Usage.CachedInputTokens, ShouldEqual, 25)
+		So(stats.Usage.ReasoningTokens, ShouldEqual, 30)
 	})
 
 	Convey("convertStatisticsFromGoogle should return nil for nil input", t, func() {
@@ -544,5 +546,6 @@ func TestConvertStatisticsFromGoogle(t *testing.T) {
 		So(stats.Usage.InputTokens, ShouldEqual, 0)
 		So(stats.Usage.OutputTokens, ShouldEqual, 0)
 		So(stats.Usage.CachedInputTokens, ShouldEqual, 0)
+		So(stats.Usage.ReasoningTokens, ShouldEqual, 0)
 	})
 }

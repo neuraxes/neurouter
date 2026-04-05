@@ -234,12 +234,14 @@ func TestChatModel_RecordUsage(t *testing.T) {
 					InputTokens:       100,
 					OutputTokens:      50,
 					CachedInputTokens: 10,
+					ReasoningTokens:   7,
 				},
 			})
 
 			So(m.inputTokens.Load(), ShouldEqual, 100)
 			So(m.outputTokens.Load(), ShouldEqual, 50)
 			So(m.cachedInputTokens.Load(), ShouldEqual, 10)
+			So(m.reasoningTokens.Load(), ShouldEqual, 7)
 			So(concurrency.Probe(), ShouldEqual, 0)
 		})
 
@@ -285,6 +287,7 @@ func TestChatModel_RecordUsage(t *testing.T) {
 					InputTokens:       100,
 					OutputTokens:      50,
 					CachedInputTokens: 10,
+					ReasoningTokens:   20,
 				},
 			})
 
@@ -293,6 +296,7 @@ func TestChatModel_RecordUsage(t *testing.T) {
 			So(data["neurouter_input_tokens_total"][0].Value, ShouldEqual, 100)
 			So(data["neurouter_output_tokens_total"][0].Value, ShouldEqual, 50)
 			So(data["neurouter_cached_input_tokens_total"][0].Value, ShouldEqual, 10)
+			So(data["neurouter_reasoning_tokens_total"][0].Value, ShouldEqual, 20)
 			So(data["neurouter_requests_total"], ShouldHaveLength, 1)
 			So(data["neurouter_requests_total"][0].Value, ShouldEqual, 1)
 

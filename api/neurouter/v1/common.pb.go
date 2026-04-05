@@ -808,6 +808,7 @@ type Statistics_Usage struct {
 	InputTokens       uint32                 `protobuf:"varint,1,opt,name=input_tokens,json=inputTokens,proto3" json:"input_tokens,omitempty"`
 	OutputTokens      uint32                 `protobuf:"varint,2,opt,name=output_tokens,json=outputTokens,proto3" json:"output_tokens,omitempty"`
 	CachedInputTokens uint32                 `protobuf:"varint,3,opt,name=cached_input_tokens,json=cachedInputTokens,proto3" json:"cached_input_tokens,omitempty"`
+	ReasoningTokens   uint32                 `protobuf:"varint,4,opt,name=reasoning_tokens,json=reasoningTokens,proto3" json:"reasoning_tokens,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -859,6 +860,13 @@ func (x *Statistics_Usage) GetOutputTokens() uint32 {
 func (x *Statistics_Usage) GetCachedInputTokens() uint32 {
 	if x != nil {
 		return x.CachedInputTokens
+	}
+	return 0
+}
+
+func (x *Statistics_Usage) GetReasoningTokens() uint32 {
+	if x != nil {
+		return x.ReasoningTokens
 	}
 	return 0
 }
@@ -955,14 +963,15 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x06_top_kB\x14\n" +
 	"\x12_frequency_penaltyB\x13\n" +
 	"\x11_presence_penaltyB\x13\n" +
-	"\x11_reasoning_config\"\xc3\x01\n" +
+	"\x11_reasoning_config\"\xef\x01\n" +
 	"\n" +
 	"Statistics\x124\n" +
-	"\x05usage\x18\x01 \x01(\v2\x1e.neurouter.v1.Statistics.UsageR\x05usage\x1a\x7f\n" +
+	"\x05usage\x18\x01 \x01(\v2\x1e.neurouter.v1.Statistics.UsageR\x05usage\x1a\xaa\x01\n" +
 	"\x05Usage\x12!\n" +
 	"\finput_tokens\x18\x01 \x01(\rR\vinputTokens\x12#\n" +
 	"\routput_tokens\x18\x02 \x01(\rR\foutputTokens\x12.\n" +
-	"\x13cached_input_tokens\x18\x03 \x01(\rR\x11cachedInputTokens\"\xd4\x05\n" +
+	"\x13cached_input_tokens\x18\x03 \x01(\rR\x11cachedInputTokens\x12)\n" +
+	"\x10reasoning_tokens\x18\x04 \x01(\rR\x0freasoningTokens\"\xd4\x05\n" +
 	"\x06Schema\x12-\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x19.neurouter.v1.Schema.TypeR\x04type\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x18\n" +

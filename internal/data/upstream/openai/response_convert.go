@@ -532,7 +532,11 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 }
 
 func convertStatisticsFromOpenAIResponse(usage *responses.ResponseUsage) *v1.Statistics {
-	if usage == nil || (usage.InputTokens == 0 && usage.OutputTokens == 0 && usage.InputTokensDetails.CachedTokens == 0) {
+	if usage == nil ||
+		(usage.InputTokens == 0 &&
+			usage.OutputTokens == 0 &&
+			usage.InputTokensDetails.CachedTokens == 0 &&
+			usage.OutputTokensDetails.ReasoningTokens == 0) {
 		return nil
 	}
 
@@ -541,6 +545,7 @@ func convertStatisticsFromOpenAIResponse(usage *responses.ResponseUsage) *v1.Sta
 			InputTokens:       uint32(usage.InputTokens),
 			OutputTokens:      uint32(usage.OutputTokens),
 			CachedInputTokens: uint32(usage.InputTokensDetails.CachedTokens),
+			ReasoningTokens:   uint32(usage.OutputTokensDetails.ReasoningTokens),
 		},
 	}
 }

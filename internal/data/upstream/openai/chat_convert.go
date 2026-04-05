@@ -401,7 +401,7 @@ func (r *upstream) convertResponseFromOpenAIChat(openAIResp *openai.ChatCompleti
 	resp = &entity.ChatResp{
 		Id:         openAIResp.ID,
 		Model:      openAIResp.Model,
-		Statistics: convertStatisticsFromOpenAI(&openAIResp.Usage),
+		Statistics: convertStatisticsFromOpenAIChat(&openAIResp.Usage),
 	}
 
 	if len(openAIResp.Choices) > 0 {
@@ -479,7 +479,7 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 		resp.Status = c.status // Keep previous status
 	}
 
-	resp.Statistics = convertStatisticsFromOpenAI(&chunk.Usage)
+	resp.Statistics = convertStatisticsFromOpenAIChat(&chunk.Usage)
 
 	if resp.Message == nil && resp.Statistics == nil {
 		return nil
@@ -488,8 +488,12 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 	return resp
 }
 
-func convertStatisticsFromOpenAI(usage *openai.CompletionUsage) *v1.Statistics {
-	if usage == nil || (usage.PromptTokens == 0 && usage.CompletionTokens == 0 && usage.PromptTokensDetails.CachedTokens == 0) {
+func convertStatisticsFromOpenAIChat(usage *openai.CompletionUsage) *v1.Statistics {
+	if usage == nil ||
+		(usage.PromptTokens == 0 &&
+			usage.CompletionTokens == 0 &&
+			usage.PromptTokensDetails.CachedTokens == 0 &&
+			usage.CompletionTokensDetails.ReasoningTokens == 0) {
 		return nil
 	}
 
@@ -498,6 +502,7 @@ func convertStatisticsFromOpenAI(usage *openai.CompletionUsage) *v1.Statistics {
 			InputTokens:       uint32(usage.PromptTokens),
 			OutputTokens:      uint32(usage.CompletionTokens),
 			CachedInputTokens: uint32(usage.PromptTokensDetails.CachedTokens),
+			ReasoningTokens:   uint32(usage.CompletionTokensDetails.ReasoningTokens),
 		},
 	}
 }

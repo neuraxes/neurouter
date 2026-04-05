@@ -79,6 +79,9 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 			PromptTokensDetails: &openai.PromptTokensDetails{
 				CachedTokens: int(resp.Statistics.Usage.CachedInputTokens),
 			},
+			CompletionTokensDetails: &openai.CompletionTokensDetails{
+				ReasoningTokens: int(resp.Statistics.Usage.ReasoningTokens),
+			},
 		}
 		if len(chunk.Choices) == 0 {
 			chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{

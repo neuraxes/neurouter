@@ -266,6 +266,9 @@ func convertChatRespToOpenAI(resp *v1.ChatResp) *openai.ChatCompletionResponse {
 		openAIResp.Usage.PromptTokensDetails = &openai.PromptTokensDetails{
 			CachedTokens: int(resp.Statistics.Usage.CachedInputTokens),
 		}
+		openAIResp.Usage.CompletionTokensDetails = &openai.CompletionTokensDetails{
+			ReasoningTokens: int(resp.Statistics.Usage.ReasoningTokens),
+		}
 	}
 
 	return openAIResp

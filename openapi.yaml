@@ -412,6 +412,9 @@ components:
                 cachedInputTokens:
                     type: integer
                     format: uint32
+                reasoningTokens:
+                    type: integer
+                    format: uint32
         neurouter.v1.ToolResult:
             type: object
             properties:

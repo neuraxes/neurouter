@@ -146,8 +146,19 @@ func (a *ChatRespAccumulator) accumulateStatistics(statistics *v1.Statistics) {
 			a.resp.Statistics.Usage = &v1.Statistics_Usage{}
 		}
 
-		a.resp.Statistics.Usage.InputTokens += statistics.Usage.InputTokens
-		a.resp.Statistics.Usage.OutputTokens += statistics.Usage.OutputTokens
-		a.resp.Statistics.Usage.CachedInputTokens += statistics.Usage.CachedInputTokens
+		// Streaming usage is cumulative, but some chunks only carry partial fields.
+		// Update only non-zero fields to avoid resetting previous counters to zero.
+		if statistics.Usage.InputTokens != 0 {
+			a.resp.Statistics.Usage.InputTokens = statistics.Usage.InputTokens
+		}
+		if statistics.Usage.OutputTokens != 0 {
+			a.resp.Statistics.Usage.OutputTokens = statistics.Usage.OutputTokens
+		}
+		if statistics.Usage.CachedInputTokens != 0 {
+			a.resp.Statistics.Usage.CachedInputTokens = statistics.Usage.CachedInputTokens
+		}
+		if statistics.Usage.ReasoningTokens != 0 {
+			a.resp.Statistics.Usage.ReasoningTokens = statistics.Usage.ReasoningTokens
+		}
 	}
 }

@@ -872,7 +872,7 @@ func TestConvertChunkFromOpenAIChat(t *testing.T) {
 func TestConvertStatisticsFromOpenAI(t *testing.T) {
 	Convey("Test convertStatisticsFromOpenAI", t, func() {
 		Convey("with nil usage", func() {
-			result := convertStatisticsFromOpenAI(nil)
+			result := convertStatisticsFromOpenAIChat(nil)
 
 			Convey("Then the result should be nil", func() {
 				So(result, ShouldBeNil)
@@ -886,9 +886,12 @@ func TestConvertStatisticsFromOpenAI(t *testing.T) {
 				PromptTokensDetails: openai.CompletionUsagePromptTokensDetails{
 					CachedTokens: 5,
 				},
+				CompletionTokensDetails: openai.CompletionUsageCompletionTokensDetails{
+					ReasoningTokens: 12,
+				},
 			}
 
-			result := convertStatisticsFromOpenAI(usage)
+			result := convertStatisticsFromOpenAIChat(usage)
 
 			Convey("Then the converted statistics should have correct values", func() {
 				So(result, ShouldNotBeNil)
@@ -896,6 +899,7 @@ func TestConvertStatisticsFromOpenAI(t *testing.T) {
 				So(result.Usage.InputTokens, ShouldEqual, 10)
 				So(result.Usage.OutputTokens, ShouldEqual, 20)
 				So(result.Usage.CachedInputTokens, ShouldEqual, 5)
+				So(result.Usage.ReasoningTokens, ShouldEqual, 12)
 			})
 		})
 
@@ -905,7 +909,7 @@ func TestConvertStatisticsFromOpenAI(t *testing.T) {
 				CompletionTokens: 0,
 			}
 
-			result := convertStatisticsFromOpenAI(usage)
+			result := convertStatisticsFromOpenAIChat(usage)
 
 			Convey("Then the converted statistics should be nil", func() {
 				So(result, ShouldBeNil)
@@ -916,15 +920,35 @@ func TestConvertStatisticsFromOpenAI(t *testing.T) {
 			usage := &openai.CompletionUsage{
 				PromptTokens:     4294967295, // Max uint32
 				CompletionTokens: 2147483647, // Large number
+				CompletionTokensDetails: openai.CompletionUsageCompletionTokensDetails{
+					ReasoningTokens: 1024,
+				},
 			}
 
-			result := convertStatisticsFromOpenAI(usage)
+			result := convertStatisticsFromOpenAIChat(usage)
 
 			Convey("Then the converted statistics should handle large values", func() {
 				So(result, ShouldNotBeNil)
 				So(result.Usage, ShouldNotBeNil)
 				So(result.Usage.InputTokens, ShouldEqual, 4294967295)
 				So(result.Usage.OutputTokens, ShouldEqual, 2147483647)
+				So(result.Usage.ReasoningTokens, ShouldEqual, 1024)
+			})
+		})
+
+		Convey("with reasoning tokens only", func() {
+			usage := &openai.CompletionUsage{
+				CompletionTokensDetails: openai.CompletionUsageCompletionTokensDetails{
+					ReasoningTokens: 3,
+				},
+			}
+
+			result := convertStatisticsFromOpenAIChat(usage)
+
+			Convey("Then the converted statistics should include reasoning tokens", func() {
+				So(result, ShouldNotBeNil)
+				So(result.Usage, ShouldNotBeNil)
+				So(result.Usage.ReasoningTokens, ShouldEqual, 3)
 			})
 		})
 	})

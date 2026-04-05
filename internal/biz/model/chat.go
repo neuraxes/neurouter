@@ -24,10 +24,12 @@ func (m *chatModel) RecordUsage(ctx context.Context, stats *v1.Statistics) {
 		inputTokens := int64(stats.Usage.InputTokens)
 		outputTokens := int64(stats.Usage.OutputTokens)
 		cachedInputTokens := int64(stats.Usage.CachedInputTokens)
+		reasoningTokens := int64(stats.Usage.ReasoningTokens)
 
 		m.inputTokens.Add(inputTokens)
 		m.outputTokens.Add(outputTokens)
 		m.cachedInputTokens.Add(cachedInputTokens)
+		m.reasoningTokens.Add(reasoningTokens)
 
 		m.metrics.recordTokenUsage(
 			ctx,
@@ -36,6 +38,7 @@ func (m *chatModel) RecordUsage(ctx context.Context, stats *v1.Statistics) {
 			inputTokens,
 			outputTokens,
 			cachedInputTokens,
+			reasoningTokens,
 		)
 
 		tokenUsage := int64(stats.Usage.InputTokens + stats.Usage.OutputTokens)

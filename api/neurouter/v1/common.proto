@@ -72,6 +72,7 @@ message Statistics {
     uint32 input_tokens = 1;
     uint32 output_tokens = 2;
     uint32 cached_input_tokens = 3;
+    uint32 reasoning_tokens = 4;
   }
 
   Usage usage = 1;

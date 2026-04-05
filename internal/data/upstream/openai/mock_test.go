@@ -480,6 +480,7 @@ var mockResponsesResp = &entity.ChatResp{
 			InputTokens:       196,
 			OutputTokens:      85,
 			CachedInputTokens: 0,
+			ReasoningTokens:   56,
 		},
 	},
 }

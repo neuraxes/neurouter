@@ -39,6 +39,7 @@ type model struct {
 	inputTokens       atomic.Int64
 	outputTokens      atomic.Int64
 	cachedInputTokens atomic.Int64
+	reasoningTokens   atomic.Int64
 	upstreamLimiters  *limiterGroup // shared across models in same upstream
 	modelLimiters     *limiterGroup // specific to this model
 	metrics           *metrics

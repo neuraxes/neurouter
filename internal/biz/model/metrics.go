@@ -12,6 +12,7 @@ type metrics struct {
 	inputTokens       metric.Int64Counter
 	outputTokens      metric.Int64Counter
 	cachedInputTokens metric.Int64Counter
+	reasoningTokens   metric.Int64Counter
 	requests          metric.Int64Counter
 }
 
@@ -40,6 +41,13 @@ func newMetrics(meterProvider metric.MeterProvider) (*metrics, error) {
 		return nil, err
 	}
 
+	reasoningTokens, err := meter.Int64Counter("neurouter_reasoning_tokens_total",
+		metric.WithDescription("Total number of reasoning tokens generated"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	requests, err := meter.Int64Counter("neurouter_requests_total",
 		metric.WithDescription("Total number of requests processed"),
 	)
@@ -51,11 +59,12 @@ func newMetrics(meterProvider metric.MeterProvider) (*metrics, error) {
 		inputTokens:       inputTokens,
 		outputTokens:      outputTokens,
 		cachedInputTokens: cachedInputTokens,
+		reasoningTokens:   reasoningTokens,
 		requests:          requests,
 	}, nil
 }
 
-func (m *metrics) recordTokenUsage(ctx context.Context, upstream, model string, input, output, cachedInput int64) {
+func (m *metrics) recordTokenUsage(ctx context.Context, upstream, model string, input, output, cachedInput, reasoning int64) {
 	if m == nil {
 		return
 	}
@@ -71,6 +80,9 @@ func (m *metrics) recordTokenUsage(ctx context.Context, upstream, model string, 
 	}
 	if cachedInput > 0 {
 		m.cachedInputTokens.Add(ctx, cachedInput, attrs)
+	}
+	if reasoning > 0 {
+		m.reasoningTokens.Add(ctx, reasoning, attrs)
 	}
 }
 

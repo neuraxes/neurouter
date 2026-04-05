@@ -106,6 +106,7 @@ const chatPrettyPrintTmpl = `
    • Input Tokens: {{.Response.Statistics.Usage.InputTokens}}
    • Output Tokens: {{.Response.Statistics.Usage.OutputTokens}}
    • Cached Input Tokens: {{.Response.Statistics.Usage.CachedInputTokens}}
+   • Reasoning Tokens: {{.Response.Statistics.Usage.ReasoningTokens}}
 {{- end}}
   </statistics>
 {{- end}}

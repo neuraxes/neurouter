@@ -28,7 +28,7 @@ func (m *embeddingModel) RecordUsage(ctx context.Context, actualTokens int64) {
 		ctx,
 		m.upstreamConfig.Name,
 		m.config.Id,
-		actualTokens, 0, 0,
+		actualTokens, 0, 0, 0,
 	)
 	m.metrics.recordRequest(ctx, m.upstreamConfig.Name, m.config.Id)
 
