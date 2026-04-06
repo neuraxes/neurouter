@@ -583,9 +583,9 @@ type Schema struct {
 	Type        Schema_Type            `protobuf:"varint,1,opt,name=type,proto3,enum=neurouter.v1.Schema_Type" json:"type,omitempty"`
 	Description string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The minimum for number
-	Minimum int32 `protobuf:"varint,3,opt,name=minimum,proto3" json:"minimum,omitempty"`
+	Minimum float64 `protobuf:"fixed64,3,opt,name=minimum,proto3" json:"minimum,omitempty"`
 	// The maximum for number
-	Maximum int32 `protobuf:"varint,4,opt,name=maximum,proto3" json:"maximum,omitempty"`
+	Maximum float64 `protobuf:"fixed64,4,opt,name=maximum,proto3" json:"maximum,omitempty"`
 	// The regex pattern for string
 	Pattern string `protobuf:"bytes,5,opt,name=pattern,proto3" json:"pattern,omitempty"`
 	// The minimum length for string
@@ -653,14 +653,14 @@ func (x *Schema) GetDescription() string {
 	return ""
 }
 
-func (x *Schema) GetMinimum() int32 {
+func (x *Schema) GetMinimum() float64 {
 	if x != nil {
 		return x.Minimum
 	}
 	return 0
 }
 
-func (x *Schema) GetMaximum() int32 {
+func (x *Schema) GetMaximum() float64 {
 	if x != nil {
 		return x.Maximum
 	}
@@ -975,8 +975,8 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x06Schema\x12-\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x19.neurouter.v1.Schema.TypeR\x04type\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x18\n" +
-	"\aminimum\x18\x03 \x01(\x05R\aminimum\x12\x18\n" +
-	"\amaximum\x18\x04 \x01(\x05R\amaximum\x12\x18\n" +
+	"\aminimum\x18\x03 \x01(\x01R\aminimum\x12\x18\n" +
+	"\amaximum\x18\x04 \x01(\x01R\amaximum\x12\x18\n" +
 	"\apattern\x18\x05 \x01(\tR\apattern\x12\x1c\n" +
 	"\tminLength\x18\x06 \x01(\x05R\tminLength\x12\x1c\n" +
 	"\tmaxLength\x18\a \x01(\x05R\tmaxLength\x12*\n" +

@@ -111,9 +111,9 @@ message Schema {
   string description = 2;
 
   // The minimum for number
-  int32 minimum = 3;
+  double minimum = 3;
   // The maximum for number
-  int32 maximum = 4;
+  double maximum = 4;
 
   // The regex pattern for string
   string pattern = 5;

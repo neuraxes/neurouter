@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 
 	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/go-kratos/kratos/v2/log"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
@@ -256,10 +257,12 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 			var parameters *v1.Schema
 			j, err := json.Marshal(tool.OfTool.InputSchema)
 			if err != nil {
+				log.Errorf("failed to marshal anthropic tool schema: %s", err.Error())
 				continue
 			}
 			err = json.Unmarshal(j, &parameters)
 			if err != nil {
+				log.Errorf("failed to unmarshal anthropic tool schema: %s", err.Error())
 				continue
 			}
 
@@ -271,6 +274,7 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 				},
 			}
 		default:
+			log.Errorf("unsupported anthropic tool: %v", tool)
 			continue
 		}
 		tools = append(tools, t)

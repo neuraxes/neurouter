@@ -95,14 +95,14 @@ paths:
                   in: query
                   description: The minimum for number
                   schema:
-                    type: integer
-                    format: int32
+                    type: number
+                    format: double
                 - name: config.schema.maximum
                   in: query
                   description: The maximum for number
                   schema:
-                    type: integer
-                    format: int32
+                    type: number
+                    format: double
                 - name: config.schema.pattern
                   in: query
                   description: The regex pattern for string
@@ -133,14 +133,14 @@ paths:
                   in: query
                   description: The minimum for number
                   schema:
-                    type: integer
-                    format: int32
+                    type: number
+                    format: double
                 - name: config.schema.items.maximum
                   in: query
                   description: The maximum for number
                   schema:
-                    type: integer
-                    format: int32
+                    type: number
+                    format: double
                 - name: config.schema.items.pattern
                   in: query
                   description: The regex pattern for string
