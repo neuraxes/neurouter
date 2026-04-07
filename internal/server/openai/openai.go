@@ -22,22 +22,30 @@ import (
 
 func RegisterOpenAIHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v1.ChatServer, embedSvc v1.EmbeddingServer) {
 	r := s.Route("/")
-	r.POST("/chat/completions", func(ctx http.Context) error {
-		return handleChatCompletion(ctx, chatSvc)
-	})
-	r.POST("/v1/chat/completions", func(ctx http.Context) error {
-		return handleChatCompletion(ctx, chatSvc)
-	})
-	r.POST("/embeddings", func(ctx http.Context) error {
-		return handleEmbedding(ctx, embedSvc)
-	})
-	r.POST("/v1/embeddings", func(ctx http.Context) error {
-		return handleEmbedding(ctx, embedSvc)
-	})
-	r.GET("/models", func(ctx http.Context) error {
-		return handleListModels(ctx, modelSvc)
-	})
-	r.GET("/v1/models", func(ctx http.Context) error {
-		return handleListModels(ctx, modelSvc)
-	})
+
+	for _, path := range []string{
+		"/chat/completions",
+		"/v1/chat/completions",
+		"/openai/chat/completions",
+		"/openai/v1/chat/completions",
+	} {
+		r.POST(path, func(ctx http.Context) error { return handleChatCompletion(ctx, chatSvc) })
+	}
+
+	for _, path := range []string{
+		"/embeddings",
+		"/v1/embeddings",
+		"/openai/embeddings",
+		"/openai/v1/embeddings",
+	} {
+		r.POST(path, func(ctx http.Context) error { return handleEmbedding(ctx, embedSvc) })
+	}
+
+	for _, path := range []string{
+		"/models",
+		"/openai/models",
+		"/openai/v1/models",
+	} {
+		r.GET(path, func(ctx http.Context) error { return handleListModels(ctx, modelSvc) })
+	}
 }

@@ -61,7 +61,7 @@ func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.G
 		config.ReasoningConfig = &v1.ReasoningConfig{
 			Effort: v1.ReasoningEffort_REASONING_EFFORT_NONE,
 		}
-	} else if req.Thinking.OfAdaptive != nil {
+	} else if req.Thinking.OfAdaptive != nil || req.OutputConfig.Effort != "" {
 		config.ReasoningConfig = &v1.ReasoningConfig{
 			Effort: convertEffortFromAnthropic(req.OutputConfig.Effort),
 		}

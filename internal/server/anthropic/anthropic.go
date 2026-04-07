@@ -22,10 +22,15 @@ import (
 
 func RegisterAnthropicHTTPServer(s *http.Server, chatSvc v1.ChatServer) {
 	r := s.Route("/")
-	r.POST("/messages", func(ctx http.Context) error {
-		return handleMessageCompletion(ctx, chatSvc)
-	})
-	r.POST("/v1/messages", func(ctx http.Context) error {
-		return handleMessageCompletion(ctx, chatSvc)
-	})
+
+	for _, path := range []string{
+		"/messages",
+		"/v1/messages",
+		"/anthropic/messages",
+		"/anthropic/v1/messages",
+	} {
+		r.POST(path, func(ctx http.Context) error {
+			return handleMessageCompletion(ctx, chatSvc)
+		})
+	}
 }
