@@ -18,14 +18,14 @@ import (
 	"context"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/sashabaranov/go-openai"
+	"github.com/openai/openai-go/v3"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func handleListModels(httpCtx http.Context, svc v1.ModelServer) error {
+func (s *OpenAIServer) handleListModels(httpCtx http.Context) error {
 	m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-		return svc.ListModel(ctx, &v1.ListModelReq{})
+		return s.modelSvc.ListModel(ctx, &v1.ListModelReq{})
 	})
 	r, err := m(httpCtx, nil)
 	if err != nil {
@@ -34,11 +34,10 @@ func handleListModels(httpCtx http.Context, svc v1.ModelServer) error {
 
 	resp := r.(*v1.ListModelResp)
 
-	openaiResp := &openai.ModelsList{}
+	openaiResp := &modelsList{Object: "list"}
 	for _, model := range resp.Models {
 		openaiResp.Models = append(openaiResp.Models, openai.Model{
 			ID:      model.Id,
-			Object:  "model",
 			OwnedBy: model.Owner,
 		})
 	}

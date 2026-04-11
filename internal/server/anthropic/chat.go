@@ -26,7 +26,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func handleMessageCompletion(httpCtx http.Context, svc v1.ChatServer) (err error) {
+func (s *AnthropicServer) handleMessageCompletion(httpCtx http.Context) (err error) {
 	requestBody, err := io.ReadAll(httpCtx.Request().Body)
 	if err != nil {
 		return
@@ -49,8 +49,7 @@ func handleMessageCompletion(httpCtx http.Context, svc v1.ChatServer) (err error
 		streamServer := &messageStreamServer{httpCtx: httpCtx}
 
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-			err := svc.ChatStream(req.(*v1.ChatReq), streamServer)
-			// Send final events after streaming is complete
+			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), streamServer)
 			if err == nil {
 				streamServer.sendMessageStopEvent()
 			}
@@ -63,7 +62,7 @@ func handleMessageCompletion(httpCtx http.Context, svc v1.ChatServer) (err error
 		}
 	} else {
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-			return svc.Chat(ctx, req.(*v1.ChatReq))
+			return s.chatSvc.Chat(ctx, req.(*v1.ChatReq))
 		})
 
 		resp, err := m(httpCtx, req)

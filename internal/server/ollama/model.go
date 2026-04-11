@@ -24,9 +24,9 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func handleListModels(ctx http.Context, svc v1.ModelServer) error {
+func (s *OllamaServer) handleListModels(ctx http.Context) error {
 	m := ctx.Middleware(func(ctx context.Context, req any) (any, error) {
-		return svc.ListModel(ctx, &v1.ListModelReq{})
+		return s.modelSvc.ListModel(ctx, &v1.ListModelReq{})
 	})
 	r, err := m(ctx, nil)
 	if err != nil {
@@ -46,7 +46,7 @@ func handleListModels(ctx http.Context, svc v1.ModelServer) error {
 	return ctx.Result(200, ollamaResp)
 }
 
-func handleShowModel(ctx http.Context, svc v1.ModelServer) error {
+func (s *OllamaServer) handleShowModel(ctx http.Context) error {
 	requestBody, err := io.ReadAll(ctx.Request().Body)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func handleShowModel(ctx http.Context, svc v1.ModelServer) error {
 	}
 
 	m := ctx.Middleware(func(ctx context.Context, req any) (any, error) {
-		return svc.ListModel(ctx, &v1.ListModelReq{})
+		return s.modelSvc.ListModel(ctx, &v1.ListModelReq{})
 	})
 	r, err := m(ctx, nil)
 	if err != nil {

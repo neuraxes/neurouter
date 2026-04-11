@@ -20,7 +20,8 @@ import (
 	"io"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/sashabaranov/go-openai"
+	"github.com/openai/openai-go/v3"
+	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
@@ -36,34 +37,34 @@ func (c *chatStreamServer) Context() context.Context {
 }
 
 func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
-	chunk := &openai.ChatCompletionStreamResponse{
+	chunk := &chatCompletionChunk{
 		ID:      resp.Id,
 		Object:  "chat.completion.chunk",
 		Model:   resp.Model,
-		Choices: []openai.ChatCompletionStreamChoice{},
+		Choices: []chatCompletionChunkChoice{},
 	}
 
 	if resp.Message != nil {
 		var content string
-		var toolCalls []openai.ToolCall
+		var toolCalls []toolCall
 		for _, c := range resp.Message.Contents {
 			switch c := c.Content.(type) {
 			case *v1.Content_Text:
 				content = c.Text
 			case *v1.Content_ToolUse:
-				toolCalls = append(toolCalls, openai.ToolCall{
+				toolCalls = append(toolCalls, toolCall{
 					ID:   c.ToolUse.Id,
-					Type: openai.ToolTypeFunction,
-					Function: openai.FunctionCall{
+					Type: "function",
+					Function: functionCall{
 						Name:      c.ToolUse.GetName(),
 						Arguments: c.ToolUse.GetTextualInput(),
 					},
 				})
 			}
 		}
-		chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
-			Delta: openai.ChatCompletionStreamChoiceDelta{
-				Role:      openai.ChatMessageRoleAssistant,
+		chunk.Choices = append(chunk.Choices, chatCompletionChunkChoice{
+			Delta: chatCompletionChunkDelta{
+				Role:      "assistant",
 				Content:   content,
 				ToolCalls: toolCalls,
 			},
@@ -72,19 +73,9 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 	}
 
 	if resp.Statistics != nil && resp.Statistics.Usage != nil {
-		chunk.Usage = &openai.Usage{
-			PromptTokens:     int(resp.Statistics.Usage.InputTokens),
-			CompletionTokens: int(resp.Statistics.Usage.OutputTokens),
-			TotalTokens:      int(resp.Statistics.Usage.InputTokens) + int(resp.Statistics.Usage.OutputTokens),
-			PromptTokensDetails: &openai.PromptTokensDetails{
-				CachedTokens: int(resp.Statistics.Usage.CachedInputTokens),
-			},
-			CompletionTokensDetails: &openai.CompletionTokensDetails{
-				ReasoningTokens: int(resp.Statistics.Usage.ReasoningTokens),
-			},
-		}
+		chunk.Usage = convertUsageToOpenAI(resp.Statistics.Usage)
 		if len(chunk.Choices) == 0 {
-			chunk.Choices = append(chunk.Choices, openai.ChatCompletionStreamChoice{
+			chunk.Choices = append(chunk.Choices, chatCompletionChunkChoice{
 				FinishReason: convertStatusToOpenAI(resp.Status),
 			})
 		}
@@ -102,13 +93,13 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 	return nil
 }
 
-func handleChatCompletion(httpCtx http.Context, svc v1.ChatServer) (err error) {
+func (s *OpenAIServer) handleChatCompletion(httpCtx http.Context) (err error) {
 	requestBody, err := io.ReadAll(httpCtx.Request().Body)
 	if err != nil {
 		return
 	}
 
-	openAIReq := openai.ChatCompletionRequest{}
+	var openAIReq openai.ChatCompletionNewParams
 	err = json.Unmarshal(requestBody, &openAIReq)
 	if err != nil {
 		return err
@@ -116,13 +107,13 @@ func handleChatCompletion(httpCtx http.Context, svc v1.ChatServer) (err error) {
 
 	req := convertChatReqFromOpenAI(&openAIReq)
 
-	if openAIReq.Stream {
+	if gjson.GetBytes(requestBody, "stream").Bool() {
 		httpCtx.Response().Header().Set("Content-Type", "text/event-stream")
 		httpCtx.Response().Header().Set("Cache-Control", "no-cache")
 		httpCtx.Response().Header().Set("Connection", "keep-alive")
 
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-			err := svc.ChatStream(req.(*v1.ChatReq), &chatStreamServer{
+			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), &chatStreamServer{
 				ctx:     ctx,
 				httpCtx: httpCtx,
 			})
@@ -135,7 +126,7 @@ func handleChatCompletion(httpCtx http.Context, svc v1.ChatServer) (err error) {
 		_, err = m(httpCtx, req)
 	} else {
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-			return svc.Chat(ctx, req.(*v1.ChatReq))
+			return s.chatSvc.Chat(ctx, req.(*v1.ChatReq))
 		})
 		resp, err := m(httpCtx, req)
 		if err != nil {

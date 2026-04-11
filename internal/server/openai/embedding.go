@@ -20,18 +20,18 @@ import (
 	"io"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/sashabaranov/go-openai"
+	"github.com/openai/openai-go/v3"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func handleEmbedding(httpCtx http.Context, svc v1.EmbeddingServer) error {
+func (s *OpenAIServer) handleEmbedding(httpCtx http.Context) error {
 	requestBody, err := io.ReadAll(httpCtx.Request().Body)
 	if err != nil {
 		return err
 	}
 
-	openAIReq := openai.EmbeddingRequest{}
+	var openAIReq openai.EmbeddingNewParams
 	err = json.Unmarshal(requestBody, &openAIReq)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func handleEmbedding(httpCtx http.Context, svc v1.EmbeddingServer) error {
 	req := convertEmbeddingReqFromOpenAI(&openAIReq)
 
 	m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-		return svc.Embed(ctx, req.(*v1.EmbedReq))
+		return s.embedSvc.Embed(ctx, req.(*v1.EmbedReq))
 	})
 	resp, err := m(httpCtx, req)
 	if err != nil {

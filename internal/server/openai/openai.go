@@ -18,10 +18,25 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/service"
 )
 
-func RegisterOpenAIHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v1.ChatServer, embedSvc v1.EmbeddingServer) {
-	r := s.Route("/")
+type OpenAIServer struct {
+	modelSvc v1.ModelServer
+	chatSvc  v1.ChatServer
+	embedSvc v1.EmbeddingServer
+}
+
+func NewOpenAIServer(svc *service.RouterService) *OpenAIServer {
+	return &OpenAIServer{
+		modelSvc: svc,
+		chatSvc:  svc,
+		embedSvc: svc,
+	}
+}
+
+func (s *OpenAIServer) RegisterRoutes(srv *http.Server) {
+	r := srv.Route("/")
 
 	for _, path := range []string{
 		"/chat/completions",
@@ -29,7 +44,7 @@ func RegisterOpenAIHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v
 		"/openai/chat/completions",
 		"/openai/v1/chat/completions",
 	} {
-		r.POST(path, func(ctx http.Context) error { return handleChatCompletion(ctx, chatSvc) })
+		r.POST(path, func(ctx http.Context) error { return s.handleChatCompletion(ctx) })
 	}
 
 	for _, path := range []string{
@@ -38,7 +53,7 @@ func RegisterOpenAIHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v
 		"/openai/embeddings",
 		"/openai/v1/embeddings",
 	} {
-		r.POST(path, func(ctx http.Context) error { return handleEmbedding(ctx, embedSvc) })
+		r.POST(path, func(ctx http.Context) error { return s.handleEmbedding(ctx) })
 	}
 
 	for _, path := range []string{
@@ -46,6 +61,6 @@ func RegisterOpenAIHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v
 		"/openai/models",
 		"/openai/v1/models",
 	} {
-		r.GET(path, func(ctx http.Context) error { return handleListModels(ctx, modelSvc) })
+		r.GET(path, func(ctx http.Context) error { return s.handleListModels(ctx) })
 	}
 }

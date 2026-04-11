@@ -99,6 +99,7 @@ func (t *mockHTTPContext) Result(code int, v any) error {
 func TestChat(t *testing.T) {
 	Convey("Given a mock ChatServer for non-streaming requests", t, func() {
 		mock := &mockChatServer{}
+		srv := &AnthropicServer{chatSvc: mock}
 
 		Convey("When a non-streaming Anthropic request is sent", func() {
 			mock.chatFunc = func(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
@@ -112,8 +113,7 @@ func TestChat(t *testing.T) {
 			ctx := newMockHTTPContext(req)
 			So(ctx, ShouldNotBeNil)
 
-			// Call handleMessageCompletion
-			err = handleMessageCompletion(ctx, mock)
+			err = srv.handleMessageCompletion(ctx)
 			So(err, ShouldBeNil)
 
 			// Verify the response
@@ -165,6 +165,7 @@ func parseSSEEvents(sseData string) []sseEvent {
 func TestChatStream(t *testing.T) {
 	Convey("Given a mock ChatServer for streaming requests", t, func() {
 		mock := &mockChatServer{}
+		srv := &AnthropicServer{chatSvc: mock}
 
 		Convey("When ChatStream is called and responses are sent", func() {
 			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
@@ -183,8 +184,7 @@ func TestChatStream(t *testing.T) {
 			req.Header.Set("Accept", "text/event-stream")
 			ctx := newMockHTTPContext(req)
 
-			// Call handleMessageCompletion for streaming
-			err = handleMessageCompletion(ctx, mock)
+			err = srv.handleMessageCompletion(ctx)
 			So(err, ShouldBeNil)
 
 			// Parse SSE events from the buffer

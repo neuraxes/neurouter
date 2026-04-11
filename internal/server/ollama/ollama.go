@@ -18,19 +18,30 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/service"
 )
 
-func RegisterOllamaHTTPServer(s *http.Server, modelSvc v1.ModelServer, chatSvc v1.ChatServer) {
-	r := s.Route("/")
+type OllamaServer struct {
+	modelSvc v1.ModelServer
+}
+
+func NewOllamaServer(svc *service.RouterService) *OllamaServer {
+	return &OllamaServer{
+		modelSvc: svc,
+	}
+}
+
+func (s *OllamaServer) RegisterRoutes(srv *http.Server) {
+	r := srv.Route("/")
 	r.GET("/api/version", func(ctx http.Context) error {
 		return ctx.JSON(200, map[string]any{
 			"version": "0.7.0",
 		})
 	})
 	r.GET("/api/tags", func(ctx http.Context) error {
-		return handleListModels(ctx, modelSvc)
+		return s.handleListModels(ctx)
 	})
 	r.POST("/api/show", func(ctx http.Context) error {
-		return handleShowModel(ctx, modelSvc)
+		return s.handleShowModel(ctx)
 	})
 }

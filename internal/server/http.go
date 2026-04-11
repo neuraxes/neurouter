@@ -75,9 +75,9 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	v1.RegisterModelHTTPServer(srv, svc)
 	v1.RegisterChatHTTPServer(srv, svc)
 	v1.RegisterEmbeddingHTTPServer(srv, svc)
-	openai.RegisterOpenAIHTTPServer(srv, svc, svc, svc)
-	ollama.RegisterOllamaHTTPServer(srv, svc, svc)
-	anthropic.RegisterAnthropicHTTPServer(srv, svc)
+	openai.NewOpenAIServer(svc).RegisterRoutes(srv)
+	ollama.NewOllamaServer(svc).RegisterRoutes(srv)
+	anthropic.NewAnthropicServer(svc).RegisterRoutes(srv)
 
 	// Register /metrics endpoint directly on mux, bypassing Kratos middleware (including JWT)
 	srv.Handle("/metrics", promhttp.Handler())

@@ -11,7 +11,6 @@ require (
 	github.com/gorilla/handlers v1.5.2
 	github.com/openai/openai-go/v3 v3.30.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/sashabaranov/go-openai v1.41.2
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/tidwall/gjson v1.18.0
 	go.opentelemetry.io/otel v1.42.0

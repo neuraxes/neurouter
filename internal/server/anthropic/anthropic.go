@@ -18,10 +18,21 @@ import (
 	"github.com/go-kratos/kratos/v2/transport/http"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/service"
 )
 
-func RegisterAnthropicHTTPServer(s *http.Server, chatSvc v1.ChatServer) {
-	r := s.Route("/")
+type AnthropicServer struct {
+	chatSvc v1.ChatServer
+}
+
+func NewAnthropicServer(svc *service.RouterService) *AnthropicServer {
+	return &AnthropicServer{
+		chatSvc: svc,
+	}
+}
+
+func (s *AnthropicServer) RegisterRoutes(srv *http.Server) {
+	r := srv.Route("/")
 
 	for _, path := range []string{
 		"/messages",
@@ -30,7 +41,7 @@ func RegisterAnthropicHTTPServer(s *http.Server, chatSvc v1.ChatServer) {
 		"/anthropic/v1/messages",
 	} {
 		r.POST(path, func(ctx http.Context) error {
-			return handleMessageCompletion(ctx, chatSvc)
+			return s.handleMessageCompletion(ctx)
 		})
 	}
 }
