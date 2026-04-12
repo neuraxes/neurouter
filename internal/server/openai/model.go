@@ -23,7 +23,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func (s *OpenAIServer) handleListModels(httpCtx http.Context) error {
+func (s *Server) handleListModels(httpCtx http.Context) error {
 	m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 		return s.modelSvc.ListModel(ctx, &v1.ListModelReq{})
 	})

@@ -47,6 +47,12 @@ const chatPrettyPrintTmpl = `
 {{- if .Request.Config.PresencePenalty}}
    • Presence Penalty: {{printf "%.2f" .Request.Config.GetPresencePenalty}}
 {{- end}}
+{{- if .Request.Config.GetReasoningConfig}}
+   • Reasoning Effort: {{.Request.Config.GetReasoningConfig.GetEffort}}
+{{- if .Request.Config.GetReasoningConfig.GetTokenBudget}}
+   • Reasoning Token Budget: {{.Request.Config.GetReasoningConfig.GetTokenBudget}}
+{{- end}}
+{{- end}}
 {{- if .Request.Config.GetPresetTemplate}}
    • Preset Template: {{.Request.Config.GetPresetTemplate}}
 {{- end}}

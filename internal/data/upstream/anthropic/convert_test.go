@@ -879,7 +879,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			Convey("Then statistics are emitted", func() {
 				So(resp, ShouldNotBeNil)
 				So(resp.Statistics, ShouldNotBeNil)
-				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 12)
+				So(resp.Statistics.Usage.InputTokens, ShouldEqual, 0)
 				So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 34)
 			})
 		})

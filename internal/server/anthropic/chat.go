@@ -15,6 +15,7 @@
 package anthropic
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -24,9 +25,10 @@ import (
 	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func (s *AnthropicServer) handleMessageCompletion(httpCtx http.Context) (err error) {
+func (s *Server) handleMessageCompletion(httpCtx http.Context) (err error) {
 	requestBody, err := io.ReadAll(httpCtx.Request().Body)
 	if err != nil {
 		return
@@ -46,22 +48,31 @@ func (s *AnthropicServer) handleMessageCompletion(httpCtx http.Context) (err err
 		httpCtx.Response().Header().Set("Cache-Control", "no-cache")
 		httpCtx.Response().Header().Set("Connection", "keep-alive")
 
-		streamServer := &messageStreamServer{httpCtx: httpCtx}
-
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
+			util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
+			streamServer := &messageStreamServer{
+				ctx:     ctx,
+				httpCtx: httpCtx,
+			}
+			if s.otelLogger != nil {
+				streamServer.buffer = &bytes.Buffer{}
+			}
 			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), streamServer)
 			if err == nil {
 				streamServer.sendMessageStopEvent()
+			}
+			if s.otelLogger != nil {
+				util.EmitEvent(ctx, s.otelLogger, util.EventServerRespSent, streamServer.buffer.Bytes())
 			}
 			return nil, err
 		})
 
 		_, err = m(httpCtx, req)
-		if err != nil {
-			return err
-		}
 	} else {
+		var emitCtx context.Context = httpCtx
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
+			emitCtx = ctx
+			util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
 			return s.chatSvc.Chat(ctx, req.(*v1.ChatReq))
 		})
 
@@ -70,7 +81,18 @@ func (s *AnthropicServer) handleMessageCompletion(httpCtx http.Context) (err err
 			return err
 		}
 
-		return httpCtx.Result(200, convertChatRespToAnthropic(resp.(*v1.ChatResp)))
+		anthropicResp := convertChatRespToAnthropic(resp.(*v1.ChatResp))
+		respBytes, err := json.Marshal(anthropicResp)
+		if err != nil {
+			return err
+		}
+
+		util.EmitEvent(emitCtx, s.otelLogger, util.EventServerRespSent, respBytes)
+
+		err = httpCtx.Blob(200, "application/json", respBytes)
+		if err != nil {
+			return err
+		}
 	}
 
 	return

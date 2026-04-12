@@ -37,7 +37,7 @@ func TestNewAnthropicUpstream(t *testing.T) {
 		}
 
 		Convey("When newAnthropicUpstream is called", func() {
-			repo, err := newAnthropicUpstream(config, log.DefaultLogger)
+			repo, err := newAnthropicUpstreamWithClient(config, nil, log.DefaultLogger)
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)

@@ -18,4 +18,4 @@ import (
 	"github.com/google/wire"
 )
 
-var ProviderSet = wire.NewSet(NewGRPCServer, NewHTTPServer, NewMeterProvider)
+var ProviderSet = wire.NewSet(NewGRPCServer, NewHTTPServer)

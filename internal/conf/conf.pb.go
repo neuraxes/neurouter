@@ -149,9 +149,10 @@ func (x *Server) GetGrpc() *Server_GRPC {
 }
 
 type Data struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	EnableEventLog bool                   `protobuf:"varint,1,opt,name=enable_event_log,json=enableEventLog,proto3" json:"enable_event_log,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Data) Reset() {
@@ -182,6 +183,13 @@ func (x *Data) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Data.ProtoReflect.Descriptor instead.
 func (*Data) Descriptor() ([]byte, []int) {
 	return file_conf_conf_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Data) GetEnableEventLog() bool {
+	if x != nil {
+		return x.EnableEventLog
+	}
+	return false
 }
 
 type Server_HTTP struct {
@@ -396,8 +404,9 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x06\n" +
-	"\x04DataB2Z0github.com/neuraxes/neurouter/internal/conf;confb\x06proto3"
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"0\n" +
+	"\x04Data\x12(\n" +
+	"\x10enable_event_log\x18\x01 \x01(\bR\x0eenableEventLogB2Z0github.com/neuraxes/neurouter/internal/conf;confb\x06proto3"
 
 var (
 	file_conf_conf_proto_rawDescOnce sync.Once

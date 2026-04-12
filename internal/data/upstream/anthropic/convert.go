@@ -354,8 +354,7 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 	switch chunk.Type {
 	case "message_start":
 		c.messageID = chunk.Message.ID
-		c.model = string(chunk.Message.Model)
-		c.inputTokens = uint32(chunk.Message.Usage.InputTokens)
+		c.model = chunk.Message.Model
 		return nil
 	case "content_block_start":
 		var resp *entity.ChatResp
@@ -462,9 +461,9 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 			resp.Message = nil
 			resp.Statistics = &v1.Statistics{
 				Usage: &v1.Statistics_Usage{
-					InputTokens:       c.inputTokens + uint32(chunk.Usage.InputTokens),
-					OutputTokens:      uint32(chunk.Usage.OutputTokens),
-					CachedInputTokens: uint32(chunk.Usage.CacheReadInputTokens),
+					InputTokens:       uint32(max(chunk.Usage.InputTokens, 0)),
+					OutputTokens:      uint32(max(chunk.Usage.OutputTokens, 0)),
+					CachedInputTokens: uint32(max(chunk.Usage.CacheReadInputTokens, 0)),
 				},
 			}
 			if chunk.Delta.StopReason != "" {
@@ -489,9 +488,9 @@ func convertStatisticsFromAnthropic(usage *anthropic.Usage) *v1.Statistics {
 
 	return &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
-			InputTokens:       uint32(usage.InputTokens),
-			OutputTokens:      uint32(usage.OutputTokens),
-			CachedInputTokens: uint32(usage.CacheReadInputTokens),
+			InputTokens:       uint32(max(usage.InputTokens, 0)),
+			OutputTokens:      uint32(max(usage.OutputTokens, 0)),
+			CachedInputTokens: uint32(max(usage.CacheReadInputTokens, 0)),
 		},
 	}
 }

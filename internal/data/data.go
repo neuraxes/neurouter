@@ -16,13 +16,14 @@ package data
 
 import (
 	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data/telemetry"
 	"github.com/neuraxes/neurouter/internal/data/upstream"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 )
 
-var ProviderSet = wire.NewSet(NewData, upstream.ProviderSet)
+var ProviderSet = wire.NewSet(NewData, upstream.ProviderSet, telemetry.ProviderSet)
 
 type Data struct {
 }

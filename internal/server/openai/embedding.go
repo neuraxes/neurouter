@@ -25,7 +25,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func (s *OpenAIServer) handleEmbedding(httpCtx http.Context) error {
+func (s *Server) handleEmbedding(httpCtx http.Context) error {
 	requestBody, err := io.ReadAll(httpCtx.Request().Body)
 	if err != nil {
 		return err

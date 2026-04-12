@@ -15,6 +15,7 @@
 package anthropic
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 
@@ -37,7 +38,9 @@ const (
 
 type messageStreamServer struct {
 	v1.Chat_ChatStreamServer
+	ctx                 context.Context
 	httpCtx             http.Context
+	buffer              *bytes.Buffer
 	messageStarted      bool
 	contentBlockStarted bool
 	contentIndex        int64
@@ -45,23 +48,19 @@ type messageStreamServer struct {
 }
 
 func (s *messageStreamServer) Context() context.Context {
-	return s.httpCtx
+	return s.ctx
 }
 
-func (s *messageStreamServer) sendEvent(event string, data []byte) (err error) {
-	_, err = s.httpCtx.Response().Write([]byte("event: " + event + "\n"))
-	if err != nil {
-		return err
+func (s *messageStreamServer) sendEvent(event string, eventData []byte) (err error) {
+	data := []byte("event: " + event + "\ndata: ")
+	data = append(data, eventData...)
+	data = append(data, '\n', '\n')
+
+	if s.buffer != nil {
+		s.buffer.Write(data)
 	}
-	_, err = s.httpCtx.Response().Write([]byte("data: "))
-	if err != nil {
-		return err
-	}
+
 	_, err = s.httpCtx.Response().Write(data)
-	if err != nil {
-		return err
-	}
-	_, err = s.httpCtx.Response().Write([]byte("\n\n"))
 	if err != nil {
 		return err
 	}

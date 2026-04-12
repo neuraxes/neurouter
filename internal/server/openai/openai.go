@@ -16,26 +16,32 @@ package openai
 
 import (
 	"github.com/go-kratos/kratos/v2/transport/http"
+	otellog "go.opentelemetry.io/otel/log"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/service"
 )
 
-type OpenAIServer struct {
-	modelSvc v1.ModelServer
-	chatSvc  v1.ChatServer
-	embedSvc v1.EmbeddingServer
+type Server struct {
+	modelSvc   v1.ModelServer
+	chatSvc    v1.ChatServer
+	embedSvc   v1.EmbeddingServer
+	otelLogger otellog.Logger
 }
 
-func NewOpenAIServer(svc *service.RouterService) *OpenAIServer {
-	return &OpenAIServer{
+func NewServer(svc *service.RouterService, loggerProvider otellog.LoggerProvider) (s *Server) {
+	s = &Server{
 		modelSvc: svc,
 		chatSvc:  svc,
 		embedSvc: svc,
 	}
+	if loggerProvider != nil {
+		s.otelLogger = loggerProvider.Logger("neurouter.server.openai")
+	}
+	return
 }
 
-func (s *OpenAIServer) RegisterRoutes(srv *http.Server) {
+func (s *Server) RegisterRoutes(srv *http.Server) {
 	r := srv.Route("/")
 
 	for _, path := range []string{

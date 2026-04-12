@@ -52,16 +52,14 @@ func TestNewOpenAIUpstream(t *testing.T) {
 		}
 
 		Convey("When newOpenAIUpstream is called", func() {
-			repo, err := newOpenAIUpstream(config, log.DefaultLogger)
+			repo, err := newOpenAIUpstreamWithClient(config, nil, log.DefaultLogger)
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)
 				So(repo, ShouldNotBeNil)
-				upstream, ok := repo.(*upstream)
-				So(ok, ShouldBeTrue)
-				So(upstream.config.BaseUrl, ShouldEqual, "https://api.openai.com/v1/")
-				So(upstream.config.ApiKey, ShouldEqual, "test-key")
-				So(upstream.client, ShouldNotBeNil)
+				So(repo.config.BaseUrl, ShouldEqual, "https://api.openai.com/v1/")
+				So(repo.config.ApiKey, ShouldEqual, "test-key")
+				So(repo.client, ShouldNotBeNil)
 			})
 		})
 

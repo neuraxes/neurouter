@@ -18,6 +18,7 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/log"
 	"go.opentelemetry.io/otel/metric"
 
@@ -58,7 +59,7 @@ type UseCaseImpl struct {
 }
 
 func NewModelUseCase(
-	c *conf.Upstream,
+	c config.Config,
 	anthropicFactory repository.UpstreamFactory[conf.AnthropicConfig],
 	googleFactory repository.UpstreamFactory[conf.GoogleConfig],
 	neurouterFactory repository.UpstreamFactory[conf.NeurouterConfig],
@@ -75,22 +76,24 @@ func NewModelUseCase(
 	var models []*model
 	aliases := make(map[string]*alias)
 
-	if c != nil {
-		for _, config := range c.Configs {
+	var upstream conf.Upstream
+	err = c.Value("upstream").Scan(&upstream)
+	if err == nil {
+		for _, upstreamConfig := range upstream.Configs {
 			var (
 				repo repository.Repo
 				err  error
 			)
 
-			switch config.GetConfig().(type) {
+			switch upstreamConfig.GetConfig().(type) {
 			case *conf.UpstreamConfig_Neurouter:
-				repo, err = neurouterFactory(config.GetNeurouter(), logger)
+				repo, err = neurouterFactory(upstreamConfig.GetNeurouter(), logger)
 			case *conf.UpstreamConfig_OpenAi:
-				repo, err = openAIFactory(config.GetOpenAi(), logger)
+				repo, err = openAIFactory(upstreamConfig.GetOpenAi(), logger)
 			case *conf.UpstreamConfig_Google:
-				repo, err = googleFactory(config.GetGoogle(), logger)
+				repo, err = googleFactory(upstreamConfig.GetGoogle(), logger)
 			case *conf.UpstreamConfig_Anthropic:
-				repo, err = anthropicFactory(config.GetAnthropic(), logger)
+				repo, err = anthropicFactory(upstreamConfig.GetAnthropic(), logger)
 			}
 
 			if err != nil {
@@ -99,7 +102,7 @@ func NewModelUseCase(
 			}
 
 			// Create upstream limiter group once (shared across all models in this upstream)
-			us := config.GetScheduling()
+			us := upstreamConfig.GetScheduling()
 			upstreamLimiters := newLimiterGroup(
 				us.GetConcurrencyLimit(),
 				us.GetRpmLimit(),
@@ -108,7 +111,7 @@ func NewModelUseCase(
 				us.GetTpdLimit(),
 			)
 
-			for _, modelConfig := range config.GetModels() {
+			for _, modelConfig := range upstreamConfig.GetModels() {
 				chatRepo, _ := repo.(repository.ChatRepo)
 				embeddingRepo, _ := repo.(repository.EmbeddingRepo)
 
@@ -124,7 +127,7 @@ func NewModelUseCase(
 
 				models = append(models, &model{
 					config:           modelConfig,
-					upstreamConfig:   config,
+					upstreamConfig:   upstreamConfig,
 					chatRepo:         chatRepo,
 					embeddingRepo:    embeddingRepo,
 					upstreamLimiters: upstreamLimiters,
@@ -134,7 +137,7 @@ func NewModelUseCase(
 			}
 		}
 
-		for _, ac := range c.GetAliases() {
+		for _, ac := range upstream.GetAliases() {
 			actual := ac.GetActual()
 			if actual == nil {
 				logHelper.Errorf("alias %q has no actual config, skipping", ac.GetId())

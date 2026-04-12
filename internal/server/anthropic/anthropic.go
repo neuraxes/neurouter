@@ -16,22 +16,28 @@ package anthropic
 
 import (
 	"github.com/go-kratos/kratos/v2/transport/http"
+	otellog "go.opentelemetry.io/otel/log"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/service"
 )
 
-type AnthropicServer struct {
-	chatSvc v1.ChatServer
+type Server struct {
+	chatSvc    v1.ChatServer
+	otelLogger otellog.Logger
 }
 
-func NewAnthropicServer(svc *service.RouterService) *AnthropicServer {
-	return &AnthropicServer{
+func NewServer(svc *service.RouterService, loggerProvider otellog.LoggerProvider) (s *Server) {
+	s = &Server{
 		chatSvc: svc,
 	}
+	if loggerProvider != nil {
+		s.otelLogger = loggerProvider.Logger("neurouter.server.anthropic")
+	}
+	return
 }
 
-func (s *AnthropicServer) RegisterRoutes(srv *http.Server) {
+func (s *Server) RegisterRoutes(srv *http.Server) {
 	r := srv.Route("/")
 
 	for _, path := range []string{

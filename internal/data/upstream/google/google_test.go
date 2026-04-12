@@ -37,7 +37,7 @@ func TestNewGoogleUpstream(t *testing.T) {
 		}
 
 		Convey("When newGoogleUpstream is called", func() {
-			repo, err := newGoogleUpstream(config, log.DefaultLogger)
+			repo, err := newGoogleUpstreamWithClient(config, nil, log.DefaultLogger)
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)

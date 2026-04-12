@@ -86,12 +86,9 @@ func (t *mockHTTPContext) Middleware(handler middleware.Handler) middleware.Hand
 	return handler
 }
 
-func (t *mockHTTPContext) Result(code int, v any) error {
+func (t *mockHTTPContext) Blob(code int, contentType string, data []byte) error {
 	t.statusCode = code
-	data, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
+	t.headers.Set("Content-Type", contentType)
 	t.respBody.Write(data)
 	return nil
 }
@@ -99,7 +96,7 @@ func (t *mockHTTPContext) Result(code int, v any) error {
 func TestChat(t *testing.T) {
 	Convey("Given a mock ChatServer for non-streaming requests", t, func() {
 		mock := &mockChatServer{}
-		srv := &AnthropicServer{chatSvc: mock}
+		srv := &Server{chatSvc: mock}
 
 		Convey("When a non-streaming Anthropic request is sent", func() {
 			mock.chatFunc = func(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
@@ -165,7 +162,7 @@ func parseSSEEvents(sseData string) []sseEvent {
 func TestChatStream(t *testing.T) {
 	Convey("Given a mock ChatServer for streaming requests", t, func() {
 		mock := &mockChatServer{}
-		srv := &AnthropicServer{chatSvc: mock}
+		srv := &Server{chatSvc: mock}
 
 		Convey("When ChatStream is called and responses are sent", func() {
 			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {

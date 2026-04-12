@@ -8,11 +8,13 @@ package main
 
 import (
 	"github.com/go-kratos/kratos/v2"
+	"github.com/go-kratos/kratos/v2/config"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/neuraxes/neurouter/internal/biz/chat"
 	"github.com/neuraxes/neurouter/internal/biz/embedding"
 	"github.com/neuraxes/neurouter/internal/biz/model"
 	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data/telemetry"
 	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic"
 	"github.com/neuraxes/neurouter/internal/data/upstream/google"
 	"github.com/neuraxes/neurouter/internal/data/upstream/neurouter"
@@ -28,23 +30,36 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, data *conf.Data, upstream *conf.Upstream, logger log.Logger) (*kratos.App, func(), error) {
-	upstreamFactory := anthropic.NewAnthropicChatRepoFactory()
-	repositoryUpstreamFactory := google.NewGoogleFactory()
-	upstreamFactory2 := neurouter.NewNeurouterFactory()
-	upstreamFactory3 := openai.NewOpenAIFactory()
-	meterProvider, cleanup, err := server.NewMeterProvider()
+func wireApp(confServer *conf.Server, data *conf.Data, configConfig config.Config, logger log.Logger) (*kratos.App, func(), error) {
+	loggerProvider, cleanup, err := telemetry.NewLoggerProvider(data, logger)
 	if err != nil {
 		return nil, nil, err
 	}
-	useCaseImpl := model.NewModelUseCase(upstream, upstreamFactory, repositoryUpstreamFactory, upstreamFactory2, upstreamFactory3, meterProvider, logger)
+	upstreamFactory := anthropic.NewAnthropicChatRepoFactory(loggerProvider)
+	repositoryUpstreamFactory := google.NewGoogleFactory(loggerProvider)
+	upstreamFactory2 := neurouter.NewNeurouterFactory()
+	upstreamFactory3 := openai.NewOpenAIFactory(loggerProvider)
+	meterProvider, cleanup2, err := telemetry.NewMeterProvider()
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	useCaseImpl := model.NewModelUseCase(configConfig, upstreamFactory, repositoryUpstreamFactory, upstreamFactory2, upstreamFactory3, meterProvider, logger)
 	useCase := chat.NewChatUseCase(useCaseImpl, logger)
 	embeddingUseCase := embedding.NewUseCase(useCaseImpl, logger)
 	routerService := service.NewRouterService(useCase, useCaseImpl, embeddingUseCase, logger)
-	grpcServer := server.NewGRPCServer(confServer, routerService, logger)
-	httpServer := server.NewHTTPServer(confServer, routerService, logger)
+	tracerProvider, cleanup3, err := telemetry.NewTracerProvider()
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	grpcServer := server.NewGRPCServer(confServer, routerService, tracerProvider, logger)
+	httpServer := server.NewHTTPServer(confServer, routerService, loggerProvider, tracerProvider, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
+		cleanup3()
+		cleanup2()
 		cleanup()
 	}, nil
 }

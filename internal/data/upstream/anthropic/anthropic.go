@@ -22,10 +22,12 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/anthropics/anthropic-sdk-go/packages/ssestream"
 	"github.com/go-kratos/kratos/v2/log"
+	otellog "go.opentelemetry.io/otel/log"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data/upstream/shared"
 )
 
 type upstream struct {
@@ -34,12 +36,11 @@ type upstream struct {
 	log    *log.Helper
 }
 
-func NewAnthropicChatRepoFactory() repository.UpstreamFactory[conf.AnthropicConfig] {
-	return newAnthropicUpstream
-}
-
-func newAnthropicUpstream(config *conf.AnthropicConfig, logger log.Logger) (repository.Repo, error) {
-	return newAnthropicUpstreamWithClient(config, nil, logger)
+func NewAnthropicChatRepoFactory(loggerProvider otellog.LoggerProvider) repository.UpstreamFactory[conf.AnthropicConfig] {
+	return func(config *conf.AnthropicConfig, logger log.Logger) (repository.Repo, error) {
+		client := shared.NewRecordingClientFromLoggerProvider(loggerProvider, "neurouter.upstream.anthropic")
+		return newAnthropicUpstreamWithClient(config, client, logger)
+	}
 }
 
 func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient option.HTTPClient, logger log.Logger) (repo repository.ChatRepo, err error) {
@@ -88,11 +89,10 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 }
 
 type anthropicChatStreamClient struct {
-	req         *entity.ChatReq
-	upstream    *ssestream.Stream[anthropic.MessageStreamEventUnion]
-	messageID   string
-	model       string
-	inputTokens uint32
+	req       *entity.ChatReq
+	upstream  *ssestream.Stream[anthropic.MessageStreamEventUnion]
+	messageID string
+	model     string
 }
 
 func (c *anthropicChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {

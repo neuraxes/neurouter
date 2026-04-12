@@ -21,17 +21,17 @@ import (
 	"github.com/neuraxes/neurouter/internal/service"
 )
 
-type OllamaServer struct {
+type Server struct {
 	modelSvc v1.ModelServer
 }
 
-func NewOllamaServer(svc *service.RouterService) *OllamaServer {
-	return &OllamaServer{
+func NewServer(svc *service.RouterService) *Server {
+	return &Server{
 		modelSvc: svc,
 	}
 }
 
-func (s *OllamaServer) RegisterRoutes(srv *http.Server) {
+func (s *Server) RegisterRoutes(srv *http.Server) {
 	r := srv.Route("/")
 	r.GET("/api/version", func(ctx http.Context) error {
 		return ctx.JSON(200, map[string]any{

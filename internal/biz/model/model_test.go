@@ -30,7 +30,7 @@ func TestNewModelUseCase(t *testing.T) {
 		}
 
 		Convey("with nil config should return empty use case", func() {
-			uc := NewModelUseCase(nil, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(uc, ShouldNotBeNil)
 			So(uc.models, ShouldBeEmpty)
 			So(uc.aliases, ShouldBeEmpty)
@@ -40,7 +40,7 @@ func TestNewModelUseCase(t *testing.T) {
 			c := &conf.Upstream{
 				Configs: []*conf.UpstreamConfig{},
 			}
-			uc := NewModelUseCase(c, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(uc, ShouldNotBeNil)
 			So(uc.models, ShouldBeEmpty)
 			So(uc.aliases, ShouldBeEmpty)
@@ -68,7 +68,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(c, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(len(uc.models), ShouldEqual, 2)
 			So(uc.models[0].config.Id, ShouldEqual, "gpt-4")
 			So(uc.models[1].config.Id, ShouldEqual, "text-embedding-ada")
@@ -98,7 +98,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(c, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(len(uc.models), ShouldEqual, 1)
 			So(uc.models[0].config.Id, ShouldEqual, "claude-3")
 			So(uc.models[0].chatRepo, ShouldNotBeNil)
@@ -131,7 +131,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(c, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(len(uc.models), ShouldEqual, 1)
 			// Upstream limiters should have concurrency + rpm
 			So(len(uc.models[0].upstreamLimiters.requestLimiters), ShouldEqual, 2)
@@ -158,7 +158,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(c, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(len(uc.models), ShouldEqual, 2)
 			// Both models should share the same upstream limiter group pointer
 			So(uc.models[0].upstreamLimiters, ShouldPointTo, uc.models[1].upstreamLimiters)
@@ -183,7 +183,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(c, anthropicFactory, googleFactory, neurouterFactory, failFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, failFactory, noop.NewMeterProvider(), log.DefaultLogger)
 			So(uc.models, ShouldBeEmpty)
 		})
 	})

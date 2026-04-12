@@ -15,6 +15,7 @@
 package openai
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -24,12 +25,14 @@ import (
 	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 type chatStreamServer struct {
 	v1.Chat_ChatStreamServer
 	ctx     context.Context
 	httpCtx http.Context
+	buffer  *bytes.Buffer
 }
 
 func (c *chatStreamServer) Context() context.Context {
@@ -86,14 +89,35 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 		return err
 	}
 
-	c.httpCtx.Response().Write([]byte("data: "))
-	c.httpCtx.Response().Write(chunkJson)
-	c.httpCtx.Response().Write([]byte("\n\n"))
+	data := append([]byte("data: "), chunkJson...)
+	data = append(data, '\n', '\n')
+
+	if c.buffer != nil {
+		c.buffer.Write(data)
+	}
+
+	_, err = c.httpCtx.Response().Write(data)
+	if err != nil {
+		return err
+	}
 	c.httpCtx.Response().(http.Flusher).Flush()
 	return nil
 }
 
-func (s *OpenAIServer) handleChatCompletion(httpCtx http.Context) (err error) {
+func (c *chatStreamServer) sendDone() error {
+	data := []byte("data: [DONE]\n\n")
+	if c.buffer != nil {
+		c.buffer.Write(data)
+	}
+	_, err := c.httpCtx.Response().Write(data)
+	if err != nil {
+		return err
+	}
+	c.httpCtx.Response().(http.Flusher).Flush()
+	return nil
+}
+
+func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 	requestBody, err := io.ReadAll(httpCtx.Request().Body)
 	if err != nil {
 		return
@@ -113,28 +137,47 @@ func (s *OpenAIServer) handleChatCompletion(httpCtx http.Context) (err error) {
 		httpCtx.Response().Header().Set("Connection", "keep-alive")
 
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), &chatStreamServer{
+			util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
+			streamServer := &chatStreamServer{
 				ctx:     ctx,
 				httpCtx: httpCtx,
-			})
+			}
+			if s.otelLogger != nil {
+				streamServer.buffer = &bytes.Buffer{}
+			}
+			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), streamServer)
 			if err == nil {
-				httpCtx.Response().Write([]byte("data: [DONE]\n\n"))
-				httpCtx.Response().(http.Flusher).Flush()
+				err = streamServer.sendDone()
+			}
+			if s.otelLogger != nil {
+				util.EmitEvent(ctx, s.otelLogger, util.EventServerRespSent, streamServer.buffer.Bytes())
 			}
 			return nil, err
 		})
 		_, err = m(httpCtx, req)
 	} else {
+		var eventCtx context.Context = httpCtx
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
+			eventCtx = ctx
+			util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
 			return s.chatSvc.Chat(ctx, req.(*v1.ChatReq))
 		})
+
 		resp, err := m(httpCtx, req)
 		if err != nil {
 			return err
 		}
 
 		openAIResp := convertChatRespToOpenAI(resp.(*v1.ChatResp))
-		err = httpCtx.Result(200, openAIResp)
+
+		respBytes, err := json.Marshal(openAIResp)
+		if err != nil {
+			return err
+		}
+
+		util.EmitEvent(eventCtx, s.otelLogger, util.EventServerRespSent, respBytes)
+
+		err = httpCtx.Blob(200, "application/json", respBytes)
 		if err != nil {
 			return err
 		}

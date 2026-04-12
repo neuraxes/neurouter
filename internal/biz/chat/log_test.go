@@ -37,6 +37,10 @@ func TestPrintChat(t *testing.T) {
 				TopK:             ptr.To[int64](40),
 				FrequencyPenalty: ptr.To[float32](0.1),
 				PresencePenalty:  ptr.To[float32](0.2),
+				ReasoningConfig: &v1.ReasoningConfig{
+					Effort:      v1.ReasoningEffort_REASONING_EFFORT_MEDIUM,
+					TokenBudget: 2048,
+				},
 				Template: &v1.GenerationConfig_PresetTemplate{
 					PresetTemplate: "example_tmpl",
 				},

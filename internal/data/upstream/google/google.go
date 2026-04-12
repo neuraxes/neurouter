@@ -21,12 +21,14 @@ import (
 	"net/http"
 
 	"github.com/go-kratos/kratos/v2/log"
+	otellog "go.opentelemetry.io/otel/log"
 	"google.golang.org/genai"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data/upstream/shared"
 )
 
 type upstream struct {
@@ -35,12 +37,11 @@ type upstream struct {
 	log    *log.Helper
 }
 
-func NewGoogleFactory() repository.UpstreamFactory[conf.GoogleConfig] {
-	return newGoogleUpstream
-}
-
-func newGoogleUpstream(config *conf.GoogleConfig, logger log.Logger) (repo repository.Repo, err error) {
-	return newGoogleUpstreamWithClient(config, nil, logger)
+func NewGoogleFactory(loggerProvider otellog.LoggerProvider) repository.UpstreamFactory[conf.GoogleConfig] {
+	return func(config *conf.GoogleConfig, logger log.Logger) (repository.Repo, error) {
+		client := shared.NewRecordingClientFromLoggerProvider(loggerProvider, "neurouter.upstream.google")
+		return newGoogleUpstreamWithClient(config, client, logger)
+	}
 }
 
 func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Client, logger log.Logger) (repo repository.ChatRepo, err error) {

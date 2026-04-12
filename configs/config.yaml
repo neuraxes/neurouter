@@ -22,3 +22,4 @@ server:
     addr: 0.0.0.0:9000
     timeout: 600s
 data:
+  enable_event_log: false

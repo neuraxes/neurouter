@@ -18,10 +18,13 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
+	"github.com/go-kratos/kratos/v2/middleware/tracing"
 	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	"github.com/gorilla/handlers"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	otellog "go.opentelemetry.io/otel/log"
+	oteltrace "go.opentelemetry.io/otel/trace"
+
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/conf"
 	"github.com/neuraxes/neurouter/internal/server/anthropic"
@@ -52,10 +55,17 @@ func newCORSFilter(cors *conf.Server_HTTP_CORS) http.FilterFunc {
 	return handlers.CORS(options...)
 }
 
-func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger) *http.Server {
+func NewHTTPServer(
+	c *conf.Server,
+	svc *service.RouterService,
+	loggerProvider otellog.LoggerProvider,
+	tracerProvider oteltrace.TracerProvider,
+	logger log.Logger,
+) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
 			recovery.Recovery(),
+			tracing.Server(tracing.WithTracerProvider(tracerProvider)),
 			logging.Server(logger),
 		),
 	}
@@ -75,9 +85,9 @@ func NewHTTPServer(c *conf.Server, svc *service.RouterService, logger log.Logger
 	v1.RegisterModelHTTPServer(srv, svc)
 	v1.RegisterChatHTTPServer(srv, svc)
 	v1.RegisterEmbeddingHTTPServer(srv, svc)
-	openai.NewOpenAIServer(svc).RegisterRoutes(srv)
-	ollama.NewOllamaServer(svc).RegisterRoutes(srv)
-	anthropic.NewAnthropicServer(svc).RegisterRoutes(srv)
+	openai.NewServer(svc, loggerProvider).RegisterRoutes(srv)
+	ollama.NewServer(svc).RegisterRoutes(srv)
+	anthropic.NewServer(svc, loggerProvider).RegisterRoutes(srv)
 
 	// Register /metrics endpoint directly on mux, bypassing Kratos middleware (including JWT)
 	srv.Handle("/metrics", promhttp.Handler())
