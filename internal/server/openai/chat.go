@@ -28,18 +28,18 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-type chatStreamServer struct {
+type chatCompletionStreamServer struct {
 	v1.Chat_ChatStreamServer
 	ctx     context.Context
 	httpCtx http.Context
 	buffer  *bytes.Buffer
 }
 
-func (c *chatStreamServer) Context() context.Context {
+func (c *chatCompletionStreamServer) Context() context.Context {
 	return c.ctx
 }
 
-func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
+func (c *chatCompletionStreamServer) Send(resp *v1.ChatResp) error {
 	chunk := &chatCompletionChunk{
 		ID:      resp.Id,
 		Object:  "chat.completion.chunk",
@@ -71,15 +71,15 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 				Content:   content,
 				ToolCalls: toolCalls,
 			},
-			FinishReason: convertStatusToOpenAI(resp.Status),
+			FinishReason: convertStatusToOpenAIChat(resp.Status),
 		})
 	}
 
 	if resp.Statistics != nil && resp.Statistics.Usage != nil {
-		chunk.Usage = convertUsageToOpenAI(resp.Statistics.Usage)
+		chunk.Usage = convertUsageToOpenAIChat(resp.Statistics.Usage)
 		if len(chunk.Choices) == 0 {
 			chunk.Choices = append(chunk.Choices, chatCompletionChunkChoice{
-				FinishReason: convertStatusToOpenAI(resp.Status),
+				FinishReason: convertStatusToOpenAIChat(resp.Status),
 			})
 		}
 	}
@@ -104,7 +104,7 @@ func (c *chatStreamServer) Send(resp *v1.ChatResp) error {
 	return nil
 }
 
-func (c *chatStreamServer) sendDone() error {
+func (c *chatCompletionStreamServer) sendDone() error {
 	data := []byte("data: [DONE]\n\n")
 	if c.buffer != nil {
 		c.buffer.Write(data)
@@ -129,7 +129,7 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 		return err
 	}
 
-	req := convertChatReqFromOpenAI(&openAIReq)
+	req := convertChatReqFromOpenAIChat(&openAIReq)
 
 	if gjson.GetBytes(requestBody, "stream").Bool() {
 		httpCtx.Response().Header().Set("Content-Type", "text/event-stream")
@@ -138,7 +138,7 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 			util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
-			streamServer := &chatStreamServer{
+			streamServer := &chatCompletionStreamServer{
 				ctx:     ctx,
 				httpCtx: httpCtx,
 			}
@@ -168,7 +168,7 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 			return err
 		}
 
-		openAIResp := convertChatRespToOpenAI(resp.(*v1.ChatResp))
+		openAIResp := convertChatRespToOpenAIChat(resp.(*v1.ChatResp))
 
 		respBytes, err := json.Marshal(openAIResp)
 		if err != nil {

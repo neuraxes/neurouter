@@ -35,7 +35,7 @@ func convertImageFromOpenAIURL(u string) *v1.Image {
 	}
 }
 
-func convertDeveloperMessageFromOpenAI(m *openai.ChatCompletionDeveloperMessageParam) *v1.Message {
+func convertDeveloperMessageFromOpenAIChat(m *openai.ChatCompletionDeveloperMessageParam) *v1.Message {
 	var contents []*v1.Content
 
 	if m.Content.OfString.Valid() {
@@ -60,7 +60,7 @@ func convertDeveloperMessageFromOpenAI(m *openai.ChatCompletionDeveloperMessageP
 	return msg
 }
 
-func convertSystemMessageFromOpenAI(m *openai.ChatCompletionSystemMessageParam) *v1.Message {
+func convertSystemMessageFromOpenAIChat(m *openai.ChatCompletionSystemMessageParam) *v1.Message {
 	var contents []*v1.Content
 
 	if m.Content.OfString.Valid() {
@@ -85,7 +85,7 @@ func convertSystemMessageFromOpenAI(m *openai.ChatCompletionSystemMessageParam) 
 	return msg
 }
 
-func convertUserMessageFromOpenAI(m *openai.ChatCompletionUserMessageParam) *v1.Message {
+func convertUserMessageFromOpenAIChat(m *openai.ChatCompletionUserMessageParam) *v1.Message {
 	var contents []*v1.Content
 
 	if m.Content.OfString.Valid() {
@@ -118,7 +118,7 @@ func convertUserMessageFromOpenAI(m *openai.ChatCompletionUserMessageParam) *v1.
 	return msg
 }
 
-func convertAssistantMessageFromOpenAI(m *openai.ChatCompletionAssistantMessageParam) *v1.Message {
+func convertAssistantMessageFromOpenAIChat(m *openai.ChatCompletionAssistantMessageParam) *v1.Message {
 	var contents []*v1.Content
 
 	if m.Content.OfString.Valid() {
@@ -161,7 +161,7 @@ func convertAssistantMessageFromOpenAI(m *openai.ChatCompletionAssistantMessageP
 	return msg
 }
 
-func convertToolMessageFromOpenAI(m *openai.ChatCompletionToolMessageParam) *v1.Message {
+func convertToolMessageFromOpenAIChat(m *openai.ChatCompletionToolMessageParam) *v1.Message {
 	tr := &v1.Content_ToolResult{
 		ToolResult: &v1.ToolResult{
 			Id:      m.ToolCallID,
@@ -187,26 +187,26 @@ func convertToolMessageFromOpenAI(m *openai.ChatCompletionToolMessageParam) *v1.
 	}
 }
 
-func convertChatMessageFromOpenAI(msg openai.ChatCompletionMessageParamUnion) *v1.Message {
+func convertChatMessageFromOpenAIChat(msg openai.ChatCompletionMessageParamUnion) *v1.Message {
 	if msg.OfDeveloper != nil {
-		return convertDeveloperMessageFromOpenAI(msg.OfDeveloper)
+		return convertDeveloperMessageFromOpenAIChat(msg.OfDeveloper)
 	}
 	if msg.OfSystem != nil {
-		return convertSystemMessageFromOpenAI(msg.OfSystem)
+		return convertSystemMessageFromOpenAIChat(msg.OfSystem)
 	}
 	if msg.OfUser != nil {
-		return convertUserMessageFromOpenAI(msg.OfUser)
+		return convertUserMessageFromOpenAIChat(msg.OfUser)
 	}
 	if msg.OfAssistant != nil {
-		return convertAssistantMessageFromOpenAI(msg.OfAssistant)
+		return convertAssistantMessageFromOpenAIChat(msg.OfAssistant)
 	}
 	if msg.OfTool != nil {
-		return convertToolMessageFromOpenAI(msg.OfTool)
+		return convertToolMessageFromOpenAIChat(msg.OfTool)
 	}
 	return nil
 }
 
-func convertChatReqFromOpenAI(req *openai.ChatCompletionNewParams) *v1.ChatReq {
+func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatReq {
 	config := &v1.GenerationConfig{}
 
 	if req.MaxCompletionTokens.Valid() {
@@ -235,7 +235,7 @@ func convertChatReqFromOpenAI(req *openai.ChatCompletionNewParams) *v1.ChatReq {
 
 	var messages []*v1.Message
 	for _, message := range req.Messages {
-		if m := convertChatMessageFromOpenAI(message); m != nil {
+		if m := convertChatMessageFromOpenAIChat(message); m != nil {
 			messages = append(messages, m)
 		}
 	}
@@ -267,7 +267,7 @@ func convertChatReqFromOpenAI(req *openai.ChatCompletionNewParams) *v1.ChatReq {
 	}
 }
 
-func convertStatusToOpenAI(status v1.ChatStatus) string {
+func convertStatusToOpenAIChat(status v1.ChatStatus) string {
 	switch status {
 	case v1.ChatStatus_CHAT_COMPLETED:
 		return "stop"
@@ -282,7 +282,7 @@ func convertStatusToOpenAI(status v1.ChatStatus) string {
 	}
 }
 
-func convertUsageToOpenAI(u *v1.Statistics_Usage) *openai.CompletionUsage {
+func convertUsageToOpenAIChat(u *v1.Statistics_Usage) *openai.CompletionUsage {
 	if u == nil {
 		return nil
 	}
@@ -299,7 +299,7 @@ func convertUsageToOpenAI(u *v1.Statistics_Usage) *openai.CompletionUsage {
 	}
 }
 
-func convertChatRespToOpenAI(resp *v1.ChatResp) *chatCompletionResponse {
+func convertChatRespToOpenAIChat(resp *v1.ChatResp) *chatCompletionResponse {
 	r := &chatCompletionResponse{
 		ID:     resp.Id,
 		Object: "chat.completion",
@@ -332,19 +332,19 @@ func convertChatRespToOpenAI(resp *v1.ChatResp) *chatCompletionResponse {
 		r.Choices = []chatCompletionChoice{
 			{
 				Message:      message,
-				FinishReason: convertStatusToOpenAI(resp.Status),
+				FinishReason: convertStatusToOpenAIChat(resp.Status),
 			},
 		}
 	}
 
 	if resp.Statistics != nil {
-		r.Usage = convertUsageToOpenAI(resp.Statistics.Usage)
+		r.Usage = convertUsageToOpenAIChat(resp.Statistics.Usage)
 	}
 
 	return r
 }
 
-func convertEmbeddingReqFromOpenAI(req *openai.EmbeddingNewParams) *v1.EmbedReq {
+func convertEmbeddingReqFromOpenAIChat(req *openai.EmbeddingNewParams) *v1.EmbedReq {
 	var contents []*v1.Content
 
 	if req.Input.OfString.Valid() {
@@ -363,7 +363,7 @@ func convertEmbeddingReqFromOpenAI(req *openai.EmbeddingNewParams) *v1.EmbedReq 
 	}
 }
 
-func convertEmbeddingRespToOpenAI(resp *v1.EmbedResp) *embeddingResponse {
+func convertEmbeddingRespToOpenAIChat(resp *v1.EmbedResp) *embeddingResponse {
 	embedding := make([]float64, len(resp.Embedding))
 	for i, v := range resp.Embedding {
 		embedding[i] = float64(v)
