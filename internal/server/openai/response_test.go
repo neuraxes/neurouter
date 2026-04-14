@@ -292,6 +292,32 @@ func parseSSEEvents(sseData string) []sseEvent {
 	return events
 }
 
+func eventNames(events []sseEvent) []string {
+	names := make([]string, 0, len(events))
+	for _, ev := range events {
+		names = append(names, ev.event)
+	}
+	return names
+}
+
+func containsEvent(events []sseEvent, name string) bool {
+	for _, ev := range events {
+		if ev.event == name {
+			return true
+		}
+	}
+	return false
+}
+
+func lastEventByName(events []sseEvent, name string) *sseEvent {
+	for i := len(events) - 1; i >= 0; i-- {
+		if events[i].event == name {
+			return &events[i]
+		}
+	}
+	return nil
+}
+
 func TestHandleCreateResponseStream(t *testing.T) {
 	Convey("Given a mock ChatServer for streaming Responses API requests", t, func() {
 		mock := &mockChatServer{}
@@ -460,6 +486,148 @@ func TestHandleCreateResponseStreamWithToolUse(t *testing.T) {
 				lastEvent := events[len(events)-1]
 				So(lastEvent.event, ShouldEqual, "response.completed")
 			})
+		})
+	})
+}
+
+func TestHandleCreateResponseStreamRefusal(t *testing.T) {
+	Convey("Given a mock ChatServer for streaming refusals", t, func() {
+		mock := &mockChatServer{}
+		srv := &Server{chatSvc: mock}
+
+		Convey("When a refusal is streamed", func() {
+			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+				responses := []*v1.ChatResp{
+					{
+						Model:  "gpt-4o",
+						Status: v1.ChatStatus_CHAT_REFUSED,
+						Message: &v1.Message{
+							Role: v1.Role_MODEL,
+							Contents: []*v1.Content{{
+								Index:   new(uint32(0)),
+								Content: &v1.Content_Text{Text: "No."},
+							}},
+						},
+					},
+				}
+				for _, resp := range responses {
+					if err := stream.Send(resp); err != nil {
+						return err
+					}
+				}
+				return nil
+			}
+
+			body := `{"model":"gpt-4o","input":"forbidden","stream":true}`
+			httpReq, _ := http.NewRequest("POST", "/v1/responses", strings.NewReader(body))
+			ctx := newMockHTTPContext(httpReq)
+
+			err := srv.handleCreateResponse(ctx)
+			So(err, ShouldBeNil)
+
+			events := parseSSEEvents(ctx.respBody.String())
+			So(containsEvent(events, "response.refusal.delta"), ShouldBeTrue)
+			last := events[len(events)-1]
+			So(last.event, ShouldEqual, "response.completed")
+			var data responseStreamEvent
+			json.Unmarshal([]byte(last.data), &data)
+			So(data.Response.Status, ShouldEqual, "completed")
+		})
+	})
+}
+
+func TestHandleCreateResponseStreamReasoningAndIncomplete(t *testing.T) {
+	Convey("Given a mock ChatServer for reasoning streams", t, func() {
+		mock := &mockChatServer{}
+		srv := &Server{chatSvc: mock}
+
+		Convey("When reasoning text is streamed and the response is incomplete", func() {
+			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+				responses := []*v1.ChatResp{
+					{
+						Model: "o3",
+						Message: &v1.Message{
+							Role: v1.Role_MODEL,
+							Contents: []*v1.Content{{
+								Id:        "rs_1",
+								Index:     new(uint32(0)),
+								Reasoning: true,
+								Metadata:  map[string]string{"summary": "Planning."},
+								Content:   &v1.Content_Text{Text: "Long internal thought."},
+							}},
+						},
+					},
+					{
+						Model:  "o3",
+						Status: v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT,
+					},
+				}
+				for _, resp := range responses {
+					if err := stream.Send(resp); err != nil {
+						return err
+					}
+				}
+				return nil
+			}
+
+			body := `{"model":"o3","input":"think","stream":true}`
+			httpReq, _ := http.NewRequest("POST", "/v1/responses", strings.NewReader(body))
+			ctx := newMockHTTPContext(httpReq)
+
+			err := srv.handleCreateResponse(ctx)
+			So(err, ShouldBeNil)
+
+			events := parseSSEEvents(ctx.respBody.String())
+			So(containsEvent(events, "response.reasoning_summary_text.delta"), ShouldBeTrue)
+			So(containsEvent(events, "response.reasoning_text.delta"), ShouldBeTrue)
+			last := events[len(events)-1]
+			So(last.event, ShouldEqual, "response.incomplete")
+		})
+	})
+}
+
+func TestHandleCreateResponseStreamFailedWithoutUsageChunk(t *testing.T) {
+	Convey("Given a mock ChatServer that ends without a stats chunk", t, func() {
+		mock := &mockChatServer{}
+		srv := &Server{chatSvc: mock}
+
+		Convey("When the final chunk only carries failed status", func() {
+			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+				responses := []*v1.ChatResp{
+					{
+						Model: "gpt-4o",
+						Message: &v1.Message{
+							Role: v1.Role_MODEL,
+							Contents: []*v1.Content{{
+								Index:   new(uint32(0)),
+								Content: &v1.Content_Text{Text: "partial"},
+							}},
+						},
+					},
+					{
+						Model:  "gpt-4o",
+						Status: v1.ChatStatus_CHAT_FAILED,
+					},
+				}
+				for _, resp := range responses {
+					if err := stream.Send(resp); err != nil {
+						return err
+					}
+				}
+				return nil
+			}
+
+			body := `{"model":"gpt-4o","input":"hi","stream":true}`
+			httpReq, _ := http.NewRequest("POST", "/v1/responses", strings.NewReader(body))
+			ctx := newMockHTTPContext(httpReq)
+
+			err := srv.handleCreateResponse(ctx)
+			So(err, ShouldBeNil)
+
+			events := parseSSEEvents(ctx.respBody.String())
+			So(containsEvent(events, "response.output_item.done"), ShouldBeTrue)
+			last := events[len(events)-1]
+			So(last.event, ShouldEqual, "response.failed")
 		})
 	})
 }
