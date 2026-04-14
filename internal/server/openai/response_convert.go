@@ -442,14 +442,13 @@ func convertRespToResponse(resp *v1.ChatResp) *responseObject {
 			case *v1.Content_ToolUse:
 				flushReasoning()
 				flushMessage()
+				id := content.Id
+				if id == "" {
+					id = "fc_" + uuid.NewString()[:12]
+				}
 				r.Output = append(r.Output, responseFunctionCall{
 					Type:      "function_call",
-					ID: func() string {
-						if content.Id != "" {
-							return content.Id
-						}
-						return "fc_" + uuid.NewString()[:12]
-					}(),
+					ID:        id,
 					CallID:    c.ToolUse.Id,
 					Name:      c.ToolUse.Name,
 					Arguments: c.ToolUse.GetTextualInput(),
