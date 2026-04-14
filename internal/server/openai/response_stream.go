@@ -50,6 +50,9 @@ type responseStreamServer struct {
 	currentKind       outputItemKind
 	itemStarted       bool
 	contentPartOpened bool
+	terminalSent      bool
+	finalStatus       v1.ChatStatus
+	finalUsage        *v1.Statistics_Usage
 
 	accumulatedText      string
 	accumulatedArgs      string
@@ -58,6 +61,7 @@ type responseStreamServer struct {
 	currentCallID        string
 	currentFuncName      string
 	encryptedContent     string
+	currentRefusal       bool
 }
 
 func (s *responseStreamServer) Context() context.Context {
@@ -152,6 +156,17 @@ func (s *responseStreamServer) closeCurrentItem() error {
 			}
 			s.contentPartOpened = false
 		}
+		var outputContent responseOutputContent = responseOutputText{
+			Type:        "output_text",
+			Text:        s.accumulatedText,
+			Annotations: []any{},
+		}
+		if s.currentRefusal {
+			outputContent = responseRefusal{
+				Type:    "refusal",
+				Refusal: s.accumulatedText,
+			}
+		}
 		if err := s.sendJSONEvent("response.output_item.done", responseStreamEvent{
 			Type:        "response.output_item.done",
 			OutputIndex: &s.outputIndex,
@@ -161,11 +176,7 @@ func (s *responseStreamServer) closeCurrentItem() error {
 				Role:   "assistant",
 				Status: "completed",
 				Content: []responseOutputContent{
-					responseOutputText{
-						Type:        "output_text",
-						Text:        s.accumulatedText,
-						Annotations: []any{},
-					},
+					outputContent,
 				},
 			},
 		}); err != nil {
@@ -222,12 +233,19 @@ func (s *responseStreamServer) closeCurrentItem() error {
 	s.currentCallID = ""
 	s.currentFuncName = ""
 	s.encryptedContent = ""
+	s.currentRefusal = false
 	return nil
 }
 
 func (s *responseStreamServer) Send(resp *v1.ChatResp) error {
 	if resp.Model != "" {
 		s.model = resp.Model
+	}
+	if resp.Status != v1.ChatStatus_CHAT_IN_PROGRESS {
+		s.finalStatus = resp.Status
+	}
+	if resp.Statistics != nil {
+		s.finalUsage = resp.Statistics.Usage
 	}
 
 	if err := s.ensureStarted(); err != nil {
@@ -287,7 +305,7 @@ func (s *responseStreamServer) Send(resp *v1.ChatResp) error {
 		if err := s.closeCurrentItem(); err != nil {
 			return err
 		}
-		return s.sendCompleted(resp)
+		return s.sendTerminal(resp.Status, resp.Statistics.Usage)
 	}
 
 	return nil
@@ -298,6 +316,7 @@ func (s *responseStreamServer) handleTextDelta(resp *v1.ChatResp, c *v1.Content_
 		s.itemStarted = true
 		s.currentKind = outputItemMessage
 		s.currentItemID = "msg_" + uuid.NewString()[:12]
+		s.currentRefusal = resp.Status == v1.ChatStatus_CHAT_REFUSED
 
 		idx := s.outputIndex
 		if err := s.sendJSONEvent("response.output_item.added", responseStreamEvent{
@@ -337,8 +356,12 @@ func (s *responseStreamServer) handleTextDelta(resp *v1.ChatResp, c *v1.Content_
 		s.accumulatedText += c.Text
 		idx := s.outputIndex
 		cidx := s.contentIndex
-		if err := s.sendJSONEvent("response.output_text.delta", responseStreamEvent{
-			Type:         "response.output_text.delta",
+		eventType := "response.output_text.delta"
+		if s.currentRefusal {
+			eventType = "response.refusal.delta"
+		}
+		if err := s.sendJSONEvent(eventType, responseStreamEvent{
+			Type:         eventType,
 			OutputIndex:  &idx,
 			ContentIndex: &cidx,
 			Delta:        c.Text,
@@ -441,6 +464,18 @@ func (s *responseStreamServer) handleReasoningDelta(content *v1.Content, c *v1.C
 		}
 	}
 
+	if c.Text != "" {
+		idx := s.outputIndex
+		if err := s.sendJSONEvent("response.reasoning_text.delta", responseStreamEvent{
+			Type:        "response.reasoning_text.delta",
+			OutputIndex: &idx,
+			ItemID:      s.currentItemID,
+			Delta:       c.Text,
+		}); err != nil {
+			return err
+		}
+	}
+
 	if encrypted := content.Meta("encrypted"); encrypted != "" {
 		s.encryptedContent = encrypted
 	}
@@ -448,15 +483,34 @@ func (s *responseStreamServer) handleReasoningDelta(content *v1.Content, c *v1.C
 	return nil
 }
 
-func (s *responseStreamServer) sendCompleted(resp *v1.ChatResp) error {
-	skeleton := s.responseSkeleton(convertStatusToResponse(resp.Status))
-	skeleton.Usage = convertUsageToResponse(resp.Statistics.Usage)
-	return s.sendJSONEvent("response.completed", responseStreamEvent{
-		Type:     "response.completed",
+func (s *responseStreamServer) sendTerminal(status v1.ChatStatus, usage *v1.Statistics_Usage) error {
+	if s.terminalSent {
+		return nil
+	}
+	s.terminalSent = true
+
+	eventType := "response.completed"
+	switch convertStatusToResponse(status) {
+	case "failed":
+		eventType = "response.failed"
+	case "incomplete":
+		eventType = "response.incomplete"
+	}
+
+	skeleton := s.responseSkeleton(convertStatusToResponse(status))
+	skeleton.Usage = convertUsageToResponse(usage)
+	return s.sendJSONEvent(eventType, responseStreamEvent{
+		Type:     eventType,
 		Response: skeleton,
 	})
 }
 
 func (s *responseStreamServer) sendDone() error {
-	return nil
+	if !s.started {
+		return nil
+	}
+	if err := s.closeCurrentItem(); err != nil {
+		return err
+	}
+	return s.sendTerminal(s.finalStatus, s.finalUsage)
 }

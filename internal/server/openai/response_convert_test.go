@@ -475,8 +475,9 @@ func TestConvertRespToResponse(t *testing.T) {
 				reasoning, ok := result.Output[0].(responseReasoning)
 				So(ok, ShouldBeTrue)
 				So(reasoning.Type, ShouldEqual, "reasoning")
-				So(reasoning.Summary, ShouldHaveLength, 1)
+				So(reasoning.Summary, ShouldHaveLength, 2)
 				So(reasoning.Summary[0].Text, ShouldEqual, "Analyzing the problem.")
+				So(reasoning.Summary[1].Text, ShouldEqual, "Let me think...")
 
 				msg, ok := result.Output[1].(responseOutputMessage)
 				So(ok, ShouldBeTrue)
@@ -502,12 +503,58 @@ func TestConvertRespToResponse(t *testing.T) {
 			result := convertRespToResponse(resp)
 
 			Convey("Then content should be a refusal", func() {
+				So(result.Status, ShouldEqual, "completed")
 				msg, ok := result.Output[0].(responseOutputMessage)
 				So(ok, ShouldBeTrue)
 				refusal, ok := msg.Content[0].(responseRefusal)
 				So(ok, ShouldBeTrue)
 				So(refusal.Type, ShouldEqual, "refusal")
 				So(refusal.Refusal, ShouldEqual, "I cannot do that.")
+			})
+		})
+
+		Convey("When converting interleaved output items", func() {
+			resp := &v1.ChatResp{
+				Id:     "test-id-order",
+				Model:  "o3",
+				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Message: &v1.Message{
+					Role: v1.Role_MODEL,
+					Contents: []*v1.Content{
+						{Id: "msg_1", Content: &v1.Content_Text{Text: "First."}},
+						{Id: "fc_1", Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{Id: "call_1", Name: "lookup", Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: `{"q":"x"}`}}}}}},
+						{Id: "rs_1", Reasoning: true, Metadata: map[string]string{"summary": "Thinking."}, Content: &v1.Content_Text{Text: "Hidden chain."}},
+						{Id: "msg_2", Content: &v1.Content_Text{Text: "Second."}},
+					},
+				},
+			}
+			result := convertRespToResponse(resp)
+
+			Convey("Then output order should match input order", func() {
+				So(result.Output, ShouldHaveLength, 4)
+
+				msg1, ok := result.Output[0].(responseOutputMessage)
+				So(ok, ShouldBeTrue)
+				So(msg1.ID, ShouldEqual, "msg_1")
+				text1, ok := msg1.Content[0].(responseOutputText)
+				So(ok, ShouldBeTrue)
+				So(text1.Text, ShouldEqual, "First.")
+
+				fc, ok := result.Output[1].(responseFunctionCall)
+				So(ok, ShouldBeTrue)
+				So(fc.ID, ShouldEqual, "fc_1")
+				So(fc.CallID, ShouldEqual, "call_1")
+
+				reasoning, ok := result.Output[2].(responseReasoning)
+				So(ok, ShouldBeTrue)
+				So(reasoning.ID, ShouldEqual, "rs_1")
+				So(reasoning.Summary, ShouldHaveLength, 2)
+				So(reasoning.Summary[0].Text, ShouldEqual, "Thinking.")
+				So(reasoning.Summary[1].Text, ShouldEqual, "Hidden chain.")
+
+				msg2, ok := result.Output[3].(responseOutputMessage)
+				So(ok, ShouldBeTrue)
+				So(msg2.ID, ShouldEqual, "msg_2")
 			})
 		})
 
