@@ -320,7 +320,7 @@ func convertReqFromResponse(req *responses.ResponseNewParams) *v1.ChatReq {
 
 func convertStatusToResponse(status v1.ChatStatus) string {
 	switch status {
-	case v1.ChatStatus_CHAT_COMPLETED, v1.ChatStatus_CHAT_PENDING_TOOL_USE:
+	case v1.ChatStatus_CHAT_COMPLETED, v1.ChatStatus_CHAT_PENDING_TOOL_USE, v1.ChatStatus_CHAT_REFUSED:
 		return "completed"
 	case v1.ChatStatus_CHAT_FAILED:
 		return "failed"
@@ -359,86 +359,107 @@ func convertRespToResponse(resp *v1.ChatResp) *responseObject {
 	}
 
 	if resp.Message != nil {
-		var reasoningContents []*v1.Content
-		var messageContents []*v1.Content
-		var functionCalls []*v1.Content
+		var currentReasoning *responseReasoning
+		var currentMessage *responseOutputMessage
+
+		flushReasoning := func() {
+			if currentReasoning != nil {
+				r.Output = append(r.Output, *currentReasoning)
+				currentReasoning = nil
+			}
+		}
+
+		flushMessage := func() {
+			if currentMessage != nil {
+				r.Output = append(r.Output, *currentMessage)
+				currentMessage = nil
+			}
+		}
 
 		for _, content := range resp.Message.Contents {
-			switch content.Content.(type) {
+			switch c := content.Content.(type) {
 			case *v1.Content_Text:
 				if content.Reasoning {
-					reasoningContents = append(reasoningContents, content)
-				} else {
-					messageContents = append(messageContents, content)
+					flushMessage()
+					if currentReasoning == nil || (content.Id != "" && currentReasoning.ID != content.Id) {
+						flushReasoning()
+						id := content.Id
+						if id == "" {
+							id = "rs_" + uuid.NewString()[:12]
+						}
+						currentReasoning = &responseReasoning{
+							Type:    "reasoning",
+							ID:      id,
+							Summary: []responseReasoningSummary{},
+						}
+					}
+					if summary := content.Meta("summary"); summary != "" {
+						currentReasoning.Summary = append(currentReasoning.Summary, responseReasoningSummary{
+							Type: "summary_text",
+							Text: summary,
+						})
+					}
+					if text := c.Text; text != "" {
+						currentReasoning.Summary = append(currentReasoning.Summary, responseReasoningSummary{
+							Type: "summary_text",
+							Text: text,
+						})
+					}
+					if encrypted := content.Meta("encrypted"); encrypted != "" {
+						currentReasoning.EncryptedContent = encrypted
+					}
+					continue
 				}
-			case *v1.Content_ToolUse:
-				functionCalls = append(functionCalls, content)
-			}
-		}
 
-		if len(reasoningContents) > 0 {
-			item := responseReasoning{
-				Type:    "reasoning",
-				ID:      "rs_" + uuid.NewString()[:12],
-				Summary: []responseReasoningSummary{},
-			}
-			for _, c := range reasoningContents {
-				text := c.GetText()
-				if summary := c.Meta("summary"); summary != "" {
-					item.Summary = append(item.Summary, responseReasoningSummary{
-						Type: "summary_text",
-						Text: summary,
-					})
-				} else if text != "" {
-					item.Summary = append(item.Summary, responseReasoningSummary{
-						Type: "summary_text",
-						Text: text,
-					})
+				flushReasoning()
+				if currentMessage == nil || (content.Id != "" && currentMessage.ID != content.Id) {
+					flushMessage()
+					id := content.Id
+					if id == "" {
+						id = "msg_" + uuid.NewString()[:12]
+					}
+					currentMessage = &responseOutputMessage{
+						Type:    "message",
+						ID:      id,
+						Role:    "assistant",
+						Status:  "completed",
+						Content: []responseOutputContent{},
+					}
 				}
-				if encrypted := c.Meta("encrypted"); encrypted != "" {
-					item.EncryptedContent = encrypted
-				}
-			}
-			r.Output = append(r.Output, item)
-		}
-
-		if len(messageContents) > 0 || (len(functionCalls) == 0 && len(reasoningContents) == 0) {
-			msg := responseOutputMessage{
-				Type:    "message",
-				ID:      "msg_" + uuid.NewString()[:12],
-				Role:    "assistant",
-				Status:  "completed",
-				Content: []responseOutputContent{},
-			}
-			for _, c := range messageContents {
-				text := c.GetText()
 				if resp.Status == v1.ChatStatus_CHAT_REFUSED {
-					msg.Content = append(msg.Content, responseRefusal{
+					currentMessage.Content = append(currentMessage.Content, responseRefusal{
 						Type:    "refusal",
-						Refusal: text,
+						Refusal: c.Text,
 					})
 				} else {
-					msg.Content = append(msg.Content, responseOutputText{
+					currentMessage.Content = append(currentMessage.Content, responseOutputText{
 						Type:        "output_text",
-						Text:        text,
+						Text:        c.Text,
 						Annotations: []any{},
 					})
 				}
+
+			case *v1.Content_ToolUse:
+				flushReasoning()
+				flushMessage()
+				r.Output = append(r.Output, responseFunctionCall{
+					Type:      "function_call",
+					ID: func() string {
+						if content.Id != "" {
+							return content.Id
+						}
+						return "fc_" + uuid.NewString()[:12]
+					}(),
+					CallID:    c.ToolUse.Id,
+					Name:      c.ToolUse.Name,
+					Arguments: c.ToolUse.GetTextualInput(),
+					Status:    "completed",
+				})
 			}
-			r.Output = append(r.Output, msg)
 		}
 
-		for _, c := range functionCalls {
-			tu := c.GetToolUse()
-			r.Output = append(r.Output, responseFunctionCall{
-				Type:      "function_call",
-				ID:        "fc_" + uuid.NewString()[:12],
-				CallID:    tu.Id,
-				Name:      tu.Name,
-				Arguments: tu.GetTextualInput(),
-				Status:    "completed",
-			})
-		}
+		flushReasoning()
+		flushMessage()
 	}
 
 	if resp.Statistics != nil {
