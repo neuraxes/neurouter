@@ -130,16 +130,28 @@ func (s *responseStreamServer) closeCurrentItem() error {
 
 	switch s.currentKind {
 	case outputItemMessage:
-		if s.contentPartOpened {
-			idx := s.outputIndex
-			cidx := s.contentIndex
-			part := responseOutputText{
+		var outputContent responseOutputContent
+		if s.currentRefusal {
+			outputContent = responseRefusal{
+				Type:    "refusal",
+				Refusal: s.accumulatedText,
+			}
+		} else {
+			outputContent = responseOutputText{
 				Type:        "output_text",
 				Text:        s.accumulatedText,
 				Annotations: []any{},
 			}
-			if err := s.sendJSONEvent("response.output_text.done", responseStreamEvent{
-				Type:         "response.output_text.done",
+		}
+		if s.contentPartOpened {
+			idx := s.outputIndex
+			cidx := s.contentIndex
+			doneEvent := "response.output_text.done"
+			if s.currentRefusal {
+				doneEvent = "response.refusal.done"
+			}
+			if err := s.sendJSONEvent(doneEvent, responseStreamEvent{
+				Type:         doneEvent,
 				OutputIndex:  &idx,
 				ContentIndex: &cidx,
 				Text:         s.accumulatedText,
@@ -150,22 +162,11 @@ func (s *responseStreamServer) closeCurrentItem() error {
 				Type:         "response.content_part.done",
 				OutputIndex:  &idx,
 				ContentIndex: &cidx,
-				Part:         part,
+				Part:         outputContent,
 			}); err != nil {
 				return err
 			}
 			s.contentPartOpened = false
-		}
-		var outputContent responseOutputContent = responseOutputText{
-			Type:        "output_text",
-			Text:        s.accumulatedText,
-			Annotations: []any{},
-		}
-		if s.currentRefusal {
-			outputContent = responseRefusal{
-				Type:    "refusal",
-				Refusal: s.accumulatedText,
-			}
 		}
 		if err := s.sendJSONEvent("response.output_item.done", responseStreamEvent{
 			Type:        "response.output_item.done",
@@ -338,15 +339,17 @@ func (s *responseStreamServer) handleTextDelta(resp *v1.ChatResp, c *v1.Content_
 		s.contentPartOpened = true
 		idx := s.outputIndex
 		cidx := s.contentIndex
+		var part responseOutputContent
+		if s.currentRefusal {
+			part = responseRefusal{Type: "refusal", Refusal: ""}
+		} else {
+			part = responseOutputText{Type: "output_text", Text: "", Annotations: []any{}}
+		}
 		if err := s.sendJSONEvent("response.content_part.added", responseStreamEvent{
 			Type:         "response.content_part.added",
 			OutputIndex:  &idx,
 			ContentIndex: &cidx,
-			Part: responseOutputText{
-				Type:        "output_text",
-				Text:        "",
-				Annotations: []any{},
-			},
+			Part:         part,
 		}); err != nil {
 			return err
 		}
@@ -489,15 +492,16 @@ func (s *responseStreamServer) sendTerminal(status v1.ChatStatus, usage *v1.Stat
 	}
 	s.terminalSent = true
 
+	respStatus := convertStatusToResponse(status)
 	eventType := "response.completed"
-	switch convertStatusToResponse(status) {
+	switch respStatus {
 	case "failed":
 		eventType = "response.failed"
 	case "incomplete":
 		eventType = "response.incomplete"
 	}
 
-	skeleton := s.responseSkeleton(convertStatusToResponse(status))
+	skeleton := s.responseSkeleton(respStatus)
 	skeleton.Usage = convertUsageToResponse(usage)
 	return s.sendJSONEvent(eventType, responseStreamEvent{
 		Type:     eventType,
