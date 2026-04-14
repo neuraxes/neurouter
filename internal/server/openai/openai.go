@@ -63,6 +63,15 @@ func (s *Server) RegisterRoutes(srv *http.Server) {
 	}
 
 	for _, path := range []string{
+		"/responses",
+		"/v1/responses",
+		"/openai/responses",
+		"/openai/v1/responses",
+	} {
+		r.POST(path, func(ctx http.Context) error { return s.handleCreateResponse(ctx) })
+	}
+
+	for _, path := range []string{
 		"/models",
 		"/openai/models",
 		"/openai/v1/models",
