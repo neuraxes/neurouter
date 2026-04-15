@@ -86,11 +86,7 @@ func (s *messageStreamServer) sendMessageStartEvent(resp *v1.ChatResp) {
 		},
 	}
 	if resp.Statistics != nil && resp.Statistics.Usage != nil {
-		event.Message.Usage = anthropic.Usage{
-			InputTokens:          int64(resp.Statistics.Usage.InputTokens),
-			OutputTokens:         int64(resp.Statistics.Usage.OutputTokens),
-			CacheReadInputTokens: int64(resp.Statistics.Usage.CachedInputTokens),
-		}
+		event.Message.Usage = convertStatisticsToAnthropic(resp.Statistics)
 	}
 	s.sendJSONEvent("message_start", event)
 }
@@ -252,14 +248,15 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 			s.contentIndex += 1
 		}
 
+		usage := convertStatisticsToAnthropic(resp.Statistics)
 		deltaEvent := anthropic.MessageDeltaEvent{
 			Delta: anthropic.MessageDeltaEventDelta{
 				StopReason: convertStatusToAnthropic(resp.Status),
 			},
 			Usage: anthropic.MessageDeltaUsage{
-				InputTokens:          int64(resp.Statistics.Usage.InputTokens),
-				OutputTokens:         int64(resp.Statistics.Usage.OutputTokens),
-				CacheReadInputTokens: int64(resp.Statistics.Usage.CachedInputTokens),
+				InputTokens:          usage.InputTokens,
+				OutputTokens:         usage.OutputTokens,
+				CacheReadInputTokens: usage.CacheReadInputTokens,
 			},
 		}
 		s.sendJSONEvent("message_delta", deltaEvent)

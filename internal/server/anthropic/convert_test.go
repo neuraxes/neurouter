@@ -680,7 +680,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 				So(result.Content, ShouldHaveLength, 1)
 				So(result.Content[0].Type, ShouldEqual, "text")
 				So(result.Content[0].Text, ShouldEqual, "Hello!")
-				So(result.Usage.InputTokens, ShouldEqual, 10)
+				So(result.Usage.InputTokens, ShouldEqual, 7)
 				So(result.Usage.OutputTokens, ShouldEqual, 5)
 				So(result.Usage.CacheReadInputTokens, ShouldEqual, 3)
 			})
@@ -913,7 +913,7 @@ func TestConvertStatisticsToAnthropic(t *testing.T) {
 		result := convertStatisticsToAnthropic(stats)
 
 		Convey("Then all usage fields should be mapped", func() {
-			So(result.InputTokens, ShouldEqual, 100)
+			So(result.InputTokens, ShouldEqual, 80)
 			So(result.OutputTokens, ShouldEqual, 50)
 			So(result.CacheReadInputTokens, ShouldEqual, 20)
 		})

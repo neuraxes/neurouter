@@ -456,14 +456,17 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		}
 		return resp
 	case "message_delta":
-		if chunk.Usage.InputTokens != 0 || chunk.Usage.OutputTokens != 0 || chunk.Delta.StopReason != "" {
+		if chunk.Usage.InputTokens != 0 || chunk.Usage.OutputTokens != 0 ||
+			chunk.Usage.CacheReadInputTokens != 0 || chunk.Usage.CacheCreationInputTokens != 0 ||
+			chunk.Delta.StopReason != "" {
 			resp := c.newResp()
 			resp.Message = nil
+			cachedInput := uint32(max(chunk.Usage.CacheReadInputTokens+chunk.Usage.CacheCreationInputTokens, 0))
 			resp.Statistics = &v1.Statistics{
 				Usage: &v1.Statistics_Usage{
-					InputTokens:       uint32(max(chunk.Usage.InputTokens, 0)),
+					InputTokens:       uint32(max(chunk.Usage.InputTokens, 0)) + cachedInput,
 					OutputTokens:      uint32(max(chunk.Usage.OutputTokens, 0)),
-					CachedInputTokens: uint32(max(chunk.Usage.CacheReadInputTokens, 0)),
+					CachedInputTokens: cachedInput,
 				},
 			}
 			if chunk.Delta.StopReason != "" {
@@ -482,15 +485,17 @@ func convertStatisticsFromAnthropic(usage *anthropic.Usage) *v1.Statistics {
 		return nil
 	}
 
-	if usage.InputTokens == 0 && usage.OutputTokens == 0 {
+	if usage.InputTokens == 0 && usage.OutputTokens == 0 &&
+		usage.CacheCreationInputTokens == 0 && usage.CacheReadInputTokens == 0 {
 		return nil
 	}
 
+	cachedInput := uint32(max(usage.CacheReadInputTokens+usage.CacheCreationInputTokens, 0))
 	return &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
-			InputTokens:       uint32(max(usage.InputTokens, 0)),
+			InputTokens:       uint32(max(usage.InputTokens, 0)) + cachedInput,
 			OutputTokens:      uint32(max(usage.OutputTokens, 0)),
-			CachedInputTokens: uint32(max(usage.CacheReadInputTokens, 0)),
+			CachedInputTokens: cachedInput,
 		},
 	}
 }

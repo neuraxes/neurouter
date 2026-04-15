@@ -17,9 +17,10 @@ type recordingTransport struct {
 }
 
 // NewRecordingClientFromLoggerProvider creates a recording client using a logger provider and scope name.
+// Returns http.DefaultClient if the provider is nil.
 func NewRecordingClientFromLoggerProvider(provider otellog.LoggerProvider, scope string) *http.Client {
 	if provider == nil {
-		return nil
+		return http.DefaultClient
 	}
 
 	return NewRecordingClient(provider.Logger(scope), nil)

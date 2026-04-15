@@ -499,10 +499,10 @@ func convertStatisticsFromOpenAIChat(usage *openai.CompletionUsage) *v1.Statisti
 
 	return &v1.Statistics{
 		Usage: &v1.Statistics_Usage{
-			InputTokens:       uint32(usage.PromptTokens),
-			OutputTokens:      uint32(usage.CompletionTokens),
-			CachedInputTokens: uint32(usage.PromptTokensDetails.CachedTokens),
-			ReasoningTokens:   uint32(usage.CompletionTokensDetails.ReasoningTokens),
+			InputTokens:       uint32(max(usage.PromptTokens, 0)),
+			OutputTokens:      uint32(max(usage.CompletionTokens, 0)),
+			CachedInputTokens: uint32(max(usage.PromptTokensDetails.CachedTokens, 0)),
+			ReasoningTokens:   uint32(max(usage.CompletionTokensDetails.ReasoningTokens, 0)),
 		},
 	}
 }

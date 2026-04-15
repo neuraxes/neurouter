@@ -315,13 +315,13 @@ func convertStatusToAnthropic(status v1.ChatStatus) anthropic.StopReason {
 func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 	anthropicResp := &anthropic.Message{
 		Type:       "message",
-		ID:         resp.Message.Id,
 		Model:      anthropic.Model(resp.Model),
 		Role:       "assistant",
 		StopReason: convertStatusToAnthropic(resp.Status),
 	}
 
 	if resp.Message != nil {
+		anthropicResp.ID = resp.Message.Id
 		for _, content := range resp.Message.Contents {
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
@@ -369,7 +369,7 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 
 func convertStatisticsToAnthropic(stats *v1.Statistics) anthropic.Usage {
 	return anthropic.Usage{
-		InputTokens:          int64(stats.Usage.InputTokens),
+		InputTokens:          max(int64(stats.Usage.InputTokens)-int64(stats.Usage.CachedInputTokens), 0),
 		OutputTokens:         int64(stats.Usage.OutputTokens),
 		CacheReadInputTokens: int64(stats.Usage.CachedInputTokens),
 	}
