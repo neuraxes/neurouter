@@ -56,14 +56,20 @@ func (s *Server) handleCreateResponse(httpCtx http.Context) (err error) {
 			if s.otelLogger != nil {
 				streamServer.buffer = &bytes.Buffer{}
 			}
-			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), streamServer)
-			if err == nil {
-				err = streamServer.sendDone()
+			chatErr := s.chatSvc.ChatStream(req.(*v1.ChatReq), streamServer)
+			var sendErr error
+			if chatErr != nil {
+				sendErr = streamServer.sendError()
+			} else {
+				sendErr = streamServer.sendDone()
 			}
 			if s.otelLogger != nil {
 				util.EmitEvent(ctx, s.otelLogger, util.EventServerRespSent, streamServer.buffer.Bytes())
 			}
-			return nil, err
+			if chatErr != nil {
+				return nil, chatErr
+			}
+			return nil, sendErr
 		})
 		_, err = m(httpCtx, req)
 	} else {

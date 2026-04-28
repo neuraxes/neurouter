@@ -475,9 +475,11 @@ func TestConvertRespToResponse(t *testing.T) {
 				reasoning, ok := result.Output[0].(responseReasoning)
 				So(ok, ShouldBeTrue)
 				So(reasoning.Type, ShouldEqual, "reasoning")
-				So(reasoning.Summary, ShouldHaveLength, 2)
+				So(reasoning.Summary, ShouldHaveLength, 1)
 				So(reasoning.Summary[0].Text, ShouldEqual, "Analyzing the problem.")
-				So(reasoning.Summary[1].Text, ShouldEqual, "Let me think...")
+				So(reasoning.Content, ShouldHaveLength, 1)
+				So(reasoning.Content[0].Type, ShouldEqual, "reasoning_text")
+				So(reasoning.Content[0].Text, ShouldEqual, "Let me think...")
 
 				msg, ok := result.Output[1].(responseOutputMessage)
 				So(ok, ShouldBeTrue)
@@ -548,9 +550,10 @@ func TestConvertRespToResponse(t *testing.T) {
 				reasoning, ok := result.Output[2].(responseReasoning)
 				So(ok, ShouldBeTrue)
 				So(reasoning.ID, ShouldEqual, "rs_1")
-				So(reasoning.Summary, ShouldHaveLength, 2)
+				So(reasoning.Summary, ShouldHaveLength, 1)
 				So(reasoning.Summary[0].Text, ShouldEqual, "Thinking.")
-				So(reasoning.Summary[1].Text, ShouldEqual, "Hidden chain.")
+				So(reasoning.Content, ShouldHaveLength, 1)
+				So(reasoning.Content[0].Text, ShouldEqual, "Hidden chain.")
 
 				msg2, ok := result.Output[3].(responseOutputMessage)
 				So(ok, ShouldBeTrue)
@@ -568,6 +571,188 @@ func TestConvertRespToResponse(t *testing.T) {
 			Convey("Then output should be empty", func() {
 				So(result.Output, ShouldBeEmpty)
 			})
+		})
+	})
+}
+
+func TestConvertEasyInputMessageWithImage(t *testing.T) {
+	Convey("Given an EasyInputMessage with an image url part", t, func() {
+		m := &responses.EasyInputMessageParam{
+			Role: responses.EasyInputMessageRoleUser,
+			Content: responses.EasyInputMessageContentUnionParam{
+				OfInputItemContentList: responses.ResponseInputMessageContentListParam{
+					{OfInputText: &responses.ResponseInputTextParam{Text: "what is in this image"}},
+					{OfInputImage: &responses.ResponseInputImageParam{
+						ImageURL: openai.Opt("https://example.com/cat.png"),
+					}},
+				},
+			},
+		}
+
+		msg := convertEasyInputMessageFromResponse(m)
+
+		Convey("Then both text and image contents should be preserved", func() {
+			So(msg.Role, ShouldEqual, v1.Role_USER)
+			So(msg.Contents, ShouldHaveLength, 2)
+			So(msg.Contents[0].GetText(), ShouldEqual, "what is in this image")
+			img := msg.Contents[1].GetImage()
+			So(img, ShouldNotBeNil)
+		})
+	})
+}
+
+func TestConvertOutputMessageFromResponseWithRefusal(t *testing.T) {
+	Convey("Given an OutputMessage with both text and refusal parts", t, func() {
+		m := &responses.ResponseOutputMessageParam{
+			ID: "msg_history_1",
+			Content: []responses.ResponseOutputMessageContentUnionParam{
+				{OfOutputText: &responses.ResponseOutputTextParam{Text: "partial answer"}},
+				{OfRefusal: &responses.ResponseOutputRefusalParam{Refusal: "I cannot answer that."}},
+			},
+		}
+
+		msg := convertOutputMessageFromResponse(m)
+
+		Convey("Then both contents should be present and refusal flagged", func() {
+			So(msg.Role, ShouldEqual, v1.Role_MODEL)
+			So(msg.Contents, ShouldHaveLength, 2)
+			So(msg.Contents[0].GetText(), ShouldEqual, "partial answer")
+			So(msg.Contents[0].Meta("refusal"), ShouldBeEmpty)
+			So(msg.Contents[1].GetText(), ShouldEqual, "I cannot answer that.")
+			So(msg.Contents[1].Meta("refusal"), ShouldEqual, "true")
+		})
+	})
+}
+
+func TestConvertReasoningFromResponseAlignment(t *testing.T) {
+	Convey("Given a ResponseReasoningItem from a previous turn", t, func() {
+		Convey("With encrypted content, summary parts and reasoning text", func() {
+			r := &responses.ResponseReasoningItemParam{
+				ID:               "rs_history_1",
+				EncryptedContent: openai.Opt("opaque-bytes"),
+				Summary: []responses.ResponseReasoningItemSummaryParam{
+					{Text: "first summary"},
+					{Text: "second summary"},
+				},
+				Content: []responses.ResponseReasoningItemContentParam{
+					{Text: "internal thought"},
+				},
+			}
+
+			msg := convertReasoningFromResponse(r)
+
+			Convey("Then layout matches the upstream incoming converter", func() {
+				So(msg.Role, ShouldEqual, v1.Role_MODEL)
+				So(msg.Contents, ShouldHaveLength, 2)
+
+				// First content carries encrypted + first summary, both
+				// metadata-only with an empty text slot.
+				first := msg.Contents[0]
+				So(first.Reasoning, ShouldBeTrue)
+				So(first.Meta("encrypted"), ShouldEqual, "opaque-bytes")
+				So(first.Meta("summary"), ShouldEqual, "first summary")
+				So(first.Meta("summary_index"), ShouldEqual, "0")
+				So(first.GetText(), ShouldEqual, "")
+
+				// Second content holds the next summary and absorbs the
+				// reasoning text into its empty Content_Text slot, mirroring
+				// the upstream incoming converter exactly.
+				second := msg.Contents[1]
+				So(second.Reasoning, ShouldBeTrue)
+				So(second.Meta("encrypted"), ShouldBeEmpty)
+				So(second.Meta("summary"), ShouldEqual, "second summary")
+				So(second.Meta("summary_index"), ShouldEqual, "1")
+				So(second.GetText(), ShouldEqual, "internal thought")
+			})
+		})
+
+		Convey("With only encrypted content", func() {
+			r := &responses.ResponseReasoningItemParam{
+				ID:               "rs_history_2",
+				EncryptedContent: openai.Opt("opaque"),
+			}
+
+			msg := convertReasoningFromResponse(r)
+
+			Convey("Then a single content carries the encrypted blob", func() {
+				So(msg.Contents, ShouldHaveLength, 1)
+				So(msg.Contents[0].Meta("encrypted"), ShouldEqual, "opaque")
+			})
+		})
+
+		Convey("With only summary parts", func() {
+			r := &responses.ResponseReasoningItemParam{
+				ID: "rs_history_3",
+				Summary: []responses.ResponseReasoningItemSummaryParam{
+					{Text: "only summary"},
+				},
+			}
+
+			msg := convertReasoningFromResponse(r)
+
+			Convey("Then summary_index is recorded", func() {
+				So(msg.Contents, ShouldHaveLength, 1)
+				So(msg.Contents[0].Meta("summary"), ShouldEqual, "only summary")
+				So(msg.Contents[0].Meta("summary_index"), ShouldEqual, "0")
+			})
+		})
+	})
+}
+
+func TestConvertInputItemsGroupsAssistantTurn(t *testing.T) {
+	Convey("Given an input history with reasoning, function call and output_message in the same assistant turn", t, func() {
+		items := []responses.ResponseInputItemUnionParam{
+			{OfMessage: &responses.EasyInputMessageParam{
+				Role:    responses.EasyInputMessageRoleUser,
+				Content: responses.EasyInputMessageContentUnionParam{OfString: openai.Opt("hello")},
+			}},
+			{OfReasoning: &responses.ResponseReasoningItemParam{
+				ID: "rs_1",
+				Summary: []responses.ResponseReasoningItemSummaryParam{
+					{Text: "thinking"},
+				},
+			}},
+			{OfFunctionCall: &responses.ResponseFunctionToolCallParam{
+				CallID:    "call_1",
+				Name:      "lookup",
+				Arguments: `{"q":"x"}`,
+			}},
+			{OfOutputMessage: &responses.ResponseOutputMessageParam{
+				ID: "msg_1",
+				Content: []responses.ResponseOutputMessageContentUnionParam{
+					{OfOutputText: &responses.ResponseOutputTextParam{Text: "here you go"}},
+				},
+			}},
+			{OfFunctionCallOutput: &responses.ResponseInputItemFunctionCallOutputParam{
+				CallID: "call_1",
+				Output: responses.ResponseInputItemFunctionCallOutputOutputUnionParam{
+					OfString: openai.Opt(`{"ok":true}`),
+				},
+			}},
+		}
+
+		messages := convertInputItemsFromResponse(items)
+
+		Convey("Then the assistant turn is collapsed into one MODEL message", func() {
+			So(messages, ShouldHaveLength, 3)
+			So(messages[0].Role, ShouldEqual, v1.Role_USER)
+
+			model := messages[1]
+			So(model.Role, ShouldEqual, v1.Role_MODEL)
+			So(len(model.Contents), ShouldEqual, 3)
+
+			So(model.Contents[0].Reasoning, ShouldBeTrue)
+			So(model.Contents[0].Meta("summary"), ShouldEqual, "thinking")
+
+			tu := model.Contents[1].GetToolUse()
+			So(tu, ShouldNotBeNil)
+			So(tu.Id, ShouldEqual, "call_1")
+
+			So(model.Contents[2].GetText(), ShouldEqual, "here you go")
+
+			So(messages[2].Role, ShouldEqual, v1.Role_USER)
+			tr := messages[2].Contents[0].GetToolResult()
+			So(tr, ShouldNotBeNil)
 		})
 	})
 }

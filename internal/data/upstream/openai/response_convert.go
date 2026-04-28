@@ -16,6 +16,7 @@ package openai
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	"github.com/openai/openai-go/v3"
@@ -323,13 +324,19 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 				}
 				flushReasoning()
 
+				var contentPart responses.ResponseOutputMessageContentUnionParam
+				if content.Meta("refusal") == "true" {
+					contentPart = responses.ResponseOutputMessageContentUnionParam{
+						OfRefusal: &responses.ResponseOutputRefusalParam{Refusal: c.Text},
+					}
+				} else {
+					contentPart = responses.ResponseOutputMessageContentUnionParam{
+						OfOutputText: &responses.ResponseOutputTextParam{Text: c.Text},
+					}
+				}
 				msg := &responses.ResponseOutputMessageParam{
-					ID: content.Id,
-					Content: []responses.ResponseOutputMessageContentUnionParam{{
-						OfOutputText: &responses.ResponseOutputTextParam{
-							Text: c.Text,
-						},
-					}},
+					ID:      content.Id,
+					Content: []responses.ResponseOutputMessageContentUnionParam{contentPart},
 				}
 				if phase := content.Meta("phase"); phase != "" {
 					msg.Phase = responses.ResponseOutputMessagePhase(phase)
@@ -443,6 +450,7 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 						Id:      item.ID,
 						Content: &v1.Content_Text{Text: content.Refusal},
 					}
+					c.SetMeta("refusal", "true")
 					if item.Phase != "" {
 						c.SetMeta("phase", phase)
 					}
@@ -460,7 +468,8 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 					Content:   &v1.Content_Text{},
 				})
 			}
-			for _, s := range item.Summary {
+			for i, s := range item.Summary {
+				summaryIdx := strconv.Itoa(i)
 				if n := len(reasoningContents); n > 0 {
 					last := reasoningContents[n-1]
 					if last.Metadata == nil {
@@ -468,14 +477,18 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 					}
 					if last.Metadata["summary"] == "" {
 						last.Metadata["summary"] = s.Text
+						last.Metadata["summary_index"] = summaryIdx
 						continue
 					}
 				}
 				reasoningContents = append(reasoningContents, &v1.Content{
 					Id:        item.ID,
 					Reasoning: true,
-					Metadata:  map[string]string{"summary": s.Text},
-					Content:   &v1.Content_Text{},
+					Metadata: map[string]string{
+						"summary":       s.Text,
+						"summary_index": summaryIdx,
+					},
+					Content: &v1.Content_Text{},
 				})
 			}
 			for _, c := range item.Content {
@@ -613,8 +626,10 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 			Id:   c.messageID,
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:   new(uint32(event.OutputIndex)),
-				Content: &v1.Content_Text{Text: event.Delta},
+				Id:       event.ItemID,
+				Index:    new(uint32(event.OutputIndex)),
+				Metadata: map[string]string{"refusal": "true"},
+				Content:  &v1.Content_Text{Text: event.Delta},
 			}},
 		}
 
@@ -626,8 +641,11 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 				Id:        event.ItemID,
 				Index:     new(uint32(event.OutputIndex)),
 				Reasoning: true,
-				Metadata:  map[string]string{"summary": event.Delta},
-				Content:   &v1.Content_Text{},
+				Metadata: map[string]string{
+					"summary":       event.Delta,
+					"summary_index": strconv.FormatInt(event.SummaryIndex, 10),
+				},
+				Content: &v1.Content_Text{},
 			}},
 		}
 
