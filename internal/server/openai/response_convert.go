@@ -16,6 +16,7 @@ package openai
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -122,20 +123,37 @@ func convertEasyInputMessageFromResponse(m *responses.EasyInputMessageParam) *v1
 	}
 }
 
+// convertOutputMessageFromResponse maps a ResponseOutputMessage from a prior
+// turn back into a v1.Message. Both output_text and refusal parts are
+// preserved; refusal parts are tagged with a "refusal=true" metadata flag so
+// downstream consumers can distinguish them from ordinary assistant text.
 func convertOutputMessageFromResponse(m *responses.ResponseOutputMessageParam) *v1.Message {
-	var contents []*v1.Content
-	for _, part := range m.Content {
-		if part.OfOutputText != nil {
-			contents = append(contents, &v1.Content{
-				Id:      m.ID,
-				Content: &v1.Content_Text{Text: part.OfOutputText.Text},
-			})
-		}
-	}
+	contents := convertOutputMessageContents(m)
 	return &v1.Message{
 		Role:     v1.Role_MODEL,
 		Contents: contents,
 	}
+}
+
+func convertOutputMessageContents(m *responses.ResponseOutputMessageParam) []*v1.Content {
+	var contents []*v1.Content
+	for _, part := range m.Content {
+		switch {
+		case part.OfOutputText != nil:
+			contents = append(contents, &v1.Content{
+				Id:      m.ID,
+				Content: &v1.Content_Text{Text: part.OfOutputText.Text},
+			})
+		case part.OfRefusal != nil:
+			c := &v1.Content{
+				Id:      m.ID,
+				Content: &v1.Content_Text{Text: part.OfRefusal.Refusal},
+			}
+			c.SetMeta("refusal", "true")
+			contents = append(contents, c)
+		}
+	}
+	return contents
 }
 
 func convertFunctionCallFromResponse(fc *responses.ResponseFunctionToolCallParam) *v1.Content {
@@ -184,29 +202,15 @@ func convertFunctionCallOutputFromResponse(fco *responses.ResponseInputItemFunct
 	}
 }
 
+// convertReasoningFromResponse maps a previously-emitted ResponseReasoningItem
+// back into the internal v1 representation. Layout matches the upstream
+// incoming converter: encrypted content goes first, summary parts are merged
+// into the trailing content slot when possible (each tagged with its
+// summary_index), and the reasoning text content (if any) is placed last.
 func convertReasoningFromResponse(r *responses.ResponseReasoningItemParam) *v1.Message {
 	var contents []*v1.Content
-	for _, c := range r.Content {
-		ct := &v1.Content{
-			Id:        r.ID,
-			Reasoning: true,
-			Content:   &v1.Content_Text{Text: c.Text},
-		}
-		if r.EncryptedContent.Valid() {
-			ct.SetMeta("encrypted", r.EncryptedContent.Value)
-		}
-		contents = append(contents, ct)
-	}
-	for _, s := range r.Summary {
-		ct := &v1.Content{
-			Id:        r.ID,
-			Reasoning: true,
-			Content:   &v1.Content_Text{},
-		}
-		ct.SetMeta("summary", s.Text)
-		contents = append(contents, ct)
-	}
-	if len(contents) == 0 && r.EncryptedContent.Valid() {
+
+	if r.EncryptedContent.Valid() {
 		ct := &v1.Content{
 			Id:        r.ID,
 			Reasoning: true,
@@ -215,12 +219,61 @@ func convertReasoningFromResponse(r *responses.ResponseReasoningItemParam) *v1.M
 		ct.SetMeta("encrypted", r.EncryptedContent.Value)
 		contents = append(contents, ct)
 	}
+
+	for i, s := range r.Summary {
+		summaryIdx := strconv.Itoa(i)
+		if n := len(contents); n > 0 {
+			last := contents[n-1]
+			if last.Meta("summary") == "" {
+				last.SetMeta("summary", s.Text)
+				last.SetMeta("summary_index", summaryIdx)
+				continue
+			}
+		}
+		ct := &v1.Content{
+			Id:        r.ID,
+			Reasoning: true,
+			Content:   &v1.Content_Text{},
+		}
+		ct.SetMeta("summary", s.Text)
+		ct.SetMeta("summary_index", summaryIdx)
+		contents = append(contents, ct)
+	}
+
+	for _, c := range r.Content {
+		if n := len(contents); n > 0 {
+			last := contents[n-1]
+			if last.GetText() == "" {
+				last.Content = &v1.Content_Text{Text: c.Text}
+				continue
+			}
+		}
+		contents = append(contents, &v1.Content{
+			Id:        r.ID,
+			Reasoning: true,
+			Content:   &v1.Content_Text{Text: c.Text},
+		})
+	}
+
+	if len(contents) == 0 {
+		contents = append(contents, &v1.Content{
+			Id:        r.ID,
+			Reasoning: true,
+			Content:   &v1.Content_Text{},
+		})
+	}
+
 	return &v1.Message{
 		Role:     v1.Role_MODEL,
 		Contents: contents,
 	}
 }
 
+// convertInputItemsFromResponse projects a heterogeneous list of
+// ResponseInputItemUnionParam (the wire history) into v1.Messages. Consecutive
+// model-side items (reasoning, function call, output_message) are merged into a
+// single v1.Message so that one assistant turn is preserved as one MODEL
+// message, mirroring the way the upstream converter assembles them.
 func convertInputItemsFromResponse(items []responses.ResponseInputItemUnionParam) []*v1.Message {
 	var messages []*v1.Message
 	var pendingModelContents []*v1.Content
@@ -243,8 +296,7 @@ func convertInputItemsFromResponse(items []responses.ResponseInputItemUnionParam
 			messages = append(messages, convertEasyInputMessageFromResponse(item.OfMessage))
 
 		case item.OfOutputMessage != nil:
-			flushModel()
-			messages = append(messages, convertOutputMessageFromResponse(item.OfOutputMessage))
+			pendingModelContents = append(pendingModelContents, convertOutputMessageContents(item.OfOutputMessage)...)
 
 		case item.OfFunctionCall != nil:
 			pendingModelContents = append(pendingModelContents, convertFunctionCallFromResponse(item.OfFunctionCall))
@@ -393,22 +445,22 @@ func convertRespToResponse(resp *v1.ChatResp) *responseObject {
 							Summary: []responseReasoningSummary{},
 						}
 					}
-					if summary := content.Meta("summary"); summary != "" {
-						currentReasoning.Summary = append(currentReasoning.Summary, responseReasoningSummary{
-							Type: "summary_text",
-							Text: summary,
-						})
-					}
-					if text := c.Text; text != "" {
-						currentReasoning.Summary = append(currentReasoning.Summary, responseReasoningSummary{
-							Type: "summary_text",
-							Text: text,
-						})
-					}
-					if encrypted := content.Meta("encrypted"); encrypted != "" {
-						currentReasoning.EncryptedContent = encrypted
-					}
-					continue
+				if summary := content.Meta("summary"); summary != "" {
+					currentReasoning.Summary = append(currentReasoning.Summary, responseReasoningSummary{
+						Type: "summary_text",
+						Text: summary,
+					})
+				}
+				if text := c.Text; text != "" {
+					currentReasoning.Content = append(currentReasoning.Content, responseReasoningContent{
+						Type: "reasoning_text",
+						Text: text,
+					})
+				}
+				if encrypted := content.Meta("encrypted"); encrypted != "" {
+					currentReasoning.EncryptedContent = encrypted
+				}
+				continue
 				}
 
 				flushReasoning()

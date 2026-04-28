@@ -19,7 +19,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -309,6 +311,30 @@ func containsEvent(events []sseEvent, name string) bool {
 	return false
 }
 
+func countEvent(eventNames []string, name string) int {
+	c := 0
+	for _, n := range eventNames {
+		if n == name {
+			c++
+		}
+	}
+	return c
+}
+
+func collectByEvent(events []sseEvent, name string) []string {
+	var out []string
+	for _, ev := range events {
+		if ev.event == name {
+			out = append(out, ev.data)
+		}
+	}
+	return out
+}
+
+func strconvI(i int) string { return strconv.Itoa(i) }
+
+var errBoom = errors.New("boom")
+
 func lastEventByName(events []sseEvent, name string) *sseEvent {
 	for i := len(events) - 1; i >= 0; i-- {
 		if events[i].event == name {
@@ -497,17 +523,37 @@ func TestHandleCreateResponseStreamRefusal(t *testing.T) {
 
 		Convey("When a refusal is streamed", func() {
 			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+				refusalContent := func(text string) *v1.Content {
+					c := &v1.Content{
+						Id:      "msg_refused",
+						Index:   new(uint32(0)),
+						Content: &v1.Content_Text{Text: text},
+					}
+					c.SetMeta("refusal", "true")
+					return c
+				}
 				responses := []*v1.ChatResp{
+					// Two delta chunks then the terminal stats chunk; only the
+					// final response carries the CHAT_REFUSED status, exactly
+					// like the upstream incoming converter does.
 					{
-						Model:  "gpt-4o",
-						Status: v1.ChatStatus_CHAT_REFUSED,
+						Model: "gpt-4o",
 						Message: &v1.Message{
-							Role: v1.Role_MODEL,
-							Contents: []*v1.Content{{
-								Index:   new(uint32(0)),
-								Content: &v1.Content_Text{Text: "No."},
-							}},
+							Role:     v1.Role_MODEL,
+							Contents: []*v1.Content{refusalContent("I cannot ")},
 						},
+					},
+					{
+						Model: "gpt-4o",
+						Message: &v1.Message{
+							Role:     v1.Role_MODEL,
+							Contents: []*v1.Content{refusalContent("help with that.")},
+						},
+					},
+					{
+						Model:      "gpt-4o",
+						Status:     v1.ChatStatus_CHAT_REFUSED,
+						Statistics: &v1.Statistics{Usage: &v1.Statistics_Usage{InputTokens: 5, OutputTokens: 3}},
 					},
 				}
 				for _, resp := range responses {
@@ -526,12 +572,29 @@ func TestHandleCreateResponseStreamRefusal(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			events := parseSSEEvents(ctx.respBody.String())
-			So(containsEvent(events, "response.refusal.delta"), ShouldBeTrue)
-			last := events[len(events)-1]
-			So(last.event, ShouldEqual, "response.completed")
-			var data responseStreamEvent
-			json.Unmarshal([]byte(last.data), &data)
-			So(data.Response.Status, ShouldEqual, "completed")
+			Convey("Then the SSE stream emits refusal-shaped events", func() {
+				So(containsEvent(events, "response.refusal.delta"), ShouldBeTrue)
+				So(containsEvent(events, "response.refusal.done"), ShouldBeTrue)
+				So(containsEvent(events, "response.content_part.added"), ShouldBeTrue)
+				So(containsEvent(events, "response.content_part.done"), ShouldBeTrue)
+			})
+			Convey("And the terminal event reports the cumulative refusal text", func() {
+				last := events[len(events)-1]
+				So(last.event, ShouldEqual, "response.completed")
+				var data responseStreamEvent
+				So(json.Unmarshal([]byte(last.data), &data), ShouldBeNil)
+				So(data.Response.Status, ShouldEqual, "completed")
+				output := data.Response.Output
+				So(len(output), ShouldEqual, 1)
+			})
+			Convey("And every event carries a sequence_number", func() {
+				for _, ev := range events {
+					var raw map[string]any
+					So(json.Unmarshal([]byte(ev.data), &raw), ShouldBeNil)
+					_, ok := raw["sequence_number"]
+					So(ok, ShouldBeTrue)
+				}
+			})
 		})
 	})
 }
@@ -626,6 +689,161 @@ func TestHandleCreateResponseStreamFailedWithoutUsageChunk(t *testing.T) {
 
 			events := parseSSEEvents(ctx.respBody.String())
 			So(containsEvent(events, "response.output_item.done"), ShouldBeTrue)
+			last := events[len(events)-1]
+			So(last.event, ShouldEqual, "response.failed")
+		})
+	})
+}
+
+func TestHandleCreateResponseStreamReasoningSummaryParts(t *testing.T) {
+	Convey("Given a mock ChatServer that emits two summary parts followed by reasoning text", t, func() {
+		mock := &mockChatServer{}
+		srv := &Server{chatSvc: mock}
+
+		mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+			summaryDelta := func(idx int, text string) *v1.Content {
+				c := &v1.Content{
+					Id:        "rs_upstream_id",
+					Index:     new(uint32(0)),
+					Reasoning: true,
+					Content:   &v1.Content_Text{},
+				}
+				c.SetMeta("summary", text)
+				c.SetMeta("summary_index", strconvI(idx))
+				return c
+			}
+			reasoningTextDelta := func(text string) *v1.Content {
+				return &v1.Content{
+					Id:        "rs_upstream_id",
+					Index:     new(uint32(0)),
+					Reasoning: true,
+					Content:   &v1.Content_Text{Text: text},
+				}
+			}
+			responses := []*v1.ChatResp{
+				{Id: "abc", Model: "o3", Message: &v1.Message{Role: v1.Role_MODEL, Contents: []*v1.Content{summaryDelta(0, "Looking ")}}},
+				{Model: "o3", Message: &v1.Message{Role: v1.Role_MODEL, Contents: []*v1.Content{summaryDelta(0, "things up.")}}},
+				{Model: "o3", Message: &v1.Message{Role: v1.Role_MODEL, Contents: []*v1.Content{summaryDelta(1, "Then deciding.")}}},
+				{Model: "o3", Message: &v1.Message{Role: v1.Role_MODEL, Contents: []*v1.Content{reasoningTextDelta("Internal analysis.")}}},
+				{Model: "o3", Status: v1.ChatStatus_CHAT_COMPLETED, Statistics: &v1.Statistics{Usage: &v1.Statistics_Usage{InputTokens: 5, OutputTokens: 10, ReasoningTokens: 7}}},
+			}
+			for _, resp := range responses {
+				if err := stream.Send(resp); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		body := `{"model":"o3","input":"think","stream":true}`
+		httpReq, _ := http.NewRequest("POST", "/v1/responses", strings.NewReader(body))
+		ctx := newMockHTTPContext(httpReq)
+
+		err := srv.handleCreateResponse(ctx)
+		So(err, ShouldBeNil)
+
+		events := parseSSEEvents(ctx.respBody.String())
+
+		Convey("Then summary part lifecycle events are emitted in order", func() {
+			seq := []string{}
+			for _, e := range events {
+				seq = append(seq, e.event)
+			}
+			// Must contain part.added/done bracketing each part and a final
+			// summary_text.done flushing each accumulated summary.
+			added := countEvent(seq, "response.reasoning_summary_part.added")
+			done := countEvent(seq, "response.reasoning_summary_part.done")
+			textDone := countEvent(seq, "response.reasoning_summary_text.done")
+			So(added, ShouldEqual, 2)
+			So(done, ShouldEqual, 2)
+			So(textDone, ShouldEqual, 2)
+			So(containsEvent(events, "response.reasoning_text.done"), ShouldBeTrue)
+		})
+
+		Convey("Then summary deltas for the same part are merged on the wire", func() {
+			deltas := collectByEvent(events, "response.reasoning_summary_text.delta")
+			So(len(deltas), ShouldEqual, 3) // "Looking ", "things up.", "Then deciding."
+
+			var first, second responseStreamEvent
+			So(json.Unmarshal([]byte(deltas[0]), &first), ShouldBeNil)
+			So(json.Unmarshal([]byte(deltas[1]), &second), ShouldBeNil)
+			// First two deltas belong to summary_index 0.
+			So(*first.SummaryIndex, ShouldEqual, 0)
+			So(*second.SummaryIndex, ShouldEqual, 0)
+			var third responseStreamEvent
+			So(json.Unmarshal([]byte(deltas[2]), &third), ShouldBeNil)
+			So(*third.SummaryIndex, ShouldEqual, 1)
+		})
+
+		Convey("Then the streamed item_id reuses the upstream content id", func() {
+			added := collectByEvent(events, "response.output_item.added")
+			So(len(added), ShouldEqual, 1)
+			var ev responseStreamEvent
+			So(json.Unmarshal([]byte(added[0]), &ev), ShouldBeNil)
+			b, _ := json.Marshal(ev.Item)
+			So(string(b), ShouldContainSubstring, `"id":"rs_upstream_id"`)
+		})
+
+		Convey("Then sequence numbers are strictly increasing from zero", func() {
+			var prev int64 = -1
+			for _, e := range events {
+				var raw responseStreamEvent
+				So(json.Unmarshal([]byte(e.data), &raw), ShouldBeNil)
+				So(raw.SequenceNumber, ShouldEqual, prev+1)
+				prev = raw.SequenceNumber
+			}
+		})
+
+		Convey("Then the terminal completed event echoes the reasoning item in output", func() {
+			last := events[len(events)-1]
+			So(last.event, ShouldEqual, "response.completed")
+			var data responseStreamEvent
+			So(json.Unmarshal([]byte(last.data), &data), ShouldBeNil)
+			So(data.Response.Output, ShouldHaveLength, 1)
+			b, _ := json.Marshal(data.Response.Output[0])
+			So(string(b), ShouldContainSubstring, `"type":"reasoning"`)
+			So(string(b), ShouldContainSubstring, `"id":"rs_upstream_id"`)
+		})
+
+		Convey("Then the response id is derived from the upstream resp.Id", func() {
+			created := collectByEvent(events, "response.created")
+			So(len(created), ShouldEqual, 1)
+			var data responseStreamEvent
+			So(json.Unmarshal([]byte(created[0]), &data), ShouldBeNil)
+			So(data.Response.ID, ShouldEqual, "resp_abc")
+		})
+	})
+}
+
+func TestHandleCreateResponseStreamUpstreamError(t *testing.T) {
+	Convey("Given a ChatStream that returns an error after partial output", t, func() {
+		mock := &mockChatServer{}
+		srv := &Server{chatSvc: mock}
+
+		mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+			_ = stream.Send(&v1.ChatResp{
+				Id:    "abc",
+				Model: "gpt-4o",
+				Message: &v1.Message{
+					Role: v1.Role_MODEL,
+					Contents: []*v1.Content{{
+						Index:   new(uint32(0)),
+						Content: &v1.Content_Text{Text: "partial"},
+					}},
+				},
+			})
+			return errBoom
+		}
+
+		body := `{"model":"gpt-4o","input":"hi","stream":true}`
+		httpReq, _ := http.NewRequest("POST", "/v1/responses", strings.NewReader(body))
+		ctx := newMockHTTPContext(httpReq)
+
+		_ = srv.handleCreateResponse(ctx)
+		events := parseSSEEvents(ctx.respBody.String())
+
+		Convey("Then the client still sees a terminal failed event", func() {
+			So(len(events), ShouldBeGreaterThan, 0)
 			last := events[len(events)-1]
 			So(last.event, ShouldEqual, "response.failed")
 		})

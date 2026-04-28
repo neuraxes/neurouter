@@ -49,10 +49,16 @@ type responseFunctionCall struct {
 	Status    string `json:"status"`
 }
 
+type responseReasoningContent struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
 type responseReasoning struct {
-	Type             string                    `json:"type"`
-	ID               string                    `json:"id"`
+	Type             string                     `json:"type"`
+	ID               string                     `json:"id"`
 	Summary          []responseReasoningSummary `json:"summary"`
+	Content          []responseReasoningContent `json:"content,omitempty"`
 	EncryptedContent string                     `json:"encrypted_content,omitempty"`
 }
 
@@ -85,16 +91,21 @@ type responseObject struct {
 
 // Streaming event types.
 
+// responseStreamEvent is the union envelope shared by all SSE events emitted by
+// the Responses API. Fields marked omitempty are populated only by the event
+// kinds that need them.
 type responseStreamEvent struct {
-	Type         string          `json:"type"`
-	Response     *responseObject `json:"response,omitempty"`
-	OutputIndex  *int64          `json:"output_index,omitempty"`
-	ContentIndex *int64          `json:"content_index,omitempty"`
-	ItemID       string          `json:"item_id,omitempty"`
-	SummaryIndex *int64          `json:"summary_index,omitempty"`
-	Item         any             `json:"item,omitempty"`
-	Part         any             `json:"part,omitempty"`
-	Delta        string          `json:"delta,omitempty"`
-	Text         string          `json:"text,omitempty"`
-	Arguments    string          `json:"arguments,omitempty"`
+	Type           string          `json:"type"`
+	SequenceNumber int64           `json:"sequence_number"`
+	Response       *responseObject `json:"response,omitempty"`
+	OutputIndex    *int64          `json:"output_index,omitempty"`
+	ContentIndex   *int64          `json:"content_index,omitempty"`
+	ItemID         string          `json:"item_id,omitempty"`
+	SummaryIndex   *int64          `json:"summary_index,omitempty"`
+	Item           any             `json:"item,omitempty"`
+	Part           any             `json:"part,omitempty"`
+	Delta          string          `json:"delta,omitempty"`
+	Text           string          `json:"text,omitempty"`
+	Refusal        string          `json:"refusal,omitempty"`
+	Arguments      string          `json:"arguments,omitempty"`
 }
