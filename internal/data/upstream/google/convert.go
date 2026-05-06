@@ -32,7 +32,7 @@ func convertEffortToGoogleThinkingLevel(effort v1.ReasoningEffort) genai.Thinkin
 		return genai.ThinkingLevelLow
 	case v1.ReasoningEffort_REASONING_EFFORT_MEDIUM:
 		return genai.ThinkingLevelMedium
-	case v1.ReasoningEffort_REASONING_EFFORT_HIGH, v1.ReasoningEffort_REASONING_EFFORT_MAX:
+	case v1.ReasoningEffort_REASONING_EFFORT_HIGH, v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH, v1.ReasoningEffort_REASONING_EFFORT_MAX:
 		return genai.ThinkingLevelHigh
 	default:
 		return genai.ThinkingLevelUnspecified

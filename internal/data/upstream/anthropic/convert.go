@@ -50,6 +50,8 @@ func convertEffortToAnthropic(effort v1.ReasoningEffort) anthropic.OutputConfigE
 		return anthropic.OutputConfigEffortMedium
 	case v1.ReasoningEffort_REASONING_EFFORT_HIGH:
 		return anthropic.OutputConfigEffortHigh
+	case v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH:
+		return anthropic.OutputConfigEffortXhigh
 	case v1.ReasoningEffort_REASONING_EFFORT_MAX:
 		return anthropic.OutputConfigEffortMax
 	default:
@@ -227,6 +229,7 @@ func (r *upstream) convertInputSchemaToAnthropic(params *v1.Schema) (schema anth
 	if params == nil {
 		return
 	}
+	schema.Type = "object" // OpenRouter validates this field which will be omitted if not set explicitly
 	if params.Properties != nil {
 		schema.Properties = params.Properties
 	}

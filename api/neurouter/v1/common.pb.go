@@ -44,7 +44,8 @@ const (
 	ReasoningEffort_REASONING_EFFORT_LOW         ReasoningEffort = 3
 	ReasoningEffort_REASONING_EFFORT_MEDIUM      ReasoningEffort = 4
 	ReasoningEffort_REASONING_EFFORT_HIGH        ReasoningEffort = 5
-	ReasoningEffort_REASONING_EFFORT_MAX         ReasoningEffort = 6
+	ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH  ReasoningEffort = 6
+	ReasoningEffort_REASONING_EFFORT_MAX         ReasoningEffort = 7
 )
 
 // Enum value maps for ReasoningEffort.
@@ -56,7 +57,8 @@ var (
 		3: "REASONING_EFFORT_LOW",
 		4: "REASONING_EFFORT_MEDIUM",
 		5: "REASONING_EFFORT_HIGH",
-		6: "REASONING_EFFORT_MAX",
+		6: "REASONING_EFFORT_EXTRA_HIGH",
+		7: "REASONING_EFFORT_MAX",
 	}
 	ReasoningEffort_value = map[string]int32{
 		"REASONING_EFFORT_UNSPECIFIED": 0,
@@ -65,7 +67,8 @@ var (
 		"REASONING_EFFORT_LOW":         3,
 		"REASONING_EFFORT_MEDIUM":      4,
 		"REASONING_EFFORT_HIGH":        5,
-		"REASONING_EFFORT_MAX":         6,
+		"REASONING_EFFORT_EXTRA_HIGH":  6,
+		"REASONING_EFFORT_MAX":         7,
 	}
 )
 
@@ -1051,15 +1054,16 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\n" +
 	"parameters\x18\x03 \x01(\v2\x14.neurouter.v1.SchemaR\n" +
 	"parametersB\x06\n" +
-	"\x04tool*\xd8\x01\n" +
+	"\x04tool*\xf9\x01\n" +
 	"\x0fReasoningEffort\x12 \n" +
 	"\x1cREASONING_EFFORT_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15REASONING_EFFORT_NONE\x10\x01\x12\x1c\n" +
 	"\x18REASONING_EFFORT_MINIMAL\x10\x02\x12\x18\n" +
 	"\x14REASONING_EFFORT_LOW\x10\x03\x12\x1b\n" +
 	"\x17REASONING_EFFORT_MEDIUM\x10\x04\x12\x19\n" +
-	"\x15REASONING_EFFORT_HIGH\x10\x05\x12\x18\n" +
-	"\x14REASONING_EFFORT_MAX\x10\x06*s\n" +
+	"\x15REASONING_EFFORT_HIGH\x10\x05\x12\x1f\n" +
+	"\x1bREASONING_EFFORT_EXTRA_HIGH\x10\x06\x12\x18\n" +
+	"\x14REASONING_EFFORT_MAX\x10\a*s\n" +
 	"\bModality\x12\x18\n" +
 	"\x14MODALITY_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rMODALITY_TEXT\x10\x01\x12\x12\n" +

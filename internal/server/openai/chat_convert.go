@@ -18,10 +18,30 @@ import (
 	"encoding/json"
 
 	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/shared"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/util"
 )
+
+func convertEffortFromOpenAI(effort shared.ReasoningEffort) v1.ReasoningEffort {
+	switch effort {
+	case shared.ReasoningEffortNone:
+		return v1.ReasoningEffort_REASONING_EFFORT_NONE
+	case shared.ReasoningEffortMinimal:
+		return v1.ReasoningEffort_REASONING_EFFORT_MINIMAL
+	case shared.ReasoningEffortLow:
+		return v1.ReasoningEffort_REASONING_EFFORT_LOW
+	case shared.ReasoningEffortMedium:
+		return v1.ReasoningEffort_REASONING_EFFORT_MEDIUM
+	case shared.ReasoningEffortHigh:
+		return v1.ReasoningEffort_REASONING_EFFORT_HIGH
+	case shared.ReasoningEffortXhigh:
+		return v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH
+	default:
+		return v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED
+	}
+}
 
 func convertImageFromOpenAIURL(u string) *v1.Image {
 	if data, mimeType := util.DecodeImageDataFromUrl(u); data != nil {
@@ -225,6 +245,12 @@ func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatR
 	}
 	if req.PresencePenalty.Valid() {
 		config.PresencePenalty = new(float32(req.PresencePenalty.Value))
+	}
+
+	if req.ReasoningEffort != "" {
+		config.ReasoningConfig = &v1.ReasoningConfig{
+			Effort: convertEffortFromOpenAI(req.ReasoningEffort),
+		}
 	}
 
 	if req.ResponseFormat.OfJSONObject != nil {

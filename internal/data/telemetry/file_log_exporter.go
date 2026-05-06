@@ -11,20 +11,19 @@ import (
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 )
 
-// Set to a directory path to enable writing event to JSON files for debugging.
-const fileLogBaseDir = ""
+type FileLogExporter struct {
+	BaseDir string
+}
 
-type FileLogExporter struct{}
-
-func NewFileLogExporter() sdklog.Exporter {
-	return &FileLogExporter{}
+func NewFileLogExporter(baseDir string) sdklog.Exporter {
+	return &FileLogExporter{BaseDir: baseDir}
 }
 
 func (e *FileLogExporter) Export(_ context.Context, records []sdklog.Record) error {
-	if fileLogBaseDir == "" {
+	if e.BaseDir == "" {
 		return nil
 	}
-	err := os.MkdirAll(fileLogBaseDir, 0o755)
+	err := os.MkdirAll(e.BaseDir, 0o755)
 	if err != nil {
 		return err
 	}
@@ -34,7 +33,7 @@ func (e *FileLogExporter) Export(_ context.Context, records []sdklog.Record) err
 		var raw any
 		if err := json.Unmarshal(r.Body().AsBytes(), &raw); err != nil {
 			// For non-JSON events
-			err = os.WriteFile(filepath.Join(fileLogBaseDir, filename+".txt"), r.Body().AsBytes(), 0o644)
+			err = os.WriteFile(filepath.Join(e.BaseDir, filename+".txt"), r.Body().AsBytes(), 0o644)
 			if err != nil {
 				return err
 			}
@@ -46,7 +45,7 @@ func (e *FileLogExporter) Export(_ context.Context, records []sdklog.Record) err
 			return err
 		}
 
-		err = os.WriteFile(filepath.Join(fileLogBaseDir, filename+".json"), append(pretty, '\n'), 0o644)
+		err = os.WriteFile(filepath.Join(e.BaseDir, filename+".json"), append(pretty, '\n'), 0o644)
 		if err != nil {
 			return err
 		}

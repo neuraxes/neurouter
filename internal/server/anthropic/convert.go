@@ -32,6 +32,8 @@ func convertEffortFromAnthropic(effort anthropic.OutputConfigEffort) v1.Reasonin
 		return v1.ReasoningEffort_REASONING_EFFORT_MEDIUM
 	case anthropic.OutputConfigEffortHigh:
 		return v1.ReasoningEffort_REASONING_EFFORT_HIGH
+	case anthropic.OutputConfigEffortXhigh:
+		return v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH
 	case anthropic.OutputConfigEffortMax:
 		return v1.ReasoningEffort_REASONING_EFFORT_MAX
 	default:
