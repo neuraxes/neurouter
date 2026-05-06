@@ -27,12 +27,15 @@ type ChatHTTPServer interface {
 
 func RegisterChatHTTPServer(s *http.Server, srv ChatHTTPServer) {
 	r := s.Route("/")
-	r.GET("/v1/chat", _Chat_Chat0_HTTP_Handler(srv))
+	r.POST("/v1/chat", _Chat_Chat0_HTTP_Handler(srv))
 }
 
 func _Chat_Chat0_HTTP_Handler(srv ChatHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in ChatReq
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
@@ -64,10 +67,10 @@ func NewChatHTTPClient(client *http.Client) ChatHTTPClient {
 func (c *ChatHTTPClientImpl) Chat(ctx context.Context, in *ChatReq, opts ...http.CallOption) (*ChatResp, error) {
 	var out ChatResp
 	pattern := "/v1/chat"
-	path := binding.EncodeURL(pattern, in, true)
+	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationChatChat))
 	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

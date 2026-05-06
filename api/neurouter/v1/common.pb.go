@@ -342,6 +342,8 @@ type GenerationConfig struct {
 	PresencePenalty *float32 `protobuf:"fixed32,6,opt,name=presence_penalty,json=presencePenalty,proto3,oneof" json:"presence_penalty,omitempty"`
 	// Configuration for reasoning.
 	ReasoningConfig *ReasoningConfig `protobuf:"bytes,7,opt,name=reasoning_config,json=reasoningConfig,proto3,oneof" json:"reasoning_config,omitempty"`
+	// The sequences where the model will stop generating further tokens.
+	StopSequences []string `protobuf:"bytes,8,rep,name=stop_sequences,json=stopSequences,proto3" json:"stop_sequences,omitempty"`
 	// Types that are valid to be assigned to Template:
 	//
 	//	*GenerationConfig_PresetTemplate
@@ -432,6 +434,13 @@ func (x *GenerationConfig) GetPresencePenalty() float32 {
 func (x *GenerationConfig) GetReasoningConfig() *ReasoningConfig {
 	if x != nil {
 		return x.ReasoningConfig
+	}
+	return nil
+}
+
+func (x *GenerationConfig) GetStopSequences() []string {
+	if x != nil {
+		return x.StopSequences
 	}
 	return nil
 }
@@ -978,7 +987,7 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\"k\n" +
 	"\x0fReasoningConfig\x125\n" +
 	"\x06effort\x18\x01 \x01(\x0e2\x1d.neurouter.v1.ReasoningEffortR\x06effort\x12!\n" +
-	"\ftoken_budget\x18\x02 \x01(\rR\vtokenBudget\"\x98\x05\n" +
+	"\ftoken_budget\x18\x02 \x01(\rR\vtokenBudget\"\xbf\x05\n" +
 	"\x10GenerationConfig\x12\"\n" +
 	"\n" +
 	"max_tokens\x18\x01 \x01(\x03H\x02R\tmaxTokens\x88\x01\x01\x12%\n" +
@@ -987,7 +996,8 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x05top_k\x18\x04 \x01(\x03H\x05R\x04topK\x88\x01\x01\x120\n" +
 	"\x11frequency_penalty\x18\x05 \x01(\x02H\x06R\x10frequencyPenalty\x88\x01\x01\x12.\n" +
 	"\x10presence_penalty\x18\x06 \x01(\x02H\aR\x0fpresencePenalty\x88\x01\x01\x12M\n" +
-	"\x10reasoning_config\x18\a \x01(\v2\x1d.neurouter.v1.ReasoningConfigH\bR\x0freasoningConfig\x88\x01\x01\x12)\n" +
+	"\x10reasoning_config\x18\a \x01(\v2\x1d.neurouter.v1.ReasoningConfigH\bR\x0freasoningConfig\x88\x01\x01\x12%\n" +
+	"\x0estop_sequences\x18\b \x03(\tR\rstopSequences\x12)\n" +
 	"\x0fpreset_template\x182 \x01(\tH\x00R\x0epresetTemplate\x12'\n" +
 	"\x0epreset_grammar\x18< \x01(\tH\x01R\rpresetGrammar\x12#\n" +
 	"\fgbnf_grammar\x18= \x01(\tH\x01R\vgbnfGrammar\x12.\n" +

@@ -299,18 +299,20 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 			}
 		}
 
+		ensureReasoning := func(id string) {
+			if reasoning != nil && reasoning.ID != id {
+				flushReasoning()
+			}
+			if reasoning == nil {
+				reasoning = &responses.ResponseReasoningItemParam{ID: id}
+			}
+		}
+
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
 			case *v1.Content_Text:
 				if content.Reasoning {
-					if reasoning == nil || reasoning.ID != content.Id {
-						flushReasoning()
-						reasoning = &responses.ResponseReasoningItemParam{ID: content.Id}
-					}
-
-					if encrypted := content.Meta("encrypted"); encrypted != "" {
-						reasoning.EncryptedContent = openai.Opt(encrypted)
-					}
+					ensureReasoning(content.Id)
 					if summary := content.Meta("summary"); summary != "" {
 						reasoning.Summary = append(reasoning.Summary,
 							responses.ResponseReasoningItemSummaryParam{Text: summary})
@@ -335,6 +337,11 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 					msg.Phase = responses.ResponseOutputMessagePhase(phase)
 				}
 				result = append(result, responses.ResponseInputItemUnionParam{OfOutputMessage: msg})
+			case *v1.Content_Opaque:
+				if content.Reasoning {
+					ensureReasoning(content.Id)
+					reasoning.EncryptedContent = openai.Opt(c.Opaque)
+				}
 			case *v1.Content_ToolUse:
 				flushReasoning()
 				fc := &responses.ResponseFunctionToolCallParam{
@@ -452,53 +459,56 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 			}
 		case "reasoning":
 			var reasoningContents []*v1.Content
+			var reasoningContent *v1.Content
+
+			flushReasoning := func() {
+				if reasoningContent != nil {
+					reasoningContents = append(reasoningContents, reasoningContent)
+					reasoningContent = nil
+				}
+			}
+
+			ensureReasoning := func() {
+				if reasoningContent == nil {
+					reasoningContent = &v1.Content{
+						Id:        item.ID,
+						Reasoning: true,
+						Content:   &v1.Content_Text{},
+					}
+				}
+			}
+
 			if item.EncryptedContent != "" {
 				reasoningContents = append(reasoningContents, &v1.Content{
 					Id:        item.ID,
 					Reasoning: true,
-					Metadata:  map[string]string{"encrypted": item.EncryptedContent},
-					Content:   &v1.Content_Text{},
+					Content:   &v1.Content_Opaque{Opaque: item.EncryptedContent},
 				})
 			}
 			for _, s := range item.Summary {
-				if n := len(reasoningContents); n > 0 {
-					last := reasoningContents[n-1]
-					if last.Metadata == nil {
-						last.Metadata = make(map[string]string)
-					}
-					if last.Metadata["summary"] == "" {
-						last.Metadata["summary"] = s.Text
-						continue
-					}
+				if reasoningContent.Meta("summary") != "" {
+					flushReasoning()
 				}
-				reasoningContents = append(reasoningContents, &v1.Content{
-					Id:        item.ID,
-					Reasoning: true,
-					Metadata:  map[string]string{"summary": s.Text},
-					Content:   &v1.Content_Text{},
-				})
+				ensureReasoning()
+				if reasoningContent.Metadata == nil {
+					reasoningContent.Metadata = make(map[string]string)
+				}
+				reasoningContent.Metadata["summary"] = s.Text
 			}
 			for _, c := range item.Content {
-				if n := len(reasoningContents); n > 0 {
-					if last := reasoningContents[n-1]; last.GetText() == "" {
-						last.Content = &v1.Content_Text{Text: c.Text}
-						continue
-					}
+				if reasoningContent.GetText() != "" {
+					flushReasoning()
 				}
-				reasoningContents = append(reasoningContents, &v1.Content{
-					Id:        item.ID,
-					Reasoning: true,
-					Content:   &v1.Content_Text{Text: c.Text},
-				})
+				ensureReasoning()
+				reasoningContent.Content = &v1.Content_Text{Text: c.Text}
 			}
-			if len(reasoningContents) > 0 {
-				contents = append(contents, reasoningContents...)
-			} else {
-				contents = append(contents, &v1.Content{
-					Id:        item.ID,
-					Reasoning: true,
-				})
+
+			if len(reasoningContents) == 0 {
+				ensureReasoning() // Fallback to empty content
 			}
+			flushReasoning()
+
+			contents = append(contents, reasoningContents...)
 		case "function_call":
 			hasFunctionCall = true
 			contents = append(contents, &v1.Content{
@@ -652,8 +662,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 					Id:        event.Item.ID,
 					Index:     new(uint32(event.OutputIndex)),
 					Reasoning: true,
-					Metadata:  map[string]string{"encrypted": event.Item.EncryptedContent},
-					Content:   &v1.Content_Text{},
+					Content:   &v1.Content_Opaque{Opaque: event.Item.EncryptedContent},
 				}},
 			}
 		}

@@ -67,6 +67,9 @@ func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *
 		}
 		googleConfig.ThinkingConfig = gc
 	}
+	if len(config.StopSequences) > 0 {
+		googleConfig.StopSequences = config.StopSequences
+	}
 }
 
 func convertFunctionParametersToGoogle(params *v1.Schema) *genai.Schema {

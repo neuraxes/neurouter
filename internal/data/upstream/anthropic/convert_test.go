@@ -348,8 +348,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 				Contents: []*v1.Content{
 					{
 						Reasoning: true,
-						Metadata:  map[string]string{"redacted_thinking": "opaque-data"},
-						Content:   &v1.Content_Text{Text: ""},
+						Content:   &v1.Content_Opaque{Opaque: "opaque-data"},
 					},
 				},
 			}
@@ -713,8 +712,7 @@ func TestConvertContentsFromAnthropic(t *testing.T) {
 
 			// redacted_thinking block
 			So(msg.Contents[1].Reasoning, ShouldBeTrue)
-			So(msg.Contents[1].GetText(), ShouldEqual, "")
-			So(msg.Contents[1].Metadata["redacted_thinking"], ShouldEqual, "opaque-encrypted-data")
+			So(msg.Contents[1].GetOpaque(), ShouldEqual, "opaque-encrypted-data")
 
 			// text block
 			So(msg.Contents[2].GetText(), ShouldEqual, "final answer")
@@ -822,8 +820,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
 				So(*resp.Message.Contents[0].Index, ShouldEqual, 2)
 				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "")
-				So(resp.Message.Contents[0].Metadata["redacted_thinking"], ShouldEqual, "opaque-data-123")
+				So(resp.Message.Contents[0].GetOpaque(), ShouldEqual, "opaque-data-123")
 			})
 		})
 

@@ -128,14 +128,12 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 			switch content.Content.(type) {
 			case *v1.Content_Text:
 				if content.Reasoning {
-					if content.Metadata["redacted_thinking"] != "" {
-						currentKind = contentBlockRedactedThinking
-					} else {
-						currentKind = contentBlockThinking
-					}
+					currentKind = contentBlockThinking
 				} else {
 					currentKind = contentBlockText
 				}
+			case *v1.Content_Opaque:
+				currentKind = contentBlockRedactedThinking
 			case *v1.Content_ToolUse:
 				currentKind = contentBlockToolUse
 			}
@@ -158,46 +156,32 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 			s.contentKind = currentKind
 
 			switch c := content.Content.(type) {
+
 			case *v1.Content_Text:
 				if content.Reasoning {
-					if content.Metadata["redacted_thinking"] != "" {
-						// Redacted thinking: emit as a self-contained content block
-						if !s.contentBlockStarted {
-							s.contentBlockStarted = true
-							event := anthropic.ContentBlockStartEvent{
-								Index: s.contentIndex,
-								ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
-									Type: "redacted_thinking",
-									Data: content.Metadata["redacted_thinking"],
-								},
-							}
-							s.sendJSONEvent("content_block_start", event)
+					if !s.contentBlockStarted {
+						s.contentBlockStarted = true
+						s.sendContentBlockStartEvent("thinking")
+					}
+					if c.Text != "" {
+						event := anthropic.ContentBlockDeltaEvent{
+							Index: s.contentIndex,
+							Delta: anthropic.RawContentBlockDeltaUnion{
+								Type:     "thinking_delta",
+								Thinking: c.Text,
+							},
 						}
-					} else {
-						if !s.contentBlockStarted {
-							s.contentBlockStarted = true
-							s.sendContentBlockStartEvent("thinking")
+						s.sendJSONEvent("content_block_delta", event)
+					}
+					if content.Metadata["signature"] != "" {
+						event := anthropic.ContentBlockDeltaEvent{
+							Index: s.contentIndex,
+							Delta: anthropic.RawContentBlockDeltaUnion{
+								Type:      "signature_delta",
+								Signature: content.Metadata["signature"],
+							},
 						}
-						if c.Text != "" {
-							event := anthropic.ContentBlockDeltaEvent{
-								Index: s.contentIndex,
-								Delta: anthropic.RawContentBlockDeltaUnion{
-									Type:     "thinking_delta",
-									Thinking: c.Text,
-								},
-							}
-							s.sendJSONEvent("content_block_delta", event)
-						}
-						if content.Metadata["signature"] != "" {
-							event := anthropic.ContentBlockDeltaEvent{
-								Index: s.contentIndex,
-								Delta: anthropic.RawContentBlockDeltaUnion{
-									Type:      "signature_delta",
-									Signature: content.Metadata["signature"],
-								},
-							}
-							s.sendJSONEvent("content_block_delta", event)
-						}
+						s.sendJSONEvent("content_block_delta", event)
 					}
 				} else {
 					if !s.contentBlockStarted {
@@ -212,6 +196,18 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 						},
 					}
 					s.sendJSONEvent("content_block_delta", event)
+				}
+			case *v1.Content_Opaque:
+				if !s.contentBlockStarted {
+					s.contentBlockStarted = true
+					event := anthropic.ContentBlockStartEvent{
+						Index: s.contentIndex,
+						ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
+							Type: "redacted_thinking",
+							Data: c.Opaque,
+						},
+					}
+					s.sendJSONEvent("content_block_start", event)
 				}
 			case *v1.Content_ToolUse:
 				if !s.contentBlockStarted {

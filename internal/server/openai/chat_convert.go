@@ -259,6 +259,12 @@ func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatR
 		}
 	}
 
+	if len(req.Stop.OfStringArray) > 0 {
+		config.StopSequences = req.Stop.OfStringArray
+	} else if req.Stop.OfString.Valid() {
+		config.StopSequences = []string{req.Stop.OfString.Value}
+	}
+
 	var messages []*v1.Message
 	for _, message := range req.Messages {
 		if m := convertChatMessageFromOpenAIChat(message); m != nil {
