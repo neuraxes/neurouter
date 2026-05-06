@@ -91,6 +91,9 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 			req.OutputConfig.Effort = convertEffortToAnthropic(c.Effort)
 		}
 	}
+	if len(config.StopSequences) > 0 {
+		req.StopSequences = config.StopSequences
+	}
 	switch g := config.Grammar.(type) {
 	case *v1.GenerationConfig_JsonSchema:
 		var schema map[string]any
@@ -133,16 +136,13 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 		switch c := content.GetContent().(type) {
 		case *v1.Content_Text:
 			if content.Reasoning {
-				if content.Metadata["redacted_thinking"] != "" {
-					// Redacted thinking block: encrypted data stored in metadata
-					parts = append(parts, anthropic.NewRedactedThinkingBlock(content.Metadata["redacted_thinking"]))
-				} else {
-					signature := content.Metadata["signature"]
-					parts = append(parts, anthropic.NewThinkingBlock(signature, c.Text))
-				}
+				signature := content.Metadata["signature"]
+				parts = append(parts, anthropic.NewThinkingBlock(signature, c.Text))
 			} else {
 				parts = append(parts, anthropic.NewTextBlock(c.Text))
 			}
+		case *v1.Content_Opaque:
+			parts = append(parts, anthropic.NewRedactedThinkingBlock(c.Opaque))
 		case *v1.Content_Image:
 			switch src := c.Image.Source.(type) {
 			case *v1.Image_Url:
@@ -307,11 +307,8 @@ func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 			})
 		case "redacted_thinking":
 			message.Contents = append(message.Contents, &v1.Content{
-				Metadata: map[string]string{
-					"redacted_thinking": content.Data,
-				},
 				Reasoning: true,
-				Content:   &v1.Content_Text{Text: ""},
+				Content:   &v1.Content_Opaque{Opaque: content.Data},
 			})
 		case "text":
 			message.Contents = append(message.Contents, &v1.Content{
@@ -391,10 +388,7 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
 				Index:     new(uint32(chunk.Index)),
 				Reasoning: true,
-				Metadata: map[string]string{
-					"redacted_thinking": chunk.ContentBlock.Data,
-				},
-				Content: &v1.Content_Text{Text: ""},
+				Content:   &v1.Content_Opaque{Opaque: chunk.ContentBlock.Data},
 			})
 		case "tool_use":
 			resp = c.newResp()

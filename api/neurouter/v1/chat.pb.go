@@ -98,10 +98,10 @@ const (
 	ChatStatus_CHAT_REFUSED ChatStatus = 3
 	// The generation has been cancelled
 	ChatStatus_CHAT_CANCELLED ChatStatus = 4
-	// The generation stopped due to exceeding token limit
-	ChatStatus_CHAT_REACHED_TOKEN_LIMIT ChatStatus = 5
 	// The generation stopped due to pending tool uses
-	ChatStatus_CHAT_PENDING_TOOL_USE ChatStatus = 6
+	ChatStatus_CHAT_PENDING_TOOL_USE ChatStatus = 5
+	// The generation stopped due to exceeding token limit
+	ChatStatus_CHAT_REACHED_TOKEN_LIMIT ChatStatus = 6
 )
 
 // Enum value maps for ChatStatus.
@@ -112,8 +112,8 @@ var (
 		2: "CHAT_FAILED",
 		3: "CHAT_REFUSED",
 		4: "CHAT_CANCELLED",
-		5: "CHAT_REACHED_TOKEN_LIMIT",
-		6: "CHAT_PENDING_TOOL_USE",
+		5: "CHAT_PENDING_TOOL_USE",
+		6: "CHAT_REACHED_TOKEN_LIMIT",
 	}
 	ChatStatus_value = map[string]int32{
 		"CHAT_IN_PROGRESS":         0,
@@ -121,8 +121,8 @@ var (
 		"CHAT_FAILED":              2,
 		"CHAT_REFUSED":             3,
 		"CHAT_CANCELLED":           4,
-		"CHAT_REACHED_TOKEN_LIMIT": 5,
-		"CHAT_PENDING_TOOL_USE":    6,
+		"CHAT_PENDING_TOOL_USE":    5,
+		"CHAT_REACHED_TOKEN_LIMIT": 6,
 	}
 )
 
@@ -160,9 +160,9 @@ type Message struct {
 	// The role of the message sender
 	Role Role `protobuf:"varint,2,opt,name=role,proto3,enum=neurouter.v1.Role" json:"role,omitempty"`
 	// The multi-modality content
-	Contents []*Content `protobuf:"bytes,4,rep,name=contents,proto3" json:"contents,omitempty"`
+	Contents []*Content `protobuf:"bytes,3,rep,name=contents,proto3" json:"contents,omitempty"`
 	// The optional name of the message sender
-	Name string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
 	// Additional metadata for the message
 	Metadata      map[string]string `protobuf:"bytes,15,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
@@ -413,8 +413,8 @@ const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12&\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x12.neurouter.v1.RoleR\x04role\x121\n" +
-	"\bcontents\x18\x04 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\x12\x12\n" +
-	"\x04name\x18\x05 \x01(\tR\x04name\x12?\n" +
+	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12?\n" +
 	"\bmetadata\x18\x0f \x03(\v2#.neurouter.v1.Message.MetadataEntryR\bmetadata\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -448,12 +448,11 @@ const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\x0eCHAT_COMPLETED\x10\x01\x12\x0f\n" +
 	"\vCHAT_FAILED\x10\x02\x12\x10\n" +
 	"\fCHAT_REFUSED\x10\x03\x12\x12\n" +
-	"\x0eCHAT_CANCELLED\x10\x04\x12\x1c\n" +
-	"\x18CHAT_REACHED_TOKEN_LIMIT\x10\x05\x12\x19\n" +
-	"\x15CHAT_PENDING_TOOL_USE\x10\x062\x90\x01\n" +
-	"\x04Chat\x12G\n" +
-	"\x04Chat\x12\x15.neurouter.v1.ChatReq\x1a\x16.neurouter.v1.ChatResp\"\x10\x82\xd3\xe4\x93\x02\n" +
-	"\x12\b/v1/chat\x12?\n" +
+	"\x0eCHAT_CANCELLED\x10\x04\x12\x19\n" +
+	"\x15CHAT_PENDING_TOOL_USE\x10\x05\x12\x1c\n" +
+	"\x18CHAT_REACHED_TOKEN_LIMIT\x10\x062\x93\x01\n" +
+	"\x04Chat\x12J\n" +
+	"\x04Chat\x12\x15.neurouter.v1.ChatReq\x1a\x16.neurouter.v1.ChatResp\"\x13\x82\xd3\xe4\x93\x02\r:\x01*\"\b/v1/chat\x12?\n" +
 	"\n" +
 	"ChatStream\x12\x15.neurouter.v1.ChatReq\x1a\x16.neurouter.v1.ChatResp\"\x000\x01B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 

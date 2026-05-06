@@ -257,6 +257,7 @@ type Content struct {
 	//	*Content_Image
 	//	*Content_ToolUse
 	//	*Content_ToolResult
+	//	*Content_Opaque
 	Content       isContent_Content `protobuf_oneof:"content"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -363,6 +364,15 @@ func (x *Content) GetToolResult() *ToolResult {
 	return nil
 }
 
+func (x *Content) GetOpaque() string {
+	if x != nil {
+		if x, ok := x.Content.(*Content_Opaque); ok {
+			return x.Opaque
+		}
+	}
+	return ""
+}
+
 type isContent_Content interface {
 	isContent_Content()
 }
@@ -383,6 +393,11 @@ type Content_ToolResult struct {
 	ToolResult *ToolResult `protobuf:"bytes,13,opt,name=tool_result,json=toolResult,proto3,oneof"`
 }
 
+type Content_Opaque struct {
+	// Opaque content like encrypted CoT
+	Opaque string `protobuf:"bytes,14,opt,name=opaque,proto3,oneof"`
+}
+
 func (*Content_Text) isContent_Content() {}
 
 func (*Content_Image) isContent_Content() {}
@@ -390,6 +405,8 @@ func (*Content_Image) isContent_Content() {}
 func (*Content_ToolUse) isContent_Content() {}
 
 func (*Content_ToolResult) isContent_Content() {}
+
+func (*Content_Opaque) isContent_Content() {}
 
 type ToolUse_Input struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -586,7 +603,7 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	" \x01(\tH\x00R\x04text\x12+\n" +
 	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05imageB\b\n" +
 	"\x06outputB\b\n" +
-	"\x06_index\"\x99\x03\n" +
+	"\x06_index\"\xb3\x03\n" +
 	"\aContent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05index\x18\x02 \x01(\rH\x01R\x05index\x88\x01\x01\x12\x1c\n" +
@@ -597,7 +614,8 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05image\x122\n" +
 	"\btool_use\x18\f \x01(\v2\x15.neurouter.v1.ToolUseH\x00R\atoolUse\x12;\n" +
 	"\vtool_result\x18\r \x01(\v2\x18.neurouter.v1.ToolResultH\x00R\n" +
-	"toolResult\x1a;\n" +
+	"toolResult\x12\x18\n" +
+	"\x06opaque\x18\x0e \x01(\tH\x00R\x06opaque\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
@@ -655,6 +673,7 @@ func file_neurouter_v1_content_proto_init() {
 		(*Content_Image)(nil),
 		(*Content_ToolUse)(nil),
 		(*Content_ToolResult)(nil),
+		(*Content_Opaque)(nil),
 	}
 	file_neurouter_v1_content_proto_msgTypes[4].OneofWrappers = []any{
 		(*ToolUse_Input_Text)(nil),

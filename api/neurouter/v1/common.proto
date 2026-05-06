@@ -51,6 +51,8 @@ message GenerationConfig {
   optional float presence_penalty = 6;
   // Configuration for reasoning.
   optional ReasoningConfig reasoning_config = 7;
+  // The sequences where the model will stop generating further tokens.
+  repeated string stop_sequences = 8;
 
   oneof template {
     string preset_template = 50;

@@ -71,5 +71,7 @@ message Content {
     Image image = 11;
     ToolUse tool_use = 12;
     ToolResult tool_result = 13;
+    // Opaque content like encrypted CoT
+    string opaque = 14;
   }
 }

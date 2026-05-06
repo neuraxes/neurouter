@@ -344,8 +344,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 			Convey("Then it should create a redacted thinking content", func() {
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].Reasoning, ShouldBeTrue)
-				So(result.Contents[0].GetText(), ShouldEqual, "")
-				So(result.Contents[0].Metadata["redacted_thinking"], ShouldEqual, "opaque-encrypted-data")
+				So(result.Contents[0].GetOpaque(), ShouldEqual, "opaque-encrypted-data")
 			})
 		})
 
@@ -502,8 +501,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 
 				// redacted thinking
 				So(result.Contents[1].Reasoning, ShouldBeTrue)
-				So(result.Contents[1].GetText(), ShouldEqual, "")
-				So(result.Contents[1].Metadata["redacted_thinking"], ShouldEqual, "opaque-data")
+				So(result.Contents[1].GetOpaque(), ShouldEqual, "opaque-data")
 
 				// text
 				So(result.Contents[2].Reasoning, ShouldBeFalse)
@@ -733,8 +731,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Contents: []*v1.Content{
 						{
 							Reasoning: true,
-							Metadata:  map[string]string{"redacted_thinking": "opaque-data"},
-							Content:   &v1.Content_Text{Text: ""},
+							Content:   &v1.Content_Opaque{Opaque: "opaque-data"},
 						},
 						{
 							Content: &v1.Content_Text{Text: "Result here."},
@@ -813,8 +810,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 						},
 						{
 							Reasoning: true,
-							Metadata:  map[string]string{"redacted_thinking": "secret-data"},
-							Content:   &v1.Content_Text{Text: ""},
+							Content:   &v1.Content_Opaque{Opaque: "secret-data"},
 						},
 						{
 							Content: &v1.Content_Text{Text: "Let me help you."},

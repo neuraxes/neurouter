@@ -45,9 +45,11 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 	if config.PresencePenalty != nil {
 		req.PresencePenalty = openai.Opt(float64(*config.PresencePenalty))
 	}
-
 	if c := config.ReasoningConfig; c != nil && c.Effort > v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED {
 		req.ReasoningEffort = convertEffortToOpenAI(c.Effort)
+	}
+	if len(config.StopSequences) > 0 {
+		req.Stop = openai.ChatCompletionNewParamsStopUnion{OfStringArray: config.StopSequences}
 	}
 
 	// Convert grammar to OpenAI response format
@@ -245,6 +247,8 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 					)
 				case *v1.Content_ToolUse:
 					// Tool calls will be processed later
+				case *v1.Content_Opaque:
+					// Opaque content is not supported by OpenAI
 				default:
 					r.log.Errorf("unsupported content for assistant: %v", c)
 				}

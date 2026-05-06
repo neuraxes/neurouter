@@ -68,6 +68,9 @@ func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.G
 			Effort: convertEffortFromAnthropic(req.OutputConfig.Effort),
 		}
 	}
+	if len(req.StopSequences) > 0 {
+		config.StopSequences = req.StopSequences
+	}
 	if len(req.OutputConfig.Format.Schema) > 0 {
 		jsonSchema, err := json.Marshal(req.OutputConfig.Format.Schema)
 		if err == nil {
@@ -158,10 +161,7 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 		case content.OfRedactedThinking != nil:
 			contents = append(contents, &v1.Content{
 				Reasoning: true,
-				Metadata: map[string]string{
-					"redacted_thinking": content.OfRedactedThinking.Data,
-				},
-				Content: &v1.Content_Text{Text: ""},
+				Content:   &v1.Content_Opaque{Opaque: content.OfRedactedThinking.Data},
 			})
 		case content.OfToolUse != nil:
 			var args []byte
@@ -328,20 +328,12 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
 				if content.Reasoning {
-					if content.Metadata["redacted_thinking"] != "" {
-						// Redacted thinking block
-						anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
-							Type: "redacted_thinking",
-							Data: content.Metadata["redacted_thinking"],
-						})
-					} else {
-						// Thinking block
-						anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
-							Type:      "thinking",
-							Thinking:  c.Text,
-							Signature: content.Metadata["signature"],
-						})
-					}
+					// Thinking block
+					anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
+						Type:      "thinking",
+						Thinking:  c.Text,
+						Signature: content.Metadata["signature"],
+					})
 				} else {
 					if c.Text != "" {
 						anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
@@ -350,6 +342,11 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 						})
 					}
 				}
+			case *v1.Content_Opaque:
+				anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
+					Type: "redacted_thinking",
+					Data: c.Opaque,
+				})
 			case *v1.Content_ToolUse:
 				f := c.ToolUse
 				anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{

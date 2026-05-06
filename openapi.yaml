@@ -7,212 +7,16 @@ info:
     version: 0.0.1
 paths:
     /v1/chat:
-        get:
+        post:
             tags:
                 - Chat
             operationId: Chat_Chat
-            parameters:
-                - name: id
-                  in: query
-                  description: The unique identifier of the chat session
-                  schema:
-                    type: string
-                - name: model
-                  in: query
-                  description: The requested model to use
-                  schema:
-                    type: string
-                - name: config.maxTokens
-                  in: query
-                  description: The maximum number of tokens that can be generated.
-                  schema:
-                    type: string
-                - name: config.temperature
-                  in: query
-                  description: The temperature sampling. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
-                  schema:
-                    type: number
-                    format: float
-                - name: config.topP
-                  in: query
-                  description: The nucleus sampling, where the model considers the results of the tokens with top_p probability mass.
-                  schema:
-                    type: number
-                    format: float
-                - name: config.topK
-                  in: query
-                  description: The top_k sampling, where the model considers the results of the top_k most probable tokens.
-                  schema:
-                    type: string
-                - name: config.frequencyPenalty
-                  in: query
-                  description: Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
-                  schema:
-                    type: number
-                    format: float
-                - name: config.presencePenalty
-                  in: query
-                  description: Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
-                  schema:
-                    type: number
-                    format: float
-                - name: config.reasoningConfig.effort
-                  in: query
-                  description: The effort level for reasoning.
-                  schema:
-                    type: integer
-                    format: enum
-                - name: config.reasoningConfig.tokenBudget
-                  in: query
-                  description: The token budget for reasoning.
-                  schema:
-                    type: integer
-                    format: uint32
-                - name: config.presetTemplate
-                  in: query
-                  schema:
-                    type: string
-                - name: config.presetGrammar
-                  in: query
-                  description: Preset grammars, e.g. "text", "json_object", etc.
-                  schema:
-                    type: string
-                - name: config.gbnfGrammar
-                  in: query
-                  description: The GGML BNF grammar definition.
-                  schema:
-                    type: string
-                - name: config.schema.type
-                  in: query
-                  schema:
-                    type: integer
-                    format: enum
-                - name: config.schema.description
-                  in: query
-                  schema:
-                    type: string
-                - name: config.schema.minimum
-                  in: query
-                  description: The minimum for number
-                  schema:
-                    type: number
-                    format: double
-                - name: config.schema.maximum
-                  in: query
-                  description: The maximum for number
-                  schema:
-                    type: number
-                    format: double
-                - name: config.schema.pattern
-                  in: query
-                  description: The regex pattern for string
-                  schema:
-                    type: string
-                - name: config.schema.minLength
-                  in: query
-                  description: The minimum length for string
-                  schema:
-                    type: integer
-                    format: int32
-                - name: config.schema.maxLength
-                  in: query
-                  description: The maximum length for string
-                  schema:
-                    type: integer
-                    format: int32
-                - name: config.schema.items.type
-                  in: query
-                  schema:
-                    type: integer
-                    format: enum
-                - name: config.schema.items.description
-                  in: query
-                  schema:
-                    type: string
-                - name: config.schema.items.minimum
-                  in: query
-                  description: The minimum for number
-                  schema:
-                    type: number
-                    format: double
-                - name: config.schema.items.maximum
-                  in: query
-                  description: The maximum for number
-                  schema:
-                    type: number
-                    format: double
-                - name: config.schema.items.pattern
-                  in: query
-                  description: The regex pattern for string
-                  schema:
-                    type: string
-                - name: config.schema.items.minLength
-                  in: query
-                  description: The minimum length for string
-                  schema:
-                    type: integer
-                    format: int32
-                - name: config.schema.items.maxLength
-                  in: query
-                  description: The maximum length for string
-                  schema:
-                    type: integer
-                    format: int32
-                - name: config.schema.items.items.minItems
-                  in: query
-                  description: The minimum number of items for array
-                  schema:
-                    type: integer
-                    format: int32
-                - name: config.schema.items.items.maxItems
-                  in: query
-                  description: The maximum number of items for array
-                  schema:
-                    type: integer
-                    format: int32
-                - name: config.schema.items.items.propertyNames.minItems
-                  in: query
-                  description: The minimum number of items for array
-                  schema:
-                    type: integer
-                    format: int32
-                - name: config.schema.items.items.propertyNames.maxItems
-                  in: query
-                  description: The maximum number of items for array
-                  schema:
-                    type: integer
-                    format: int32
-                - name: config.schema.items.items.propertyNames.propertyNames.required
-                  in: query
-                  description: The required properties for object
-                  schema:
-                    type: array
-                    items:
-                        type: string
-                - name: config.schema.items.items.propertyNames.propertyNames.enum
-                  in: query
-                  schema:
-                    type: array
-                    items:
-                        type: string
-                - name: config.schema.items.items.propertyNames.propertyNames.not.required
-                  in: query
-                  description: The required properties for object
-                  schema:
-                    type: array
-                    items:
-                        type: string
-                - name: config.schema.items.items.propertyNames.propertyNames.not.enum
-                  in: query
-                  schema:
-                    type: array
-                    items:
-                        type: string
-                - name: config.jsonSchema
-                  in: query
-                  description: The JSON schema definition.
-                  schema:
-                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/neurouter.v1.ChatReq'
+                required: true
             responses:
                 "200":
                     description: OK
@@ -252,6 +56,34 @@ paths:
                                 $ref: '#/components/schemas/neurouter.v1.ListModelResp'
 components:
     schemas:
+        neurouter.v1.ChatReq:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: The unique identifier of the chat session
+                model:
+                    type: string
+                    description: The requested model to use
+                config:
+                    allOf:
+                        - $ref: '#/components/schemas/neurouter.v1.GenerationConfig'
+                    description: The generation configuration
+                messages:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.Message'
+                    description: The conversation history
+                tools:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.Tool'
+                    description: The tools available for the model to use
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: Additional metadata for the request
         neurouter.v1.ChatResp:
             type: object
             properties:
@@ -299,6 +131,9 @@ components:
                     $ref: '#/components/schemas/neurouter.v1.ToolUse'
                 toolResult:
                     $ref: '#/components/schemas/neurouter.v1.ToolResult'
+                opaque:
+                    type: string
+                    description: Opaque content like encrypted CoT
             description: Multi-modality content
         neurouter.v1.EmbedReq:
             type: object
@@ -323,6 +158,55 @@ components:
                     items:
                         type: number
                         format: float
+        neurouter.v1.GenerationConfig:
+            type: object
+            properties:
+                maxTokens:
+                    type: string
+                    description: The maximum number of tokens that can be generated.
+                temperature:
+                    type: number
+                    description: The temperature sampling. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+                    format: float
+                topP:
+                    type: number
+                    description: The nucleus sampling, where the model considers the results of the tokens with top_p probability mass.
+                    format: float
+                topK:
+                    type: string
+                    description: The top_k sampling, where the model considers the results of the top_k most probable tokens.
+                frequencyPenalty:
+                    type: number
+                    description: Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+                    format: float
+                presencePenalty:
+                    type: number
+                    description: Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+                    format: float
+                reasoningConfig:
+                    allOf:
+                        - $ref: '#/components/schemas/neurouter.v1.ReasoningConfig'
+                    description: Configuration for reasoning.
+                stopSequences:
+                    type: array
+                    items:
+                        type: string
+                    description: The sequences where the model will stop generating further tokens.
+                presetTemplate:
+                    type: string
+                presetGrammar:
+                    type: string
+                    description: Preset grammars, e.g. "text", "json_object", etc.
+                gbnfGrammar:
+                    type: string
+                    description: The GGML BNF grammar definition.
+                schema:
+                    allOf:
+                        - $ref: '#/components/schemas/neurouter.v1.Schema'
+                    description: The schema definition.
+                jsonSchema:
+                    type: string
+                    description: The JSON schema definition.
         neurouter.v1.Image:
             type: object
             properties:
@@ -395,6 +279,88 @@ components:
                     type: integer
                     description: The context length (max tokens) supported by the model.
                     format: uint32
+        neurouter.v1.ReasoningConfig:
+            type: object
+            properties:
+                effort:
+                    type: integer
+                    description: The effort level for reasoning.
+                    format: enum
+                tokenBudget:
+                    type: integer
+                    description: The token budget for reasoning.
+                    format: uint32
+        neurouter.v1.Schema:
+            type: object
+            properties:
+                type:
+                    type: integer
+                    format: enum
+                description:
+                    type: string
+                minimum:
+                    type: number
+                    description: The minimum for number
+                    format: double
+                maximum:
+                    type: number
+                    description: The maximum for number
+                    format: double
+                pattern:
+                    type: string
+                    description: The regex pattern for string
+                minLength:
+                    type: integer
+                    description: The minimum length for string
+                    format: int32
+                maxLength:
+                    type: integer
+                    description: The maximum length for string
+                    format: int32
+                items:
+                    allOf:
+                        - $ref: '#/components/schemas/neurouter.v1.Schema'
+                    description: The schema for array items
+                minItems:
+                    type: integer
+                    description: The minimum number of items for array
+                    format: int32
+                maxItems:
+                    type: integer
+                    description: The maximum number of items for array
+                    format: int32
+                propertyNames:
+                    allOf:
+                        - $ref: '#/components/schemas/neurouter.v1.Schema'
+                    description: The schema for object keys
+                properties:
+                    type: object
+                    additionalProperties:
+                        $ref: '#/components/schemas/neurouter.v1.Schema'
+                    description: The schema for object values
+                required:
+                    type: array
+                    items:
+                        type: string
+                    description: The required properties for object
+                enum:
+                    type: array
+                    items:
+                        type: string
+                allOf:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.Schema'
+                anyOf:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.Schema'
+                oneOf:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/neurouter.v1.Schema'
+                not:
+                    $ref: '#/components/schemas/neurouter.v1.Schema'
         neurouter.v1.Statistics:
             type: object
             properties:
@@ -420,6 +386,11 @@ components:
                     type: integer
                     description: Number of reasoning tokens consumed (subset of output_tokens for reasoning models).
                     format: uint32
+        neurouter.v1.Tool:
+            type: object
+            properties:
+                function:
+                    $ref: '#/components/schemas/neurouter.v1.Tool_Function'
         neurouter.v1.ToolResult:
             type: object
             properties:
@@ -460,6 +431,15 @@ components:
                     format: uint32
                 text:
                     type: string
+        neurouter.v1.Tool_Function:
+            type: object
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                parameters:
+                    $ref: '#/components/schemas/neurouter.v1.Schema'
 tags:
     - name: Chat
     - name: Embedding
