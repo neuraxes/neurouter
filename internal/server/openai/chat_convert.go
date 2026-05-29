@@ -282,9 +282,10 @@ func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatR
 			tools = append(tools, &v1.Tool{
 				Tool: &v1.Tool_Function_{
 					Function: &v1.Tool_Function{
-						Name:        fn.Name,
-						Description: fn.Description.Value,
-						Parameters:  parameters,
+						Name:            fn.Name,
+						Description:     fn.Description.Value,
+						InputSchema:     parameters,
+						InputJsonSchema: string(j),
 					},
 				},
 			})

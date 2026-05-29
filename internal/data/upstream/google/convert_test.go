@@ -56,7 +56,7 @@ func TestConvertToolsToGoogle(t *testing.T) {
 					Function: &v1.Tool_Function{
 						Name:        "fn",
 						Description: "desc",
-						Parameters:  &v1.Schema{Type: v1.Schema_TYPE_OBJECT},
+						InputSchema: &v1.Schema{Type: v1.Schema_TYPE_OBJECT},
 					},
 				},
 			},

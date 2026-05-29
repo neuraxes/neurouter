@@ -270,9 +270,10 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 
 			t.Tool = &v1.Tool_Function_{
 				Function: &v1.Tool_Function{
-					Name:        tool.OfTool.Name,
-					Description: tool.OfTool.Description.Value,
-					Parameters:  parameters,
+					Name:            tool.OfTool.Name,
+					Description:     tool.OfTool.Description.Value,
+					InputSchema:     parameters,
+					InputJsonSchema: string(j),
 				},
 			}
 		default:

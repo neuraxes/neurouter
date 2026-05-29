@@ -123,7 +123,7 @@ func TestPrintChat(t *testing.T) {
 						Function: &v1.Tool_Function{
 							Name:        "get_weather",
 							Description: "Get the weather",
-							Parameters: &v1.Schema{
+							InputSchema: &v1.Schema{
 								Properties: map[string]*v1.Schema{
 									"location": {
 										Type: v1.Schema_TYPE_STRING,

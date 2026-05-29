@@ -100,6 +100,9 @@ func TestChat(t *testing.T) {
 
 		Convey("When a non-streaming Anthropic request is sent", func() {
 			mock.chatFunc = func(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
+				for _, tool := range req.Tools {
+					tool.GetFunction().InputJsonSchema = ""
+				}
 				So(proto.Equal(req, mockChatReq), ShouldBeTrue)
 				return mockChatResp, nil
 			}
@@ -166,6 +169,9 @@ func TestChatStream(t *testing.T) {
 
 		Convey("When ChatStream is called and responses are sent", func() {
 			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+				for _, tool := range req.Tools {
+					tool.GetFunction().InputJsonSchema = ""
+				}
 				So(proto.Equal(req, mockChatReq), ShouldBeTrue)
 				for _, resp := range mockChatStreamResp {
 					if err := stream.Send(resp); err != nil {

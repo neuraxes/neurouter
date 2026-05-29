@@ -266,9 +266,15 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 		for _, tool := range req.Tools {
 			switch t := tool.Tool.(type) {
 			case *v1.Tool_Function_:
+				var inputSchemaRaw anthropic.ToolInputSchemaParam
+				if t.Function.InputJsonSchema != "" {
+					_ = json.Unmarshal([]byte(t.Function.InputJsonSchema), &inputSchemaRaw)
+				} else if t.Function.InputSchema != nil {
+					inputSchemaRaw = r.convertInputSchemaToAnthropic(t.Function.InputSchema)
+				}
 				at := &anthropic.ToolParam{
 					Name:        t.Function.Name,
-					InputSchema: r.convertInputSchemaToAnthropic(t.Function.Parameters),
+					InputSchema: inputSchemaRaw,
 				}
 				if t.Function.Description != "" {
 					at.Description = anthropic.Opt(t.Function.Description)

@@ -825,9 +825,9 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				So(fn, ShouldNotBeNil)
 				So(fn.Name, ShouldEqual, "get_weather")
 				So(fn.Description, ShouldEqual, "Get weather info")
-				So(fn.Parameters, ShouldNotBeNil)
-				So(fn.Parameters.Type, ShouldEqual, v1.Schema_TYPE_OBJECT)
-				So(fn.Parameters.Properties, ShouldContainKey, "city")
+				So(fn.InputSchema, ShouldNotBeNil)
+				So(fn.InputSchema.Type, ShouldEqual, v1.Schema_TYPE_OBJECT)
+				So(fn.InputSchema.Properties, ShouldContainKey, "city")
 			})
 		})
 

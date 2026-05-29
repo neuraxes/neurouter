@@ -587,7 +587,7 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 					Function: &v1.Tool_Function{
 						Name:        "get_weather",
 						Description: "Get weather",
-						Parameters: &v1.Schema{
+						InputSchema: &v1.Schema{
 							Type: v1.Schema_TYPE_OBJECT,
 							Properties: map[string]*v1.Schema{
 								"city": {Type: v1.Schema_TYPE_STRING, Description: "City name"},

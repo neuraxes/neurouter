@@ -439,8 +439,10 @@ components:
                     type: string
                 description:
                     type: string
-                parameters:
+                inputSchema:
                     $ref: '#/components/schemas/neurouter.v1.Schema'
+                inputJsonSchema:
+                    type: string
 tags:
     - name: Chat
     - name: Embedding

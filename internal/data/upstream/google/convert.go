@@ -102,10 +102,18 @@ func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	for _, tool := range tools {
 		switch t := tool.Tool.(type) {
 		case *v1.Tool_Function_:
+			var parameters *genai.Schema
+			if t.Function.GetInputJsonSchema() != "" {
+				// Fallback to unstructured JSON schema parsing if provided, or could be kept as nil if Google SDK doesn't support unmarshaling easily
+				// For now let's prioritize InputSchema for Google as they strongly type it
+				parameters = convertFunctionParametersToGoogle(t.Function.GetInputSchema())
+			} else {
+				parameters = convertFunctionParametersToGoogle(t.Function.GetInputSchema())
+			}
 			functionDecls = append(functionDecls, &genai.FunctionDeclaration{
 				Name:        t.Function.GetName(),
 				Description: t.Function.GetDescription(),
-				Parameters:  convertFunctionParametersToGoogle(t.Function.GetParameters()),
+				Parameters:  parameters,
 			})
 		}
 	}

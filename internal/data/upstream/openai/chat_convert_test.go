@@ -672,7 +672,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 							Function: &v1.Tool_Function{
 								Name:        "test_function",
 								Description: "Test function description",
-								Parameters: &v1.Schema{
+								InputSchema: &v1.Schema{
 									Type: v1.Schema_TYPE_OBJECT,
 									Properties: map[string]*v1.Schema{
 										"prop1": {Type: v1.Schema_TYPE_STRING},

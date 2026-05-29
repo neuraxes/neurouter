@@ -96,7 +96,7 @@ var mockChatReq = &entity.ChatReq{
 				Function: &v1.Tool_Function{
 					Name:        "get_date",
 					Description: "Get today's date",
-					Parameters: &v1.Schema{
+					InputSchema: &v1.Schema{
 						Type:       v1.Schema_TYPE_OBJECT,
 						Properties: map[string]*v1.Schema{},
 					},
@@ -108,7 +108,7 @@ var mockChatReq = &entity.ChatReq{
 				Function: &v1.Tool_Function{
 					Name:        "get_weather",
 					Description: "Get weather for specific date",
-					Parameters: &v1.Schema{
+					InputSchema: &v1.Schema{
 						Type: v1.Schema_TYPE_OBJECT,
 						Properties: map[string]*v1.Schema{
 							"city": {

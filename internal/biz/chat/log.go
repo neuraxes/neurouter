@@ -87,7 +87,8 @@ const chatPrettyPrintTmpl = `
 {{- if $tool.GetFunction}}
   • Function: {{$tool.GetFunction.Name}}
   • Description: {{$tool.GetFunction.Description}}
-  • Parameters: {{formatSchema $tool.GetFunction.Parameters}}
+  • Input Schema: {{formatSchema $tool.GetFunction.GetInputSchema}}
+  • Input JSON Schema: {{$tool.GetFunction.GetInputJsonSchema}}
 {{- end}}
     </tool_declaration>
 {{- end}}

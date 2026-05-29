@@ -311,9 +311,15 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCo
 		for _, tool := range req.Tools {
 			switch t := tool.Tool.(type) {
 			case *v1.Tool_Function_:
+				var parameters openai.FunctionParameters
+				if t.Function.InputJsonSchema != "" {
+					_ = json.Unmarshal([]byte(t.Function.InputJsonSchema), &parameters)
+				} else if t.Function.InputSchema != nil {
+					parameters = convertSchemaToMap(t.Function.InputSchema)
+				}
 				ot := openai.FunctionDefinitionParam{
 					Name:       t.Function.Name,
-					Parameters: convertSchemaToMap(t.Function.Parameters),
+					Parameters: parameters,
 				}
 				if t.Function.Description != "" {
 					ot.Description = openai.Opt(t.Function.Description)
