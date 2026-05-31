@@ -66,8 +66,8 @@ func shouldMergeContent(last, current *v1.Content) bool {
 		return false
 	}
 
-	// Reasoning and non-reasoning should not merge
-	if last.Reasoning != current.Reasoning {
+	// Different phases should not merge
+	if last.GetPhase() != current.GetPhase() {
 		return false
 	}
 

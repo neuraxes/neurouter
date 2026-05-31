@@ -133,9 +133,12 @@ func (r *upstream) convertSystemToAnthropic(messages []*v1.Message) []anthropic.
 func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.MessageParam {
 	var parts []anthropic.ContentBlockParamUnion
 	for _, content := range message.Contents {
+		if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY {
+			continue // Skip reasoning summary content since it's not supported by Anthropic API
+		}
 		switch c := content.GetContent().(type) {
 		case *v1.Content_Text:
-			if content.Reasoning {
+			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
 				signature := content.Metadata["signature"]
 				parts = append(parts, anthropic.NewThinkingBlock(signature, c.Text))
 			} else {
@@ -300,15 +303,15 @@ func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 				Metadata: map[string]string{
 					"signature": content.Signature,
 				},
-				Reasoning: true,
+				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 				Content: &v1.Content_Text{
 					Text: content.Thinking,
 				},
 			})
 		case "redacted_thinking":
 			message.Contents = append(message.Contents, &v1.Content{
-				Reasoning: true,
-				Content:   &v1.Content_Opaque{Opaque: content.Data},
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: &v1.Content_Opaque{Opaque: content.Data},
 			})
 		case "text":
 			message.Contents = append(message.Contents, &v1.Content{
@@ -373,8 +376,8 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 			if chunk.ContentBlock.Thinking != "" || chunk.ContentBlock.Signature != "" {
 				resp = c.newResp()
 				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-					Index:     new(uint32(chunk.Index)),
-					Reasoning: true,
+					Index: new(uint32(chunk.Index)),
+					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 					Metadata: map[string]string{
 						"signature": chunk.ContentBlock.Signature,
 					},
@@ -386,9 +389,9 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		case "redacted_thinking":
 			resp = c.newResp()
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index:     new(uint32(chunk.Index)),
-				Reasoning: true,
-				Content:   &v1.Content_Opaque{Opaque: chunk.ContentBlock.Data},
+				Index:   new(uint32(chunk.Index)),
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: &v1.Content_Opaque{Opaque: chunk.ContentBlock.Data},
 			})
 		case "tool_use":
 			resp = c.newResp()
@@ -409,16 +412,16 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		switch chunk.Delta.Type {
 		case "thinking_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index:     new(uint32(chunk.Index)),
-				Reasoning: true,
+				Index: new(uint32(chunk.Index)),
+				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 				Content: &v1.Content_Text{
 					Text: chunk.Delta.Thinking,
 				},
 			})
 		case "signature_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index:     new(uint32(chunk.Index)),
-				Reasoning: true,
+				Index: new(uint32(chunk.Index)),
+				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 				Metadata: map[string]string{
 					"signature": chunk.Delta.Signature,
 				},

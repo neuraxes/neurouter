@@ -27,6 +27,14 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
+// contentPhaseFromOpenAIPhase maps an OpenAI response output-message phase to the internal ContentPhase enum.
+func contentPhaseFromOpenAIPhase(phase responses.ResponseOutputMessagePhase) v1.ContentPhase {
+	if phase == responses.ResponseOutputMessagePhaseFinalAnswer {
+		return v1.ContentPhase_CONTENT_PHASE_OUTCOME
+	}
+	return v1.ContentPhase_CONTENT_PHASE_NORMAL
+}
+
 func convertEffortToOpenAI(effort v1.ReasoningEffort) shared.ReasoningEffort {
 	switch effort {
 	case v1.ReasoningEffort_REASONING_EFFORT_NONE:
@@ -311,34 +319,37 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
 			case *v1.Content_Text:
-				if content.Reasoning {
+				switch content.GetPhase() {
+				case v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY:
 					ensureReasoning(content.Id)
-					if summary := content.Meta("summary"); summary != "" {
+					if c.Text != "" {
 						reasoning.Summary = append(reasoning.Summary,
-							responses.ResponseReasoningItemSummaryParam{Text: summary})
+							responses.ResponseReasoningItemSummaryParam{Text: c.Text})
 					}
+				case v1.ContentPhase_CONTENT_PHASE_REASONING:
+					ensureReasoning(content.Id)
 					if c.Text != "" {
 						reasoning.Content = append(reasoning.Content,
 							responses.ResponseReasoningItemContentParam{Text: c.Text})
 					}
-					continue
-				}
-				flushReasoning()
+				default:
+					flushReasoning()
 
-				msg := &responses.ResponseOutputMessageParam{
-					ID: content.Id,
-					Content: []responses.ResponseOutputMessageContentUnionParam{{
-						OfOutputText: &responses.ResponseOutputTextParam{
-							Text: c.Text,
-						},
-					}},
+					msg := &responses.ResponseOutputMessageParam{
+						ID: content.Id,
+						Content: []responses.ResponseOutputMessageContentUnionParam{{
+							OfOutputText: &responses.ResponseOutputTextParam{
+								Text: c.Text,
+							},
+						}},
+					}
+					if content.GetPhase() == v1.ContentPhase_CONTENT_PHASE_OUTCOME {
+						msg.Phase = responses.ResponseOutputMessagePhaseFinalAnswer
+					}
+					result = append(result, responses.ResponseInputItemUnionParam{OfOutputMessage: msg})
 				}
-				if phase := content.Meta("phase"); phase != "" {
-					msg.Phase = responses.ResponseOutputMessagePhase(phase)
-				}
-				result = append(result, responses.ResponseInputItemUnionParam{OfOutputMessage: msg})
 			case *v1.Content_Opaque:
-				if content.Reasoning {
+				if content.IsReasoning() {
 					ensureReasoning(content.Id)
 					reasoning.EncryptedContent = openai.Opt(c.Opaque)
 				}
@@ -433,80 +444,56 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 	for _, item := range openAIResp.Output {
 		switch item.Type {
 		case "message":
-			phase := string(item.Phase)
 			for _, content := range item.Content {
 				switch content.Type {
 				case "output_text":
-					c := &v1.Content{
+					contents = append(contents, &v1.Content{
 						Id:      item.ID,
+						Phase:   contentPhaseFromOpenAIPhase(item.Phase),
 						Content: &v1.Content_Text{Text: content.Text},
-					}
-					if item.Phase != "" {
-						c.SetMeta("phase", phase)
-					}
-					contents = append(contents, c)
+					})
 				case "refusal":
-					c := &v1.Content{
+					contents = append(contents, &v1.Content{
 						Id:      item.ID,
+						Phase:   contentPhaseFromOpenAIPhase(item.Phase),
 						Content: &v1.Content_Text{Text: content.Refusal},
-					}
-					if item.Phase != "" {
-						c.SetMeta("phase", phase)
-					}
-					contents = append(contents, c)
+					})
 					resp.Status = v1.ChatStatus_CHAT_REFUSED
 				}
 			}
 		case "reasoning":
 			var reasoningContents []*v1.Content
-			var reasoningContent *v1.Content
-
-			flushReasoning := func() {
-				if reasoningContent != nil {
-					reasoningContents = append(reasoningContents, reasoningContent)
-					reasoningContent = nil
-				}
-			}
-
-			ensureReasoning := func() {
-				if reasoningContent == nil {
-					reasoningContent = &v1.Content{
-						Id:        item.ID,
-						Reasoning: true,
-						Content:   &v1.Content_Text{},
-					}
-				}
-			}
 
 			if item.EncryptedContent != "" {
 				reasoningContents = append(reasoningContents, &v1.Content{
-					Id:        item.ID,
-					Reasoning: true,
-					Content:   &v1.Content_Opaque{Opaque: item.EncryptedContent},
+					Id:      item.ID,
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Content: &v1.Content_Opaque{Opaque: item.EncryptedContent},
 				})
 			}
 			for _, s := range item.Summary {
-				if reasoningContent.Meta("summary") != "" {
-					flushReasoning()
-				}
-				ensureReasoning()
-				if reasoningContent.Metadata == nil {
-					reasoningContent.Metadata = make(map[string]string)
-				}
-				reasoningContent.Metadata["summary"] = s.Text
+				reasoningContents = append(reasoningContents, &v1.Content{
+					Id:      item.ID,
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY,
+					Content: &v1.Content_Text{Text: s.Text},
+				})
 			}
 			for _, c := range item.Content {
-				if reasoningContent.GetText() != "" {
-					flushReasoning()
-				}
-				ensureReasoning()
-				reasoningContent.Content = &v1.Content_Text{Text: c.Text}
+				reasoningContents = append(reasoningContents, &v1.Content{
+					Id:      item.ID,
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Content: &v1.Content_Text{Text: c.Text},
+				})
 			}
 
+			// Fallback to an empty reasoning content so the item is preserved.
 			if len(reasoningContents) == 0 {
-				ensureReasoning() // Fallback to empty content
+				reasoningContents = append(reasoningContents, &v1.Content{
+					Id:      item.ID,
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Content: &v1.Content_Text{},
+				})
 			}
-			flushReasoning()
 
 			contents = append(contents, reasoningContents...)
 		case "function_call":
@@ -575,14 +562,16 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 	case "response.output_item.added":
 		switch event.Item.Type {
 		case "message":
+			phase := contentPhaseFromOpenAIPhase(event.Item.Phase)
+			c.currentOutputItemPhase = phase
 			resp.Message = &v1.Message{
 				Id:   c.messageID,
 				Role: v1.Role_MODEL,
 				Contents: []*v1.Content{{
-					Id:       event.Item.ID,
-					Index:    new(uint32(event.OutputIndex)),
-					Metadata: map[string]string{"phase": string(event.Item.Phase)},
-					Content:  &v1.Content_Text{},
+					Id:      event.Item.ID,
+					Index:   new(uint32(event.OutputIndex)),
+					Phase:   phase,
+					Content: &v1.Content_Text{},
 				}},
 			}
 
@@ -613,6 +602,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Index:   new(uint32(event.OutputIndex)),
+				Phase:   c.currentOutputItemPhase,
 				Content: &v1.Content_Text{Text: event.Delta},
 			}},
 		}
@@ -624,6 +614,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Index:   new(uint32(event.OutputIndex)),
+				Phase:   c.currentOutputItemPhase,
 				Content: &v1.Content_Text{Text: event.Delta},
 			}},
 		}
@@ -633,11 +624,10 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 			Id:   c.messageID,
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Id:        event.ItemID,
-				Index:     new(uint32(event.OutputIndex)),
-				Reasoning: true,
-				Metadata:  map[string]string{"summary": event.Delta},
-				Content:   &v1.Content_Text{},
+				Id:      event.ItemID,
+				Index:   new(uint32(event.OutputIndex)),
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY,
+				Content: &v1.Content_Text{Text: event.Delta},
 			}},
 		}
 
@@ -646,10 +636,10 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 			Id:   c.messageID,
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Id:        event.ItemID,
-				Index:     new(uint32(event.OutputIndex)),
-				Reasoning: true,
-				Content:   &v1.Content_Text{Text: event.Delta},
+				Id:      event.ItemID,
+				Index:   new(uint32(event.OutputIndex)),
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: &v1.Content_Text{Text: event.Delta},
 			}},
 		}
 
@@ -659,10 +649,10 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 				Id:   c.messageID,
 				Role: v1.Role_MODEL,
 				Contents: []*v1.Content{{
-					Id:        event.Item.ID,
-					Index:     new(uint32(event.OutputIndex)),
-					Reasoning: true,
-					Content:   &v1.Content_Opaque{Opaque: event.Item.EncryptedContent},
+					Id:      event.Item.ID,
+					Index:   new(uint32(event.OutputIndex)),
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Content: &v1.Content_Opaque{Opaque: event.Item.EncryptedContent},
 				}},
 			}
 		}

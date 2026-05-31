@@ -153,12 +153,13 @@ func (r *upstream) chatStreamWithCompletion(ctx context.Context, req *entity.Cha
 }
 
 type openAIResponseStreamClient struct {
-	req         *entity.ChatReq
-	upstream    *ssestream.Stream[responses.ResponseStreamEventUnion]
-	respModel   string
-	messageID   string
-	hasRefused  bool
-	hasToolCall bool
+	req                    *entity.ChatReq
+	upstream               *ssestream.Stream[responses.ResponseStreamEventUnion]
+	respModel              string
+	messageID              string
+	hasRefused             bool
+	hasToolCall            bool
+	currentOutputItemPhase v1.ContentPhase
 }
 
 func (c *openAIResponseStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {

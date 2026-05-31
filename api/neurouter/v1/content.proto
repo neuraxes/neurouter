@@ -56,14 +56,26 @@ message ToolResult {
   repeated Output outputs = 2;
 }
 
+// The semantic phase of a content within a model turn.
+enum ContentPhase {
+  // Regular content (default).
+  CONTENT_PHASE_NORMAL = 0;
+  // The final answer, when the upstream distinguishes it.
+  CONTENT_PHASE_OUTCOME = 1;
+  // Reasoning content.
+  CONTENT_PHASE_REASONING = 2;
+  // Reasoning summary content.
+  CONTENT_PHASE_REASONING_SUMMARY = 3;
+}
+
 // Multi-modality content
 message Content {
   // The unique identifier of the content
   string id = 1;
   // The index of current content
   optional uint32 index = 2;
-  // Whether the content is for reasoning
-  bool reasoning = 3;
+  // The semantic phase of the content
+  ContentPhase phase = 3;
   // Additional metadata for the content
   map<string, string> metadata = 9;
   oneof content {

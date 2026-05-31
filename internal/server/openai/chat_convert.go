@@ -342,9 +342,12 @@ func convertChatRespToOpenAIChat(resp *v1.ChatResp) *chatCompletionResponse {
 		message := chatCompletionMessage{Role: "assistant"}
 
 		for _, content := range resp.Message.Contents {
+			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY {
+				continue // Skip reasoning summary content since it's not supported by chat completion API
+			}
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
-				if content.Reasoning {
+				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
 					message.ReasoningContent = c.Text
 				} else {
 					message.Content += c.Text

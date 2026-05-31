@@ -115,9 +115,10 @@ components:
                     type: integer
                     description: The index of current content
                     format: uint32
-                reasoning:
-                    type: boolean
-                    description: Whether the content is for reasoning
+                phase:
+                    type: integer
+                    description: The semantic phase of the content
+                    format: enum
                 metadata:
                     type: object
                     additionalProperties:

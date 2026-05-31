@@ -1,5 +1,12 @@
 package v1
 
+// IsReasoning reports whether the content belongs to reasoning (summary) phase.
+func (x *Content) IsReasoning() bool {
+	p := x.GetPhase()
+	return p == ContentPhase_CONTENT_PHASE_REASONING ||
+		p == ContentPhase_CONTENT_PHASE_REASONING_SUMMARY
+}
+
 func (x *Content) Meta(key string) string {
 	if x == nil {
 		return ""

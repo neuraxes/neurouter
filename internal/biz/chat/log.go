@@ -72,7 +72,7 @@ const chatPrettyPrintTmpl = `
     <message index={{$i}} id="{{$msg.Id}}" role="{{$msg.Role}}" name="{{$msg.Name}}">
       <contents len={{len $msg.Contents}}>
 {{- range $j, $content := $msg.Contents}}
-        <content index={{$j}} reasoning="{{ $content.Reasoning }}">
+        <content index={{$j}} phase="{{ $content.Phase }}">
 {{formatContent $content}}
         </content>
 {{- end}}
@@ -100,7 +100,7 @@ const chatPrettyPrintTmpl = `
   <message id="{{.Response.Message.Id}}" role="{{.Response.Message.Role}}">
     <contents len={{len .Response.Message.Contents}}>
 {{- range $i, $content := .Response.Message.Contents}}
-      <content index={{$i}} reasoning="{{ $content.Reasoning }}">
+      <content index={{$i}} phase="{{ $content.Phase }}">
 {{formatContent $content}}
       </content>
 {{- end}}

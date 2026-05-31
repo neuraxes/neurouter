@@ -146,7 +146,7 @@ func inferImageType(data []byte) string {
 }
 
 func convertContentToGoogle(content *v1.Content) *genai.Part {
-	if content.Reasoning {
+	if content.IsReasoning() {
 		// Reasoning content should be ignored
 		return nil
 	}
@@ -287,8 +287,12 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 		var content *v1.Content
 
 		if part.Text != "" {
+			phase := v1.ContentPhase_CONTENT_PHASE_NORMAL
+			if part.Thought {
+				phase = v1.ContentPhase_CONTENT_PHASE_REASONING
+			}
 			content = &v1.Content{
-				Reasoning: part.Thought,
+				Phase: phase,
 				Content: &v1.Content_Text{
 					Text: part.Text,
 				},

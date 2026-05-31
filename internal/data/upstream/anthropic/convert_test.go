@@ -347,8 +347,8 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 				Role: v1.Role_MODEL,
 				Contents: []*v1.Content{
 					{
-						Reasoning: true,
-						Content:   &v1.Content_Opaque{Opaque: "opaque-data"},
+						Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+						Content: &v1.Content_Opaque{Opaque: "opaque-data"},
 					},
 				},
 			}
@@ -673,7 +673,7 @@ func TestConvertContentsFromAnthropic(t *testing.T) {
 			So(msg.Id, ShouldEqual, "msg-123")
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(len(msg.Contents), ShouldEqual, 2)
-			So(msg.Contents[0].Reasoning, ShouldBeTrue)
+			So(msg.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 			So(msg.Contents[0].GetText(), ShouldEqual, "think")
 			So(msg.Contents[1].GetText(), ShouldEqual, "answer")
 		})
@@ -706,12 +706,12 @@ func TestConvertContentsFromAnthropic(t *testing.T) {
 			So(len(msg.Contents), ShouldEqual, 3)
 
 			// thinking block
-			So(msg.Contents[0].Reasoning, ShouldBeTrue)
+			So(msg.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 			So(msg.Contents[0].GetText(), ShouldEqual, "visible thought")
 			So(msg.Contents[0].Metadata["signature"], ShouldEqual, "sig-abc")
 
 			// redacted_thinking block
-			So(msg.Contents[1].Reasoning, ShouldBeTrue)
+			So(msg.Contents[1].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 			So(msg.Contents[1].GetOpaque(), ShouldEqual, "opaque-encrypted-data")
 
 			// text block
@@ -755,7 +755,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 				So(resp.Message.Contents[0], ShouldNotBeNil)
 				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
 				So(*resp.Message.Contents[0].Index, ShouldEqual, 0)
-				So(resp.Message.Contents[0].Reasoning, ShouldBeFalse)
+				So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_NORMAL)
 				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello")
 			})
 		})
@@ -777,7 +777,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 				So(resp.Message.Contents[0], ShouldNotBeNil)
 				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
 				So(*resp.Message.Contents[0].Index, ShouldEqual, 1)
-				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
+				So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Let me analyze this...")
 				So(resp.Message.Contents[0].Metadata["signature"], ShouldEqual, "sig-abc")
 			})
@@ -819,7 +819,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 				So(resp.Message.Contents[0], ShouldNotBeNil)
 				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
 				So(*resp.Message.Contents[0].Index, ShouldEqual, 2)
-				So(resp.Message.Contents[0].Reasoning, ShouldBeTrue)
+				So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 				So(resp.Message.Contents[0].GetOpaque(), ShouldEqual, "opaque-data-123")
 			})
 		})
@@ -829,7 +829,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			d1 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "thinking_delta", Thinking: "let me think"}}
 			r1 := client.convertChunkFromAnthropic(d1)
 			So(r1, ShouldNotBeNil)
-			So(r1.Message.Contents[0].Reasoning, ShouldBeTrue)
+			So(r1.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 			So(r1.Message.Contents[0].GetText(), ShouldEqual, "let me think")
 			So(r1.Message.Contents[0].Metadata, ShouldBeNil)
 
@@ -837,7 +837,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			d1s := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "signature_delta", Signature: "sig-xyz"}}
 			r1s := client.convertChunkFromAnthropic(d1s)
 			So(r1s, ShouldNotBeNil)
-			So(r1s.Message.Contents[0].Reasoning, ShouldBeTrue)
+			So(r1s.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 			So(r1s.Message.Contents[0].Metadata["signature"], ShouldEqual, "sig-xyz")
 			So(r1s.Message.Contents[0].GetText(), ShouldEqual, "")
 

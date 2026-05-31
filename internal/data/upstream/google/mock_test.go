@@ -40,7 +40,7 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Reasoning: true,
+					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 					Content: &v1.Content_Text{
 						Text: "**Navigating the User's Queries**\n\nOkay, so I've got two things to address here. First, a simple \"hello\" - easy, I can handle that right away. But then there's the weather in Shanghai *yesterday*. That's where things get interesting. I can't just throw \"yesterday\" at the 'get_weather' tool; it needs a specific date. So, here's my plan:\n\n1.  Acknowledge the initial greeting. Done.\n2.  Use the 'get_date' tool to find out what *today's* date is. Gotta know where we are to figure out yesterday.\n3.  Calculate *yesterday's* date based on the information I get from 'get_date'. Simple math, but it needs to be done.\n4.  Then, and only then, can I use the 'get_weather' tool with \"Shanghai\" and the calculated date for yesterday.\n5.  Finally, I'll package up the response to the greeting and the weather report in a coherent way for the user.\n\nSince I have to actually *do* a calculation (subtracting a day from today), I need to do this in a very systematic way. Get today's date first, then use that as the starting point to get the weather for yesterday. Piece of cake.\n",
 					},
@@ -272,7 +272,7 @@ var mockChatResp = &entity.ChatResp{
 		Role: v1.Role_MODEL,
 		Contents: []*v1.Content{
 			{
-				Reasoning: true,
+				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 				Content: &v1.Content_Text{
 					Text: "**Yesterday's Shanghai Weather**\n\nOkay, so the user asked about the weather in Shanghai yesterday. I've already handled the initial greeting, so I'm past that. Right now, I have today's date, which is \"2025-11-11\". That's a good start.\n\nMy next step is simple: I need to figure out what date \"yesterday\" actually was. With today being the 11th, that means yesterday was the 10th. Easy enough, that's \"2025-11-10\". \n\nNow that I have the date I need, I can use the 'get_weather' tool with the location \"shanghai\" and the date \"2025-11-10\". That should give me the information the user is looking for.\n",
 				},
@@ -329,7 +329,7 @@ var mockStreamChatResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Reasoning: true,
+					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 					Content: &v1.Content_Text{
 						Text: "**Calculating Yesterday's Date**\n\nI've successfully retrieved today's date, 2025-11-11. My current focus is to determine yesterday's date, which I've now calculated as 2025-11-10. This is a crucial step towards providing the requested weather information, and I'm on track to deliver a complete and accurate response.\n\n\n",
 					},
@@ -352,7 +352,7 @@ var mockStreamChatResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Reasoning: true,
+					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 					Content: &v1.Content_Text{
 						Text: "**Refining Date Parameters**\n\nI've determined yesterday's date, 2025-11-10, crucial for getting the weather. I'm building on that success. My task now is to integrate this date into the 'get_weather' tool with \"shanghai\" as the location. This will allow me to finally provide the requested information, which I will then report back.\n\n\n",
 					},

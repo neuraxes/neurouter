@@ -150,7 +150,7 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 			}
 		case content.OfThinking != nil:
 			contents = append(contents, &v1.Content{
-				Reasoning: true,
+				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 				Metadata: map[string]string{
 					"signature": content.OfThinking.Signature,
 				},
@@ -160,8 +160,8 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 			})
 		case content.OfRedactedThinking != nil:
 			contents = append(contents, &v1.Content{
-				Reasoning: true,
-				Content:   &v1.Content_Opaque{Opaque: content.OfRedactedThinking.Data},
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: &v1.Content_Opaque{Opaque: content.OfRedactedThinking.Data},
 			})
 		case content.OfToolUse != nil:
 			var args []byte
@@ -325,9 +325,12 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 	if resp.Message != nil {
 		anthropicResp.ID = resp.Message.Id
 		for _, content := range resp.Message.Contents {
+			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY {
+				continue // Skip reasoning summary content since it's not supported by Anthropic API
+			}
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
-				if content.Reasoning {
+				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
 					// Thinking block
 					anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
 						Type:      "thinking",

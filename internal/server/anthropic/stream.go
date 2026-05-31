@@ -123,11 +123,15 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 	// Send content block events
 	if resp.Message != nil && len(resp.Message.Contents) > 0 {
 		for _, content := range resp.Message.Contents {
+			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY {
+				continue // Skip reasoning summary content since it's not supported by Anthropic API
+			}
+
 			// Determine the kind of the current content block
 			currentKind := contentBlockNone
 			switch content.Content.(type) {
 			case *v1.Content_Text:
-				if content.Reasoning {
+				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
 					currentKind = contentBlockThinking
 				} else {
 					currentKind = contentBlockText
@@ -158,7 +162,7 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 			switch c := content.Content.(type) {
 
 			case *v1.Content_Text:
-				if content.Reasoning {
+				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
 					if !s.contentBlockStarted {
 						s.contentBlockStarted = true
 						s.sendContentBlockStartEvent("thinking")

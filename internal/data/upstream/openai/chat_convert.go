@@ -233,8 +233,8 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 			for _, content := range message.Contents {
 				switch c := content.GetContent().(type) {
 				case *v1.Content_Text:
-					// Reasoning content should be ignored if it has the reasoning flag
-					if content.Reasoning {
+					// Reasoning content should be ignored
+					if content.IsReasoning() {
 						continue
 					}
 					m.Content.OfArrayOfContentParts = append(
@@ -370,7 +370,7 @@ func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatComple
 			rc := gjson.Parse(reasoning.Raw()).String()
 			if rc != "" {
 				message.Contents = append(message.Contents, &v1.Content{
-					Reasoning: true,
+					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 					Content: &v1.Content_Text{
 						Text: rc,
 					},
@@ -444,7 +444,7 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 				rc := gjson.Parse(reasoning.Raw()).String()
 				if rc != "" {
 					contents = append(contents, &v1.Content{
-						Reasoning: true,
+						Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 						Content: &v1.Content_Text{
 							Text: rc,
 						},

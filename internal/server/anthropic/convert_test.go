@@ -326,7 +326,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 			Convey("Then it should create a reasoning content with signature", func() {
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].Reasoning, ShouldBeTrue)
+				So(result.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 				So(result.Contents[0].GetText(), ShouldEqual, "Let me think about this...")
 				So(result.Contents[0].Metadata["signature"], ShouldEqual, "sig-abc")
 			})
@@ -343,7 +343,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 
 			Convey("Then it should create a redacted thinking content", func() {
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].Reasoning, ShouldBeTrue)
+				So(result.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 				So(result.Contents[0].GetOpaque(), ShouldEqual, "opaque-encrypted-data")
 			})
 		})
@@ -495,16 +495,16 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 				So(result.Contents, ShouldHaveLength, 4)
 
 				// thinking
-				So(result.Contents[0].Reasoning, ShouldBeTrue)
+				So(result.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 				So(result.Contents[0].GetText(), ShouldEqual, "thinking...")
 				So(result.Contents[0].Metadata["signature"], ShouldEqual, "sig-1")
 
 				// redacted thinking
-				So(result.Contents[1].Reasoning, ShouldBeTrue)
+				So(result.Contents[1].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 				So(result.Contents[1].GetOpaque(), ShouldEqual, "opaque-data")
 
 				// text
-				So(result.Contents[2].Reasoning, ShouldBeFalse)
+				So(result.Contents[2].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_NORMAL)
 				So(result.Contents[2].GetText(), ShouldEqual, "Here is the answer")
 
 				// tool_use
@@ -693,7 +693,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Reasoning: true,
+							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 							Metadata:  map[string]string{"signature": "sig-abc"},
 							Content:   &v1.Content_Text{Text: "Let me think..."},
 						},
@@ -730,7 +730,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Reasoning: true,
+							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 							Content:   &v1.Content_Opaque{Opaque: "opaque-data"},
 						},
 						{
@@ -804,12 +804,12 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Reasoning: true,
+							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 							Metadata:  map[string]string{"signature": "sig-1"},
 							Content:   &v1.Content_Text{Text: "thinking content"},
 						},
 						{
-							Reasoning: true,
+							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
 							Content:   &v1.Content_Opaque{Opaque: "secret-data"},
 						},
 						{

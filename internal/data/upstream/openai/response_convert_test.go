@@ -3,6 +3,8 @@ package openai
 import (
 	"testing"
 
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/openai/openai-go/v3/responses"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -56,6 +58,39 @@ func TestConvertStatisticsFromOpenAIResponse(t *testing.T) {
 			result := convertStatisticsFromOpenAIResponse(usage)
 
 			So(result, ShouldBeNil)
+		})
+	})
+}
+
+func TestConvertStreamEventFromOpenAIResponse(t *testing.T) {
+	Convey("Test convertStreamEventFromOpenAIResponse", t, func() {
+		client := &openAIResponseStreamClient{
+			req: &entity.ChatReq{Id: "chat-123"},
+		}
+
+		Convey("it should keep the output item phase on text deltas", func() {
+			added := &responses.ResponseStreamEventUnion{
+				Type:        "response.output_item.added",
+				OutputIndex: 0,
+				Item: responses.ResponseOutputItemUnion{
+					ID:    "msg-123",
+					Type:  "message",
+					Phase: responses.ResponseOutputMessagePhaseFinalAnswer,
+				},
+			}
+			resp := client.convertStreamEventFromOpenAIResponse(added)
+			So(resp, ShouldNotBeNil)
+			So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_OUTCOME)
+
+			delta := &responses.ResponseStreamEventUnion{
+				Type:        "response.output_text.delta",
+				OutputIndex: 0,
+				Delta:       "final answer",
+			}
+			resp = client.convertStreamEventFromOpenAIResponse(delta)
+			So(resp, ShouldNotBeNil)
+			So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_OUTCOME)
+			So(resp.Message.Contents[0].GetText(), ShouldEqual, "final answer")
 		})
 	})
 }
