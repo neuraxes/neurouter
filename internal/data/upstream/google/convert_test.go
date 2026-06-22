@@ -75,33 +75,6 @@ func TestConvertToolsToGoogle(t *testing.T) {
 	})
 }
 
-func TestInferImageType(t *testing.T) {
-	Convey("inferImageType should detect png", t, func() {
-		data := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
-		So(inferImageType(data), ShouldEqual, "image/png")
-	})
-	Convey("inferImageType should detect jpeg", t, func() {
-		data := []byte{0xFF, 0xD8, 0xFF}
-		So(inferImageType(data), ShouldEqual, "image/jpeg")
-	})
-	Convey("inferImageType should detect gif", t, func() {
-		data := []byte{'G', 'I', 'F'}
-		So(inferImageType(data), ShouldEqual, "image/gif")
-	})
-	Convey("inferImageType should detect webp", t, func() {
-		data := []byte{'R', 'I', 'F', 'F', 0, 0, 0, 0, 'W', 'E', 'B', 'P'}
-		So(inferImageType(data), ShouldEqual, "image/webp")
-	})
-	Convey("inferImageType should detect bmp", t, func() {
-		data := []byte{'B', 'M'}
-		So(inferImageType(data), ShouldEqual, "image/bmp")
-	})
-	Convey("inferImageType should return default for unknown", t, func() {
-		data := []byte{0x00, 0x01}
-		So(inferImageType(data), ShouldEqual, "application/octet-stream")
-	})
-}
-
 func TestConvertContentToGoogle(t *testing.T) {
 	Convey("convertContentToGoogle should convert text", t, func() {
 		content := &v1.Content{
@@ -143,6 +116,24 @@ func TestConvertContentToGoogle(t *testing.T) {
 		So(part, ShouldNotBeNil)
 		So(part.InlineData, ShouldNotBeNil)
 		So(part.InlineData.MIMEType, ShouldEqual, "image/jpeg")
+	})
+
+	Convey("convertContentToGoogle should convert image base64 with explicit mime type", t, func() {
+		content := &v1.Content{
+			Content: &v1.Content_Image{
+				Image: &v1.Image{
+					MimeType: "image/png",
+					Source: &v1.Image_Base64{
+						Base64: "aGVsbG8=",
+					},
+				},
+			},
+		}
+		part := convertContentToGoogle(content)
+		So(part, ShouldNotBeNil)
+		So(part.InlineData, ShouldNotBeNil)
+		So(part.InlineData.MIMEType, ShouldEqual, "image/png")
+		So(string(part.InlineData.Data), ShouldEqual, "hello")
 	})
 
 	Convey("convertContentToGoogle should convert image URL", t, func() {

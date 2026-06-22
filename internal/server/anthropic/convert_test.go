@@ -303,14 +303,14 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 			}
 			result := convertMessageFromAnthropic(msg)
 
-			Convey("Then it should create an image content with decoded data", func() {
+			Convey("Then it should create an image content with base64 source", func() {
 				So(result.Contents, ShouldHaveLength, 1)
 				img := result.Contents[0].GetImage()
 				So(img, ShouldNotBeNil)
 				So(img.MimeType, ShouldEqual, "image/png")
-				dataSrc, ok := img.Source.(*v1.Image_Data)
+				dataSrc, ok := img.Source.(*v1.Image_Base64)
 				So(ok, ShouldBeTrue)
-				So(string(dataSrc.Data), ShouldEqual, "imagedata")
+				So(dataSrc.Base64, ShouldEqual, "aW1hZ2VkYXRh")
 			})
 		})
 
@@ -473,9 +473,9 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 				img := tr.Outputs[0].GetImage()
 				So(img, ShouldNotBeNil)
 				So(img.MimeType, ShouldEqual, "image/png")
-				dataSrc, ok := img.Source.(*v1.Image_Data)
+				dataSrc, ok := img.Source.(*v1.Image_Base64)
 				So(ok, ShouldBeTrue)
-				So(string(dataSrc.Data), ShouldEqual, "imagedata")
+				So(dataSrc.Base64, ShouldEqual, "aW1hZ2VkYXRh")
 			})
 		})
 
@@ -693,9 +693,9 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Metadata:  map[string]string{"signature": "sig-abc"},
-							Content:   &v1.Content_Text{Text: "Let me think..."},
+							Phase:    v1.ContentPhase_CONTENT_PHASE_REASONING,
+							Metadata: map[string]string{"signature": "sig-abc"},
+							Content:  &v1.Content_Text{Text: "Let me think..."},
 						},
 						{
 							Content: &v1.Content_Text{Text: "The answer is 42."},
@@ -730,8 +730,8 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Content:   &v1.Content_Opaque{Opaque: "opaque-data"},
+							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+							Content: &v1.Content_Opaque{Opaque: "opaque-data"},
 						},
 						{
 							Content: &v1.Content_Text{Text: "Result here."},
@@ -804,13 +804,13 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Metadata:  map[string]string{"signature": "sig-1"},
-							Content:   &v1.Content_Text{Text: "thinking content"},
+							Phase:    v1.ContentPhase_CONTENT_PHASE_REASONING,
+							Metadata: map[string]string{"signature": "sig-1"},
+							Content:  &v1.Content_Text{Text: "thinking content"},
 						},
 						{
-							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Content:   &v1.Content_Opaque{Opaque: "secret-data"},
+							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+							Content: &v1.Content_Opaque{Opaque: "secret-data"},
 						},
 						{
 							Content: &v1.Content_Text{Text: "Let me help you."},

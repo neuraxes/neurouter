@@ -41,23 +41,24 @@ func TestConvertImageFromOpenAIURL(t *testing.T) {
 		Convey("When the URL is a base64 data URI", func() {
 			result := convertImageFromOpenAIURL("data:image/png;base64,aW1hZ2VkYXRh")
 
-			Convey("Then it should return an image with decoded data", func() {
+			Convey("Then it should return an image with base64 source", func() {
 				So(result, ShouldNotBeNil)
 				So(result.MimeType, ShouldEqual, "image/png")
-				dataSrc, ok := result.Source.(*v1.Image_Data)
+				dataSrc, ok := result.Source.(*v1.Image_Base64)
 				So(ok, ShouldBeTrue)
-				So(string(dataSrc.Data), ShouldEqual, "imagedata")
+				So(dataSrc.Base64, ShouldEqual, "aW1hZ2VkYXRh")
 			})
 		})
 
 		Convey("When the URL is a data URI with invalid base64", func() {
 			result := convertImageFromOpenAIURL("data:image/png;base64,!!!invalid!!!")
 
-			Convey("Then it should fall back to URL source", func() {
+			Convey("Then it should return an image with base64 source", func() {
 				So(result, ShouldNotBeNil)
-				urlSrc, ok := result.Source.(*v1.Image_Url)
+				So(result.MimeType, ShouldEqual, "image/png")
+				dataSrc, ok := result.Source.(*v1.Image_Base64)
 				So(ok, ShouldBeTrue)
-				So(urlSrc.Url, ShouldEqual, "data:image/png;base64,!!!invalid!!!")
+				So(dataSrc.Base64, ShouldEqual, "!!!invalid!!!")
 			})
 		})
 
@@ -271,14 +272,14 @@ func TestConvertUserMessageFromOpenAIChat(t *testing.T) {
 			}
 			result := convertUserMessageFromOpenAIChat(m)
 
-			Convey("Then it should decode the base64 data", func() {
+			Convey("Then it should preserve the base64 data", func() {
 				So(result.Contents, ShouldHaveLength, 1)
 				img := result.Contents[0].GetImage()
 				So(img, ShouldNotBeNil)
 				So(img.MimeType, ShouldEqual, "image/jpeg")
-				dataSrc, ok := img.Source.(*v1.Image_Data)
+				dataSrc, ok := img.Source.(*v1.Image_Base64)
 				So(ok, ShouldBeTrue)
-				So(string(dataSrc.Data), ShouldEqual, "imagedata")
+				So(dataSrc.Base64, ShouldEqual, "aW1hZ2VkYXRh")
 			})
 		})
 
@@ -984,8 +985,8 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Content:   &v1.Content_Text{Text: "Let me think..."},
+							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+							Content: &v1.Content_Text{Text: "Let me think..."},
 						},
 						{
 							Content: &v1.Content_Text{Text: "The answer is 42."},

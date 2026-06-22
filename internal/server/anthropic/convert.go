@@ -15,7 +15,6 @@
 package anthropic
 
 import (
-	"encoding/base64"
 	"encoding/json"
 
 	"github.com/anthropics/anthropic-sdk-go"
@@ -133,16 +132,12 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 					},
 				})
 			case content.OfImage.Source.OfBase64 != nil:
-				data, err := base64.StdEncoding.DecodeString(content.OfImage.Source.OfBase64.Data)
-				if err != nil {
-					continue
-				}
 				contents = append(contents, &v1.Content{
 					Content: &v1.Content_Image{
 						Image: &v1.Image{
 							MimeType: string(content.OfImage.Source.OfBase64.MediaType),
-							Source: &v1.Image_Data{
-								Data: data,
+							Source: &v1.Image_Base64{
+								Base64: content.OfImage.Source.OfBase64.Data,
 							},
 						},
 					},
@@ -208,16 +203,12 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 							},
 						})
 					case output.OfImage.Source.OfBase64 != nil:
-						data, err := base64.StdEncoding.DecodeString(output.OfImage.Source.OfBase64.Data)
-						if err != nil {
-							continue
-						}
 						tr.Outputs = append(tr.Outputs, &v1.ToolResult_Output{
 							Output: &v1.ToolResult_Output_Image{
 								Image: &v1.Image{
 									MimeType: string(output.OfImage.Source.OfBase64.MediaType),
-									Source: &v1.Image_Data{
-										Data: data,
+									Source: &v1.Image_Base64{
+										Base64: output.OfImage.Source.OfBase64.Data,
 									},
 								},
 							},

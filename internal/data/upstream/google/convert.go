@@ -22,6 +22,7 @@ import (
 	"google.golang.org/genai"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 func convertEffortToGoogleThinkingLevel(effort v1.ReasoningEffort) genai.ThinkingLevel {
@@ -112,39 +113,6 @@ func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	return []*genai.Tool{{FunctionDeclarations: functionDecls}}
 }
 
-// inferImageType infers the MIME type from the byte data
-func inferImageType(data []byte) string {
-	if len(data) >= 8 {
-		// PNG: 89 50 4E 47 0D 0A 1A 0A
-		if data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A {
-			return "image/png"
-		}
-	}
-	if len(data) >= 3 {
-		// JPEG: FF D8 FF
-		if data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
-			return "image/jpeg"
-		}
-		// GIF: GIF87a or GIF89a
-		if data[0] == 'G' && data[1] == 'I' && data[2] == 'F' {
-			return "image/gif"
-		}
-	}
-	if len(data) >= 12 {
-		// WEBP: RIFF....WEBP
-		if data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P' {
-			return "image/webp"
-		}
-	}
-	if len(data) >= 2 {
-		// BMP: BM
-		if data[0] == 'B' && data[1] == 'M' {
-			return "image/bmp"
-		}
-	}
-	return "application/octet-stream"
-}
-
 func convertContentToGoogle(content *v1.Content) *genai.Part {
 	if content.IsReasoning() {
 		// Reasoning content should be ignored
@@ -161,9 +129,18 @@ func convertContentToGoogle(content *v1.Content) *genai.Part {
 			return genai.NewPartFromURI(source.Url, mimeType)
 		case *v1.Image_Data:
 			if mimeType == "" {
-				mimeType = inferImageType(source.Data)
+				mimeType = util.InferImageMimeType(source.Data)
 			}
 			return genai.NewPartFromBytes(source.Data, mimeType)
+		case *v1.Image_Base64:
+			data, err := base64.StdEncoding.DecodeString(source.Base64)
+			if err != nil {
+				return nil
+			}
+			if mimeType == "" {
+				mimeType = util.InferImageMimeType(data)
+			}
+			return genai.NewPartFromBytes(data, mimeType)
 		default:
 			return nil
 		}

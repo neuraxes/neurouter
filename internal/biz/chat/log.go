@@ -145,6 +145,10 @@ func formatContent(content *v1.Content) string {
 			sb.WriteString("<content_image_data>")
 			sb.WriteString(fmt.Sprintf("%d bytes", len(src.Data)))
 			sb.WriteString("</content_image_data>")
+		case *v1.Image_Base64:
+			sb.WriteString("<content_image_base64>")
+			sb.WriteString(fmt.Sprintf("%d chars", len(src.Base64)))
+			sb.WriteString("</content_image_base64>")
 		}
 	case *v1.Content_ToolUse:
 		sb.WriteString(fmt.Sprintf(`<content_tool_use id="%s" name="%s">`, c.ToolUse.Id, c.ToolUse.Name))
@@ -169,6 +173,10 @@ func formatContent(content *v1.Content) string {
 					sb.WriteString("\n<tool_output_image_data>")
 					sb.WriteString(fmt.Sprintf("%d bytes", len(src.Data)))
 					sb.WriteString("</tool_output_image_data>")
+				case *v1.Image_Base64:
+					sb.WriteString("\n<tool_output_image_base64>")
+					sb.WriteString(fmt.Sprintf("%d chars", len(src.Base64)))
+					sb.WriteString("</tool_output_image_base64>")
 				}
 			}
 		}

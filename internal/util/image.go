@@ -20,33 +20,63 @@ import (
 	"strings"
 )
 
-// DecodeImageDataFromUrl parses a data URL (data:<mime>;base64,<data>) and
-// returns the decoded bytes and MIME type.
-func DecodeImageDataFromUrl(url string) (data []byte, mimeType string) {
+// ParseImageDataURL parses a data URL (data:<mime>;base64,<data>) without decoding the payload.
+func ParseImageDataURL(url string) (encoded string, mimeType string, err error) {
 	if !strings.HasPrefix(url, "data:") {
-		return
+		return "", "", fmt.Errorf("image data URL must start with data:")
 	}
 
 	meta, encoded, ok := strings.Cut(url[len("data:"):], ",")
-	if !ok || !strings.HasSuffix(meta, ";base64") {
-		return
+	if !ok {
+		return "", "", fmt.Errorf("image data URL missing payload separator")
 	}
-
-	data, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		data = nil
-		return
+	if !strings.HasSuffix(meta, ";base64") {
+		return "", "", fmt.Errorf("image data URL must use base64 encoding")
 	}
 
 	mimeType, _, _ = strings.Cut(meta, ";")
-	return data, mimeType
+	return encoded, mimeType, nil
 }
 
-// EncodeImageDataToUrl encodes binary data and a MIME type into a data URL
+// EncodeImageDataToURL encodes binary data and a MIME type into a data URL
 // (data:<mime>;base64,<data>).
-func EncodeImageDataToUrl(data []byte, mimeType string) string {
+func EncodeImageDataToURL(data []byte, mimeType string) string {
+	return EncodeImageBase64ToURL(base64.StdEncoding.EncodeToString(data), mimeType)
+}
+
+// EncodeImageBase64ToURL encodes base64 image data and a MIME type into a data
+// URL (data:<mime>;base64,<data>) without decoding and re-encoding the payload.
+func EncodeImageBase64ToURL(encoded string, mimeType string) string {
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
 	}
-	return fmt.Sprintf("data:%s;base64,%s", mimeType, base64.StdEncoding.EncodeToString(data))
+	return fmt.Sprintf("data:%s;base64,%s", mimeType, encoded)
+}
+
+// InferImageMimeType infers the MIME type from image bytes.
+func InferImageMimeType(data []byte) string {
+	if len(data) >= 8 {
+		if data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A {
+			return "image/png"
+		}
+	}
+	if len(data) >= 3 {
+		if data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
+			return "image/jpeg"
+		}
+		if data[0] == 'G' && data[1] == 'I' && data[2] == 'F' {
+			return "image/gif"
+		}
+	}
+	if len(data) >= 12 {
+		if data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P' {
+			return "image/webp"
+		}
+	}
+	if len(data) >= 2 {
+		if data[0] == 'B' && data[1] == 'M' {
+			return "image/bmp"
+		}
+	}
+	return "application/octet-stream"
 }

@@ -386,14 +386,14 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 			})
 		})
 
-		Convey("When converting a message with base64 image content", func() {
+		Convey("When converting a message with base64 image source", func() {
 			msg := &v1.Message{
 				Role: v1.Role_USER,
 				Contents: []*v1.Content{
 					{Content: &v1.Content_Image{
 						Image: &v1.Image{
 							MimeType: "image/png",
-							Source:   &v1.Image_Data{Data: []byte("aW1hZ2VkYXRh")},
+							Source:   &v1.Image_Base64{Base64: "aW1hZ2VkYXRh"},
 						},
 					}},
 				},
@@ -407,7 +407,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 				So(imageBlock, ShouldNotBeNil)
 				So(imageBlock.Source.OfBase64, ShouldNotBeNil)
 				So(imageBlock.Source.OfBase64.MediaType, ShouldEqual, anthropic.Base64ImageSourceMediaType("image/png"))
-				So(imageBlock.Source.OfBase64.Data, ShouldEqual, "YVcxaFoyVmtZWFJo")
+				So(imageBlock.Source.OfBase64.Data, ShouldEqual, "aW1hZ2VkYXRh")
 			})
 		})
 
@@ -543,6 +543,34 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 				So(toolResult.Content, ShouldHaveLength, 1)
 				imageBlock := toolResult.Content[0].OfImage
 				So(imageBlock, ShouldNotBeNil)
+				So(imageBlock.Source.OfBase64, ShouldNotBeNil)
+				So(imageBlock.Source.OfBase64.MediaType, ShouldEqual, anthropic.Base64ImageSourceMediaType("image/png"))
+				So(imageBlock.Source.OfBase64.Data, ShouldEqual, "aW1hZ2VkYXRh")
+			})
+		})
+
+		Convey("When converting a message with tool_result base64 image source", func() {
+			msg := &v1.Message{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+						Id: "tool-1",
+						Outputs: []*v1.ToolResult_Output{
+							{Output: &v1.ToolResult_Output_Image{
+								Image: &v1.Image{
+									MimeType: "image/png",
+									Source:   &v1.Image_Base64{Base64: "aW1hZ2VkYXRh"},
+								},
+							}},
+						},
+					}}},
+				},
+			}
+			result := repo.convertMessageToAnthropic(msg)
+
+			Convey("Then it should pass through the base64 image data", func() {
+				toolResult := result.Content[0].OfToolResult
+				imageBlock := toolResult.Content[0].OfImage
 				So(imageBlock.Source.OfBase64, ShouldNotBeNil)
 				So(imageBlock.Source.OfBase64.MediaType, ShouldEqual, anthropic.Base64ImageSourceMediaType("image/png"))
 				So(imageBlock.Source.OfBase64.Data, ShouldEqual, "aW1hZ2VkYXRh")

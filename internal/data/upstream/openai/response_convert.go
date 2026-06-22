@@ -24,7 +24,6 @@ import (
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
-	"github.com/neuraxes/neurouter/internal/util"
 )
 
 // contentPhaseFromOpenAIPhase maps an OpenAI response output-message phase to the internal ContentPhase enum.
@@ -33,25 +32,6 @@ func contentPhaseFromOpenAIPhase(phase responses.ResponseOutputMessagePhase) v1.
 		return v1.ContentPhase_CONTENT_PHASE_OUTCOME
 	}
 	return v1.ContentPhase_CONTENT_PHASE_NORMAL
-}
-
-func convertEffortToOpenAI(effort v1.ReasoningEffort) shared.ReasoningEffort {
-	switch effort {
-	case v1.ReasoningEffort_REASONING_EFFORT_NONE:
-		return shared.ReasoningEffortNone
-	case v1.ReasoningEffort_REASONING_EFFORT_MINIMAL:
-		return shared.ReasoningEffortMinimal
-	case v1.ReasoningEffort_REASONING_EFFORT_LOW:
-		return shared.ReasoningEffortLow
-	case v1.ReasoningEffort_REASONING_EFFORT_MEDIUM:
-		return shared.ReasoningEffortMedium
-	case v1.ReasoningEffort_REASONING_EFFORT_HIGH:
-		return shared.ReasoningEffortHigh
-	case v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH, v1.ReasoningEffort_REASONING_EFFORT_MAX:
-		return shared.ReasoningEffortXhigh
-	default:
-		return ""
-	}
 }
 
 func convertConfigToOpenAIResponse(config *v1.GenerationConfig, req *responses.ResponseNewParams) {
@@ -109,16 +89,6 @@ func convertConfigToOpenAIResponse(config *v1.GenerationConfig, req *responses.R
 	}
 }
 
-func convertImageToOpenAIResponseInputURL(image *v1.Image) string {
-	switch image.Source.(type) {
-	case *v1.Image_Url:
-		return image.GetUrl()
-	case *v1.Image_Data:
-		return util.EncodeImageDataToUrl(image.GetData(), image.GetMimeType())
-	}
-	return ""
-}
-
 func (r *upstream) convertToolResultToFunctionCallOutput(toolResult *v1.ToolResult) responses.ResponseInputItemUnionParam {
 	var outputItems responses.ResponseFunctionCallOutputItemListParam
 	hasNonText := false
@@ -133,7 +103,7 @@ func (r *upstream) convertToolResultToFunctionCallOutput(toolResult *v1.ToolResu
 			hasNonText = true
 			outputItems = append(outputItems, responses.ResponseFunctionCallOutputItemUnionParam{
 				OfInputImage: &responses.ResponseInputImageContentParam{
-					ImageURL: openai.Opt(convertImageToOpenAIResponseInputURL(o.Image)),
+					ImageURL: openai.Opt(convertImageToOpenAIURL(o.Image)),
 					Detail:   responses.ResponseInputImageContentDetailAuto,
 				},
 			})
@@ -225,7 +195,7 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 					contents = append(contents, responses.ResponseInputContentUnionParam{
 						OfInputImage: &responses.ResponseInputImageParam{
 							Detail:   responses.ResponseInputImageDetailAuto,
-							ImageURL: openai.Opt(convertImageToOpenAIResponseInputURL(c.Image)),
+							ImageURL: openai.Opt(convertImageToOpenAIURL(c.Image)),
 						},
 					})
 				default:
@@ -279,7 +249,7 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 						contents = append(contents, responses.ResponseInputContentUnionParam{
 							OfInputImage: &responses.ResponseInputImageParam{
 								Detail:   responses.ResponseInputImageDetailAuto,
-								ImageURL: openai.Opt(convertImageToOpenAIResponseInputURL(c.Image)),
+								ImageURL: openai.Opt(convertImageToOpenAIURL(c.Image)),
 							},
 						})
 					default:

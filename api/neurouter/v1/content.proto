@@ -18,13 +18,16 @@ package neurouter.v1;
 
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
-
 // Represent a image content
 message Image {
   string mime_type = 1;
   oneof source {
+    // External image URL (e.g. https:// , file://)
     string url = 10;
+    // Raw image bytes.
     bytes data = 11;
+    // Base64-encoded image bytes.
+    string base64 = 12;
   }
 }
 

@@ -215,9 +215,14 @@ components:
                     type: string
                 url:
                     type: string
+                    description: External image URL (e.g. https:// , file://)
                 data:
                     type: string
+                    description: Raw image bytes.
                     format: bytes
+                base64:
+                    type: string
+                    description: Base64-encoded image bytes.
             description: Represent a image content
         neurouter.v1.ListModelResp:
             type: object

@@ -44,10 +44,10 @@ func convertEffortFromOpenAI(effort shared.ReasoningEffort) v1.ReasoningEffort {
 }
 
 func convertImageFromOpenAIURL(u string) *v1.Image {
-	if data, mimeType := util.DecodeImageDataFromUrl(u); data != nil {
+	if encoded, mimeType, err := util.ParseImageDataURL(u); err == nil {
 		return &v1.Image{
 			MimeType: mimeType,
-			Source:   &v1.Image_Data{Data: data},
+			Source:   &v1.Image_Base64{Base64: encoded},
 		}
 	}
 	return &v1.Image{

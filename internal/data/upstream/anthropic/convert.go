@@ -159,6 +159,11 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 					c.Image.MimeType,
 					base64.StdEncoding.EncodeToString(src.Data),
 				))
+			case *v1.Image_Base64:
+				parts = append(parts, anthropic.NewImageBlockBase64(
+					c.Image.MimeType,
+					src.Base64,
+				))
 			}
 		case *v1.Content_ToolUse:
 			textualInput := c.ToolUse.GetTextualInput()
@@ -209,6 +214,17 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 								},
 							},
 						})
+					case *v1.Image_Base64:
+						outputs = append(outputs, anthropic.ToolResultBlockParamContentUnion{
+							OfImage: &anthropic.ImageBlockParam{
+								Source: anthropic.ImageBlockParamSourceUnion{
+									OfBase64: &anthropic.Base64ImageSourceParam{
+										Data:      src.Base64,
+										MediaType: anthropic.Base64ImageSourceMediaType(o.Image.MimeType),
+									},
+								},
+							},
+						})
 					}
 				}
 			}
@@ -235,6 +251,8 @@ func (r *upstream) convertInputSchemaToAnthropic(params *v1.Schema) (schema anth
 	schema.Type = "object" // OpenRouter validates this field which will be omitted if not set explicitly
 	if params.Properties != nil {
 		schema.Properties = params.Properties
+	} else {
+		schema.Properties = map[string]any{}
 	}
 	if params.Required != nil {
 		schema.Required = params.Required

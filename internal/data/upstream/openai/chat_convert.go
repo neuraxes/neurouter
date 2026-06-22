@@ -197,7 +197,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 							m.Content.OfArrayOfContentParts,
 							openai.ImageContentPart(
 								openai.ChatCompletionContentPartImageImageURLParam{
-									URL: c.Image.GetUrl(),
+									URL: convertImageToOpenAIURL(c.Image),
 								},
 							),
 						)
@@ -275,21 +275,6 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 		r.log.Errorf("invalid role: %v", message.Role)
 		return nil
 	}
-}
-
-func convertSchemaToMap(parameters *v1.Schema) openai.FunctionParameters {
-	data, err := json.Marshal(parameters)
-	if err != nil {
-		return nil
-	}
-	var params openai.FunctionParameters
-	if err := json.Unmarshal(data, &params); err != nil {
-		return nil
-	}
-	if parameters.Type == v1.Schema_TYPE_OBJECT && params["properties"] == nil {
-		params["properties"] = map[string]any{}
-	}
-	return params
 }
 
 func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCompletionNewParams {
