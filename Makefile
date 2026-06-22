@@ -50,9 +50,9 @@ generate:
 .PHONY: all
 # generate all
 all:
-	make api;
-	make config;
-	make generate;
+	$(MAKE) api
+	$(MAKE) config
+	$(MAKE) generate
 
 # show help
 help:
