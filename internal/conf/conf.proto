@@ -37,7 +37,10 @@ message Server {
     string network = 1;
     string addr = 2;
     google.protobuf.Duration timeout = 3;
+    // CORS configuration for the HTTP server.
     CORS cors = 4;
+    // Enables the gRPC-Web bridge on the HTTP server. Defaults to true when unset.
+    optional bool grpc_web = 5;
   }
   message GRPC {
     string network = 1;

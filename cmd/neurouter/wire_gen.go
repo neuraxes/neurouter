@@ -24,6 +24,7 @@ import (
 )
 
 import (
+	_ "embed"
 	_ "go.uber.org/automaxprocs"
 )
 
@@ -55,7 +56,8 @@ func wireApp(confServer *conf.Server, data *conf.Data, configConfig config.Confi
 		return nil, nil, err
 	}
 	grpcServer := server.NewGRPCServer(confServer, routerService, tracerProvider, logger)
-	httpServer := server.NewHTTPServer(confServer, routerService, loggerProvider, tracerProvider, logger)
+	grpcWebFilter := server.NewGRPCWebFilter(confServer, grpcServer)
+	httpServer := server.NewHTTPServer(confServer, routerService, grpcWebFilter, loggerProvider, tracerProvider, logger)
 	app := newApp(logger, grpcServer, httpServer)
 	return app, func() {
 		cleanup3()

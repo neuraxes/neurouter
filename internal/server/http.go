@@ -58,6 +58,7 @@ func newCORSFilter(cors *conf.Server_HTTP_CORS) http.FilterFunc {
 func NewHTTPServer(
 	c *conf.Server,
 	svc *service.RouterService,
+	grpcWebFilter GRPCWebFilter,
 	loggerProvider otellog.LoggerProvider,
 	tracerProvider oteltrace.TracerProvider,
 	logger log.Logger,
@@ -69,8 +70,15 @@ func NewHTTPServer(
 			logging.Server(logger),
 		),
 	}
+	var filters []http.FilterFunc
+	if grpcWebFilter != nil {
+		filters = append(filters, http.FilterFunc(grpcWebFilter))
+	}
 	if filter := newCORSFilter(c.Http.Cors); filter != nil {
-		opts = append(opts, http.Filter(filter))
+		filters = append(filters, filter)
+	}
+	if len(filters) > 0 {
+		opts = append(opts, http.Filter(filters...))
 	}
 	if c.Http.Network != "" {
 		opts = append(opts, http.Network(c.Http.Network))
