@@ -3,6 +3,7 @@ package openai
 import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 var mockChatReq = &entity.ChatReq{
@@ -86,10 +87,10 @@ var mockChatReq = &entity.ChatReq{
 				Function: &v1.Tool_Function{
 					Name:        "get_today_date",
 					Description: "Get today's date",
-					Parameters: &v1.Schema{
-						Type:       v1.Schema_TYPE_OBJECT,
-						Properties: map[string]*v1.Schema{},
-					},
+					InputSchema: util.MustStructFromMap(map[string]any{
+						"type":       "object",
+						"properties": map[string]any{},
+					}),
 				},
 			},
 		},
@@ -98,20 +99,20 @@ var mockChatReq = &entity.ChatReq{
 				Function: &v1.Tool_Function{
 					Name:        "get_weather",
 					Description: "Get weather for specific date",
-					Parameters: &v1.Schema{
-						Type: v1.Schema_TYPE_OBJECT,
-						Properties: map[string]*v1.Schema{
-							"city": {
-								Type:        v1.Schema_TYPE_STRING,
-								Description: "The name of the city",
+					InputSchema: util.MustStructFromMap(map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"city": map[string]any{
+								"type":        "string",
+								"description": "The name of the city",
 							},
-							"date": {
-								Type:        v1.Schema_TYPE_STRING,
-								Description: "The date to get the weather for",
+							"date": map[string]any{
+								"type":        "string",
+								"description": "The date to get the weather for",
 							},
 						},
-						Required: []string{"city", "date"},
-					},
+						"required": []string{"city", "date"},
+					}),
 				},
 			},
 		},
@@ -450,16 +451,16 @@ var mockResponsesResp = &entity.ChatResp{
 		Id:   "resp_0dd30283291d2ea70169d0e9b95d488193a445876892202e22",
 		Role: v1.Role_MODEL,
 		Contents: []*v1.Content{
-		{
-			Id:      "rs_0dd30283291d2ea70169d0e9b9b3f08193a563e455f75eef7f",
-			Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-			Content: &v1.Content_Opaque{Opaque: "gAAAAABp0Om8ygrVlzOfI4jMt3tSNBZ-XBbU3uK_9f3ev0EGMZH2er5Pt1mpadlQpmXxYiK81yfuaPzZs2pgFeuTQMByY1qZd_lIeHQtX1m8Yt-Bkh49goZaUiXXPysITbkK9_8Z0tK7VzEfbE1wg6aVYN70pNVD5LM2K8TUD7rHX7VB9UpyVLJdNX6Pj0AdxbjPdpVZCieHB8wM4oNEUFmlLtOgw5CfOSHBAS3o3ewC2AFFVal-DXurw4Mu_c8_8zPBKNj_355wjT-1k-DdK6TrjRbfSUnkfKyIKCQHzPs0rVuC3kvLL2prLAsI1TqU1Al4JFFm3aTiViChdkf_bDtf-oo1NtDCRdSMYU0Vyj5qoHPnPnKuFCVzERJ3QE7Rz1-aYBb9DCDbvg-aWF-nqeLroclts6Fhu7ZBDYEJtLqzZvn67VrBcQEX0SUEO1rX5nwknxka0kxwo7wYmtKJAyK1F-TioSCBnfdorVIfMSDkiDTB6oc9Ddu82U6HLNX_oX4Ls1mfjo3sjNnRvXaS4vhtjqqH6xlwgEwWLg21ezSDPBHHKlNrqcUiU2Y9NXbZvv6mcZS8kUohNKSf8arGSZj60W58g77VGzMs292uqyTexCJSgFRk41mGmoVM8Nd757PEiaYw7AdYPQKrNzqbSeLk4ZOi2kpFPwsfGfpwVLQInZQ6iyCXCKLj7wR8qkHi4r4dwEjHPwfolyjJZMCjAlASZ5gxDYPztthffu8ju-4vBr1JtvO_f9dk7bys1vwG-zknbhWKz_w8hjeIqHq-KCLbCTvWmQI0SqWNOkDXbDmIdyfslQkFqW-A8wjABCOo1S271N6WzPcXMmqoT9qXwDhpWrZTkcUx7VSWKPRdiY5mH4_Y3EFUsHOFAmpPiuuuEwwBvULeNJhYuW4AyeWhGSs5b6iJapLfUqghsl1GpTqauOn8motlFUWQY0ynAtaUHmoS_jf0eAyLXymm6F3mdk1YjhnddOuGT5by-MoiQlj8XCksn3D11HFJOmeiNtCMZPggAUxNfHKjowt3C6a7fjQn0OmpSfoa5EL30hQiC3T51bzXohq8pBg="},
-		},
-		{
-			Id:      "rs_0dd30283291d2ea70169d0e9b9b3f08193a563e455f75eef7f",
-			Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY,
-			Content: &v1.Content_Text{Text: "**Looking up yesterday's weather**\n\nThe user greeted me with \"hi, how are you?\" and asked about the weather in Shanghai yesterday. Since today is November 11, 2025, I can easily calculate that yesterday's date was November 10, 2025. I need to use the weather tool to get that information, specifically checking for the weather conditions in Shanghai on that date. Let's proceed with that!"},
-		},
+			{
+				Id:      "rs_0dd30283291d2ea70169d0e9b9b3f08193a563e455f75eef7f",
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: &v1.Content_Opaque{Opaque: "gAAAAABp0Om8ygrVlzOfI4jMt3tSNBZ-XBbU3uK_9f3ev0EGMZH2er5Pt1mpadlQpmXxYiK81yfuaPzZs2pgFeuTQMByY1qZd_lIeHQtX1m8Yt-Bkh49goZaUiXXPysITbkK9_8Z0tK7VzEfbE1wg6aVYN70pNVD5LM2K8TUD7rHX7VB9UpyVLJdNX6Pj0AdxbjPdpVZCieHB8wM4oNEUFmlLtOgw5CfOSHBAS3o3ewC2AFFVal-DXurw4Mu_c8_8zPBKNj_355wjT-1k-DdK6TrjRbfSUnkfKyIKCQHzPs0rVuC3kvLL2prLAsI1TqU1Al4JFFm3aTiViChdkf_bDtf-oo1NtDCRdSMYU0Vyj5qoHPnPnKuFCVzERJ3QE7Rz1-aYBb9DCDbvg-aWF-nqeLroclts6Fhu7ZBDYEJtLqzZvn67VrBcQEX0SUEO1rX5nwknxka0kxwo7wYmtKJAyK1F-TioSCBnfdorVIfMSDkiDTB6oc9Ddu82U6HLNX_oX4Ls1mfjo3sjNnRvXaS4vhtjqqH6xlwgEwWLg21ezSDPBHHKlNrqcUiU2Y9NXbZvv6mcZS8kUohNKSf8arGSZj60W58g77VGzMs292uqyTexCJSgFRk41mGmoVM8Nd757PEiaYw7AdYPQKrNzqbSeLk4ZOi2kpFPwsfGfpwVLQInZQ6iyCXCKLj7wR8qkHi4r4dwEjHPwfolyjJZMCjAlASZ5gxDYPztthffu8ju-4vBr1JtvO_f9dk7bys1vwG-zknbhWKz_w8hjeIqHq-KCLbCTvWmQI0SqWNOkDXbDmIdyfslQkFqW-A8wjABCOo1S271N6WzPcXMmqoT9qXwDhpWrZTkcUx7VSWKPRdiY5mH4_Y3EFUsHOFAmpPiuuuEwwBvULeNJhYuW4AyeWhGSs5b6iJapLfUqghsl1GpTqauOn8motlFUWQY0ynAtaUHmoS_jf0eAyLXymm6F3mdk1YjhnddOuGT5by-MoiQlj8XCksn3D11HFJOmeiNtCMZPggAUxNfHKjowt3C6a7fjQn0OmpSfoa5EL30hQiC3T51bzXohq8pBg="},
+			},
+			{
+				Id:      "rs_0dd30283291d2ea70169d0e9b9b3f08193a563e455f75eef7f",
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY,
+				Content: &v1.Content_Text{Text: "**Looking up yesterday's weather**\n\nThe user greeted me with \"hi, how are you?\" and asked about the weather in Shanghai yesterday. Since today is November 11, 2025, I can easily calculate that yesterday's date was November 10, 2025. I need to use the weather tool to get that information, specifically checking for the weather conditions in Shanghai on that date. Let's proceed with that!"},
+			},
 			{
 				Id: "fc_0dd30283291d2ea70169d0e9bc4f948193a7ed1ab06c9f04f9",
 				Content: &v1.Content_ToolUse{

@@ -731,6 +731,34 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 			})
 		})
 
+		Convey("When ResponseFormat is JSON schema", func() {
+			req := &openai.ChatCompletionNewParams{
+				Model: "gpt-4",
+				ResponseFormat: openai.ChatCompletionNewParamsResponseFormatUnion{
+					OfJSONSchema: &shared.ResponseFormatJSONSchemaParam{
+						JSONSchema: shared.ResponseFormatJSONSchemaJSONSchemaParam{
+							Name: "weather",
+							Schema: map[string]any{
+								"type": "object",
+								"properties": map[string]any{
+									"city": map[string]any{"type": "string"},
+								},
+								"additionalProperties": false,
+							},
+						},
+					},
+				},
+			}
+			result := convertChatReqFromOpenAIChat(req)
+
+			Convey("Then Grammar should be set as schema", func() {
+				schema, ok := result.Config.Grammar.(*v1.GenerationConfig_Schema)
+				So(ok, ShouldBeTrue)
+				So(schema.Schema.AsMap()["type"], ShouldEqual, "object")
+				So(schema.Schema.AsMap()["additionalProperties"], ShouldEqual, false)
+			})
+		})
+
 		Convey("When no optional config fields are set", func() {
 			req := &openai.ChatCompletionNewParams{
 				Model: "gpt-4",
@@ -826,9 +854,9 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				So(fn, ShouldNotBeNil)
 				So(fn.Name, ShouldEqual, "get_weather")
 				So(fn.Description, ShouldEqual, "Get weather info")
-				So(fn.Parameters, ShouldNotBeNil)
-				So(fn.Parameters.Type, ShouldEqual, v1.Schema_TYPE_OBJECT)
-				So(fn.Parameters.Properties, ShouldContainKey, "city")
+				So(fn.InputSchema, ShouldNotBeNil)
+				So(fn.InputSchema.AsMap()["type"], ShouldEqual, "object")
+				So(fn.InputSchema.AsMap()["properties"], ShouldContainKey, "city")
 			})
 		})
 

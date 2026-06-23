@@ -22,6 +22,7 @@ import (
 	"text/template"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const chatPrettyPrintTmpl = `
@@ -62,8 +63,8 @@ const chatPrettyPrintTmpl = `
 {{- if .Request.Config.GetGbnfGrammar}}
    • GBNF Grammar: {{.Request.Config.GetGbnfGrammar}}
 {{- end}}
-{{- if .Request.Config.GetJsonSchema}}
-   • JSON Schema: {{.Request.Config.GetJsonSchema}}
+{{- if .Request.Config.GetSchema}}
+   • Schema: {{formatSchema .Request.Config.GetSchema}}
 {{- end}}
   </generation_config>
 {{- end}}
@@ -87,7 +88,7 @@ const chatPrettyPrintTmpl = `
 {{- if $tool.GetFunction}}
   • Function: {{$tool.GetFunction.Name}}
   • Description: {{$tool.GetFunction.Description}}
-  • Parameters: {{formatSchema $tool.GetFunction.Parameters}}
+  • Input schema: {{formatSchema $tool.GetFunction.InputSchema}}
 {{- end}}
     </tool_declaration>
 {{- end}}
@@ -186,8 +187,8 @@ func formatContent(content *v1.Content) string {
 	return sb.String()
 }
 
-func formatSchema(schema *v1.Schema) string {
-	j, _ := json.MarshalIndent(schema, "    ", "  ")
+func formatSchema(schema *structpb.Struct) string {
+	j, _ := json.MarshalIndent(schema.AsMap(), "    ", "  ")
 	return string(j)
 }
 

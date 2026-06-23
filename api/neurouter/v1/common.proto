@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package neurouter.v1;
 
+import "google/protobuf/struct.proto";
+
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
 enum ReasoningEffort {
@@ -64,9 +66,7 @@ message GenerationConfig {
     // The GGML BNF grammar definition.
     string gbnf_grammar = 61;
     // The schema definition.
-    Schema schema = 62;
-    // The JSON schema definition.
-    string json_schema = 63;
+    google.protobuf.Struct schema = 62;
   }
 }
 
@@ -104,58 +104,11 @@ enum Capability {
   CAPABILITY_TOOL_USE = 4;
 }
 
-message Schema {
-  enum Type {
-    TYPE_UNSPECIFIED = 0;
-    TYPE_STRING = 1;
-    TYPE_NUMBER = 2;
-    TYPE_INTEGER = 3;
-    TYPE_BOOLEAN = 4;
-    TYPE_ARRAY = 5;
-    TYPE_OBJECT = 6;
-  }
-
-  Type type = 1;
-  string description = 2;
-
-  // The minimum for number
-  double minimum = 3;
-  // The maximum for number
-  double maximum = 4;
-
-  // The regex pattern for string
-  string pattern = 5;
-  // The minimum length for string
-  int32 minLength = 6;
-  // The maximum length for string
-  int32 maxLength = 7;
-
-  // The schema for array items
-  Schema items = 8;
-  // The minimum number of items for array
-  int32 minItems = 9;
-  // The maximum number of items for array
-  int32 maxItems = 10;
-
-  // The schema for object keys
-  Schema propertyNames = 11;
-  // The schema for object values
-  map<string, Schema> properties = 12;
-  // The required properties for object
-  repeated string required = 13;
-
-  repeated string enum = 14;
-  repeated Schema allOf = 15;
-  repeated Schema anyOf = 16;
-  repeated Schema oneOf = 17;
-  Schema not = 18;
-}
-
 message Tool {
   message Function {
     string name = 1;
     string description = 2;
-    Schema parameters = 3;
+    google.protobuf.Struct input_schema = 3;
   }
 
   oneof tool {

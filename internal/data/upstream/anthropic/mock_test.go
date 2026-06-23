@@ -3,6 +3,7 @@ package anthropic
 import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
+	"github.com/neuraxes/neurouter/internal/util"
 	"k8s.io/utils/ptr"
 )
 
@@ -97,10 +98,10 @@ var mockChatReq = &entity.ChatReq{
 				Function: &v1.Tool_Function{
 					Name:        "get_date",
 					Description: "Get today's date",
-					Parameters: &v1.Schema{
-						Type:       v1.Schema_TYPE_OBJECT,
-						Properties: map[string]*v1.Schema{},
-					},
+					InputSchema: util.MustStructFromMap(map[string]any{
+						"type":       "object",
+						"properties": map[string]any{},
+					}),
 				},
 			},
 		},
@@ -109,20 +110,20 @@ var mockChatReq = &entity.ChatReq{
 				Function: &v1.Tool_Function{
 					Name:        "get_weather",
 					Description: "Get weather for specific date",
-					Parameters: &v1.Schema{
-						Type: v1.Schema_TYPE_OBJECT,
-						Properties: map[string]*v1.Schema{
-							"city": {
-								Type:        v1.Schema_TYPE_STRING,
-								Description: "The name of the city",
+					InputSchema: util.MustStructFromMap(map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"city": map[string]any{
+								"type":        "string",
+								"description": "The name of the city",
 							},
-							"date": {
-								Type:        v1.Schema_TYPE_STRING,
-								Description: "The date to get the weather for",
+							"date": map[string]any{
+								"type":        "string",
+								"description": "The date to get the weather for",
 							},
 						},
-						Required: []string{"city", "date"},
-					},
+						"required": []string{"city", "date"},
+					}),
 				},
 			},
 		},

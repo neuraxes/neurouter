@@ -173,13 +173,18 @@ func TestConvertGenerationConfigFromAnthropic(t *testing.T) {
 			}
 			config := convertGenerationConfigFromAnthropic(req)
 
-			Convey("Then Grammar should be set as JsonSchema", func() {
+			Convey("Then Grammar should be set as Schema", func() {
 				So(config.Grammar, ShouldNotBeNil)
-				jsonSchema, ok := config.Grammar.(*v1.GenerationConfig_JsonSchema)
+				schema, ok := config.Grammar.(*v1.GenerationConfig_Schema)
 				So(ok, ShouldBeTrue)
-				So(jsonSchema.JsonSchema, ShouldNotBeEmpty)
-				So(jsonSchema.JsonSchema, ShouldContainSubstring, `"type":"object"`)
-				So(jsonSchema.JsonSchema, ShouldContainSubstring, `"name":{"type":"string"}`)
+				So(schema.Schema.AsMap(), ShouldResemble, map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"name": map[string]any{"type": "string"},
+						"age":  map[string]any{"type": "integer"},
+					},
+					"required": []any{"name"},
+				})
 			})
 		})
 
@@ -589,11 +594,16 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 				So(fn, ShouldNotBeNil)
 				So(fn.Name, ShouldEqual, "get_weather")
 				So(fn.Description, ShouldEqual, "Get weather info")
-				So(fn.Parameters, ShouldNotBeNil)
-				So(fn.Parameters.Properties, ShouldContainKey, "city")
-				So(fn.Parameters.Properties["city"].Type, ShouldEqual, v1.Schema_TYPE_STRING)
-				So(fn.Parameters.Properties["city"].Description, ShouldEqual, "The name of city")
-				So(fn.Parameters.Required, ShouldResemble, []string{"city"})
+				So(fn.InputSchema.AsMap(), ShouldResemble, map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"city": map[string]any{
+							"type":        "string",
+							"description": "The name of city",
+						},
+					},
+					"required": []any{"city"},
+				})
 			})
 		})
 

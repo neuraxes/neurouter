@@ -15,7 +15,6 @@
 package openai
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/openai/openai-go/v3"
@@ -64,25 +63,12 @@ func convertConfigToOpenAIResponse(config *v1.GenerationConfig, req *responses.R
 				},
 			}
 		}
-	case *v1.GenerationConfig_JsonSchema:
-		var schema map[string]any
-		if err := json.Unmarshal([]byte(g.JsonSchema), &schema); err == nil {
-			req.Text = responses.ResponseTextConfigParam{
-				Format: responses.ResponseFormatTextConfigUnionParam{
-					OfJSONSchema: &responses.ResponseFormatTextJSONSchemaConfigParam{
-						Name:   "custom_schema",
-						Schema: schema,
-					},
-				},
-			}
-		}
 	case *v1.GenerationConfig_Schema:
-		schemaMap := convertSchemaToMap(g.Schema)
 		req.Text = responses.ResponseTextConfigParam{
 			Format: responses.ResponseFormatTextConfigUnionParam{
 				OfJSONSchema: &responses.ResponseFormatTextJSONSchemaConfigParam{
 					Name:   "custom_schema",
-					Schema: schemaMap,
+					Schema: convertSchemaToMap(g.Schema),
 				},
 			},
 		}
@@ -371,7 +357,7 @@ func (r *upstream) convertRequestToOpenAIResponse(req *entity.ChatReq) responses
 			case *v1.Tool_Function_:
 				ft := &responses.FunctionToolParam{
 					Name:       t.Function.Name,
-					Parameters: convertSchemaToMap(t.Function.Parameters),
+					Parameters: convertSchemaToMap(t.Function.InputSchema),
 				}
 				if t.Function.Description != "" {
 					ft.Description = openai.Opt(t.Function.Description)

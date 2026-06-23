@@ -22,6 +22,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 func TestPrintChat(t *testing.T) {
@@ -123,13 +124,13 @@ func TestPrintChat(t *testing.T) {
 						Function: &v1.Tool_Function{
 							Name:        "get_weather",
 							Description: "Get the weather",
-							Parameters: &v1.Schema{
-								Properties: map[string]*v1.Schema{
-									"location": {
-										Type: v1.Schema_TYPE_STRING,
+							InputSchema: util.MustStructFromMap(map[string]any{
+								"properties": map[string]any{
+									"location": map[string]any{
+										"type": "string",
 									},
 								},
-							},
+							}),
 						},
 					},
 				},

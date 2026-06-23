@@ -202,12 +202,8 @@ components:
                     type: string
                     description: The GGML BNF grammar definition.
                 schema:
-                    allOf:
-                        - $ref: '#/components/schemas/neurouter.v1.Schema'
+                    type: object
                     description: The schema definition.
-                jsonSchema:
-                    type: string
-                    description: The JSON schema definition.
         neurouter.v1.Image:
             type: object
             properties:
@@ -296,77 +292,6 @@ components:
                     type: integer
                     description: The token budget for reasoning.
                     format: uint32
-        neurouter.v1.Schema:
-            type: object
-            properties:
-                type:
-                    type: integer
-                    format: enum
-                description:
-                    type: string
-                minimum:
-                    type: number
-                    description: The minimum for number
-                    format: double
-                maximum:
-                    type: number
-                    description: The maximum for number
-                    format: double
-                pattern:
-                    type: string
-                    description: The regex pattern for string
-                minLength:
-                    type: integer
-                    description: The minimum length for string
-                    format: int32
-                maxLength:
-                    type: integer
-                    description: The maximum length for string
-                    format: int32
-                items:
-                    allOf:
-                        - $ref: '#/components/schemas/neurouter.v1.Schema'
-                    description: The schema for array items
-                minItems:
-                    type: integer
-                    description: The minimum number of items for array
-                    format: int32
-                maxItems:
-                    type: integer
-                    description: The maximum number of items for array
-                    format: int32
-                propertyNames:
-                    allOf:
-                        - $ref: '#/components/schemas/neurouter.v1.Schema'
-                    description: The schema for object keys
-                properties:
-                    type: object
-                    additionalProperties:
-                        $ref: '#/components/schemas/neurouter.v1.Schema'
-                    description: The schema for object values
-                required:
-                    type: array
-                    items:
-                        type: string
-                    description: The required properties for object
-                enum:
-                    type: array
-                    items:
-                        type: string
-                allOf:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/neurouter.v1.Schema'
-                anyOf:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/neurouter.v1.Schema'
-                oneOf:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/neurouter.v1.Schema'
-                not:
-                    $ref: '#/components/schemas/neurouter.v1.Schema'
         neurouter.v1.Statistics:
             type: object
             properties:
@@ -444,8 +369,8 @@ components:
                     type: string
                 description:
                     type: string
-                parameters:
-                    $ref: '#/components/schemas/neurouter.v1.Schema'
+                inputSchema:
+                    type: object
 tags:
     - name: Chat
     - name: Embedding

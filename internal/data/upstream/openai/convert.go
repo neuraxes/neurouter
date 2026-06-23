@@ -15,10 +15,9 @@
 package openai
 
 import (
-	"encoding/json"
-
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/shared"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/util"
@@ -61,19 +60,9 @@ func convertImageToOpenAIURL(image *v1.Image) string {
 	return ""
 }
 
-// convertSchemaToMap converts an internal schema to the generic map form used for OpenAI
-// function parameters and response formats.
-func convertSchemaToMap(parameters *v1.Schema) openai.FunctionParameters {
-	data, err := json.Marshal(parameters)
-	if err != nil {
+func convertSchemaToMap(schema *structpb.Struct) openai.FunctionParameters {
+	if schema == nil {
 		return nil
 	}
-	var params openai.FunctionParameters
-	if err := json.Unmarshal(data, &params); err != nil {
-		return nil
-	}
-	if parameters.Type == v1.Schema_TYPE_OBJECT && params["properties"] == nil {
-		params["properties"] = map[string]any{}
-	}
-	return params
+	return openai.FunctionParameters(schema.AsMap())
 }

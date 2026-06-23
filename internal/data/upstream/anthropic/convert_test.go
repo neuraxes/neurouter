@@ -26,6 +26,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 func TestConvertStatusFromAnthropic(t *testing.T) {
@@ -181,10 +182,17 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 			})
 		})
 
-		Convey("When config has json_schema grammar", func() {
+		Convey("When config has schema grammar", func() {
 			config := &v1.GenerationConfig{
-				Grammar: &v1.GenerationConfig_JsonSchema{
-					JsonSchema: `{"type":"object","properties":{"name":{"type":"string"},"age":{"type":"integer"}},"required":["name"]}`,
+				Grammar: &v1.GenerationConfig_Schema{
+					Schema: util.MustStructFromMap(map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"name": map[string]any{"type": "string"},
+							"age":  map[string]any{"type": "integer"},
+						},
+						"required": []string{"name"},
+					}),
 				},
 			}
 			req := &anthropic.MessageNewParams{}
@@ -203,17 +211,18 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 			})
 		})
 
-		Convey("When config has proto schema grammar", func() {
+		Convey("When config has schema grammar with advanced fields", func() {
 			config := &v1.GenerationConfig{
 				Grammar: &v1.GenerationConfig_Schema{
-					Schema: &v1.Schema{
-						Type: v1.Schema_TYPE_OBJECT,
-						Properties: map[string]*v1.Schema{
-							"city": {Type: v1.Schema_TYPE_STRING, Description: "City name"},
-							"temp": {Type: v1.Schema_TYPE_NUMBER},
+					Schema: util.MustStructFromMap(map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"city": map[string]any{"type": "string", "description": "City name"},
+							"temp": map[string]any{"type": "number"},
 						},
-						Required: []string{"city"},
-					},
+						"required":             []string{"city"},
+						"additionalProperties": false,
+					}),
 				},
 			}
 			req := &anthropic.MessageNewParams{}
@@ -231,20 +240,7 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 				required, ok := req.OutputConfig.Format.Schema["required"].([]any)
 				So(ok, ShouldBeTrue)
 				So(required, ShouldContain, "city")
-			})
-		})
-
-		Convey("When config has invalid json_schema grammar", func() {
-			config := &v1.GenerationConfig{
-				Grammar: &v1.GenerationConfig_JsonSchema{
-					JsonSchema: `{invalid json`,
-				},
-			}
-			req := &anthropic.MessageNewParams{}
-			repo.convertGenerationConfigToAnthropic(config, req)
-
-			Convey("Then OutputConfig.Format.Schema should remain nil", func() {
-				So(req.OutputConfig.Format.Schema, ShouldBeNil)
+				So(req.OutputConfig.Format.Schema["additionalProperties"], ShouldEqual, false)
 			})
 		})
 	})
@@ -591,17 +587,19 @@ func TestConvertInputSchemaToAnthropic(t *testing.T) {
 		})
 
 		Convey("When params has properties/required", func() {
-			params := &v1.Schema{
-				Type: v1.Schema_TYPE_OBJECT,
-				Properties: map[string]*v1.Schema{
-					"location": {Type: v1.Schema_TYPE_STRING, Description: "City name"},
+			params := util.MustStructFromMap(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"location": map[string]any{"type": "string", "description": "City name"},
 				},
-				Required: []string{"location"},
-			}
+				"required":             []string{"location"},
+				"additionalProperties": false,
+			})
 			sch := repo.convertInputSchemaToAnthropic(params)
 			Convey("Then fields are copied over", func() {
-				So(sch.Properties, ShouldResemble, params.Properties)
-				So(sch.Required, ShouldResemble, params.Required)
+				So(sch.Properties, ShouldResemble, params.AsMap()["properties"])
+				So(sch.Required, ShouldResemble, []string{"location"})
+				So(sch.ExtraFields["additionalProperties"], ShouldEqual, false)
 			})
 		})
 	})
@@ -615,13 +613,13 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 					Function: &v1.Tool_Function{
 						Name:        "get_weather",
 						Description: "Get weather",
-						Parameters: &v1.Schema{
-							Type: v1.Schema_TYPE_OBJECT,
-							Properties: map[string]*v1.Schema{
-								"city": {Type: v1.Schema_TYPE_STRING, Description: "City name"},
+						InputSchema: util.MustStructFromMap(map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"city": map[string]any{"type": "string", "description": "City name"},
 							},
-							Required: []string{"city"},
-						},
+							"required": []string{"city"},
+						}),
 					},
 				},
 			},

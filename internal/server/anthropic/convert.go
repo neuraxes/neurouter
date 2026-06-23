@@ -21,6 +21,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 func convertEffortFromAnthropic(effort anthropic.OutputConfigEffort) v1.ReasoningEffort {
@@ -71,10 +72,10 @@ func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.G
 		config.StopSequences = req.StopSequences
 	}
 	if len(req.OutputConfig.Format.Schema) > 0 {
-		jsonSchema, err := json.Marshal(req.OutputConfig.Format.Schema)
+		schema, err := util.StructFromMap(req.OutputConfig.Format.Schema)
 		if err == nil {
-			config.Grammar = &v1.GenerationConfig_JsonSchema{
-				JsonSchema: string(jsonSchema),
+			config.Grammar = &v1.GenerationConfig_Schema{
+				Schema: schema,
 			}
 		}
 	}
@@ -247,15 +248,9 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 		t := &v1.Tool{}
 		switch {
 		case tool.OfTool != nil:
-			var parameters *v1.Schema
-			j, err := json.Marshal(tool.OfTool.InputSchema)
+			inputSchema, err := util.StructFromAny(tool.OfTool.InputSchema)
 			if err != nil {
-				log.Errorf("failed to marshal anthropic tool schema: %s", err.Error())
-				continue
-			}
-			err = json.Unmarshal(j, &parameters)
-			if err != nil {
-				log.Errorf("failed to unmarshal anthropic tool schema: %s", err.Error())
+				log.Errorf("failed to convert anthropic tool schema: %s", err.Error())
 				continue
 			}
 
@@ -263,7 +258,7 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 				Function: &v1.Tool_Function{
 					Name:        tool.OfTool.Name,
 					Description: tool.OfTool.Description.Value,
-					Parameters:  parameters,
+					InputSchema: inputSchema,
 				},
 			}
 		default:

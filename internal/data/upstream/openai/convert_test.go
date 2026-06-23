@@ -21,6 +21,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 func TestConvertEffortToOpenAI(t *testing.T) {
@@ -71,13 +72,13 @@ func TestConvertImageToOpenAIURL(t *testing.T) {
 func TestConvertSchemaToMap(t *testing.T) {
 	Convey("Test convertSchemaToMap", t, func() {
 		Convey("with object schema and properties", func() {
-			schema := &v1.Schema{
-				Type: v1.Schema_TYPE_OBJECT,
-				Properties: map[string]*v1.Schema{
-					"name": {Type: v1.Schema_TYPE_STRING},
+			schema := util.MustStructFromMap(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"name": map[string]any{"type": "string"},
 				},
-				Required: []string{"name"},
-			}
+				"required": []string{"name"},
+			})
 
 			params := convertSchemaToMap(schema)
 			So(params["type"], ShouldEqual, "object")
@@ -87,11 +88,18 @@ func TestConvertSchemaToMap(t *testing.T) {
 			So(name["type"], ShouldEqual, "string")
 		})
 
-		Convey("with object schema lacking properties", func() {
-			schema := &v1.Schema{Type: v1.Schema_TYPE_OBJECT}
+		Convey("with advanced JSON schema fields", func() {
+			schema := util.MustStructFromMap(map[string]any{
+				"type":                 "object",
+				"additionalProperties": false,
+				"$defs": map[string]any{
+					"city": map[string]any{"type": "string"},
+				},
+			})
 
 			params := convertSchemaToMap(schema)
-			So(params["properties"], ShouldResemble, map[string]any{})
+			So(params["additionalProperties"], ShouldEqual, false)
+			So(params["$defs"], ShouldContainKey, "city")
 		})
 	})
 }

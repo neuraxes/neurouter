@@ -24,29 +24,8 @@ import (
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/util"
 )
-
-func TestConvertFunctionParametersToGoogle(t *testing.T) {
-	Convey("convertFunctionParametersToGoogle should convert parameters", t, func() {
-		params := &v1.Schema{
-			Type:     v1.Schema_TYPE_OBJECT,
-			Required: []string{"foo"},
-			Properties: map[string]*v1.Schema{
-				"foo": {Type: v1.Schema_TYPE_STRING, Description: "desc"},
-			},
-		}
-		schema := convertFunctionParametersToGoogle(params)
-		So(schema, ShouldNotBeNil)
-		So(schema.Type, ShouldEqual, genai.TypeObject)
-		So(schema.Required, ShouldResemble, []string{"foo"})
-		So(schema.Properties["foo"].Type, ShouldEqual, genai.TypeString)
-		So(schema.Properties["foo"].Description, ShouldEqual, "desc")
-	})
-
-	Convey("convertFunctionParametersToGoogle should return nil for nil input", t, func() {
-		So(convertFunctionParametersToGoogle(nil), ShouldBeNil)
-	})
-}
 
 func TestConvertToolsToGoogle(t *testing.T) {
 	Convey("convertToolsToGoogle should convert tools", t, func() {
@@ -56,7 +35,10 @@ func TestConvertToolsToGoogle(t *testing.T) {
 					Function: &v1.Tool_Function{
 						Name:        "fn",
 						Description: "desc",
-						Parameters:  &v1.Schema{Type: v1.Schema_TYPE_OBJECT},
+						InputSchema: util.MustStructFromMap(map[string]any{
+							"type":                 "object",
+							"additionalProperties": false,
+						}),
 					},
 				},
 			},
@@ -66,7 +48,11 @@ func TestConvertToolsToGoogle(t *testing.T) {
 		So(result[0].FunctionDeclarations, ShouldHaveLength, 1)
 		So(result[0].FunctionDeclarations[0].Name, ShouldEqual, "fn")
 		So(result[0].FunctionDeclarations[0].Description, ShouldEqual, "desc")
-		So(result[0].FunctionDeclarations[0].Parameters.Type, ShouldEqual, genai.TypeObject)
+		So(result[0].FunctionDeclarations[0].Parameters, ShouldBeNil)
+		So(result[0].FunctionDeclarations[0].ParametersJsonSchema, ShouldResemble, map[string]any{
+			"type":                 "object",
+			"additionalProperties": false,
+		})
 	})
 
 	Convey("convertToolsToGoogle should return nil for empty input", t, func() {

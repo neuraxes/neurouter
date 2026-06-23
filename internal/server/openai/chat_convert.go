@@ -15,8 +15,6 @@
 package openai
 
 import (
-	"encoding/json"
-
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/shared"
 
@@ -257,6 +255,13 @@ func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatR
 		config.Grammar = &v1.GenerationConfig_PresetGrammar{
 			PresetGrammar: "json_object",
 		}
+	} else if req.ResponseFormat.OfJSONSchema != nil {
+		schema, err := util.StructFromAny(req.ResponseFormat.OfJSONSchema.JSONSchema.Schema)
+		if err == nil {
+			config.Grammar = &v1.GenerationConfig_Schema{
+				Schema: schema,
+			}
+		}
 	}
 
 	if len(req.Stop.OfStringArray) > 0 {
@@ -276,15 +281,13 @@ func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatR
 	for _, tool := range req.Tools {
 		if tool.OfFunction != nil {
 			fn := tool.OfFunction.Function
-			var parameters *v1.Schema
-			j, _ := json.Marshal(fn.Parameters)
-			_ = json.Unmarshal(j, &parameters)
+			inputSchema, _ := util.StructFromMap(map[string]any(fn.Parameters))
 			tools = append(tools, &v1.Tool{
 				Tool: &v1.Tool_Function_{
 					Function: &v1.Tool_Function{
 						Name:        fn.Name,
 						Description: fn.Description.Value,
-						Parameters:  parameters,
+						InputSchema: inputSchema,
 					},
 				},
 			})

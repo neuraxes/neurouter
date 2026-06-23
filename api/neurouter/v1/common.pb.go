@@ -23,6 +23,7 @@ package v1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -211,67 +212,6 @@ func (Capability) EnumDescriptor() ([]byte, []int) {
 	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{2}
 }
 
-type Schema_Type int32
-
-const (
-	Schema_TYPE_UNSPECIFIED Schema_Type = 0
-	Schema_TYPE_STRING      Schema_Type = 1
-	Schema_TYPE_NUMBER      Schema_Type = 2
-	Schema_TYPE_INTEGER     Schema_Type = 3
-	Schema_TYPE_BOOLEAN     Schema_Type = 4
-	Schema_TYPE_ARRAY       Schema_Type = 5
-	Schema_TYPE_OBJECT      Schema_Type = 6
-)
-
-// Enum value maps for Schema_Type.
-var (
-	Schema_Type_name = map[int32]string{
-		0: "TYPE_UNSPECIFIED",
-		1: "TYPE_STRING",
-		2: "TYPE_NUMBER",
-		3: "TYPE_INTEGER",
-		4: "TYPE_BOOLEAN",
-		5: "TYPE_ARRAY",
-		6: "TYPE_OBJECT",
-	}
-	Schema_Type_value = map[string]int32{
-		"TYPE_UNSPECIFIED": 0,
-		"TYPE_STRING":      1,
-		"TYPE_NUMBER":      2,
-		"TYPE_INTEGER":     3,
-		"TYPE_BOOLEAN":     4,
-		"TYPE_ARRAY":       5,
-		"TYPE_OBJECT":      6,
-	}
-)
-
-func (x Schema_Type) Enum() *Schema_Type {
-	p := new(Schema_Type)
-	*p = x
-	return p
-}
-
-func (x Schema_Type) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (Schema_Type) Descriptor() protoreflect.EnumDescriptor {
-	return file_neurouter_v1_common_proto_enumTypes[3].Descriptor()
-}
-
-func (Schema_Type) Type() protoreflect.EnumType {
-	return &file_neurouter_v1_common_proto_enumTypes[3]
-}
-
-func (x Schema_Type) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use Schema_Type.Descriptor instead.
-func (Schema_Type) EnumDescriptor() ([]byte, []int) {
-	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{3, 0}
-}
-
 type ReasoningConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The effort level for reasoning.
@@ -353,7 +293,6 @@ type GenerationConfig struct {
 	//	*GenerationConfig_PresetGrammar
 	//	*GenerationConfig_GbnfGrammar
 	//	*GenerationConfig_Schema
-	//	*GenerationConfig_JsonSchema
 	Grammar       isGenerationConfig_Grammar `protobuf_oneof:"grammar"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -486,22 +425,13 @@ func (x *GenerationConfig) GetGbnfGrammar() string {
 	return ""
 }
 
-func (x *GenerationConfig) GetSchema() *Schema {
+func (x *GenerationConfig) GetSchema() *structpb.Struct {
 	if x != nil {
 		if x, ok := x.Grammar.(*GenerationConfig_Schema); ok {
 			return x.Schema
 		}
 	}
 	return nil
-}
-
-func (x *GenerationConfig) GetJsonSchema() string {
-	if x != nil {
-		if x, ok := x.Grammar.(*GenerationConfig_JsonSchema); ok {
-			return x.JsonSchema
-		}
-	}
-	return ""
 }
 
 type isGenerationConfig_Template interface {
@@ -530,12 +460,7 @@ type GenerationConfig_GbnfGrammar struct {
 
 type GenerationConfig_Schema struct {
 	// The schema definition.
-	Schema *Schema `protobuf:"bytes,62,opt,name=schema,proto3,oneof"`
-}
-
-type GenerationConfig_JsonSchema struct {
-	// The JSON schema definition.
-	JsonSchema string `protobuf:"bytes,63,opt,name=json_schema,json=jsonSchema,proto3,oneof"`
+	Schema *structpb.Struct `protobuf:"bytes,62,opt,name=schema,proto3,oneof"`
 }
 
 func (*GenerationConfig_PresetGrammar) isGenerationConfig_Grammar() {}
@@ -543,8 +468,6 @@ func (*GenerationConfig_PresetGrammar) isGenerationConfig_Grammar() {}
 func (*GenerationConfig_GbnfGrammar) isGenerationConfig_Grammar() {}
 
 func (*GenerationConfig_Schema) isGenerationConfig_Grammar() {}
-
-func (*GenerationConfig_JsonSchema) isGenerationConfig_Grammar() {}
 
 // Statistics contains token usage information for a model invocation.
 type Statistics struct {
@@ -591,197 +514,6 @@ func (x *Statistics) GetUsage() *Statistics_Usage {
 	return nil
 }
 
-type Schema struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Type        Schema_Type            `protobuf:"varint,1,opt,name=type,proto3,enum=neurouter.v1.Schema_Type" json:"type,omitempty"`
-	Description string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	// The minimum for number
-	Minimum float64 `protobuf:"fixed64,3,opt,name=minimum,proto3" json:"minimum,omitempty"`
-	// The maximum for number
-	Maximum float64 `protobuf:"fixed64,4,opt,name=maximum,proto3" json:"maximum,omitempty"`
-	// The regex pattern for string
-	Pattern string `protobuf:"bytes,5,opt,name=pattern,proto3" json:"pattern,omitempty"`
-	// The minimum length for string
-	MinLength int32 `protobuf:"varint,6,opt,name=minLength,proto3" json:"minLength,omitempty"`
-	// The maximum length for string
-	MaxLength int32 `protobuf:"varint,7,opt,name=maxLength,proto3" json:"maxLength,omitempty"`
-	// The schema for array items
-	Items *Schema `protobuf:"bytes,8,opt,name=items,proto3" json:"items,omitempty"`
-	// The minimum number of items for array
-	MinItems int32 `protobuf:"varint,9,opt,name=minItems,proto3" json:"minItems,omitempty"`
-	// The maximum number of items for array
-	MaxItems int32 `protobuf:"varint,10,opt,name=maxItems,proto3" json:"maxItems,omitempty"`
-	// The schema for object keys
-	PropertyNames *Schema `protobuf:"bytes,11,opt,name=propertyNames,proto3" json:"propertyNames,omitempty"`
-	// The schema for object values
-	Properties map[string]*Schema `protobuf:"bytes,12,rep,name=properties,proto3" json:"properties,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// The required properties for object
-	Required      []string  `protobuf:"bytes,13,rep,name=required,proto3" json:"required,omitempty"`
-	Enum          []string  `protobuf:"bytes,14,rep,name=enum,proto3" json:"enum,omitempty"`
-	AllOf         []*Schema `protobuf:"bytes,15,rep,name=allOf,proto3" json:"allOf,omitempty"`
-	AnyOf         []*Schema `protobuf:"bytes,16,rep,name=anyOf,proto3" json:"anyOf,omitempty"`
-	OneOf         []*Schema `protobuf:"bytes,17,rep,name=oneOf,proto3" json:"oneOf,omitempty"`
-	Not           *Schema   `protobuf:"bytes,18,opt,name=not,proto3" json:"not,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Schema) Reset() {
-	*x = Schema{}
-	mi := &file_neurouter_v1_common_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Schema) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Schema) ProtoMessage() {}
-
-func (x *Schema) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_common_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Schema.ProtoReflect.Descriptor instead.
-func (*Schema) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *Schema) GetType() Schema_Type {
-	if x != nil {
-		return x.Type
-	}
-	return Schema_TYPE_UNSPECIFIED
-}
-
-func (x *Schema) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-func (x *Schema) GetMinimum() float64 {
-	if x != nil {
-		return x.Minimum
-	}
-	return 0
-}
-
-func (x *Schema) GetMaximum() float64 {
-	if x != nil {
-		return x.Maximum
-	}
-	return 0
-}
-
-func (x *Schema) GetPattern() string {
-	if x != nil {
-		return x.Pattern
-	}
-	return ""
-}
-
-func (x *Schema) GetMinLength() int32 {
-	if x != nil {
-		return x.MinLength
-	}
-	return 0
-}
-
-func (x *Schema) GetMaxLength() int32 {
-	if x != nil {
-		return x.MaxLength
-	}
-	return 0
-}
-
-func (x *Schema) GetItems() *Schema {
-	if x != nil {
-		return x.Items
-	}
-	return nil
-}
-
-func (x *Schema) GetMinItems() int32 {
-	if x != nil {
-		return x.MinItems
-	}
-	return 0
-}
-
-func (x *Schema) GetMaxItems() int32 {
-	if x != nil {
-		return x.MaxItems
-	}
-	return 0
-}
-
-func (x *Schema) GetPropertyNames() *Schema {
-	if x != nil {
-		return x.PropertyNames
-	}
-	return nil
-}
-
-func (x *Schema) GetProperties() map[string]*Schema {
-	if x != nil {
-		return x.Properties
-	}
-	return nil
-}
-
-func (x *Schema) GetRequired() []string {
-	if x != nil {
-		return x.Required
-	}
-	return nil
-}
-
-func (x *Schema) GetEnum() []string {
-	if x != nil {
-		return x.Enum
-	}
-	return nil
-}
-
-func (x *Schema) GetAllOf() []*Schema {
-	if x != nil {
-		return x.AllOf
-	}
-	return nil
-}
-
-func (x *Schema) GetAnyOf() []*Schema {
-	if x != nil {
-		return x.AnyOf
-	}
-	return nil
-}
-
-func (x *Schema) GetOneOf() []*Schema {
-	if x != nil {
-		return x.OneOf
-	}
-	return nil
-}
-
-func (x *Schema) GetNot() *Schema {
-	if x != nil {
-		return x.Not
-	}
-	return nil
-}
-
 type Tool struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Tool:
@@ -794,7 +526,7 @@ type Tool struct {
 
 func (x *Tool) Reset() {
 	*x = Tool{}
-	mi := &file_neurouter_v1_common_proto_msgTypes[4]
+	mi := &file_neurouter_v1_common_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -806,7 +538,7 @@ func (x *Tool) String() string {
 func (*Tool) ProtoMessage() {}
 
 func (x *Tool) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_common_proto_msgTypes[4]
+	mi := &file_neurouter_v1_common_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -819,7 +551,7 @@ func (x *Tool) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tool.ProtoReflect.Descriptor instead.
 func (*Tool) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{4}
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Tool) GetTool() isTool_Tool {
@@ -864,7 +596,7 @@ type Statistics_Usage struct {
 
 func (x *Statistics_Usage) Reset() {
 	*x = Statistics_Usage{}
-	mi := &file_neurouter_v1_common_proto_msgTypes[5]
+	mi := &file_neurouter_v1_common_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -876,7 +608,7 @@ func (x *Statistics_Usage) String() string {
 func (*Statistics_Usage) ProtoMessage() {}
 
 func (x *Statistics_Usage) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_common_proto_msgTypes[5]
+	mi := &file_neurouter_v1_common_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -924,14 +656,14 @@ type Tool_Function struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	Parameters    *Schema                `protobuf:"bytes,3,opt,name=parameters,proto3" json:"parameters,omitempty"`
+	InputSchema   *structpb.Struct       `protobuf:"bytes,3,opt,name=input_schema,json=inputSchema,proto3" json:"input_schema,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Tool_Function) Reset() {
 	*x = Tool_Function{}
-	mi := &file_neurouter_v1_common_proto_msgTypes[7]
+	mi := &file_neurouter_v1_common_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -943,7 +675,7 @@ func (x *Tool_Function) String() string {
 func (*Tool_Function) ProtoMessage() {}
 
 func (x *Tool_Function) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_common_proto_msgTypes[7]
+	mi := &file_neurouter_v1_common_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -956,7 +688,7 @@ func (x *Tool_Function) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tool_Function.ProtoReflect.Descriptor instead.
 func (*Tool_Function) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{4, 0}
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *Tool_Function) GetName() string {
@@ -973,9 +705,9 @@ func (x *Tool_Function) GetDescription() string {
 	return ""
 }
 
-func (x *Tool_Function) GetParameters() *Schema {
+func (x *Tool_Function) GetInputSchema() *structpb.Struct {
 	if x != nil {
-		return x.Parameters
+		return x.InputSchema
 	}
 	return nil
 }
@@ -984,10 +716,10 @@ var File_neurouter_v1_common_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\n" +
-	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\"k\n" +
+	"\x19neurouter/v1/common.proto\x12\fneurouter.v1\x1a\x1cgoogle/protobuf/struct.proto\"k\n" +
 	"\x0fReasoningConfig\x125\n" +
 	"\x06effort\x18\x01 \x01(\x0e2\x1d.neurouter.v1.ReasoningEffortR\x06effort\x12!\n" +
-	"\ftoken_budget\x18\x02 \x01(\rR\vtokenBudget\"\xbf\x05\n" +
+	"\ftoken_budget\x18\x02 \x01(\rR\vtokenBudget\"\x9f\x05\n" +
 	"\x10GenerationConfig\x12\"\n" +
 	"\n" +
 	"max_tokens\x18\x01 \x01(\x03H\x02R\tmaxTokens\x88\x01\x01\x12%\n" +
@@ -1000,10 +732,8 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x0estop_sequences\x18\b \x03(\tR\rstopSequences\x12)\n" +
 	"\x0fpreset_template\x182 \x01(\tH\x00R\x0epresetTemplate\x12'\n" +
 	"\x0epreset_grammar\x18< \x01(\tH\x01R\rpresetGrammar\x12#\n" +
-	"\fgbnf_grammar\x18= \x01(\tH\x01R\vgbnfGrammar\x12.\n" +
-	"\x06schema\x18> \x01(\v2\x14.neurouter.v1.SchemaH\x01R\x06schema\x12!\n" +
-	"\vjson_schema\x18? \x01(\tH\x01R\n" +
-	"jsonSchemaB\n" +
+	"\fgbnf_grammar\x18= \x01(\tH\x01R\vgbnfGrammar\x121\n" +
+	"\x06schema\x18> \x01(\v2\x17.google.protobuf.StructH\x01R\x06schemaB\n" +
 	"\n" +
 	"\btemplateB\t\n" +
 	"\agrammarB\r\n" +
@@ -1021,49 +751,13 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\finput_tokens\x18\x01 \x01(\rR\vinputTokens\x12#\n" +
 	"\routput_tokens\x18\x02 \x01(\rR\foutputTokens\x12.\n" +
 	"\x13cached_input_tokens\x18\x03 \x01(\rR\x11cachedInputTokens\x12)\n" +
-	"\x10reasoning_tokens\x18\x04 \x01(\rR\x0freasoningTokens\"\x80\a\n" +
-	"\x06Schema\x12-\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x19.neurouter.v1.Schema.TypeR\x04type\x12 \n" +
-	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x18\n" +
-	"\aminimum\x18\x03 \x01(\x01R\aminimum\x12\x18\n" +
-	"\amaximum\x18\x04 \x01(\x01R\amaximum\x12\x18\n" +
-	"\apattern\x18\x05 \x01(\tR\apattern\x12\x1c\n" +
-	"\tminLength\x18\x06 \x01(\x05R\tminLength\x12\x1c\n" +
-	"\tmaxLength\x18\a \x01(\x05R\tmaxLength\x12*\n" +
-	"\x05items\x18\b \x01(\v2\x14.neurouter.v1.SchemaR\x05items\x12\x1a\n" +
-	"\bminItems\x18\t \x01(\x05R\bminItems\x12\x1a\n" +
-	"\bmaxItems\x18\n" +
-	" \x01(\x05R\bmaxItems\x12:\n" +
-	"\rpropertyNames\x18\v \x01(\v2\x14.neurouter.v1.SchemaR\rpropertyNames\x12D\n" +
-	"\n" +
-	"properties\x18\f \x03(\v2$.neurouter.v1.Schema.PropertiesEntryR\n" +
-	"properties\x12\x1a\n" +
-	"\brequired\x18\r \x03(\tR\brequired\x12\x12\n" +
-	"\x04enum\x18\x0e \x03(\tR\x04enum\x12*\n" +
-	"\x05allOf\x18\x0f \x03(\v2\x14.neurouter.v1.SchemaR\x05allOf\x12*\n" +
-	"\x05anyOf\x18\x10 \x03(\v2\x14.neurouter.v1.SchemaR\x05anyOf\x12*\n" +
-	"\x05oneOf\x18\x11 \x03(\v2\x14.neurouter.v1.SchemaR\x05oneOf\x12&\n" +
-	"\x03not\x18\x12 \x01(\v2\x14.neurouter.v1.SchemaR\x03not\x1aS\n" +
-	"\x0fPropertiesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
-	"\x05value\x18\x02 \x01(\v2\x14.neurouter.v1.SchemaR\x05value:\x028\x01\"\x83\x01\n" +
-	"\x04Type\x12\x14\n" +
-	"\x10TYPE_UNSPECIFIED\x10\x00\x12\x0f\n" +
-	"\vTYPE_STRING\x10\x01\x12\x0f\n" +
-	"\vTYPE_NUMBER\x10\x02\x12\x10\n" +
-	"\fTYPE_INTEGER\x10\x03\x12\x10\n" +
-	"\fTYPE_BOOLEAN\x10\x04\x12\x0e\n" +
-	"\n" +
-	"TYPE_ARRAY\x10\x05\x12\x0f\n" +
-	"\vTYPE_OBJECT\x10\x06\"\xc1\x01\n" +
+	"\x10reasoning_tokens\x18\x04 \x01(\rR\x0freasoningTokens\"\xc7\x01\n" +
 	"\x04Tool\x129\n" +
-	"\bfunction\x18\x01 \x01(\v2\x1b.neurouter.v1.Tool.FunctionH\x00R\bfunction\x1av\n" +
+	"\bfunction\x18\x01 \x01(\v2\x1b.neurouter.v1.Tool.FunctionH\x00R\bfunction\x1a|\n" +
 	"\bFunction\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x02 \x01(\tR\vdescription\x124\n" +
-	"\n" +
-	"parameters\x18\x03 \x01(\v2\x14.neurouter.v1.SchemaR\n" +
-	"parametersB\x06\n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12:\n" +
+	"\finput_schema\x18\x03 \x01(\v2\x17.google.protobuf.StructR\vinputSchemaB\x06\n" +
 	"\x04tool*\xf9\x01\n" +
 	"\x0fReasoningEffort\x12 \n" +
 	"\x1cREASONING_EFFORT_UNSPECIFIED\x10\x00\x12\x19\n" +
@@ -1100,43 +794,32 @@ func file_neurouter_v1_common_proto_rawDescGZIP() []byte {
 	return file_neurouter_v1_common_proto_rawDescData
 }
 
-var file_neurouter_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_neurouter_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_neurouter_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_neurouter_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_neurouter_v1_common_proto_goTypes = []any{
 	(ReasoningEffort)(0),     // 0: neurouter.v1.ReasoningEffort
 	(Modality)(0),            // 1: neurouter.v1.Modality
 	(Capability)(0),          // 2: neurouter.v1.Capability
-	(Schema_Type)(0),         // 3: neurouter.v1.Schema.Type
-	(*ReasoningConfig)(nil),  // 4: neurouter.v1.ReasoningConfig
-	(*GenerationConfig)(nil), // 5: neurouter.v1.GenerationConfig
-	(*Statistics)(nil),       // 6: neurouter.v1.Statistics
-	(*Schema)(nil),           // 7: neurouter.v1.Schema
-	(*Tool)(nil),             // 8: neurouter.v1.Tool
-	(*Statistics_Usage)(nil), // 9: neurouter.v1.Statistics.Usage
-	nil,                      // 10: neurouter.v1.Schema.PropertiesEntry
-	(*Tool_Function)(nil),    // 11: neurouter.v1.Tool.Function
+	(*ReasoningConfig)(nil),  // 3: neurouter.v1.ReasoningConfig
+	(*GenerationConfig)(nil), // 4: neurouter.v1.GenerationConfig
+	(*Statistics)(nil),       // 5: neurouter.v1.Statistics
+	(*Tool)(nil),             // 6: neurouter.v1.Tool
+	(*Statistics_Usage)(nil), // 7: neurouter.v1.Statistics.Usage
+	(*Tool_Function)(nil),    // 8: neurouter.v1.Tool.Function
+	(*structpb.Struct)(nil),  // 9: google.protobuf.Struct
 }
 var file_neurouter_v1_common_proto_depIdxs = []int32{
-	0,  // 0: neurouter.v1.ReasoningConfig.effort:type_name -> neurouter.v1.ReasoningEffort
-	4,  // 1: neurouter.v1.GenerationConfig.reasoning_config:type_name -> neurouter.v1.ReasoningConfig
-	7,  // 2: neurouter.v1.GenerationConfig.schema:type_name -> neurouter.v1.Schema
-	9,  // 3: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
-	3,  // 4: neurouter.v1.Schema.type:type_name -> neurouter.v1.Schema.Type
-	7,  // 5: neurouter.v1.Schema.items:type_name -> neurouter.v1.Schema
-	7,  // 6: neurouter.v1.Schema.propertyNames:type_name -> neurouter.v1.Schema
-	10, // 7: neurouter.v1.Schema.properties:type_name -> neurouter.v1.Schema.PropertiesEntry
-	7,  // 8: neurouter.v1.Schema.allOf:type_name -> neurouter.v1.Schema
-	7,  // 9: neurouter.v1.Schema.anyOf:type_name -> neurouter.v1.Schema
-	7,  // 10: neurouter.v1.Schema.oneOf:type_name -> neurouter.v1.Schema
-	7,  // 11: neurouter.v1.Schema.not:type_name -> neurouter.v1.Schema
-	11, // 12: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
-	7,  // 13: neurouter.v1.Schema.PropertiesEntry.value:type_name -> neurouter.v1.Schema
-	7,  // 14: neurouter.v1.Tool.Function.parameters:type_name -> neurouter.v1.Schema
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	0, // 0: neurouter.v1.ReasoningConfig.effort:type_name -> neurouter.v1.ReasoningEffort
+	3, // 1: neurouter.v1.GenerationConfig.reasoning_config:type_name -> neurouter.v1.ReasoningConfig
+	9, // 2: neurouter.v1.GenerationConfig.schema:type_name -> google.protobuf.Struct
+	7, // 3: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Statistics.Usage
+	8, // 4: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
+	9, // 5: neurouter.v1.Tool.Function.input_schema:type_name -> google.protobuf.Struct
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_common_proto_init() }
@@ -1149,9 +832,8 @@ func file_neurouter_v1_common_proto_init() {
 		(*GenerationConfig_PresetGrammar)(nil),
 		(*GenerationConfig_GbnfGrammar)(nil),
 		(*GenerationConfig_Schema)(nil),
-		(*GenerationConfig_JsonSchema)(nil),
 	}
-	file_neurouter_v1_common_proto_msgTypes[4].OneofWrappers = []any{
+	file_neurouter_v1_common_proto_msgTypes[3].OneofWrappers = []any{
 		(*Tool_Function_)(nil),
 	}
 	type x struct{}
@@ -1159,8 +841,8 @@ func file_neurouter_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_common_proto_rawDesc), len(file_neurouter_v1_common_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   8,
+			NumEnums:      3,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

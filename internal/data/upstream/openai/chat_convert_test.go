@@ -24,6 +24,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 func TestConvertMessageToOpenAIChat(t *testing.T) {
@@ -607,35 +608,18 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 			So(param.ResponseFormat.OfJSONObject, ShouldNotBeNil)
 		})
 
-		Convey("with json_schema grammar", func() {
-			req := &entity.ChatReq{
-				Model: "gpt-4",
-				Config: &v1.GenerationConfig{
-					Grammar: &v1.GenerationConfig_JsonSchema{
-						JsonSchema: `{"type":"object","properties":{"name":{"type":"string"}}}`,
-					},
-				},
-			}
-
-			param := repo.convertRequestToOpenAIChat(req)
-			So(param.ResponseFormat.OfJSONSchema, ShouldNotBeNil)
-			So(param.ResponseFormat.OfJSONSchema.JSONSchema.Name, ShouldEqual, "custom_schema")
-			schema := param.ResponseFormat.OfJSONSchema.JSONSchema.Schema.(map[string]any)
-			So(schema["type"], ShouldEqual, "object")
-		})
-
 		Convey("with schema grammar", func() {
 			req := &entity.ChatReq{
 				Model: "gpt-4",
 				Config: &v1.GenerationConfig{
 					Grammar: &v1.GenerationConfig_Schema{
-						Schema: &v1.Schema{
-							Type: v1.Schema_TYPE_OBJECT,
-							Properties: map[string]*v1.Schema{
-								"name": {Type: v1.Schema_TYPE_STRING},
+						Schema: util.MustStructFromMap(map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"name": map[string]any{"type": "string"},
 							},
-							Required: []string{"name"},
-						},
+							"required": []string{"name"},
+						}),
 					},
 				},
 			}
@@ -643,9 +627,10 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 			param := repo.convertRequestToOpenAIChat(req)
 			So(param.ResponseFormat.OfJSONSchema, ShouldNotBeNil)
 			So(param.ResponseFormat.OfJSONSchema.JSONSchema.Name, ShouldEqual, "custom_schema")
-			schemaMap := param.ResponseFormat.OfJSONSchema.JSONSchema.Schema.(*v1.Schema)
-			So(schemaMap.Type, ShouldEqual, v1.Schema_TYPE_OBJECT)
-			So(schemaMap.Required, ShouldResemble, []string{"name"})
+			schemaMap := param.ResponseFormat.OfJSONSchema.JSONSchema.Schema.(openai.FunctionParameters)
+			So(schemaMap["type"], ShouldEqual, "object")
+			So(schemaMap["properties"], ShouldContainKey, "name")
+			So(schemaMap["required"], ShouldResemble, []any{"name"})
 		})
 
 		Convey("with gbnf grammar (ignored by OpenAI)", func() {
@@ -672,13 +657,13 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 							Function: &v1.Tool_Function{
 								Name:        "test_function",
 								Description: "Test function description",
-								Parameters: &v1.Schema{
-									Type: v1.Schema_TYPE_OBJECT,
-									Properties: map[string]*v1.Schema{
-										"prop1": {Type: v1.Schema_TYPE_STRING},
+								InputSchema: util.MustStructFromMap(map[string]any{
+									"type": "object",
+									"properties": map[string]any{
+										"prop1": map[string]any{"type": "string"},
 									},
-									Required: []string{"prop1"},
-								},
+									"required": []string{"prop1"},
+								}),
 							},
 						},
 					},

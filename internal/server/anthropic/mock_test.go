@@ -2,6 +2,7 @@ package anthropic
 
 import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/util"
 	"k8s.io/utils/ptr"
 )
 
@@ -14,7 +15,7 @@ var mockMessagesRequestBody = `{
                     "text": "hi, how are you?",
                     "type": "text"
                 },
-				{
+                {
                     "text": "and how is the weather yesterday in shanghai?",
                     "type": "text"
                 }
@@ -188,10 +189,10 @@ var mockChatReq = &v1.ChatReq{
 				Function: &v1.Tool_Function{
 					Name:        "get_date",
 					Description: "Get today's date",
-					Parameters: &v1.Schema{
-						Type:       v1.Schema_TYPE_OBJECT,
-						Properties: map[string]*v1.Schema{},
-					},
+					InputSchema: util.MustStructFromMap(map[string]any{
+						"type":       "object",
+						"properties": map[string]any{},
+					}),
 				},
 			},
 		},
@@ -200,20 +201,20 @@ var mockChatReq = &v1.ChatReq{
 				Function: &v1.Tool_Function{
 					Name:        "get_weather",
 					Description: "Get weather for specific date",
-					Parameters: &v1.Schema{
-						Type: v1.Schema_TYPE_OBJECT,
-						Properties: map[string]*v1.Schema{
-							"city": {
-								Type:        v1.Schema_TYPE_STRING,
-								Description: "The name of the city",
+					InputSchema: util.MustStructFromMap(map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"city": map[string]any{
+								"type":        "string",
+								"description": "The name of the city",
 							},
-							"date": {
-								Type:        v1.Schema_TYPE_STRING,
-								Description: "The date to get the weather for",
+							"date": map[string]any{
+								"type":        "string",
+								"description": "The date to get the weather for",
 							},
 						},
-						Required: []string{"city", "date"},
-					},
+						"required": []string{"city", "date"},
+					}),
 				},
 			},
 		},
@@ -292,9 +293,9 @@ var mockChatStreamResp = []*v1.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:     new(uint32(0)),
-				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content:   &v1.Content_Text{Text: "The user wants weather info for Shanghai."},
+				Index:   new(uint32(0)),
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: &v1.Content_Text{Text: "The user wants weather info for Shanghai."},
 			}},
 		},
 		Statistics: &v1.Statistics{
@@ -309,10 +310,10 @@ var mockChatStreamResp = []*v1.ChatResp{
 			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
-				Index:     new(uint32(0)),
-				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Metadata:  map[string]string{"signature": "sig-stream-abc"},
-				Content:   &v1.Content_Text{Text: ""},
+				Index:    new(uint32(0)),
+				Phase:    v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Metadata: map[string]string{"signature": "sig-stream-abc"},
+				Content:  &v1.Content_Text{Text: ""},
 			}},
 		},
 	},

@@ -15,7 +15,6 @@
 package openai
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/google/uuid"
@@ -52,7 +51,6 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 		req.Stop = openai.ChatCompletionNewParamsStopUnion{OfStringArray: config.StopSequences}
 	}
 
-	// Convert grammar to OpenAI response format
 	switch g := config.Grammar.(type) {
 	case *v1.GenerationConfig_PresetGrammar:
 		if g.PresetGrammar == "json_object" {
@@ -60,24 +58,12 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 				OfJSONObject: &openai.ResponseFormatJSONObjectParam{},
 			}
 		}
-	case *v1.GenerationConfig_JsonSchema:
-		var schema map[string]any
-		if err := json.Unmarshal([]byte(g.JsonSchema), &schema); err == nil {
-			req.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
-				OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
-					JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
-						Name:   "custom_schema",
-						Schema: schema,
-					},
-				},
-			}
-		}
 	case *v1.GenerationConfig_Schema:
 		req.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
 			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
 				JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
 					Name:   "custom_schema",
-					Schema: g.Schema,
+					Schema: convertSchemaToMap(g.Schema),
 				},
 			},
 		}
@@ -298,7 +284,7 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCo
 			case *v1.Tool_Function_:
 				ot := openai.FunctionDefinitionParam{
 					Name:       t.Function.Name,
-					Parameters: convertSchemaToMap(t.Function.Parameters),
+					Parameters: convertSchemaToMap(t.Function.InputSchema),
 				}
 				if t.Function.Description != "" {
 					ot.Description = openai.Opt(t.Function.Description)

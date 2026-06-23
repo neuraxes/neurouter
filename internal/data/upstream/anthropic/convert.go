@@ -21,9 +21,11 @@ import (
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/tidwall/gjson"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
+	"github.com/neuraxes/neurouter/internal/util"
 )
 
 // convertStatusFromAnthropic maps Anthropic stop reasons to internal chat status.
@@ -95,17 +97,9 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 		req.StopSequences = config.StopSequences
 	}
 	switch g := config.Grammar.(type) {
-	case *v1.GenerationConfig_JsonSchema:
-		var schema map[string]any
-		if err := json.Unmarshal([]byte(g.JsonSchema), &schema); err == nil {
-			req.OutputConfig.Format.Schema = schema
-		}
 	case *v1.GenerationConfig_Schema:
-		if data, err := json.Marshal(g.Schema); err == nil {
-			var schema map[string]any
-			if err := json.Unmarshal(data, &schema); err == nil {
-				req.OutputConfig.Format.Schema = schema
-			}
+		if g.Schema != nil {
+			req.OutputConfig.Format.Schema = g.Schema.AsMap()
 		}
 	}
 }
@@ -244,18 +238,32 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 	}
 }
 
-func (r *upstream) convertInputSchemaToAnthropic(params *v1.Schema) (schema anthropic.ToolInputSchemaParam) {
+func (r *upstream) convertInputSchemaToAnthropic(params *structpb.Struct) (schema anthropic.ToolInputSchemaParam) {
 	if params == nil {
 		return
 	}
 	schema.Type = "object" // OpenRouter validates this field which will be omitted if not set explicitly
-	if params.Properties != nil {
-		schema.Properties = params.Properties
+
+	fields := params.AsMap()
+	if properties, ok := fields["properties"]; ok {
+		schema.Properties = properties
 	} else {
 		schema.Properties = map[string]any{}
 	}
-	if params.Required != nil {
-		schema.Required = params.Required
+	if required, ok := util.StringSliceFromAny(fields["required"]); ok {
+		schema.Required = required
+	}
+
+	extraFields := make(map[string]any)
+	for key, value := range fields {
+		switch key {
+		case "properties", "required", "type":
+		default:
+			extraFields[key] = value
+		}
+	}
+	if len(extraFields) > 0 {
+		schema.ExtraFields = extraFields
 	}
 	return
 }
@@ -286,7 +294,7 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 			case *v1.Tool_Function_:
 				at := &anthropic.ToolParam{
 					Name:        t.Function.Name,
-					InputSchema: r.convertInputSchemaToAnthropic(t.Function.Parameters),
+					InputSchema: r.convertInputSchemaToAnthropic(t.Function.InputSchema),
 				}
 				if t.Function.Description != "" {
 					at.Description = anthropic.Opt(t.Function.Description)

@@ -17,7 +17,6 @@ package google
 import (
 	"encoding/base64"
 	"encoding/json"
-	"strings"
 
 	"google.golang.org/genai"
 
@@ -73,28 +72,6 @@ func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *
 	}
 }
 
-func convertFunctionParametersToGoogle(params *v1.Schema) *genai.Schema {
-	if params == nil {
-		return nil
-	}
-	schema := &genai.Schema{
-		Type:        genai.Type(strings.TrimPrefix(v1.Schema_Type_name[int32(params.Type)], "TYPE_")),
-		Description: params.Description,
-		Required:    params.Required,
-		Enum:        params.Enum,
-	}
-	switch params.Type {
-	case v1.Schema_TYPE_ARRAY:
-		schema.Items = convertFunctionParametersToGoogle(params.Items)
-	case v1.Schema_TYPE_OBJECT:
-		schema.Properties = make(map[string]*genai.Schema)
-		for key, prop := range params.Properties {
-			schema.Properties[key] = convertFunctionParametersToGoogle(prop)
-		}
-	}
-	return schema
-}
-
 func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	if len(tools) == 0 {
 		return nil
@@ -103,10 +80,14 @@ func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	for _, tool := range tools {
 		switch t := tool.Tool.(type) {
 		case *v1.Tool_Function_:
+			var parametersJsonSchema any
+			if schema := t.Function.GetInputSchema(); schema != nil {
+				parametersJsonSchema = schema.AsMap()
+			}
 			functionDecls = append(functionDecls, &genai.FunctionDeclaration{
-				Name:        t.Function.GetName(),
-				Description: t.Function.GetDescription(),
-				Parameters:  convertFunctionParametersToGoogle(t.Function.GetParameters()),
+				Name:                 t.Function.GetName(),
+				Description:          t.Function.GetDescription(),
+				ParametersJsonSchema: parametersJsonSchema,
 			})
 		}
 	}
