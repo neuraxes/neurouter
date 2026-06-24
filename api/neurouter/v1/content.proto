@@ -86,8 +86,6 @@ message Content {
   ContentPhase phase = 3;
   // Provider-supplied verification signature for this content.
   string signature = 4;
-  // Additional metadata for the content
-  map<string, string> metadata = 9;
   oneof content {
     Text text = 10;
     Image image = 11;

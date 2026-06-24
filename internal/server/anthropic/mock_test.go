@@ -240,7 +240,7 @@ var mockChatResp = &v1.ChatResp{
 		},
 	},
 	Statistics: &v1.Statistics{
-		Usage: &v1.Statistics_Usage{
+		Usage: &v1.Usage{
 			InputTokens:  840,
 			OutputTokens: 86,
 		},
@@ -287,7 +287,7 @@ var mockChatStreamResp = []*v1.ChatResp{
 			}},
 		},
 		Statistics: &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
+			Usage: &v1.Usage{
 				InputTokens: 840,
 			},
 		},
@@ -452,7 +452,7 @@ var mockChatStreamResp = []*v1.ChatResp{
 		Model:  "claude-haiku-4-5-20251001",
 		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
 		Statistics: &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
+			Usage: &v1.Usage{
 				OutputTokens: 93,
 			},
 		},

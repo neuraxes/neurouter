@@ -494,7 +494,7 @@ func convertStatisticsFromOpenAIResponse(usage *responses.ResponseUsage) *v1.Sta
 	}
 
 	return &v1.Statistics{
-		Usage: &v1.Statistics_Usage{
+		Usage: &v1.Usage{
 			InputTokens:       uint32(max(usage.InputTokens, 0)),
 			OutputTokens:      uint32(max(usage.OutputTokens, 0)),
 			CachedInputTokens: uint32(max(usage.InputTokensDetails.CachedTokens, 0)),

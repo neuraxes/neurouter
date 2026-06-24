@@ -161,7 +161,7 @@ func TestPrintChat(t *testing.T) {
 				},
 			},
 			Statistics: &v1.Statistics{
-				Usage: &v1.Statistics_Usage{
+				Usage: &v1.Usage{
 					InputTokens: 10,
 				},
 			},

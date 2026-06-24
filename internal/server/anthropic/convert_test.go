@@ -669,7 +669,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					},
 				},
 				Statistics: &v1.Statistics{
-					Usage: &v1.Statistics_Usage{
+					Usage: &v1.Usage{
 						InputTokens:       10,
 						OutputTokens:      5,
 						CachedInputTokens: 3,
@@ -839,7 +839,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					},
 				},
 				Statistics: &v1.Statistics{
-					Usage: &v1.Statistics_Usage{
+					Usage: &v1.Usage{
 						InputTokens:  100,
 						OutputTokens: 50,
 					},
@@ -909,7 +909,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 func TestConvertStatisticsToAnthropic(t *testing.T) {
 	Convey("Given statistics to convert", t, func() {
 		stats := &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
+			Usage: &v1.Usage{
 				InputTokens:       100,
 				OutputTokens:      50,
 				CachedInputTokens: 20,

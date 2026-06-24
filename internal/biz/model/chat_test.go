@@ -230,7 +230,7 @@ func TestChatModel_RecordUsage(t *testing.T) {
 			So(concurrency.Probe(), ShouldBeGreaterThan, 0)
 
 			m.RecordUsage(context.Background(), &v1.Statistics{
-				Usage: &v1.Statistics_Usage{
+				Usage: &v1.Usage{
 					InputTokens:       100,
 					OutputTokens:      50,
 					CachedInputTokens: 10,
@@ -260,7 +260,7 @@ func TestChatModel_RecordUsage(t *testing.T) {
 			}
 
 			m.RecordUsage(context.Background(), &v1.Statistics{
-				Usage: &v1.Statistics_Usage{
+				Usage: &v1.Usage{
 					InputTokens:  200,
 					OutputTokens: 100,
 				},
@@ -283,7 +283,7 @@ func TestChatModel_RecordUsage(t *testing.T) {
 			}
 
 			m.RecordUsage(context.Background(), &v1.Statistics{
-				Usage: &v1.Statistics_Usage{
+				Usage: &v1.Usage{
 					InputTokens:       100,
 					OutputTokens:      50,
 					CachedInputTokens: 10,
@@ -361,7 +361,7 @@ func TestChatModel_Close(t *testing.T) {
 			}
 
 			m.RecordUsage(context.Background(), &v1.Statistics{
-				Usage: &v1.Statistics_Usage{
+				Usage: &v1.Usage{
 					InputTokens:  10,
 					OutputTokens: 5,
 				},

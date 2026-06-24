@@ -342,7 +342,7 @@ var mockChatResp = &entity.ChatResp{
 		},
 	},
 	Statistics: &v1.Statistics{
-		Usage: &v1.Statistics_Usage{
+		Usage: &v1.Usage{
 			InputTokens:       303,
 			OutputTokens:      46,
 			CachedInputTokens: 256,
@@ -470,7 +470,7 @@ var mockResponsesResp = &entity.ChatResp{
 		},
 	},
 	Statistics: &v1.Statistics{
-		Usage: &v1.Statistics_Usage{
+		Usage: &v1.Usage{
 			InputTokens:       196,
 			OutputTokens:      85,
 			CachedInputTokens: 0,
@@ -797,7 +797,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 		},
 		Statistics: &v1.Statistics{
-			Usage: &v1.Statistics_Usage{
+			Usage: &v1.Usage{
 				InputTokens:  192,
 				OutputTokens: 65,
 			},

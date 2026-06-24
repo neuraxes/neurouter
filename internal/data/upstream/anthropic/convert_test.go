@@ -857,7 +857,6 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			So(r1, ShouldNotBeNil)
 			So(r1.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 			So(r1.Message.Contents[0].GetText().GetText(), ShouldEqual, "let me think")
-			So(r1.Message.Contents[0].Metadata, ShouldBeNil)
 
 			// signature_delta
 			d1s := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "signature_delta", Signature: "sig-xyz"}}

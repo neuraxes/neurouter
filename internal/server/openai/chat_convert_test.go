@@ -935,7 +935,7 @@ func TestConvertUsageToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("When usage has all fields", func() {
-			u := &v1.Statistics_Usage{
+			u := &v1.Usage{
 				InputTokens:       100,
 				OutputTokens:      50,
 				CachedInputTokens: 20,
@@ -954,7 +954,7 @@ func TestConvertUsageToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("When usage has zero values", func() {
-			u := &v1.Statistics_Usage{}
+			u := &v1.Usage{}
 			result := convertUsageToOpenAIChat(u)
 
 			Convey("Then all fields should be zero", func() {
@@ -982,7 +982,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 					},
 				},
 				Statistics: &v1.Statistics{
-					Usage: &v1.Statistics_Usage{
+					Usage: &v1.Usage{
 						InputTokens:  10,
 						OutputTokens: 5,
 					},

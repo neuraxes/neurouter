@@ -468,7 +468,7 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 			resp.Message = nil
 			cachedInput := uint32(max(chunk.Usage.CacheReadInputTokens+chunk.Usage.CacheCreationInputTokens, 0))
 			resp.Statistics = &v1.Statistics{
-				Usage: &v1.Statistics_Usage{
+				Usage: &v1.Usage{
 					InputTokens:       uint32(max(chunk.Usage.InputTokens, 0)) + cachedInput,
 					OutputTokens:      uint32(max(chunk.Usage.OutputTokens, 0)),
 					CachedInputTokens: cachedInput,
@@ -497,7 +497,7 @@ func convertStatisticsFromAnthropic(usage *anthropic.Usage) *v1.Statistics {
 
 	cachedInput := uint32(max(usage.CacheReadInputTokens+usage.CacheCreationInputTokens, 0))
 	return &v1.Statistics{
-		Usage: &v1.Statistics_Usage{
+		Usage: &v1.Usage{
 			InputTokens:       uint32(max(usage.InputTokens, 0)) + cachedInput,
 			OutputTokens:      uint32(max(usage.OutputTokens, 0)),
 			CachedInputTokens: cachedInput,

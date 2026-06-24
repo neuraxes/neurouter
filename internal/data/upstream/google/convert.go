@@ -295,7 +295,7 @@ func convertStatisticsFromGoogle(usage *genai.GenerateContentResponseUsageMetada
 	}
 
 	return &v1.Statistics{
-		Usage: &v1.Statistics_Usage{
+		Usage: &v1.Usage{
 			InputTokens:       uint32(usage.PromptTokenCount),
 			OutputTokens:      uint32(usage.CandidatesTokenCount + usage.ThoughtsTokenCount),
 			CachedInputTokens: uint32(usage.CachedContentTokenCount),

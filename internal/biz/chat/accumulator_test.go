@@ -176,7 +176,7 @@ func TestChatRespAccumulator(t *testing.T) {
 				So(resp.Message.Contents[1].GetText().GetText(), ShouldEqual, "second")
 			})
 
-			Convey("Reasoning signature metadata is accumulated", func() {
+			Convey("Reasoning signature is accumulated", func() {
 				acc := NewChatRespAccumulator()
 				idx := uint32(0)
 				acc.Accumulate(&v1.ChatResp{
@@ -222,41 +222,6 @@ func TestChatRespAccumulator(t *testing.T) {
 				So(len(resp.Message.Contents), ShouldEqual, 1)
 				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "think-ing-done")
 				So(resp.Message.Contents[0].Signature, ShouldEqual, "sig-nature")
-			})
-
-			Convey("Text metadata key is initialized when missing", func() {
-				acc := NewChatRespAccumulator()
-				idx := uint32(1)
-				acc.Accumulate(&v1.ChatResp{
-					Message: &v1.Message{
-						Role: v1.Role_MODEL,
-						Contents: []*v1.Content{
-							{
-								Index:   &idx,
-								Content: v1.NewTextContent("hello"),
-							},
-						},
-					},
-				})
-				acc.Accumulate(&v1.ChatResp{
-					Message: &v1.Message{
-						Role: v1.Role_MODEL,
-						Contents: []*v1.Content{
-							{
-								Index: &idx,
-								Metadata: map[string]string{
-									"trace_id": "abc",
-								},
-								Content: v1.NewTextContent(" world"),
-							},
-						},
-					},
-				})
-
-				resp := acc.Resp()
-				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "hello world")
-				So(resp.Message.Contents[0].Metadata["trace_id"], ShouldEqual, "abc")
 			})
 		})
 
@@ -557,7 +522,7 @@ func TestChatRespAccumulator(t *testing.T) {
 				acc := NewChatRespAccumulator()
 				acc.Accumulate(&v1.ChatResp{
 					Statistics: &v1.Statistics{
-						Usage: &v1.Statistics_Usage{
+						Usage: &v1.Usage{
 							InputTokens:       100,
 							OutputTokens:      50,
 							CachedInputTokens: 20,
@@ -576,7 +541,7 @@ func TestChatRespAccumulator(t *testing.T) {
 				acc := NewChatRespAccumulator()
 				acc.Accumulate(&v1.ChatResp{
 					Statistics: &v1.Statistics{
-						Usage: &v1.Statistics_Usage{
+						Usage: &v1.Usage{
 							InputTokens:       100,
 							OutputTokens:      200,
 							CachedInputTokens: 300,
@@ -586,7 +551,7 @@ func TestChatRespAccumulator(t *testing.T) {
 				})
 				acc.Accumulate(&v1.ChatResp{
 					Statistics: &v1.Statistics{
-						Usage: &v1.Statistics_Usage{
+						Usage: &v1.Usage{
 							InputTokens:       0,
 							OutputTokens:      300,
 							CachedInputTokens: 0,
@@ -596,7 +561,7 @@ func TestChatRespAccumulator(t *testing.T) {
 				})
 				acc.Accumulate(&v1.ChatResp{
 					Statistics: &v1.Statistics{
-						Usage: &v1.Statistics_Usage{
+						Usage: &v1.Usage{
 							InputTokens:       200,
 							OutputTokens:      0,
 							CachedInputTokens: 400,

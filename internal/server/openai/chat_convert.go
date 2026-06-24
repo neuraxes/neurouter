@@ -317,7 +317,7 @@ func convertStatusToOpenAIChat(status v1.ChatStatus) string {
 	}
 }
 
-func convertUsageToOpenAIChat(u *v1.Statistics_Usage) *openai.CompletionUsage {
+func convertUsageToOpenAIChat(u *v1.Usage) *openai.CompletionUsage {
 	if u == nil {
 		return nil
 	}

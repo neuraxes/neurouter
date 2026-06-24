@@ -18,20 +18,6 @@ func mergeContentSignature(last, current *v1.Content) {
 	last.Signature += current.Signature
 }
 
-func mergeContentMetadata(last, current *v1.Content) {
-	if last == nil || current == nil || len(current.Metadata) == 0 {
-		return
-	}
-
-	if last.Metadata == nil {
-		last.Metadata = make(map[string]string, len(current.Metadata))
-	}
-
-	for key, value := range current.Metadata {
-		last.Metadata[key] += value
-	}
-}
-
 func NewChatRespAccumulator() *ChatRespAccumulator {
 	return &ChatRespAccumulator{
 		resp: &v1.ChatResp{},
@@ -117,7 +103,6 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 				lastText.Text.Text += c.Text.GetText()
 			}
 			mergeContentSignature(lastContent, content)
-			mergeContentMetadata(lastContent, content)
 
 		case *v1.Content_ToolUse:
 			if c.ToolUse.Id != "" {
@@ -157,7 +142,7 @@ func (a *ChatRespAccumulator) accumulateStatistics(statistics *v1.Statistics) {
 
 	if statistics.Usage != nil {
 		if a.resp.Statistics.Usage == nil {
-			a.resp.Statistics.Usage = &v1.Statistics_Usage{}
+			a.resp.Statistics.Usage = &v1.Usage{}
 		}
 
 		// Streaming usage is cumulative, but some chunks only carry partial fields.
