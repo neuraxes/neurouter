@@ -10,6 +10,14 @@ type ChatRespAccumulator struct {
 	resp *v1.ChatResp
 }
 
+func mergeContentSignature(last, current *v1.Content) {
+	if last == nil || current == nil || current.Signature == "" {
+		return
+	}
+
+	last.Signature += current.Signature
+}
+
 func mergeContentMetadata(last, current *v1.Content) {
 	if last == nil || current == nil || len(current.Metadata) == 0 {
 		return
@@ -56,7 +64,7 @@ func (a *ChatRespAccumulator) lastContent() *v1.Content {
 	return contents[length-1]
 }
 
-func shouldMergeContent(last, current *v1.Content) bool {
+func mayMergeContent(last, current *v1.Content) bool {
 	if last == nil || current == nil {
 		return false
 	}
@@ -95,7 +103,7 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 	// Accumulate contents
 	for _, content := range message.Contents {
 		lastContent := a.lastContent()
-		if !shouldMergeContent(lastContent, content) {
+		if !mayMergeContent(lastContent, content) {
 			a.resp.Message.Contents = append(a.resp.Message.Contents, content)
 			continue
 		}
@@ -103,7 +111,12 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 		switch c := content.Content.(type) {
 		case *v1.Content_Text:
 			lastText := lastContent.Content.(*v1.Content_Text)
-			lastText.Text += c.Text
+			if lastText.Text == nil {
+				lastText.Text = &v1.Text{Text: c.Text.GetText()}
+			} else {
+				lastText.Text.Text += c.Text.GetText()
+			}
+			mergeContentSignature(lastContent, content)
 			mergeContentMetadata(lastContent, content)
 
 		case *v1.Content_ToolUse:
@@ -124,6 +137,7 @@ func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
 					lastFunctionCall.ToolUse.Inputs = append(lastFunctionCall.ToolUse.Inputs, c.ToolUse.Inputs...)
 				}
 			}
+			mergeContentSignature(lastContent, content)
 
 		default:
 			// Types without merge logic (e.g., Image) are appended as new content

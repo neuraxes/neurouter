@@ -21,9 +21,7 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_SYSTEM,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_Text{
-						Text: "You are helpful assistant.",
-					},
+					Content: v1.NewTextContent("You are helpful assistant."),
 				},
 			},
 		},
@@ -31,14 +29,10 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_USER,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_Text{
-						Text: "hi, how are you?",
-					},
+					Content: v1.NewTextContent("hi, how are you?"),
 				},
 				{
-					Content: &v1.Content_Text{
-						Text: "and how is the weather yesterday in shanghai?",
-					},
+					Content: v1.NewTextContent("and how is the weather yesterday in shanghai?"),
 				},
 			},
 		},
@@ -47,13 +41,9 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Metadata: map[string]string{
-						"signature": "Ep4ECkgICRABGAIqQPDbGoDv1NFNPOMhf8vnh3ThJJnizSYc3/qCq21j8CAwGCwTEcrY/ctoXRntgx/1cvl3mEfFEECC5LMfgJLVcQESDHKtOYoRTWm6f2jcRhoM9h+b/XKb6bxWHrScIjBD/7A9wL/wrdLHbMSM4YVrMXw7ZUQIMpTkYRWAhCMhY25FVp5KkkV2FoHQ29XQ7nAqgwMXVaVyxVPJJMQHhat2xNtBfsOafMu5TBeR+f1LjPMqdoz55nrTWGE5K2yO00BTDIFv4wf8jtbZHC1EskLkqWej1lt/wIL2fS3ZbcgPkaclKlPjGtWrGaCdgcjLYeK1BiiepbwepZWGSPfEduaLqQBkJSFB7ykbqbSk+gCKFfV1nQVRuBWQ5fJnK/59a9YjrBlizasV4d0QRA4Z1+NniaZh7Zh2s6/hOGFJHb3Aqypxiy/GFb34tkCojj6u8tF2tyBL0J/d09z+lZ/Sc4rCkfjya9/rx4QRKy42v2Cn+1fO5f90Fs5Dw8sL4czPVoD6bYNZE1AVHb5Vgu7tN22hYdxFzaR+vhhEtIwGs32IgWS5jRRR5LsZoEzaDFo3HyE5R1sZyE0E79tojMFmndvIvYQuybOEb/nqyJm1ua9jdmL+M1yNHBuO0NWB2Jh0c0IlsTre5enlLQrjTiwCmtMacdrsVJViUW2nkBEOUBudHu6bZkS1Fqe0Ro/7dSjYQyhBqUeJnvYYAQ==",
-					},
-					Content: &v1.Content_Text{
-						Text: "The user is asking two things:\n1. How am I? - This is a greeting\n2. What was the weather yesterday in Shanghai?\n\nFor the second part, I need to:\n1. First get today's date using get_date\n2. Then calculate yesterday's date\n3. Then get the weather for Shanghai on yesterday's date\n\nLet me start by getting today's date first, since I need that to determine yesterday's date.",
-					},
+					Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Signature: "Ep4ECkgICRABGAIqQPDbGoDv1NFNPOMhf8vnh3ThJJnizSYc3/qCq21j8CAwGCwTEcrY/ctoXRntgx/1cvl3mEfFEECC5LMfgJLVcQESDHKtOYoRTWm6f2jcRhoM9h+b/XKb6bxWHrScIjBD/7A9wL/wrdLHbMSM4YVrMXw7ZUQIMpTkYRWAhCMhY25FVp5KkkV2FoHQ29XQ7nAqgwMXVaVyxVPJJMQHhat2xNtBfsOafMu5TBeR+f1LjPMqdoz55nrTWGE5K2yO00BTDIFv4wf8jtbZHC1EskLkqWej1lt/wIL2fS3ZbcgPkaclKlPjGtWrGaCdgcjLYeK1BiiepbwepZWGSPfEduaLqQBkJSFB7ykbqbSk+gCKFfV1nQVRuBWQ5fJnK/59a9YjrBlizasV4d0QRA4Z1+NniaZh7Zh2s6/hOGFJHb3Aqypxiy/GFb34tkCojj6u8tF2tyBL0J/d09z+lZ/Sc4rCkfjya9/rx4QRKy42v2Cn+1fO5f90Fs5Dw8sL4czPVoD6bYNZE1AVHb5Vgu7tN22hYdxFzaR+vhhEtIwGs32IgWS5jRRR5LsZoEzaDFo3HyE5R1sZyE0E79tojMFmndvIvYQuybOEb/nqyJm1ua9jdmL+M1yNHBuO0NWB2Jh0c0IlsTre5enlLQrjTiwCmtMacdrsVJViUW2nkBEOUBudHu6bZkS1Fqe0Ro/7dSjYQyhBqUeJnvYYAQ==",
+					Content:   v1.NewTextContent("The user is asking two things:\n1. How am I? - This is a greeting\n2. What was the weather yesterday in Shanghai?\n\nFor the second part, I need to:\n1. First get today's date using get_date\n2. Then calculate yesterday's date\n3. Then get the weather for Shanghai on yesterday's date\n\nLet me start by getting today's date first, since I need that to determine yesterday's date."),
 				},
 				{
 					Content: &v1.Content_ToolUse{
@@ -261,9 +251,7 @@ var mockChatResp = &entity.ChatResp{
 		Role: v1.Role_MODEL,
 		Contents: []*v1.Content{
 			{
-				Content: &v1.Content_Text{
-					Text: "Now let me get the weather for Shanghai yesterday:",
-				},
+				Content: v1.NewTextContent("Now let me get the weather for Shanghai yesterday:"),
 			},
 			{
 				Content: &v1.Content_ToolUse{
@@ -468,7 +456,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Index:   new(uint32(0)),
-				Content: &v1.Content_Text{Text: "OK~ "},
+				Content: v1.NewTextContent("OK~ "),
 			}},
 		},
 	},
@@ -480,7 +468,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Index:   new(uint32(1)),
-				Content: &v1.Content_Text{Text: "Now"},
+				Content: v1.NewTextContent("Now"),
 			}},
 		},
 	},
@@ -492,7 +480,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Index:   new(uint32(1)),
-				Content: &v1.Content_Text{Text: " let me get the weather for Shanghai yesterday"},
+				Content: v1.NewTextContent(" let me get the weather for Shanghai yesterday"),
 			}},
 		},
 	},
@@ -504,7 +492,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{{
 				Index:   new(uint32(1)),
-				Content: &v1.Content_Text{Text: " (2025-11-10):"},
+				Content: v1.NewTextContent(" (2025-11-10):"),
 			}},
 		},
 	},

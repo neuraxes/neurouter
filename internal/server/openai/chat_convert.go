@@ -58,12 +58,12 @@ func convertDeveloperMessageFromOpenAIChat(m *openai.ChatCompletionDeveloperMess
 
 	if m.Content.OfString.Valid() {
 		contents = append(contents, &v1.Content{
-			Content: &v1.Content_Text{Text: m.Content.OfString.Value},
+			Content: v1.NewTextContent(m.Content.OfString.Value),
 		})
 	} else {
 		for _, part := range m.Content.OfArrayOfContentParts {
 			contents = append(contents, &v1.Content{
-				Content: &v1.Content_Text{Text: part.Text},
+				Content: v1.NewTextContent(part.Text),
 			})
 		}
 	}
@@ -83,12 +83,12 @@ func convertSystemMessageFromOpenAIChat(m *openai.ChatCompletionSystemMessagePar
 
 	if m.Content.OfString.Valid() {
 		contents = append(contents, &v1.Content{
-			Content: &v1.Content_Text{Text: m.Content.OfString.Value},
+			Content: v1.NewTextContent(m.Content.OfString.Value),
 		})
 	} else {
 		for _, part := range m.Content.OfArrayOfContentParts {
 			contents = append(contents, &v1.Content{
-				Content: &v1.Content_Text{Text: part.Text},
+				Content: v1.NewTextContent(part.Text),
 			})
 		}
 	}
@@ -108,13 +108,13 @@ func convertUserMessageFromOpenAIChat(m *openai.ChatCompletionUserMessageParam) 
 
 	if m.Content.OfString.Valid() {
 		contents = append(contents, &v1.Content{
-			Content: &v1.Content_Text{Text: m.Content.OfString.Value},
+			Content: v1.NewTextContent(m.Content.OfString.Value),
 		})
 	} else {
 		for _, part := range m.Content.OfArrayOfContentParts {
 			if part.OfText != nil {
 				contents = append(contents, &v1.Content{
-					Content: &v1.Content_Text{Text: part.OfText.Text},
+					Content: v1.NewTextContent(part.OfText.Text),
 				})
 			} else if part.OfImageURL != nil {
 				contents = append(contents, &v1.Content{
@@ -141,13 +141,13 @@ func convertAssistantMessageFromOpenAIChat(m *openai.ChatCompletionAssistantMess
 
 	if m.Content.OfString.Valid() {
 		contents = append(contents, &v1.Content{
-			Content: &v1.Content_Text{Text: m.Content.OfString.Value},
+			Content: v1.NewTextContent(m.Content.OfString.Value),
 		})
 	} else {
 		for _, part := range m.Content.OfArrayOfContentParts {
 			if part.OfText != nil {
 				contents = append(contents, &v1.Content{
-					Content: &v1.Content_Text{Text: part.OfText.Text},
+					Content: v1.NewTextContent(part.OfText.Text),
 				})
 			}
 		}
@@ -351,9 +351,9 @@ func convertChatRespToOpenAIChat(resp *v1.ChatResp) *chatCompletionResponse {
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
 				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
-					message.ReasoningContent = c.Text
+					message.ReasoningContent = c.Text.GetText()
 				} else {
-					message.Content += c.Text
+					message.Content += c.Text.GetText()
 				}
 			case *v1.Content_ToolUse:
 				message.ToolCalls = append(message.ToolCalls, toolCall{
@@ -387,11 +387,11 @@ func convertEmbeddingReqFromOpenAIChat(req *openai.EmbeddingNewParams) *v1.Embed
 
 	if req.Input.OfString.Valid() {
 		contents = append(contents, &v1.Content{
-			Content: &v1.Content_Text{Text: req.Input.OfString.Value},
+			Content: v1.NewTextContent(req.Input.OfString.Value),
 		})
 	} else if len(req.Input.OfArrayOfStrings) > 0 {
 		contents = append(contents, &v1.Content{
-			Content: &v1.Content_Text{Text: req.Input.OfArrayOfStrings[0]},
+			Content: v1.NewTextContent(req.Input.OfArrayOfStrings[0]),
 		})
 	}
 

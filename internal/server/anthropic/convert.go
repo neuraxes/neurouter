@@ -89,9 +89,7 @@ func convertSystemFromAnthropic(system []anthropic.TextBlockParam) *v1.Message {
 	var contents []*v1.Content
 	for _, block := range system {
 		contents = append(contents, &v1.Content{
-			Content: &v1.Content_Text{
-				Text: block.Text,
-			},
+			Content: v1.NewTextContent(block.Text),
 		})
 	}
 	return &v1.Message{
@@ -116,9 +114,7 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 		switch {
 		case content.OfText != nil:
 			contents = append(contents, &v1.Content{
-				Content: &v1.Content_Text{
-					Text: content.OfText.Text,
-				},
+				Content: v1.NewTextContent(content.OfText.Text),
 			})
 		case content.OfImage != nil:
 			switch {
@@ -146,13 +142,9 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 			}
 		case content.OfThinking != nil:
 			contents = append(contents, &v1.Content{
-				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Metadata: map[string]string{
-					"signature": content.OfThinking.Signature,
-				},
-				Content: &v1.Content_Text{
-					Text: content.OfThinking.Thinking,
-				},
+				Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Signature: content.OfThinking.Signature,
+				Content:   v1.NewTextContent(content.OfThinking.Thinking),
 			})
 		case content.OfRedactedThinking != nil:
 			contents = append(contents, &v1.Content{
@@ -320,14 +312,14 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 					// Thinking block
 					anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
 						Type:      "thinking",
-						Thinking:  c.Text,
-						Signature: content.Metadata["signature"],
+						Thinking:  c.Text.GetText(),
+						Signature: content.Signature,
 					})
 				} else {
-					if c.Text != "" {
+					if c.Text.GetText() != "" {
 						anthropicResp.Content = append(anthropicResp.Content, anthropic.ContentBlockUnion{
 							Type: "text",
-							Text: c.Text,
+							Text: c.Text.GetText(),
 						})
 					}
 				}

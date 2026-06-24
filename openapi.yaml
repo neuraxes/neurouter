@@ -119,13 +119,16 @@ components:
                     type: integer
                     description: The semantic phase of the content
                     format: enum
+                signature:
+                    type: string
+                    description: Provider-supplied verification signature for this content.
                 metadata:
                     type: object
                     additionalProperties:
                         type: string
                     description: Additional metadata for the content
                 text:
-                    type: string
+                    $ref: '#/components/schemas/neurouter.v1.Text'
                 image:
                     $ref: '#/components/schemas/neurouter.v1.Image'
                 toolUse:
@@ -317,6 +320,12 @@ components:
                     type: integer
                     description: Number of reasoning tokens consumed (subset of output_tokens for reasoning models).
                     format: uint32
+        neurouter.v1.Text:
+            type: object
+            properties:
+                text:
+                    type: string
+            description: Represent a text content
         neurouter.v1.Tool:
             type: object
             properties:

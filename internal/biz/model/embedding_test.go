@@ -32,7 +32,7 @@ func TestEstimateEmbeddingTokens(t *testing.T) {
 		Convey("with text content should estimate tokens", func() {
 			req := &v1.EmbedReq{
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "Hello, world!"}},
+					{Content: v1.NewTextContent("Hello, world!")},
 				},
 			}
 			So(estimateEmbeddingTokens(req), ShouldEqual, 13/4+1)
@@ -41,8 +41,8 @@ func TestEstimateEmbeddingTokens(t *testing.T) {
 		Convey("with multiple text contents should sum all text", func() {
 			req := &v1.EmbedReq{
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "Hello"}},    // 5 chars
-					{Content: &v1.Content_Text{Text: "World!!!"}}, // 8 chars
+					{Content: v1.NewTextContent("Hello")},
+					{Content: v1.NewTextContent("World!!!")},
 				},
 			}
 			So(estimateEmbeddingTokens(req), ShouldEqual, (5+8)/4+1)

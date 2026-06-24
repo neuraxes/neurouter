@@ -114,7 +114,7 @@ func (r *upstream) convertSystemToAnthropic(messages []*v1.Message) []anthropic.
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
 			case *v1.Content_Text:
-				parts = append(parts, anthropic.TextBlockParam{Text: c.Text})
+				parts = append(parts, anthropic.TextBlockParam{Text: c.Text.GetText()})
 			default:
 				r.log.Errorf("unsupported content: %v", c)
 			}
@@ -133,10 +133,9 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 		switch c := content.GetContent().(type) {
 		case *v1.Content_Text:
 			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
-				signature := content.Metadata["signature"]
-				parts = append(parts, anthropic.NewThinkingBlock(signature, c.Text))
+				parts = append(parts, anthropic.NewThinkingBlock(content.Signature, c.Text.GetText()))
 			} else {
-				parts = append(parts, anthropic.NewTextBlock(c.Text))
+				parts = append(parts, anthropic.NewTextBlock(c.Text.GetText()))
 			}
 		case *v1.Content_Opaque:
 			parts = append(parts, anthropic.NewRedactedThinkingBlock(c.Opaque))
@@ -326,13 +325,9 @@ func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 		switch content.Type {
 		case "thinking":
 			message.Contents = append(message.Contents, &v1.Content{
-				Metadata: map[string]string{
-					"signature": content.Signature,
-				},
-				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content: &v1.Content_Text{
-					Text: content.Thinking,
-				},
+				Signature: content.Signature,
+				Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content:   v1.NewTextContent(content.Thinking),
 			})
 		case "redacted_thinking":
 			message.Contents = append(message.Contents, &v1.Content{
@@ -341,9 +336,7 @@ func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 			})
 		case "text":
 			message.Contents = append(message.Contents, &v1.Content{
-				Content: &v1.Content_Text{
-					Text: content.Text,
-				},
+				Content: v1.NewTextContent(content.Text),
 			})
 		case "tool_use":
 			message.Contents = append(message.Contents, &v1.Content{
@@ -392,24 +385,18 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 			if chunk.ContentBlock.Text != "" {
 				resp = c.newResp()
 				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-					Index: new(uint32(chunk.Index)),
-					Content: &v1.Content_Text{
-						Text: chunk.ContentBlock.Text,
-					},
+					Index:   new(uint32(chunk.Index)),
+					Content: v1.NewTextContent(chunk.ContentBlock.Text),
 				})
 			}
 		case "thinking":
 			if chunk.ContentBlock.Thinking != "" || chunk.ContentBlock.Signature != "" {
 				resp = c.newResp()
 				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-					Index: new(uint32(chunk.Index)),
-					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Metadata: map[string]string{
-						"signature": chunk.ContentBlock.Signature,
-					},
-					Content: &v1.Content_Text{
-						Text: chunk.ContentBlock.Thinking,
-					},
+					Index:     new(uint32(chunk.Index)),
+					Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Signature: chunk.ContentBlock.Signature,
+					Content:   v1.NewTextContent(chunk.ContentBlock.Thinking),
 				})
 			}
 		case "redacted_thinking":
@@ -438,29 +425,21 @@ func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.M
 		switch chunk.Delta.Type {
 		case "thinking_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: new(uint32(chunk.Index)),
-				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content: &v1.Content_Text{
-					Text: chunk.Delta.Thinking,
-				},
+				Index:   new(uint32(chunk.Index)),
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: v1.NewTextContent(chunk.Delta.Thinking),
 			})
 		case "signature_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: new(uint32(chunk.Index)),
-				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Metadata: map[string]string{
-					"signature": chunk.Delta.Signature,
-				},
-				Content: &v1.Content_Text{
-					Text: "",
-				},
+				Index:     new(uint32(chunk.Index)),
+				Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Signature: chunk.Delta.Signature,
+				Content:   v1.NewTextContent(""),
 			})
 		case "text_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: new(uint32(chunk.Index)),
-				Content: &v1.Content_Text{
-					Text: chunk.Delta.Text,
-				},
+				Index:   new(uint32(chunk.Index)),
+				Content: v1.NewTextContent(chunk.Delta.Text),
 			})
 		case "input_json_delta":
 			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{

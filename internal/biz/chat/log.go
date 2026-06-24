@@ -134,7 +134,7 @@ func formatContent(content *v1.Content) string {
 	switch c := content.Content.(type) {
 	case *v1.Content_Text:
 		sb.WriteString("<content_text>\n")
-		sb.WriteString(c.Text)
+		sb.WriteString(c.Text.GetText())
 		sb.WriteString("\n</content_text>")
 	case *v1.Content_Image:
 		switch src := c.Image.Source.(type) {

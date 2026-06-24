@@ -140,7 +140,7 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 		for _, content := range message.Contents {
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
-				sb.WriteString(c.Text)
+				sb.WriteString(c.Text.GetText())
 			default:
 				isPlainText = false
 			}
@@ -175,7 +175,7 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 				switch c := content.GetContent().(type) {
 				case *v1.Content_Text:
 					contents = append(contents, responses.ResponseInputContentUnionParam{
-						OfInputText: &responses.ResponseInputTextParam{Text: c.Text},
+						OfInputText: &responses.ResponseInputTextParam{Text: c.Text.GetText()},
 					})
 				case *v1.Content_Image:
 					contents = append(contents, responses.ResponseInputContentUnionParam{
@@ -229,7 +229,7 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 					switch c := content.GetContent().(type) {
 					case *v1.Content_Text:
 						contents = append(contents, responses.ResponseInputContentUnionParam{
-							OfInputText: &responses.ResponseInputTextParam{Text: c.Text},
+							OfInputText: &responses.ResponseInputTextParam{Text: c.Text.GetText()},
 						})
 					case *v1.Content_Image:
 						contents = append(contents, responses.ResponseInputContentUnionParam{
@@ -278,15 +278,15 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 				switch content.GetPhase() {
 				case v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY:
 					ensureReasoning(content.Id)
-					if c.Text != "" {
+					if c.Text.GetText() != "" {
 						reasoning.Summary = append(reasoning.Summary,
-							responses.ResponseReasoningItemSummaryParam{Text: c.Text})
+							responses.ResponseReasoningItemSummaryParam{Text: c.Text.GetText()})
 					}
 				case v1.ContentPhase_CONTENT_PHASE_REASONING:
 					ensureReasoning(content.Id)
-					if c.Text != "" {
+					if c.Text.GetText() != "" {
 						reasoning.Content = append(reasoning.Content,
-							responses.ResponseReasoningItemContentParam{Text: c.Text})
+							responses.ResponseReasoningItemContentParam{Text: c.Text.GetText()})
 					}
 				default:
 					flushReasoning()
@@ -295,7 +295,7 @@ func (r *upstream) convertMessageToOpenAIResponseInput(message *v1.Message) []re
 						ID: content.Id,
 						Content: []responses.ResponseOutputMessageContentUnionParam{{
 							OfOutputText: &responses.ResponseOutputTextParam{
-								Text: c.Text,
+								Text: c.Text.GetText(),
 							},
 						}},
 					}
@@ -406,13 +406,13 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 					contents = append(contents, &v1.Content{
 						Id:      item.ID,
 						Phase:   contentPhaseFromOpenAIPhase(item.Phase),
-						Content: &v1.Content_Text{Text: content.Text},
+						Content: v1.NewTextContent(content.Text),
 					})
 				case "refusal":
 					contents = append(contents, &v1.Content{
 						Id:      item.ID,
 						Phase:   contentPhaseFromOpenAIPhase(item.Phase),
-						Content: &v1.Content_Text{Text: content.Refusal},
+						Content: v1.NewTextContent(content.Refusal),
 					})
 					resp.Status = v1.ChatStatus_CHAT_REFUSED
 				}
@@ -431,14 +431,14 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 				reasoningContents = append(reasoningContents, &v1.Content{
 					Id:      item.ID,
 					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY,
-					Content: &v1.Content_Text{Text: s.Text},
+					Content: v1.NewTextContent(s.Text),
 				})
 			}
 			for _, c := range item.Content {
 				reasoningContents = append(reasoningContents, &v1.Content{
 					Id:      item.ID,
 					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Content: &v1.Content_Text{Text: c.Text},
+					Content: v1.NewTextContent(c.Text),
 				})
 			}
 
@@ -447,7 +447,7 @@ func (r *upstream) convertResponseFromOpenAIResponse(openAIResp *responses.Respo
 				reasoningContents = append(reasoningContents, &v1.Content{
 					Id:      item.ID,
 					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Content: &v1.Content_Text{},
+					Content: v1.NewTextContent(""),
 				})
 			}
 
@@ -527,7 +527,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 					Id:      event.Item.ID,
 					Index:   new(uint32(event.OutputIndex)),
 					Phase:   phase,
-					Content: &v1.Content_Text{},
+					Content: v1.NewTextContent(""),
 				}},
 			}
 
@@ -559,7 +559,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 			Contents: []*v1.Content{{
 				Index:   new(uint32(event.OutputIndex)),
 				Phase:   c.currentOutputItemPhase,
-				Content: &v1.Content_Text{Text: event.Delta},
+				Content: v1.NewTextContent(event.Delta),
 			}},
 		}
 
@@ -571,7 +571,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 			Contents: []*v1.Content{{
 				Index:   new(uint32(event.OutputIndex)),
 				Phase:   c.currentOutputItemPhase,
-				Content: &v1.Content_Text{Text: event.Delta},
+				Content: v1.NewTextContent(event.Delta),
 			}},
 		}
 
@@ -583,7 +583,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 				Id:      event.ItemID,
 				Index:   new(uint32(event.OutputIndex)),
 				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY,
-				Content: &v1.Content_Text{Text: event.Delta},
+				Content: v1.NewTextContent(event.Delta),
 			}},
 		}
 
@@ -595,7 +595,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponse(event 
 				Id:      event.ItemID,
 				Index:   new(uint32(event.OutputIndex)),
 				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content: &v1.Content_Text{Text: event.Delta},
+				Content: v1.NewTextContent(event.Delta),
 			}},
 		}
 

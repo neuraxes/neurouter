@@ -92,6 +92,51 @@ func (ContentPhase) EnumDescriptor() ([]byte, []int) {
 	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{0}
 }
 
+// Represent a text content
+type Text struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Text) Reset() {
+	*x = Text{}
+	mi := &file_neurouter_v1_content_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Text) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Text) ProtoMessage() {}
+
+func (x *Text) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_content_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Text.ProtoReflect.Descriptor instead.
+func (*Text) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Text) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
 // Represent a image content
 type Image struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -108,7 +153,7 @@ type Image struct {
 
 func (x *Image) Reset() {
 	*x = Image{}
-	mi := &file_neurouter_v1_content_proto_msgTypes[0]
+	mi := &file_neurouter_v1_content_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -120,7 +165,7 @@ func (x *Image) String() string {
 func (*Image) ProtoMessage() {}
 
 func (x *Image) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_content_proto_msgTypes[0]
+	mi := &file_neurouter_v1_content_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -133,7 +178,7 @@ func (x *Image) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Image.ProtoReflect.Descriptor instead.
 func (*Image) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{0}
+	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Image) GetMimeType() string {
@@ -214,7 +259,7 @@ type ToolUse struct {
 
 func (x *ToolUse) Reset() {
 	*x = ToolUse{}
-	mi := &file_neurouter_v1_content_proto_msgTypes[1]
+	mi := &file_neurouter_v1_content_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -226,7 +271,7 @@ func (x *ToolUse) String() string {
 func (*ToolUse) ProtoMessage() {}
 
 func (x *ToolUse) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_content_proto_msgTypes[1]
+	mi := &file_neurouter_v1_content_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -239,7 +284,7 @@ func (x *ToolUse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolUse.ProtoReflect.Descriptor instead.
 func (*ToolUse) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{1}
+	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ToolUse) GetId() string {
@@ -274,7 +319,7 @@ type ToolResult struct {
 
 func (x *ToolResult) Reset() {
 	*x = ToolResult{}
-	mi := &file_neurouter_v1_content_proto_msgTypes[2]
+	mi := &file_neurouter_v1_content_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +331,7 @@ func (x *ToolResult) String() string {
 func (*ToolResult) ProtoMessage() {}
 
 func (x *ToolResult) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_content_proto_msgTypes[2]
+	mi := &file_neurouter_v1_content_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -299,7 +344,7 @@ func (x *ToolResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolResult.ProtoReflect.Descriptor instead.
 func (*ToolResult) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{2}
+	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ToolResult) GetId() string {
@@ -325,6 +370,8 @@ type Content struct {
 	Index *uint32 `protobuf:"varint,2,opt,name=index,proto3,oneof" json:"index,omitempty"`
 	// The semantic phase of the content
 	Phase ContentPhase `protobuf:"varint,3,opt,name=phase,proto3,enum=neurouter.v1.ContentPhase" json:"phase,omitempty"`
+	// Provider-supplied verification signature for this content.
+	Signature string `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
 	// Additional metadata for the content
 	Metadata map[string]string `protobuf:"bytes,9,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Types that are valid to be assigned to Content:
@@ -341,7 +388,7 @@ type Content struct {
 
 func (x *Content) Reset() {
 	*x = Content{}
-	mi := &file_neurouter_v1_content_proto_msgTypes[3]
+	mi := &file_neurouter_v1_content_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -353,7 +400,7 @@ func (x *Content) String() string {
 func (*Content) ProtoMessage() {}
 
 func (x *Content) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_content_proto_msgTypes[3]
+	mi := &file_neurouter_v1_content_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -366,7 +413,7 @@ func (x *Content) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Content.ProtoReflect.Descriptor instead.
 func (*Content) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{3}
+	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Content) GetId() string {
@@ -390,6 +437,13 @@ func (x *Content) GetPhase() ContentPhase {
 	return ContentPhase_CONTENT_PHASE_NORMAL
 }
 
+func (x *Content) GetSignature() string {
+	if x != nil {
+		return x.Signature
+	}
+	return ""
+}
+
 func (x *Content) GetMetadata() map[string]string {
 	if x != nil {
 		return x.Metadata
@@ -404,13 +458,13 @@ func (x *Content) GetContent() isContent_Content {
 	return nil
 }
 
-func (x *Content) GetText() string {
+func (x *Content) GetText() *Text {
 	if x != nil {
 		if x, ok := x.Content.(*Content_Text); ok {
 			return x.Text
 		}
 	}
-	return ""
+	return nil
 }
 
 func (x *Content) GetImage() *Image {
@@ -454,7 +508,7 @@ type isContent_Content interface {
 }
 
 type Content_Text struct {
-	Text string `protobuf:"bytes,10,opt,name=text,proto3,oneof"`
+	Text *Text `protobuf:"bytes,10,opt,name=text,proto3,oneof"`
 }
 
 type Content_Image struct {
@@ -497,7 +551,7 @@ type ToolUse_Input struct {
 
 func (x *ToolUse_Input) Reset() {
 	*x = ToolUse_Input{}
-	mi := &file_neurouter_v1_content_proto_msgTypes[4]
+	mi := &file_neurouter_v1_content_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +563,7 @@ func (x *ToolUse_Input) String() string {
 func (*ToolUse_Input) ProtoMessage() {}
 
 func (x *ToolUse_Input) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_content_proto_msgTypes[4]
+	mi := &file_neurouter_v1_content_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +576,7 @@ func (x *ToolUse_Input) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolUse_Input.ProtoReflect.Descriptor instead.
 func (*ToolUse_Input) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{1, 0}
+	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{2, 0}
 }
 
 func (x *ToolUse_Input) GetIndex() uint32 {
@@ -572,7 +626,7 @@ type ToolResult_Output struct {
 
 func (x *ToolResult_Output) Reset() {
 	*x = ToolResult_Output{}
-	mi := &file_neurouter_v1_content_proto_msgTypes[5]
+	mi := &file_neurouter_v1_content_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -584,7 +638,7 @@ func (x *ToolResult_Output) String() string {
 func (*ToolResult_Output) ProtoMessage() {}
 
 func (x *ToolResult_Output) ProtoReflect() protoreflect.Message {
-	mi := &file_neurouter_v1_content_proto_msgTypes[5]
+	mi := &file_neurouter_v1_content_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -597,7 +651,7 @@ func (x *ToolResult_Output) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolResult_Output.ProtoReflect.Descriptor instead.
 func (*ToolResult_Output) Descriptor() ([]byte, []int) {
-	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{2, 0}
+	return file_neurouter_v1_content_proto_rawDescGZIP(), []int{3, 0}
 }
 
 func (x *ToolResult_Output) GetIndex() uint32 {
@@ -652,7 +706,9 @@ var File_neurouter_v1_content_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_content_proto_rawDesc = "" +
 	"\n" +
-	"\x1aneurouter/v1/content.proto\x12\fneurouter.v1\"r\n" +
+	"\x1aneurouter/v1/content.proto\x12\fneurouter.v1\"\x1a\n" +
+	"\x04Text\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\"r\n" +
 	"\x05Image\x12\x1b\n" +
 	"\tmime_type\x18\x01 \x01(\tR\bmimeType\x12\x12\n" +
 	"\x03url\x18\n" +
@@ -680,14 +736,15 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	" \x01(\tH\x00R\x04text\x12+\n" +
 	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05imageB\b\n" +
 	"\x06outputB\b\n" +
-	"\x06_index\"\xc7\x03\n" +
+	"\x06_index\"\xf9\x03\n" +
 	"\aContent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05index\x18\x02 \x01(\rH\x01R\x05index\x88\x01\x01\x120\n" +
-	"\x05phase\x18\x03 \x01(\x0e2\x1a.neurouter.v1.ContentPhaseR\x05phase\x12?\n" +
-	"\bmetadata\x18\t \x03(\v2#.neurouter.v1.Content.MetadataEntryR\bmetadata\x12\x14\n" +
+	"\x05phase\x18\x03 \x01(\x0e2\x1a.neurouter.v1.ContentPhaseR\x05phase\x12\x1c\n" +
+	"\tsignature\x18\x04 \x01(\tR\tsignature\x12?\n" +
+	"\bmetadata\x18\t \x03(\v2#.neurouter.v1.Content.MetadataEntryR\bmetadata\x12(\n" +
 	"\x04text\x18\n" +
-	" \x01(\tH\x00R\x04text\x12+\n" +
+	" \x01(\v2\x12.neurouter.v1.TextH\x00R\x04text\x12+\n" +
 	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05image\x122\n" +
 	"\btool_use\x18\f \x01(\v2\x15.neurouter.v1.ToolUseH\x00R\atoolUse\x12;\n" +
 	"\vtool_result\x18\r \x01(\v2\x18.neurouter.v1.ToolResultH\x00R\n" +
@@ -717,31 +774,33 @@ func file_neurouter_v1_content_proto_rawDescGZIP() []byte {
 }
 
 var file_neurouter_v1_content_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_neurouter_v1_content_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_neurouter_v1_content_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_neurouter_v1_content_proto_goTypes = []any{
 	(ContentPhase)(0),         // 0: neurouter.v1.ContentPhase
-	(*Image)(nil),             // 1: neurouter.v1.Image
-	(*ToolUse)(nil),           // 2: neurouter.v1.ToolUse
-	(*ToolResult)(nil),        // 3: neurouter.v1.ToolResult
-	(*Content)(nil),           // 4: neurouter.v1.Content
-	(*ToolUse_Input)(nil),     // 5: neurouter.v1.ToolUse.Input
-	(*ToolResult_Output)(nil), // 6: neurouter.v1.ToolResult.Output
-	nil,                       // 7: neurouter.v1.Content.MetadataEntry
+	(*Text)(nil),              // 1: neurouter.v1.Text
+	(*Image)(nil),             // 2: neurouter.v1.Image
+	(*ToolUse)(nil),           // 3: neurouter.v1.ToolUse
+	(*ToolResult)(nil),        // 4: neurouter.v1.ToolResult
+	(*Content)(nil),           // 5: neurouter.v1.Content
+	(*ToolUse_Input)(nil),     // 6: neurouter.v1.ToolUse.Input
+	(*ToolResult_Output)(nil), // 7: neurouter.v1.ToolResult.Output
+	nil,                       // 8: neurouter.v1.Content.MetadataEntry
 }
 var file_neurouter_v1_content_proto_depIdxs = []int32{
-	5, // 0: neurouter.v1.ToolUse.inputs:type_name -> neurouter.v1.ToolUse.Input
-	6, // 1: neurouter.v1.ToolResult.outputs:type_name -> neurouter.v1.ToolResult.Output
+	6, // 0: neurouter.v1.ToolUse.inputs:type_name -> neurouter.v1.ToolUse.Input
+	7, // 1: neurouter.v1.ToolResult.outputs:type_name -> neurouter.v1.ToolResult.Output
 	0, // 2: neurouter.v1.Content.phase:type_name -> neurouter.v1.ContentPhase
-	7, // 3: neurouter.v1.Content.metadata:type_name -> neurouter.v1.Content.MetadataEntry
-	1, // 4: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
-	2, // 5: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
-	3, // 6: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
-	1, // 7: neurouter.v1.ToolResult.Output.image:type_name -> neurouter.v1.Image
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	8, // 3: neurouter.v1.Content.metadata:type_name -> neurouter.v1.Content.MetadataEntry
+	1, // 4: neurouter.v1.Content.text:type_name -> neurouter.v1.Text
+	2, // 5: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
+	3, // 6: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
+	4, // 7: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
+	2, // 8: neurouter.v1.ToolResult.Output.image:type_name -> neurouter.v1.Image
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_content_proto_init() }
@@ -749,22 +808,22 @@ func file_neurouter_v1_content_proto_init() {
 	if File_neurouter_v1_content_proto != nil {
 		return
 	}
-	file_neurouter_v1_content_proto_msgTypes[0].OneofWrappers = []any{
+	file_neurouter_v1_content_proto_msgTypes[1].OneofWrappers = []any{
 		(*Image_Url)(nil),
 		(*Image_Data)(nil),
 		(*Image_Base64)(nil),
 	}
-	file_neurouter_v1_content_proto_msgTypes[3].OneofWrappers = []any{
+	file_neurouter_v1_content_proto_msgTypes[4].OneofWrappers = []any{
 		(*Content_Text)(nil),
 		(*Content_Image)(nil),
 		(*Content_ToolUse)(nil),
 		(*Content_ToolResult)(nil),
 		(*Content_Opaque)(nil),
 	}
-	file_neurouter_v1_content_proto_msgTypes[4].OneofWrappers = []any{
+	file_neurouter_v1_content_proto_msgTypes[5].OneofWrappers = []any{
 		(*ToolUse_Input_Text)(nil),
 	}
-	file_neurouter_v1_content_proto_msgTypes[5].OneofWrappers = []any{
+	file_neurouter_v1_content_proto_msgTypes[6].OneofWrappers = []any{
 		(*ToolResult_Output_Text)(nil),
 		(*ToolResult_Output_Image)(nil),
 	}
@@ -774,7 +833,7 @@ func file_neurouter_v1_content_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_content_proto_rawDesc), len(file_neurouter_v1_content_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

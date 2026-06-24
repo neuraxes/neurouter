@@ -20,6 +20,16 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func TestNewTextContent(t *testing.T) {
+	Convey("NewTextContent", t, func() {
+		Convey("should create a text content wrapper", func() {
+			content := NewTextContent("hello")
+
+			So(content.Text.GetText(), ShouldEqual, "hello")
+		})
+	})
+}
+
 func TestToolUse_GetTextualInput(t *testing.T) {
 	Convey("GetTextualInput", t, func() {
 		Convey("should concatenate all textual inputs in order", func() {

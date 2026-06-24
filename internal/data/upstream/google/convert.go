@@ -102,7 +102,7 @@ func convertContentToGoogle(content *v1.Content) *genai.Part {
 
 	switch c := content.Content.(type) {
 	case *v1.Content_Text:
-		return genai.NewPartFromText(c.Text)
+		return genai.NewPartFromText(c.Text.GetText())
 	case *v1.Content_Image:
 		mimeType := c.Image.MimeType
 		switch source := c.Image.Source.(type) {
@@ -160,8 +160,8 @@ func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 	var parts []*genai.Part
 	for _, content := range msg.Contents {
 		if part := convertContentToGoogle(content); part != nil {
-			if thoughtSignature := content.Metadata["thoughtSignature"]; thoughtSignature != "" {
-				sig, err := base64.StdEncoding.DecodeString(thoughtSignature)
+			if content.Signature != "" {
+				sig, err := base64.StdEncoding.DecodeString(content.Signature)
 				if err == nil {
 					part.ThoughtSignature = sig
 				}
@@ -250,10 +250,8 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 				phase = v1.ContentPhase_CONTENT_PHASE_REASONING
 			}
 			content = &v1.Content{
-				Phase: phase,
-				Content: &v1.Content_Text{
-					Text: part.Text,
-				},
+				Phase:   phase,
+				Content: v1.NewTextContent(part.Text),
 			}
 		} else if part.FunctionCall != nil {
 			args, err := json.Marshal(part.FunctionCall.Args)
@@ -282,9 +280,7 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 		}
 
 		if len(part.ThoughtSignature) > 0 {
-			content.Metadata = map[string]string{
-				"thoughtSignature": base64.StdEncoding.EncodeToString(part.ThoughtSignature),
-			}
+			content.Signature = base64.StdEncoding.EncodeToString(part.ThoughtSignature)
 		}
 
 		message.Contents = append(message.Contents, content)

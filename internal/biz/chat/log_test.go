@@ -55,15 +55,11 @@ func TestPrintChat(t *testing.T) {
 					Role: v1.Role_USER,
 					Contents: []*v1.Content{
 						{
-							Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Content: &v1.Content_Text{
-								Text: "Reasoning...",
-							},
+							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+							Content: v1.NewTextContent("Reasoning..."),
 						},
 						{
-							Content: &v1.Content_Text{
-								Text: "Hello,\nWorld!",
-							},
+							Content: v1.NewTextContent("Hello,\nWorld!"),
 						},
 						{
 							Content: &v1.Content_Image{
@@ -144,9 +140,7 @@ func TestPrintChat(t *testing.T) {
 				Role: v1.Role_MODEL,
 				Contents: []*v1.Content{
 					{
-						Content: &v1.Content_Text{
-							Text: "Hello,\nWorld!",
-						},
+						Content: v1.NewTextContent("Hello,\nWorld!"),
 					},
 					{
 						Content: &v1.Content_ToolUse{

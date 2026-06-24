@@ -34,7 +34,7 @@ func TestEstimateTokens(t *testing.T) {
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "Hello, world!"}}, // 13 chars -> 13/4+1 = 4
+							{Content: v1.NewTextContent("Hello, world!")},
 						},
 					},
 				},
@@ -47,12 +47,12 @@ func TestEstimateTokens(t *testing.T) {
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "Hello"}}, // 5 chars
+							{Content: v1.NewTextContent("Hello")},
 						},
 					},
 					{
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "World!!!"}}, // 8 chars
+							{Content: v1.NewTextContent("World!!!")},
 						},
 					},
 				},
@@ -79,7 +79,7 @@ func TestEstimateTokens(t *testing.T) {
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "Describe this"}}, // 13 chars -> 4 tokens
+							{Content: v1.NewTextContent("Describe this")},
 							{Content: &v1.Content_Image{Image: &v1.Image{}}},
 						},
 					},

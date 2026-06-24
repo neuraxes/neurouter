@@ -71,7 +71,7 @@ func estimateTokens(req *v1.ChatReq) int64 {
 			case *v1.Content_Image:
 				imageCount++
 			case *v1.Content_Text:
-				totalChars += len(content.Text)
+				totalChars += len(content.Text.GetText())
 			case *v1.Content_ToolUse:
 				totalChars += len(content.ToolUse.Name)
 				for _, input := range content.ToolUse.Inputs {

@@ -45,7 +45,7 @@ func (m *embeddingModel) Close() {
 func estimateEmbeddingTokens(req *v1.EmbedReq) int64 {
 	totalChars := 0
 	for _, c := range req.Contents {
-		totalChars += len(c.GetText())
+		totalChars += len(c.GetText().GetText())
 	}
 	if totalChars == 0 {
 		return 0

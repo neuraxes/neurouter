@@ -36,9 +36,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 	singlePartTextualMessage := &v1.Message{
 		Contents: []*v1.Content{
 			{
-				Content: &v1.Content_Text{
-					Text: "You are helpful assistant.",
-				},
+				Content: v1.NewTextContent("You are helpful assistant."),
 			},
 		},
 	}
@@ -46,14 +44,10 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 	multiPartTextualMessage := &v1.Message{
 		Contents: []*v1.Content{
 			{
-				Content: &v1.Content_Text{
-					Text: "You are helpful",
-				},
+				Content: v1.NewTextContent("You are helpful"),
 			},
 			{
-				Content: &v1.Content_Text{
-					Text: " assistant.",
-				},
+				Content: v1.NewTextContent(" assistant."),
 			},
 		},
 	}
@@ -61,9 +55,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 	multiPartRichMessage := &v1.Message{
 		Contents: []*v1.Content{
 			{
-				Content: &v1.Content_Text{
-					Text: "Here is a image:",
-				},
+				Content: v1.NewTextContent("Here is a image:"),
 			},
 			{
 				Content: &v1.Content_Image{
@@ -114,9 +106,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 				Name: "System",
 				Contents: []*v1.Content{
 					{
-						Content: &v1.Content_Text{
-							Text: "Hello",
-						},
+						Content: v1.NewTextContent("Hello"),
 					},
 				},
 			}
@@ -188,9 +178,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 				Name: "User",
 				Contents: []*v1.Content{
 					{
-						Content: &v1.Content_Text{
-							Text: "Hello",
-						},
+						Content: v1.NewTextContent("Hello"),
 					},
 				},
 			}
@@ -312,9 +300,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 				Name: "Claude",
 				Contents: []*v1.Content{
 					{
-						Content: &v1.Content_Text{
-							Text: "Hello",
-						},
+						Content: v1.NewTextContent("Hello"),
 					},
 				},
 			}
@@ -329,9 +315,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 				Role: v1.Role_MODEL,
 				Contents: []*v1.Content{
 					{
-						Content: &v1.Content_Text{
-							Text: "Let me help you",
-						},
+						Content: v1.NewTextContent("Let me help you"),
 					},
 					{
 						Content: &v1.Content_ToolUse{
@@ -382,9 +366,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 				Role: v1.Role_MODEL,
 				Contents: []*v1.Content{
 					{
-						Content: &v1.Content_Text{
-							Text: "Hello",
-						},
+						Content: v1.NewTextContent("Hello"),
 					},
 				},
 			}
@@ -492,9 +474,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 						},
 					},
 					{
-						Content: &v1.Content_Text{
-							Text: "Additional user comment",
-						},
+						Content: v1.NewTextContent("Additional user comment"),
 					},
 				},
 			}
@@ -543,9 +523,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 			Role: v1.Role(-1),
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_Text{
-						Text: "Test",
-					},
+					Content: v1.NewTextContent("Test"),
 				},
 			},
 		}
@@ -569,9 +547,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 						Role: v1.Role_USER,
 						Contents: []*v1.Content{
 							{
-								Content: &v1.Content_Text{
-									Text: "Hello",
-								},
+								Content: v1.NewTextContent("Hello"),
 							},
 						},
 					},
@@ -727,7 +703,7 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 			msg := repo.convertMessageFromOpenAIChat(openAIMsg)
 			So(msg.Id, ShouldHaveLength, 36)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
-			So(msg.Contents[0].GetText(), ShouldEqual, " Hello world ")
+			So(msg.Contents[0].GetText().GetText(), ShouldEqual, " Hello world ")
 		})
 
 		Convey("with tool calls", func() {
@@ -794,7 +770,7 @@ func TestConvertChunkFromOpenAIChat(t *testing.T) {
 			resp := client.convertChunkFromOpenAIChat(chunk)
 			So(resp.Id, ShouldEqual, "chatcmpl-1")
 			So(resp.Message.Id, ShouldBeEmpty)
-			So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello")
+			So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Hello")
 		})
 
 		Convey("with usage statistics", func() {

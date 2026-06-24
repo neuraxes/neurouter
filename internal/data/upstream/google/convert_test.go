@@ -64,7 +64,7 @@ func TestConvertToolsToGoogle(t *testing.T) {
 func TestConvertContentToGoogle(t *testing.T) {
 	Convey("convertContentToGoogle should convert text", t, func() {
 		content := &v1.Content{
-			Content: &v1.Content_Text{Text: "hello"},
+			Content: v1.NewTextContent("hello"),
 		}
 		part := convertContentToGoogle(content)
 		So(part, ShouldNotBeNil)
@@ -254,7 +254,7 @@ func TestConvertMessageToGoogle(t *testing.T) {
 		msg := &v1.Message{
 			Role: v1.Role_USER,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Text{Text: "hi"}},
+				{Content: v1.NewTextContent("hi")},
 			},
 		}
 		result := convertMessageToGoogle(msg)
@@ -297,7 +297,7 @@ func TestConvertMessageToGoogle(t *testing.T) {
 		msg := &v1.Message{
 			Role: v1.Role_SYSTEM,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Text{Text: "sys"}},
+				{Content: v1.NewTextContent("sys")},
 			},
 		}
 		result := convertMessageToGoogle(msg)
@@ -311,7 +311,7 @@ func TestConvertMessageToGoogle(t *testing.T) {
 		msg := &v1.Message{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
-				{Content: &v1.Content_Text{Text: "model"}},
+				{Content: v1.NewTextContent("model")},
 			},
 		}
 		result := convertMessageToGoogle(msg)
@@ -329,7 +329,7 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 			log:    log.NewHelper(log.DefaultLogger),
 		}
 		messages := []*v1.Message{
-			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "sys"}}}},
+			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys")}}},
 		}
 		result := r.convertSystemInstructionToGoogle(messages)
 		So(result, ShouldBeNil)
@@ -341,8 +341,8 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 			log:    log.NewHelper(log.DefaultLogger),
 		}
 		messages := []*v1.Message{
-			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "sys prompt"}}}},
-			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "hi"}}}},
+			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys prompt")}}},
+			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
 		}
 		result := r.convertSystemInstructionToGoogle(messages)
 		So(result, ShouldNotBeNil)
@@ -356,7 +356,7 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 			log:    log.NewHelper(log.DefaultLogger),
 		}
 		messages := []*v1.Message{
-			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "hi"}}}},
+			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
 		}
 		result := r.convertSystemInstructionToGoogle(messages)
 		So(result, ShouldBeNil)
@@ -426,7 +426,7 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 		So(msg, ShouldNotBeNil)
 		So(msg.Role, ShouldEqual, v1.Role_MODEL)
 		So(msg.Contents, ShouldHaveLength, 1)
-		So(msg.Contents[0].GetText(), ShouldEqual, "hello")
+		So(msg.Contents[0].GetText().GetText(), ShouldEqual, "hello")
 	})
 
 	Convey("convertMessageFromGoogle should convert reasoning (thought)", t, func() {
@@ -439,7 +439,7 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 		So(msg.Role, ShouldEqual, v1.Role_MODEL)
 		So(msg.Contents, ShouldHaveLength, 1)
 		So(msg.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-		So(msg.Contents[0].GetText(), ShouldEqual, "thinking...")
+		So(msg.Contents[0].GetText().GetText(), ShouldEqual, "thinking...")
 	})
 
 	Convey("convertMessageFromGoogle should skip thought without text", t, func() {

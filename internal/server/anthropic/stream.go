@@ -167,22 +167,22 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 						s.contentBlockStarted = true
 						s.sendContentBlockStartEvent("thinking")
 					}
-					if c.Text != "" {
+					if c.Text.GetText() != "" {
 						event := anthropic.ContentBlockDeltaEvent{
 							Index: s.contentIndex,
 							Delta: anthropic.RawContentBlockDeltaUnion{
 								Type:     "thinking_delta",
-								Thinking: c.Text,
+								Thinking: c.Text.GetText(),
 							},
 						}
 						s.sendJSONEvent("content_block_delta", event)
 					}
-					if content.Metadata["signature"] != "" {
+					if content.Signature != "" {
 						event := anthropic.ContentBlockDeltaEvent{
 							Index: s.contentIndex,
 							Delta: anthropic.RawContentBlockDeltaUnion{
 								Type:      "signature_delta",
-								Signature: content.Metadata["signature"],
+								Signature: content.Signature,
 							},
 						}
 						s.sendJSONEvent("content_block_delta", event)
@@ -196,7 +196,7 @@ func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
 						Index: s.contentIndex,
 						Delta: anthropic.RawContentBlockDeltaUnion{
 							Type: "text_delta",
-							Text: c.Text,
+							Text: c.Text.GetText(),
 						},
 					}
 					s.sendJSONEvent("content_block_delta", event)

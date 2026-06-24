@@ -51,13 +51,13 @@ func TestChatRespAccumulator(t *testing.T) {
 						Id:   "msg-1",
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "Hello, World!"}},
+							{Content: v1.NewTextContent("Hello, World!")},
 						},
 					},
 				})
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello, World!")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Hello, World!")
 			})
 
 			Convey("Multiple text chunks merge into one", func() {
@@ -67,7 +67,7 @@ func TestChatRespAccumulator(t *testing.T) {
 						Id:   "msg-1",
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "Hello"}},
+							{Content: v1.NewTextContent("Hello")},
 						},
 					},
 				})
@@ -76,13 +76,13 @@ func TestChatRespAccumulator(t *testing.T) {
 						Id:   "msg-1",
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: ", World!"}},
+							{Content: v1.NewTextContent(", World!")},
 						},
 					},
 				})
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello, World!")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Hello, World!")
 			})
 
 			Convey("Text with different reasoning flags are separate", func() {
@@ -91,7 +91,10 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Phase: v1.ContentPhase_CONTENT_PHASE_REASONING, Content: &v1.Content_Text{Text: "thinking"}},
+							{
+								Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+								Content: v1.NewTextContent("thinking"),
+							},
 						},
 					},
 				})
@@ -99,7 +102,10 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Phase: v1.ContentPhase_CONTENT_PHASE_REASONING, Content: &v1.Content_Text{Text: " more"}},
+							{
+								Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+								Content: v1.NewTextContent(" more"),
+							},
 						},
 					},
 				})
@@ -107,16 +113,16 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "answer"}},
+							{Content: v1.NewTextContent("answer")},
 						},
 					},
 				})
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 2)
 				So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "thinking more")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "thinking more")
 				So(resp.Message.Contents[1].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_NORMAL)
-				So(resp.Message.Contents[1].GetText(), ShouldEqual, "answer")
+				So(resp.Message.Contents[1].GetText().GetText(), ShouldEqual, "answer")
 			})
 
 			Convey("Text with same index merges", func() {
@@ -125,7 +131,7 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Index: new(uint32(0)), Content: &v1.Content_Text{Text: "part-1"}},
+							{Index: new(uint32(0)), Content: v1.NewTextContent("part-1")},
 						},
 					},
 				})
@@ -134,14 +140,14 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Index: new(uint32(0)), Content: &v1.Content_Text{Text: "-part-2"}},
+							{Index: new(uint32(0)), Content: v1.NewTextContent("-part-2")},
 						},
 					},
 				})
 
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "part-1-part-2")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "part-1-part-2")
 			})
 
 			Convey("Text with different indices does not merge", func() {
@@ -150,7 +156,7 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Index: new(uint32(0)), Content: &v1.Content_Text{Text: "first"}},
+							{Index: new(uint32(0)), Content: v1.NewTextContent("first")},
 						},
 					},
 				})
@@ -159,15 +165,15 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Index: new(uint32(1)), Content: &v1.Content_Text{Text: "second"}},
+							{Index: new(uint32(1)), Content: v1.NewTextContent("second")},
 						},
 					},
 				})
 
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 2)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "first")
-				So(resp.Message.Contents[1].GetText(), ShouldEqual, "second")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "first")
+				So(resp.Message.Contents[1].GetText().GetText(), ShouldEqual, "second")
 			})
 
 			Convey("Reasoning signature metadata is accumulated", func() {
@@ -180,7 +186,7 @@ func TestChatRespAccumulator(t *testing.T) {
 							{
 								Index:   &idx,
 								Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-								Content: &v1.Content_Text{Text: "think-"},
+								Content: v1.NewTextContent("think-"),
 							},
 						},
 					},
@@ -190,12 +196,10 @@ func TestChatRespAccumulator(t *testing.T) {
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
 							{
-								Index: &idx,
-								Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-								Metadata: map[string]string{
-									"signature": "sig-",
-								},
-								Content: &v1.Content_Text{Text: "ing"},
+								Index:     &idx,
+								Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+								Signature: "sig-",
+								Content:   v1.NewTextContent("ing"),
 							},
 						},
 					},
@@ -205,12 +209,10 @@ func TestChatRespAccumulator(t *testing.T) {
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
 							{
-								Index: &idx,
-								Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-								Metadata: map[string]string{
-									"signature": "nature",
-								},
-								Content: &v1.Content_Text{Text: "-done"},
+								Index:     &idx,
+								Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+								Signature: "nature",
+								Content:   v1.NewTextContent("-done"),
 							},
 						},
 					},
@@ -218,8 +220,8 @@ func TestChatRespAccumulator(t *testing.T) {
 
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "think-ing-done")
-				So(resp.Message.Contents[0].Metadata["signature"], ShouldEqual, "sig-nature")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "think-ing-done")
+				So(resp.Message.Contents[0].Signature, ShouldEqual, "sig-nature")
 			})
 
 			Convey("Text metadata key is initialized when missing", func() {
@@ -231,7 +233,7 @@ func TestChatRespAccumulator(t *testing.T) {
 						Contents: []*v1.Content{
 							{
 								Index:   &idx,
-								Content: &v1.Content_Text{Text: "hello"},
+								Content: v1.NewTextContent("hello"),
 							},
 						},
 					},
@@ -245,7 +247,7 @@ func TestChatRespAccumulator(t *testing.T) {
 								Metadata: map[string]string{
 									"trace_id": "abc",
 								},
-								Content: &v1.Content_Text{Text: " world"},
+								Content: v1.NewTextContent(" world"),
 							},
 						},
 					},
@@ -253,7 +255,7 @@ func TestChatRespAccumulator(t *testing.T) {
 
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 1)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "hello world")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "hello world")
 				So(resp.Message.Contents[0].Metadata["trace_id"], ShouldEqual, "abc")
 			})
 		})
@@ -266,10 +268,13 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
-								Id:   "call-1",
-								Name: "get_weather",
-							}}},
+							{
+								Signature: "sig-",
+								Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+									Id:   "call-1",
+									Name: "get_weather",
+								}},
+							},
 						},
 					},
 				})
@@ -278,11 +283,14 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
-								Inputs: []*v1.ToolUse_Input{
-									{Input: &v1.ToolUse_Input_Text{Text: `{"loc`}},
-								},
-							}}},
+							{
+								Signature: "tool-",
+								Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+									Inputs: []*v1.ToolUse_Input{
+										{Input: &v1.ToolUse_Input_Text{Text: `{"loc`}},
+									},
+								}},
+							},
 						},
 					},
 				})
@@ -291,23 +299,70 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
-								Inputs: []*v1.ToolUse_Input{
-									{Input: &v1.ToolUse_Input_Text{Text: `ation":"NYC"}`}},
-								},
-							}}},
+							{
+								Signature: "done",
+								Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+									Inputs: []*v1.ToolUse_Input{
+										{Input: &v1.ToolUse_Input_Text{Text: `ation":"NYC"}`}},
+									},
+								}},
+							},
 						},
 					},
 				})
 
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 1)
+				So(resp.Message.Contents[0].Signature, ShouldEqual, "sig-tool-done")
 
 				toolUse := resp.Message.Contents[0].GetToolUse()
 				So(toolUse, ShouldNotBeNil)
 				So(toolUse.Id, ShouldEqual, "call-1")
 				So(toolUse.Name, ShouldEqual, "get_weather")
 				So(toolUse.GetTextualInput(), ShouldEqual, `{"location":"NYC"}`)
+			})
+
+			Convey("A new tool use does not merge signature into the previous one", func() {
+				acc := NewChatRespAccumulator()
+				acc.Accumulate(&v1.ChatResp{
+					Message: &v1.Message{
+						Role: v1.Role_MODEL,
+						Contents: []*v1.Content{
+							{
+								Signature: "first",
+								Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+									Id:   "call-1",
+									Name: "get_weather",
+									Inputs: []*v1.ToolUse_Input{
+										{Input: &v1.ToolUse_Input_Text{Text: `{"city":"NYC"}`}},
+									},
+								}},
+							},
+						},
+					},
+				})
+				acc.Accumulate(&v1.ChatResp{
+					Message: &v1.Message{
+						Role: v1.Role_MODEL,
+						Contents: []*v1.Content{
+							{
+								Signature: "second",
+								Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+									Id:   "call-2",
+									Name: "get_time",
+									Inputs: []*v1.ToolUse_Input{
+										{Input: &v1.ToolUse_Input_Text{Text: `{"tz":"EST"}`}},
+									},
+								}},
+							},
+						},
+					},
+				})
+
+				resp := acc.Resp()
+				So(len(resp.Message.Contents), ShouldEqual, 2)
+				So(resp.Message.Contents[0].Signature, ShouldEqual, "first")
+				So(resp.Message.Contents[1].Signature, ShouldEqual, "second")
 			})
 
 			Convey("Multiple tool uses with different ids", func() {
@@ -390,7 +445,7 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "Let me check "}},
+							{Content: v1.NewTextContent("Let me check ")},
 						},
 					},
 				})
@@ -398,7 +453,7 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "the weather."}},
+							{Content: v1.NewTextContent("the weather.")},
 						},
 					},
 				})
@@ -416,7 +471,7 @@ func TestChatRespAccumulator(t *testing.T) {
 
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 2)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Let me check the weather.")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Let me check the weather.")
 				So(resp.Message.Contents[1].GetToolUse().Id, ShouldEqual, "call-1")
 			})
 
@@ -426,7 +481,10 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Phase: v1.ContentPhase_CONTENT_PHASE_REASONING, Content: &v1.Content_Text{Text: "I should check"}},
+							{
+								Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+								Content: v1.NewTextContent("I should check"),
+							},
 						},
 					},
 				})
@@ -434,7 +492,7 @@ func TestChatRespAccumulator(t *testing.T) {
 					Message: &v1.Message{
 						Role: v1.Role_MODEL,
 						Contents: []*v1.Content{
-							{Content: &v1.Content_Text{Text: "Checking now"}},
+							{Content: v1.NewTextContent("Checking now")},
 						},
 					},
 				})
@@ -453,9 +511,9 @@ func TestChatRespAccumulator(t *testing.T) {
 				resp := acc.Resp()
 				So(len(resp.Message.Contents), ShouldEqual, 3)
 				So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "I should check")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "I should check")
 				So(resp.Message.Contents[1].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_NORMAL)
-				So(resp.Message.Contents[1].GetText(), ShouldEqual, "Checking now")
+				So(resp.Message.Contents[1].GetText().GetText(), ShouldEqual, "Checking now")
 				So(resp.Message.Contents[2].GetToolUse().Id, ShouldEqual, "call-1")
 				So(resp.Message.Contents[2].GetToolUse().Name, ShouldEqual, "search")
 			})
@@ -603,7 +661,7 @@ func TestChatRespAccumulator(t *testing.T) {
 				Message: &v1.Message{
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
-						{Content: &v1.Content_Text{Text: "Hello"}},
+						{Content: v1.NewTextContent("Hello")},
 						{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
 							Id:   "call-1",
 							Name: "test",
@@ -614,7 +672,7 @@ func TestChatRespAccumulator(t *testing.T) {
 
 			resp := acc.Resp()
 			So(len(resp.Message.Contents), ShouldEqual, 2)
-			So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello")
+			So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Hello")
 			So(resp.Message.Contents[1].GetToolUse().Id, ShouldEqual, "call-1")
 		})
 

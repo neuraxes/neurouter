@@ -20,9 +20,7 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_SYSTEM,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_Text{
-						Text: "You are helpful assistant.",
-					},
+					Content: v1.NewTextContent("You are helpful assistant."),
 				},
 			},
 		},
@@ -30,9 +28,7 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_USER,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_Text{
-						Text: "hi, how are you? and how is the weather yesterday in shanghai?",
-					},
+					Content: v1.NewTextContent("hi, how are you? and how is the weather yesterday in shanghai?"),
 				},
 			},
 		},
@@ -40,9 +36,7 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_Text{
-						Text: "Hello! I'm doing well, thank you for asking. \n\nTo check the weather in Shanghai for yesterday, I'll need to know what date yesterday was. Let me get today's date first, and then I can look up the weather for the previous day.",
-					},
+					Content: v1.NewTextContent("Hello! I'm doing well, thank you for asking. \n\nTo check the weather in Shanghai for yesterday, I'll need to know what date yesterday was. Let me get today's date first, and then I can look up the weather for the previous day."),
 				},
 				{
 					Content: &v1.Content_ToolUse{
@@ -328,9 +322,7 @@ var mockChatResp = &entity.ChatResp{
 		Role: v1.Role_MODEL,
 		Contents: []*v1.Content{
 			{
-				Content: &v1.Content_Text{
-					Text: "Now I'll check the weather for Shanghai for yesterday (November 10th, 2025):",
-				},
+				Content: v1.NewTextContent("Now I'll check the weather for Shanghai for yesterday (November 10th, 2025):"),
 			},
 			{
 				Content: &v1.Content_ToolUse{
@@ -459,7 +451,7 @@ var mockResponsesResp = &entity.ChatResp{
 			{
 				Id:      "rs_0dd30283291d2ea70169d0e9b9b3f08193a563e455f75eef7f",
 				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY,
-				Content: &v1.Content_Text{Text: "**Looking up yesterday's weather**\n\nThe user greeted me with \"hi, how are you?\" and asked about the weather in Shanghai yesterday. Since today is November 11, 2025, I can easily calculate that yesterday's date was November 10, 2025. I need to use the weather tool to get that information, specifically checking for the weather conditions in Shanghai on that date. Let's proceed with that!"},
+				Content: v1.NewTextContent("**Looking up yesterday's weather**\n\nThe user greeted me with \"hi, how are you?\" and asked about the weather in Shanghai yesterday. Since today is November 11, 2025, I can easily calculate that yesterday's date was November 10, 2025. I need to use the weather tool to get that information, specifically checking for the weather conditions in Shanghai on that date. Let's proceed with that!"),
 			},
 			{
 				Id: "fc_0dd30283291d2ea70169d0e9bc4f948193a7ed1ab06c9f04f9",
@@ -632,7 +624,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Message: &v1.Message{
 			Id:       "mock_message_id",
 			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "Today is November 11,"}}},
+			Contents: []*v1.Content{{Content: v1.NewTextContent("Today is November 11,")}},
 		},
 	},
 	{
@@ -641,7 +633,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Message: &v1.Message{
 			Id:       "mock_message_id",
 			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " "}}},
+			Contents: []*v1.Content{{Content: v1.NewTextContent(" ")}},
 		},
 	},
 	{
@@ -650,7 +642,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Message: &v1.Message{
 			Id:       "mock_message_id",
 			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "2025. Therefore, yesterday was November 10, 2025."}}},
+			Contents: []*v1.Content{{Content: v1.NewTextContent("2025. Therefore, yesterday was November 10, 2025.")}},
 		},
 	},
 	{
@@ -659,7 +651,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Message: &v1.Message{
 			Id:       "mock_message_id",
 			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " \n\n"}}},
+			Contents: []*v1.Content{{Content: v1.NewTextContent(" \n\n")}},
 		},
 	},
 	{
@@ -668,7 +660,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Message: &v1.Message{
 			Id:       "mock_message_id",
 			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "Now, I will check the weather in Shanghai for November"}}},
+			Contents: []*v1.Content{{Content: v1.NewTextContent("Now, I will check the weather in Shanghai for November")}},
 		},
 	},
 	{
@@ -677,7 +669,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Message: &v1.Message{
 			Id:       "mock_message_id",
 			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: " "}}},
+			Contents: []*v1.Content{{Content: v1.NewTextContent(" ")}},
 		},
 	},
 	{
@@ -686,7 +678,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Message: &v1.Message{
 			Id:       "mock_message_id",
 			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "10, 2025"}}},
+			Contents: []*v1.Content{{Content: v1.NewTextContent("10, 2025")}},
 		},
 	},
 	{
@@ -695,7 +687,7 @@ var mockChatStreamResp = []*entity.ChatResp{
 		Message: &v1.Message{
 			Id:       "mock_message_id",
 			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "."}}},
+			Contents: []*v1.Content{{Content: v1.NewTextContent(".")}},
 		},
 	},
 	{

@@ -53,7 +53,7 @@ func (c *chatCompletionStreamServer) Send(resp *v1.ChatResp) error {
 		for _, c := range resp.Message.Contents {
 			switch c := c.Content.(type) {
 			case *v1.Content_Text:
-				content = c.Text
+				content = c.Text.GetText()
 			case *v1.Content_ToolUse:
 				toolCalls = append(toolCalls, toolCall{
 					ID:   c.ToolUse.Id,

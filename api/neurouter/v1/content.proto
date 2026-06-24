@@ -18,6 +18,11 @@ package neurouter.v1;
 
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
+// Represent a text content
+message Text {
+  string text = 1;
+}
+
 // Represent a image content
 message Image {
   string mime_type = 1;
@@ -79,10 +84,12 @@ message Content {
   optional uint32 index = 2;
   // The semantic phase of the content
   ContentPhase phase = 3;
+  // Provider-supplied verification signature for this content.
+  string signature = 4;
   // Additional metadata for the content
   map<string, string> metadata = 9;
   oneof content {
-    string text = 10;
+    Text text = 10;
     Image image = 11;
     ToolUse tool_use = 12;
     ToolResult tool_result = 13;

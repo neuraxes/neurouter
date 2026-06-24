@@ -236,8 +236,8 @@ func TestConvertSystemFromAnthropic(t *testing.T) {
 				So(result, ShouldNotBeNil)
 				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 2)
-				So(result.Contents[0].GetText(), ShouldEqual, "You are a helpful assistant.")
-				So(result.Contents[1].GetText(), ShouldEqual, "Be concise.")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "You are a helpful assistant.")
+				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Be concise.")
 			})
 		})
 	})
@@ -258,7 +258,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 			Convey("Then it should create a USER message with text", func() {
 				So(result.Role, ShouldEqual, v1.Role_USER)
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].GetText(), ShouldEqual, "Hello!")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Hello!")
 			})
 		})
 
@@ -274,7 +274,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 			Convey("Then it should create a MODEL message", func() {
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].GetText(), ShouldEqual, "I'm here to help!")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "I'm here to help!")
 			})
 		})
 
@@ -332,8 +332,8 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-				So(result.Contents[0].GetText(), ShouldEqual, "Let me think about this...")
-				So(result.Contents[0].Metadata["signature"], ShouldEqual, "sig-abc")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Let me think about this...")
+				So(result.Contents[0].Signature, ShouldEqual, "sig-abc")
 			})
 		})
 
@@ -501,8 +501,8 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 
 				// thinking
 				So(result.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-				So(result.Contents[0].GetText(), ShouldEqual, "thinking...")
-				So(result.Contents[0].Metadata["signature"], ShouldEqual, "sig-1")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "thinking...")
+				So(result.Contents[0].Signature, ShouldEqual, "sig-1")
 
 				// redacted thinking
 				So(result.Contents[1].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
@@ -510,7 +510,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 
 				// text
 				So(result.Contents[2].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_NORMAL)
-				So(result.Contents[2].GetText(), ShouldEqual, "Here is the answer")
+				So(result.Contents[2].GetText().GetText(), ShouldEqual, "Here is the answer")
 
 				// tool_use
 				tu := result.Contents[3].GetToolUse()
@@ -578,14 +578,14 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 			Convey("Then system message should be included", func() {
 				So(result.Messages, ShouldHaveLength, 3) // system + 2 messages
 				So(result.Messages[0].Role, ShouldEqual, v1.Role_SYSTEM)
-				So(result.Messages[0].Contents[0].GetText(), ShouldEqual, "You are helpful.")
+				So(result.Messages[0].Contents[0].GetText().GetText(), ShouldEqual, "You are helpful.")
 			})
 
 			Convey("Then user and assistant messages should be converted", func() {
 				So(result.Messages[1].Role, ShouldEqual, v1.Role_USER)
-				So(result.Messages[1].Contents[0].GetText(), ShouldEqual, "Hello")
+				So(result.Messages[1].Contents[0].GetText().GetText(), ShouldEqual, "Hello")
 				So(result.Messages[2].Role, ShouldEqual, v1.Role_MODEL)
-				So(result.Messages[2].Contents[0].GetText(), ShouldEqual, "Hi there")
+				So(result.Messages[2].Contents[0].GetText().GetText(), ShouldEqual, "Hi there")
 			})
 
 			Convey("Then tools should be converted", func() {
@@ -621,7 +621,7 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 			Convey("Then messages should not include a system message", func() {
 				So(result.Messages, ShouldHaveLength, 1)
 				So(result.Messages[0].Role, ShouldEqual, v1.Role_USER)
-				So(result.Messages[0].Contents[0].GetText(), ShouldEqual, "Hello")
+				So(result.Messages[0].Contents[0].GetText().GetText(), ShouldEqual, "Hello")
 			})
 		})
 
@@ -665,7 +665,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Id:   "msg-1",
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
-						{Content: &v1.Content_Text{Text: "Hello!"}},
+						{Content: v1.NewTextContent("Hello!")},
 					},
 				},
 				Statistics: &v1.Statistics{
@@ -703,12 +703,12 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Phase:    v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Metadata: map[string]string{"signature": "sig-abc"},
-							Content:  &v1.Content_Text{Text: "Let me think..."},
+							Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+							Signature: "sig-abc",
+							Content:   v1.NewTextContent("Let me think..."),
 						},
 						{
-							Content: &v1.Content_Text{Text: "The answer is 42."},
+							Content: v1.NewTextContent("The answer is 42."),
 						},
 					},
 				},
@@ -744,7 +744,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 							Content: &v1.Content_Opaque{Opaque: "opaque-data"},
 						},
 						{
-							Content: &v1.Content_Text{Text: "Result here."},
+							Content: v1.NewTextContent("Result here."),
 						},
 					},
 				},
@@ -814,16 +814,16 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{
-							Phase:    v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Metadata: map[string]string{"signature": "sig-1"},
-							Content:  &v1.Content_Text{Text: "thinking content"},
+							Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+							Signature: "sig-1",
+							Content:   v1.NewTextContent("thinking content"),
 						},
 						{
 							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
 							Content: &v1.Content_Opaque{Opaque: "secret-data"},
 						},
 						{
-							Content: &v1.Content_Text{Text: "Let me help you."},
+							Content: v1.NewTextContent("Let me help you."),
 						},
 						{
 							Content: &v1.Content_ToolUse{
@@ -885,8 +885,8 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 					Id:   "msg-6",
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
-						{Content: &v1.Content_Text{Text: ""}},
-						{Content: &v1.Content_Text{Text: "actual content"}},
+						{Content: v1.NewTextContent("")},
+						{Content: v1.NewTextContent("actual content")},
 					},
 				},
 			}

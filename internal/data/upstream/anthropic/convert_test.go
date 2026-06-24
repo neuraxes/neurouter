@@ -257,13 +257,13 @@ func TestConvertSystemToAnthropic(t *testing.T) {
 			{
 				Role: v1.Role_SYSTEM,
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "sys prompt"}},
+					{Content: v1.NewTextContent("sys prompt")},
 				},
 			},
 			{
 				Role: v1.Role_USER,
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "hi"}},
+					{Content: v1.NewTextContent("hi")},
 				},
 			},
 		}
@@ -288,7 +288,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 			msg := &v1.Message{
 				Role: v1.Role_USER,
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "Hello, world!"}},
+					{Content: v1.NewTextContent("Hello, world!")},
 				},
 			}
 			result := repo.convertMessageToAnthropic(msg)
@@ -306,7 +306,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 			msg := &v1.Message{
 				Role: v1.Role_SYSTEM,
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "You are a helpful assistant"}},
+					{Content: v1.NewTextContent("You are a helpful assistant")},
 				},
 			}
 			result := repo.convertMessageToAnthropic(msg)
@@ -324,7 +324,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 			msg := &v1.Message{
 				Role: v1.Role_MODEL,
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "I'm here to help!"}},
+					{Content: v1.NewTextContent("I'm here to help!")},
 				},
 			}
 			result := repo.convertMessageToAnthropic(msg)
@@ -411,7 +411,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 			msg := &v1.Message{
 				Role: v1.Role_USER,
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "What's in this image?"}},
+					{Content: v1.NewTextContent("What's in this image?")},
 					{Content: &v1.Content_Image{
 						Image: &v1.Image{
 							Source: &v1.Image_Url{Url: "https://example.com/photo.png"},
@@ -626,9 +626,9 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 		}
 
 		msgs := []*v1.Message{
-			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "sys"}}}},
-			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "hi"}}}},
-			{Role: v1.Role_MODEL, Contents: []*v1.Content{{Content: &v1.Content_Text{Text: "resp"}}}},
+			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys")}}},
+			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
+			{Role: v1.Role_MODEL, Contents: []*v1.Content{{Content: v1.NewTextContent("resp")}}},
 			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Image{Image: &v1.Image{Source: &v1.Image_Url{Url: "https://a.b/c.png"}}}}}},
 		}
 
@@ -700,8 +700,8 @@ func TestConvertContentsFromAnthropic(t *testing.T) {
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(len(msg.Contents), ShouldEqual, 2)
 			So(msg.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-			So(msg.Contents[0].GetText(), ShouldEqual, "think")
-			So(msg.Contents[1].GetText(), ShouldEqual, "answer")
+			So(msg.Contents[0].GetText().GetText(), ShouldEqual, "think")
+			So(msg.Contents[1].GetText().GetText(), ShouldEqual, "answer")
 		})
 	})
 
@@ -733,15 +733,15 @@ func TestConvertContentsFromAnthropic(t *testing.T) {
 
 			// thinking block
 			So(msg.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-			So(msg.Contents[0].GetText(), ShouldEqual, "visible thought")
-			So(msg.Contents[0].Metadata["signature"], ShouldEqual, "sig-abc")
+			So(msg.Contents[0].GetText().GetText(), ShouldEqual, "visible thought")
+			So(msg.Contents[0].Signature, ShouldEqual, "sig-abc")
 
 			// redacted_thinking block
 			So(msg.Contents[1].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 			So(msg.Contents[1].GetOpaque(), ShouldEqual, "opaque-encrypted-data")
 
 			// text block
-			So(msg.Contents[2].GetText(), ShouldEqual, "final answer")
+			So(msg.Contents[2].GetText().GetText(), ShouldEqual, "final answer")
 		})
 	})
 }
@@ -782,7 +782,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
 				So(*resp.Message.Contents[0].Index, ShouldEqual, 0)
 				So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_NORMAL)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Hello")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Hello")
 			})
 		})
 
@@ -804,8 +804,8 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 				So(resp.Message.Contents[0].Index, ShouldNotBeNil)
 				So(*resp.Message.Contents[0].Index, ShouldEqual, 1)
 				So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-				So(resp.Message.Contents[0].GetText(), ShouldEqual, "Let me analyze this...")
-				So(resp.Message.Contents[0].Metadata["signature"], ShouldEqual, "sig-abc")
+				So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Let me analyze this...")
+				So(resp.Message.Contents[0].Signature, ShouldEqual, "sig-abc")
 			})
 		})
 
@@ -856,7 +856,7 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			r1 := client.convertChunkFromAnthropic(d1)
 			So(r1, ShouldNotBeNil)
 			So(r1.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-			So(r1.Message.Contents[0].GetText(), ShouldEqual, "let me think")
+			So(r1.Message.Contents[0].GetText().GetText(), ShouldEqual, "let me think")
 			So(r1.Message.Contents[0].Metadata, ShouldBeNil)
 
 			// signature_delta
@@ -864,14 +864,14 @@ func TestConvertChunkFromAnthropic(t *testing.T) {
 			r1s := client.convertChunkFromAnthropic(d1s)
 			So(r1s, ShouldNotBeNil)
 			So(r1s.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
-			So(r1s.Message.Contents[0].Metadata["signature"], ShouldEqual, "sig-xyz")
-			So(r1s.Message.Contents[0].GetText(), ShouldEqual, "")
+			So(r1s.Message.Contents[0].Signature, ShouldEqual, "sig-xyz")
+			So(r1s.Message.Contents[0].GetText().GetText(), ShouldEqual, "")
 
 			// text_delta
 			d2 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "text_delta", Text: "hello"}}
 			r2 := client.convertChunkFromAnthropic(d2)
 			So(r2, ShouldNotBeNil)
-			So(r2.Message.Contents[0].GetText(), ShouldEqual, "hello")
+			So(r2.Message.Contents[0].GetText().GetText(), ShouldEqual, "hello")
 
 			// input_json_delta
 			d3 := &anthropic.MessageStreamEventUnion{Type: "content_block_delta", Delta: anthropic.MessageStreamEventUnionDelta{Type: "input_json_delta", PartialJSON: "{\"x\":1}"}}

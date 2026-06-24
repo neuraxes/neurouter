@@ -89,7 +89,7 @@ func TestConvertDeveloperMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create a SYSTEM message with text content", func() {
 				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].GetText(), ShouldEqual, "You are a helpful assistant.")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "You are a helpful assistant.")
 			})
 		})
 
@@ -107,8 +107,8 @@ func TestConvertDeveloperMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create a SYSTEM message with multiple text contents", func() {
 				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 2)
-				So(result.Contents[0].GetText(), ShouldEqual, "Part 1")
-				So(result.Contents[1].GetText(), ShouldEqual, "Part 2")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Part 1")
+				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Part 2")
 			})
 		})
 
@@ -155,7 +155,7 @@ func TestConvertSystemMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create a SYSTEM message with text content", func() {
 				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].GetText(), ShouldEqual, "System prompt")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "System prompt")
 			})
 		})
 
@@ -173,8 +173,8 @@ func TestConvertSystemMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create a SYSTEM message with multiple text contents", func() {
 				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 2)
-				So(result.Contents[0].GetText(), ShouldEqual, "Be helpful.")
-				So(result.Contents[1].GetText(), ShouldEqual, "Be concise.")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Be helpful.")
+				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Be concise.")
 			})
 		})
 
@@ -208,7 +208,7 @@ func TestConvertUserMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create a USER message with text content", func() {
 				So(result.Role, ShouldEqual, v1.Role_USER)
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].GetText(), ShouldEqual, "Hello!")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Hello!")
 			})
 		})
 
@@ -226,8 +226,8 @@ func TestConvertUserMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create a USER message with multiple text contents", func() {
 				So(result.Role, ShouldEqual, v1.Role_USER)
 				So(result.Contents, ShouldHaveLength, 2)
-				So(result.Contents[0].GetText(), ShouldEqual, "Part A")
-				So(result.Contents[1].GetText(), ShouldEqual, "Part B")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Part A")
+				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Part B")
 			})
 		})
 
@@ -248,7 +248,7 @@ func TestConvertUserMessageFromOpenAIChat(t *testing.T) {
 
 			Convey("Then it should create text and image contents", func() {
 				So(result.Contents, ShouldHaveLength, 2)
-				So(result.Contents[0].GetText(), ShouldEqual, "Look at this:")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Look at this:")
 
 				img := result.Contents[1].GetImage()
 				So(img, ShouldNotBeNil)
@@ -328,7 +328,7 @@ func TestConvertAssistantMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create a MODEL message with text content", func() {
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].GetText(), ShouldEqual, "I can help!")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "I can help!")
 			})
 		})
 
@@ -346,8 +346,8 @@ func TestConvertAssistantMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create a MODEL message with multiple text contents", func() {
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
 				So(result.Contents, ShouldHaveLength, 2)
-				So(result.Contents[0].GetText(), ShouldEqual, "Line 1")
-				So(result.Contents[1].GetText(), ShouldEqual, "Line 2")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Line 1")
+				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Line 2")
 			})
 		})
 
@@ -422,7 +422,7 @@ func TestConvertAssistantMessageFromOpenAIChat(t *testing.T) {
 
 			Convey("Then both text and tool call should appear in contents", func() {
 				So(result.Contents, ShouldHaveLength, 2)
-				So(result.Contents[0].GetText(), ShouldEqual, "Let me check.")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Let me check.")
 				So(result.Contents[1].GetToolUse().Name, ShouldEqual, "lookup")
 			})
 		})
@@ -534,7 +534,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should dispatch to developer converter", func() {
 				So(result, ShouldNotBeNil)
 				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
-				So(result.Contents[0].GetText(), ShouldEqual, "dev msg")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "dev msg")
 			})
 		})
 
@@ -551,7 +551,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should dispatch to system converter", func() {
 				So(result, ShouldNotBeNil)
 				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
-				So(result.Contents[0].GetText(), ShouldEqual, "sys msg")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "sys msg")
 			})
 		})
 
@@ -568,7 +568,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should dispatch to user converter", func() {
 				So(result, ShouldNotBeNil)
 				So(result.Role, ShouldEqual, v1.Role_USER)
-				So(result.Contents[0].GetText(), ShouldEqual, "user msg")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "user msg")
 			})
 		})
 
@@ -585,7 +585,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 			Convey("Then it should dispatch to assistant converter", func() {
 				So(result, ShouldNotBeNil)
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
-				So(result.Contents[0].GetText(), ShouldEqual, "assistant msg")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "assistant msg")
 			})
 		})
 
@@ -978,7 +978,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 				Message: &v1.Message{
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
-						{Content: &v1.Content_Text{Text: "Hello!"}},
+						{Content: v1.NewTextContent("Hello!")},
 					},
 				},
 				Statistics: &v1.Statistics{
@@ -1014,10 +1014,10 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 					Contents: []*v1.Content{
 						{
 							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-							Content: &v1.Content_Text{Text: "Let me think..."},
+							Content: v1.NewTextContent("Let me think..."),
 						},
 						{
-							Content: &v1.Content_Text{Text: "The answer is 42."},
+							Content: v1.NewTextContent("The answer is 42."),
 						},
 					},
 				},
@@ -1072,7 +1072,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 				Message: &v1.Message{
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
-						{Content: &v1.Content_Text{Text: "I'll check."}},
+						{Content: v1.NewTextContent("I'll check.")},
 						{Content: &v1.Content_ToolUse{
 							ToolUse: &v1.ToolUse{
 								Id:   "call-1",
@@ -1113,7 +1113,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 				Message: &v1.Message{
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
-						{Content: &v1.Content_Text{Text: "Ok"}},
+						{Content: v1.NewTextContent("Ok")},
 					},
 				},
 			}
@@ -1132,8 +1132,8 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 				Message: &v1.Message{
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
-						{Content: &v1.Content_Text{Text: "Part 1 "}},
-						{Content: &v1.Content_Text{Text: "Part 2"}},
+						{Content: v1.NewTextContent("Part 1 ")},
+						{Content: v1.NewTextContent("Part 2")},
 					},
 				},
 			}
@@ -1161,7 +1161,7 @@ func TestConvertEmbeddingReqFromOpenAIChat(t *testing.T) {
 			Convey("Then it should create an EmbedReq with text content", func() {
 				So(result.Model, ShouldEqual, "text-embedding-3-small")
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].GetText(), ShouldEqual, "Hello world")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Hello world")
 			})
 		})
 
@@ -1177,7 +1177,7 @@ func TestConvertEmbeddingReqFromOpenAIChat(t *testing.T) {
 			Convey("Then it should use the first string", func() {
 				So(result.Model, ShouldEqual, "text-embedding-3-large")
 				So(result.Contents, ShouldHaveLength, 1)
-				So(result.Contents[0].GetText(), ShouldEqual, "first")
+				So(result.Contents[0].GetText().GetText(), ShouldEqual, "first")
 			})
 		})
 

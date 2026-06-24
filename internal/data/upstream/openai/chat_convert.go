@@ -79,7 +79,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 		for _, content := range message.Contents {
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
-				sb.WriteString(c.Text)
+				sb.WriteString(c.Text.GetText())
 			case *v1.Content_Image:
 				isPlainText = false
 			}
@@ -108,7 +108,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 				case *v1.Content_Text:
 					m.Content.OfArrayOfContentParts = append(
 						m.Content.OfArrayOfContentParts,
-						openai.ChatCompletionContentPartTextParam{Text: c.Text},
+						openai.ChatCompletionContentPartTextParam{Text: c.Text.GetText()},
 					)
 				default:
 					r.log.Errorf("unsupported content for system: %v", c)
@@ -176,7 +176,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 					case *v1.Content_Text:
 						m.Content.OfArrayOfContentParts = append(
 							m.Content.OfArrayOfContentParts,
-							openai.TextContentPart(c.Text),
+							openai.TextContentPart(c.Text.GetText()),
 						)
 					case *v1.Content_Image:
 						m.Content.OfArrayOfContentParts = append(
@@ -227,7 +227,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 						m.Content.OfArrayOfContentParts,
 						openai.ChatCompletionAssistantMessageParamContentArrayOfContentPartUnion{
 							OfText: &openai.ChatCompletionContentPartTextParam{
-								Text: c.Text,
+								Text: c.Text.GetText(),
 							},
 						},
 					)
@@ -325,9 +325,7 @@ func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatComple
 
 	if openAIMessage.Content != "" {
 		message.Contents = append(message.Contents, &v1.Content{
-			Content: &v1.Content_Text{
-				Text: openAIMessage.Content,
-			},
+			Content: v1.NewTextContent(openAIMessage.Content),
 		})
 	}
 
@@ -341,10 +339,8 @@ func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatComple
 			rc := gjson.Parse(reasoning.Raw()).String()
 			if rc != "" {
 				message.Contents = append(message.Contents, &v1.Content{
-					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Content: &v1.Content_Text{
-						Text: rc,
-					},
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Content: v1.NewTextContent(rc),
 				})
 			}
 		}
@@ -399,9 +395,7 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 
 		if msg.Delta.Content != "" {
 			contents = append(contents, &v1.Content{
-				Content: &v1.Content_Text{
-					Text: msg.Delta.Content,
-				},
+				Content: v1.NewTextContent(msg.Delta.Content),
 			})
 		}
 
@@ -415,10 +409,8 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 				rc := gjson.Parse(reasoning.Raw()).String()
 				if rc != "" {
 					contents = append(contents, &v1.Content{
-						Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-						Content: &v1.Content_Text{
-							Text: rc,
-						},
+						Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+						Content: v1.NewTextContent(rc),
 					})
 				}
 			}

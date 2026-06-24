@@ -253,7 +253,7 @@ func TestEmbed(t *testing.T) {
 				Id:    "embed-1",
 				Model: "text-embedding-004",
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "hello world"}},
+					{Content: v1.NewTextContent("hello world")},
 				},
 			}
 
@@ -279,7 +279,7 @@ func TestEmbed(t *testing.T) {
 				Id:    "embed-1",
 				Model: "text-embedding-004",
 				Contents: []*v1.Content{
-					{Content: &v1.Content_Text{Text: "hello world"}},
+					{Content: v1.NewTextContent("hello world")},
 				},
 			}
 

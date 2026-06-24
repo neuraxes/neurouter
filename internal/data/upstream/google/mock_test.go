@@ -21,9 +21,7 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_SYSTEM,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_Text{
-						Text: "You are helpful assistant.",
-					},
+					Content: v1.NewTextContent("You are helpful assistant."),
 				},
 			},
 		},
@@ -31,9 +29,7 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_USER,
 			Contents: []*v1.Content{
 				{
-					Content: &v1.Content_Text{
-						Text: "hi, how are you? and how is the weather yesterday in shanghai?",
-					},
+					Content: v1.NewTextContent("hi, how are you? and how is the weather yesterday in shanghai?"),
 				},
 			},
 		},
@@ -41,18 +37,12 @@ var mockChatReq = &entity.ChatReq{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Content: &v1.Content_Text{
-						Text: "**Navigating the User's Queries**\n\nOkay, so I've got two things to address here. First, a simple \"hello\" - easy, I can handle that right away. But then there's the weather in Shanghai *yesterday*. That's where things get interesting. I can't just throw \"yesterday\" at the 'get_weather' tool; it needs a specific date. So, here's my plan:\n\n1.  Acknowledge the initial greeting. Done.\n2.  Use the 'get_date' tool to find out what *today's* date is. Gotta know where we are to figure out yesterday.\n3.  Calculate *yesterday's* date based on the information I get from 'get_date'. Simple math, but it needs to be done.\n4.  Then, and only then, can I use the 'get_weather' tool with \"Shanghai\" and the calculated date for yesterday.\n5.  Finally, I'll package up the response to the greeting and the weather report in a coherent way for the user.\n\nSince I have to actually *do* a calculation (subtracting a day from today), I need to do this in a very systematic way. Get today's date first, then use that as the starting point to get the weather for yesterday. Piece of cake.\n",
-					},
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Content: v1.NewTextContent("**Navigating the User's Queries**\n\nOkay, so I've got two things to address here. First, a simple \"hello\" - easy, I can handle that right away. But then there's the weather in Shanghai *yesterday*. That's where things get interesting. I can't just throw \"yesterday\" at the 'get_weather' tool; it needs a specific date. So, here's my plan:\n\n1.  Acknowledge the initial greeting. Done.\n2.  Use the 'get_date' tool to find out what *today's* date is. Gotta know where we are to figure out yesterday.\n3.  Calculate *yesterday's* date based on the information I get from 'get_date'. Simple math, but it needs to be done.\n4.  Then, and only then, can I use the 'get_weather' tool with \"Shanghai\" and the calculated date for yesterday.\n5.  Finally, I'll package up the response to the greeting and the weather report in a coherent way for the user.\n\nSince I have to actually *do* a calculation (subtracting a day from today), I need to do this in a very systematic way. Get today's date first, then use that as the starting point to get the weather for yesterday. Piece of cake.\n"),
 				},
 				{
-					Metadata: map[string]string{
-						"thoughtSignature": "CpkHAdHtim8DJwCo3wMevPPWRB6wqQ+we/V4TAgfYvSHEKtu1gdeqx6NJu7qzJCSItuKMXyaYfFqQO6/C5AHyWv1+sP1at3ZpftpdcduLw3lwTO8Yh/PtglzbVUT+LvNdo4RDVethWSfv3RSl+7fAX/2zTY0pzxFGTrcIX9Qwtyv1RmZ+8uJ3+l8dC28mEQIyw9nUrwAe6K6QXCtiHaBGNfXbgh/BlVAaTOR8gKfIkg5XcN9a9foovFodz4Gr1SvIm6DN6K/Gvt2cPkIfGizL1MJyqEjnYkNIzLZmx43uPvaNRoCeMTe9lTpG+a+T9piA/XZn1vAP9XKQEvUUdCOPisdc4u2WAWK5OqotEJ1U12nT/TxULl8PNsx6fM2pdfcrdCgZVyoFZvraAmeGinDel7xuTkwb9PODYTTDgotXqP1V/knbxHG6laUIqioiSA3FHN8c4n+k0dbVf3fILJrJo6hh9vKTkUvlo0w66FxHm0vPYF+fGl8aIFXJeNIUJMvO5pKK8IdKKonZcgQrKCtBXb5/1gHKsYh93yYABs5GJwtz7a3kYwOAZLQe4WP0ehnJ995JQxvVSMgRHz8DBY8zsu6Xl7+LZc1cRrxnX8Fovgeq8o2Badi/mrIZXMYgS7IA77lbah/HCBm/+LR7K6Ty4Svh4TsCPD0PxM7hNRXykAua3eeBpzPVScA6snST4Fts22ZiX3MF7qcjvq4JrgYbpBc6q78kXmtLOx10y6//O34jXeW9KSkZ0CI3Lmi4j+a+ptchftPimk2QeX+Xx54/sBCCXZ7UhcMckJq69fVQf+dX+ueNlbnu0iS4Y3ZhR0c+1+1L4m26k/0FnrWQhqJhk1XzyTsHQurrIA2kv2IsLpZv+aVMEXVe0oTXsLG0GJpEIZ+FHFYG/T1wSEM9CxeSsumLf/90mg8BNGC6C9Sw05Ka2cOduv6g6khhzB6giINw5cm4owss18VtgO1dFD5hCYzbvnxeYDbyfN0fdvzQobu5Ch9gNe5+HjD5Ij+Rt0YtG6bLbKWBYWl+2LA/mM5yNRz3Hk4YWj9JnFNUE6zPFvh7oPan3D6cJy+VU//YP6CnHArBDUimql/rFhcaa7IBE7BUJTZ0RtJWlAV2Bw6QwomLW8CfHo38MUjA5bb29a5LOHt+Nokqlb3JdnKCuCTaaZ+WBZWqL47jGT/Mft39e+ikLHWhP+tSr/M8+06budDTtaAYkcTdI94cAP2",
-					},
-					Content: &v1.Content_Text{
-						Text: "I am doing well, thank you!\n",
-					},
+					Signature: "CpkHAdHtim8DJwCo3wMevPPWRB6wqQ+we/V4TAgfYvSHEKtu1gdeqx6NJu7qzJCSItuKMXyaYfFqQO6/C5AHyWv1+sP1at3ZpftpdcduLw3lwTO8Yh/PtglzbVUT+LvNdo4RDVethWSfv3RSl+7fAX/2zTY0pzxFGTrcIX9Qwtyv1RmZ+8uJ3+l8dC28mEQIyw9nUrwAe6K6QXCtiHaBGNfXbgh/BlVAaTOR8gKfIkg5XcN9a9foovFodz4Gr1SvIm6DN6K/Gvt2cPkIfGizL1MJyqEjnYkNIzLZmx43uPvaNRoCeMTe9lTpG+a+T9piA/XZn1vAP9XKQEvUUdCOPisdc4u2WAWK5OqotEJ1U12nT/TxULl8PNsx6fM2pdfcrdCgZVyoFZvraAmeGinDel7xuTkwb9PODYTTDgotXqP1V/knbxHG6laUIqioiSA3FHN8c4n+k0dbVf3fILJrJo6hh9vKTkUvlo0w66FxHm0vPYF+fGl8aIFXJeNIUJMvO5pKK8IdKKonZcgQrKCtBXb5/1gHKsYh93yYABs5GJwtz7a3kYwOAZLQe4WP0ehnJ995JQxvVSMgRHz8DBY8zsu6Xl7+LZc1cRrxnX8Fovgeq8o2Badi/mrIZXMYgS7IA77lbah/HCBm/+LR7K6Ty4Svh4TsCPD0PxM7hNRXykAua3eeBpzPVScA6snST4Fts22ZiX3MF7qcjvq4JrgYbpBc6q78kXmtLOx10y6//O34jXeW9KSkZ0CI3Lmi4j+a+ptchftPimk2QeX+Xx54/sBCCXZ7UhcMckJq69fVQf+dX+ueNlbnu0iS4Y3ZhR0c+1+1L4m26k/0FnrWQhqJhk1XzyTsHQurrIA2kv2IsLpZv+aVMEXVe0oTXsLG0GJpEIZ+FHFYG/T1wSEM9CxeSsumLf/90mg8BNGC6C9Sw05Ka2cOduv6g6khhzB6giINw5cm4owss18VtgO1dFD5hCYzbvnxeYDbyfN0fdvzQobu5Ch9gNe5+HjD5Ij+Rt0YtG6bLbKWBYWl+2LA/mM5yNRz3Hk4YWj9JnFNUE6zPFvh7oPan3D6cJy+VU//YP6CnHArBDUimql/rFhcaa7IBE7BUJTZ0RtJWlAV2Bw6QwomLW8CfHo38MUjA5bb29a5LOHt+Nokqlb3JdnKCuCTaaZ+WBZWqL47jGT/Mft39e+ikLHWhP+tSr/M8+06budDTtaAYkcTdI94cAP2",
+					Content:   v1.NewTextContent("I am doing well, thank you!\n"),
 				},
 				{
 					Content: &v1.Content_ToolUse{
@@ -274,18 +264,12 @@ var mockChatResp = &entity.ChatResp{
 		Role: v1.Role_MODEL,
 		Contents: []*v1.Content{
 			{
-				Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content: &v1.Content_Text{
-					Text: "**Yesterday's Shanghai Weather**\n\nOkay, so the user asked about the weather in Shanghai yesterday. I've already handled the initial greeting, so I'm past that. Right now, I have today's date, which is \"2025-11-11\". That's a good start.\n\nMy next step is simple: I need to figure out what date \"yesterday\" actually was. With today being the 11th, that means yesterday was the 10th. Easy enough, that's \"2025-11-10\". \n\nNow that I have the date I need, I can use the 'get_weather' tool with the location \"shanghai\" and the date \"2025-11-10\". That should give me the information the user is looking for.\n",
-				},
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: v1.NewTextContent("**Yesterday's Shanghai Weather**\n\nOkay, so the user asked about the weather in Shanghai yesterday. I've already handled the initial greeting, so I'm past that. Right now, I have today's date, which is \"2025-11-11\". That's a good start.\n\nMy next step is simple: I need to figure out what date \"yesterday\" actually was. With today being the 11th, that means yesterday was the 10th. Easy enough, that's \"2025-11-10\". \n\nNow that I have the date I need, I can use the 'get_weather' tool with the location \"shanghai\" and the date \"2025-11-10\". That should give me the information the user is looking for.\n"),
 			},
 			{
-				Metadata: map[string]string{
-					"thoughtSignature": "CtcCAdHtim9//a+avd6Mdp2nfaFDy9UN0XRKL5s7OpASpj4EYl4F3YcytuWj2af37z/RF2Wu4wabZG8dj9X5w5alnFCjBrepYwCZwmjbDWmeDcWfygAo6gtbThCoD7I8k1cZD4SzAMR5tlXSQJdqLJE/D2kT54WsTHLm95UHQ5s68/mYf0n6yKLvj+le92wXvkxFctZ6Gsu/W5ihhj9rlADwWWy4fhhJEvPgHm7z+t9+FmfltfX+/Yumzk2GUXSxxhosRXFX4WXlpW096MEFALnkURWeJ+owj6ppNyqNx6i7Hbz70gH3Y5odjvpGVyk8iaDM6SAWV81q95bcGjqso1LF/AyqnQS26XRFtoRcpdPMfDCrFEOPUcD3MlswapgGmnFK2DdKgpwvc3TPCLna9JdltoEVohVaimT7nS4EkSkrDsHiKsp0Omb7cmOCMCe9WXOHhUsx7qeLaA==",
-				},
-				Content: &v1.Content_Text{
-					Text: "Yesterday was 2025-11-10.\n",
-				},
+				Signature: "CtcCAdHtim9//a+avd6Mdp2nfaFDy9UN0XRKL5s7OpASpj4EYl4F3YcytuWj2af37z/RF2Wu4wabZG8dj9X5w5alnFCjBrepYwCZwmjbDWmeDcWfygAo6gtbThCoD7I8k1cZD4SzAMR5tlXSQJdqLJE/D2kT54WsTHLm95UHQ5s68/mYf0n6yKLvj+le92wXvkxFctZ6Gsu/W5ihhj9rlADwWWy4fhhJEvPgHm7z+t9+FmfltfX+/Yumzk2GUXSxxhosRXFX4WXlpW096MEFALnkURWeJ+owj6ppNyqNx6i7Hbz70gH3Y5odjvpGVyk8iaDM6SAWV81q95bcGjqso1LF/AyqnQS26XRFtoRcpdPMfDCrFEOPUcD3MlswapgGmnFK2DdKgpwvc3TPCLna9JdltoEVohVaimT7nS4EkSkrDsHiKsp0Omb7cmOCMCe9WXOHhUsx7qeLaA==",
+				Content:   v1.NewTextContent("Yesterday was 2025-11-10.\n"),
 			},
 			{
 				Content: &v1.Content_ToolUse{
@@ -331,10 +315,8 @@ var mockStreamChatResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Content: &v1.Content_Text{
-						Text: "**Calculating Yesterday's Date**\n\nI've successfully retrieved today's date, 2025-11-11. My current focus is to determine yesterday's date, which I've now calculated as 2025-11-10. This is a crucial step towards providing the requested weather information, and I'm on track to deliver a complete and accurate response.\n\n\n",
-					},
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Content: v1.NewTextContent("**Calculating Yesterday's Date**\n\nI've successfully retrieved today's date, 2025-11-11. My current focus is to determine yesterday's date, which I've now calculated as 2025-11-10. This is a crucial step towards providing the requested weather information, and I'm on track to deliver a complete and accurate response.\n\n\n"),
 				},
 			},
 		},
@@ -354,10 +336,8 @@ var mockStreamChatResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Phase: v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Content: &v1.Content_Text{
-						Text: "**Refining Date Parameters**\n\nI've determined yesterday's date, 2025-11-10, crucial for getting the weather. I'm building on that success. My task now is to integrate this date into the 'get_weather' tool with \"shanghai\" as the location. This will allow me to finally provide the requested information, which I will then report back.\n\n\n",
-					},
+					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Content: v1.NewTextContent("**Refining Date Parameters**\n\nI've determined yesterday's date, 2025-11-10, crucial for getting the weather. I'm building on that success. My task now is to integrate this date into the 'get_weather' tool with \"shanghai\" as the location. This will allow me to finally provide the requested information, which I will then report back.\n\n\n"),
 				},
 			},
 		},
@@ -377,12 +357,8 @@ var mockStreamChatResp = []*entity.ChatResp{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{
-					Metadata: map[string]string{
-						"thoughtSignature": "CikB0e2KbwvEqAUe/Jbf3zx5lg6fKQe382RFpFzHXfaI7x59tkpEUrWQ0Qp6AdHtim93jg0+fEbEV+4yvK/XAUKtsxzs/NjSKNdVB9bE6QiZZgun3CCrEMtOnvI0c0YPeSh7cD7pbCYrEdJAedfO0qLEkLB0Txf7vP8CCXFdVRfid8HX5vATXDgmJBvsb+oNBJMtbYKmvT89CvcceFYWtWUxQPVE7p0KsAEB0e2Kb7CsrMats3mXW9aOqkSbuS3kM3a6YTOQymYEfIsWmRNpM/1wvZsg8rfBSQ4rNtnKoXsRLhYdmpR4T3h5xV/UpclCduXabEjl4BV4lhln1Rp0CdAzW4j60NUv85NKR9Z0rt1sPZwwJ9B+XAgLnqz3aHWGImJG5ZXMa9FRmTIdV3ko8bAgup1nLYrl7UeOb/+QFSEMxqgZ0a9IPAJN/gB1BSBCRAzvZ/xvP3F3tgppAdHtim9mSHTlqsHDzXB6eIXcG+ciJayNMWdfVwrJ1RLK5aXwNgaeQb7p8QANO3gH9GpY5bIIazL+w20wnKM8xFP5rFD8T/x4LNhe+0sXh4Y7aJewaR8C6DN2ocob8zKi1qxqXyEaJL9I",
-					},
-					Content: &v1.Content_Text{
-						Text: "Yesterday was 2025-11-10.\n",
-					},
+					Signature: "CikB0e2KbwvEqAUe/Jbf3zx5lg6fKQe382RFpFzHXfaI7x59tkpEUrWQ0Qp6AdHtim93jg0+fEbEV+4yvK/XAUKtsxzs/NjSKNdVB9bE6QiZZgun3CCrEMtOnvI0c0YPeSh7cD7pbCYrEdJAedfO0qLEkLB0Txf7vP8CCXFdVRfid8HX5vATXDgmJBvsb+oNBJMtbYKmvT89CvcceFYWtWUxQPVE7p0KsAEB0e2Kb7CsrMats3mXW9aOqkSbuS3kM3a6YTOQymYEfIsWmRNpM/1wvZsg8rfBSQ4rNtnKoXsRLhYdmpR4T3h5xV/UpclCduXabEjl4BV4lhln1Rp0CdAzW4j60NUv85NKR9Z0rt1sPZwwJ9B+XAgLnqz3aHWGImJG5ZXMa9FRmTIdV3ko8bAgup1nLYrl7UeOb/+QFSEMxqgZ0a9IPAJN/gB1BSBCRAzvZ/xvP3F3tgppAdHtim9mSHTlqsHDzXB6eIXcG+ciJayNMWdfVwrJ1RLK5aXwNgaeQb7p8QANO3gH9GpY5bIIazL+w20wnKM8xFP5rFD8T/x4LNhe+0sXh4Y7aJewaR8C6DN2ocob8zKi1qxqXyEaJL9I",
+					Content:   v1.NewTextContent("Yesterday was 2025-11-10.\n"),
 				},
 			},
 		},

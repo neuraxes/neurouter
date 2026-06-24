@@ -90,7 +90,7 @@ func TestConvertStreamEventFromOpenAIResponse(t *testing.T) {
 			resp = client.convertStreamEventFromOpenAIResponse(delta)
 			So(resp, ShouldNotBeNil)
 			So(resp.Message.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_OUTCOME)
-			So(resp.Message.Contents[0].GetText(), ShouldEqual, "final answer")
+			So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "final answer")
 		})
 	})
 }
