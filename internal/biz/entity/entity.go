@@ -22,6 +22,9 @@ type ChatReq = v1.ChatReq
 // ChatResp represents a chat response, aliased from the API proto definition.
 type ChatResp = v1.ChatResp
 
+// ChatEvent represents a streaming chat event, aliased from the API proto definition.
+type ChatEvent = v1.ChatEvent
+
 // ModelSpec represents a model specification, aliased from the API proto definition.
 type ModelSpec = v1.ModelSpec
 

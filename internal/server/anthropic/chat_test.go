@@ -167,8 +167,8 @@ func TestChatStream(t *testing.T) {
 		Convey("When ChatStream is called and responses are sent", func() {
 			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
 				So(proto.Equal(req, mockChatReq), ShouldBeTrue)
-				for _, resp := range mockChatStreamResp {
-					if err := stream.Send(resp); err != nil {
+				for _, event := range mockChatStreamEvents {
+					if err := stream.Send(event); err != nil {
 						return err
 					}
 				}

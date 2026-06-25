@@ -1,0 +1,60 @@
+{
+  "model": "openai/gpt-5.4-mini",
+  "max_completion_tokens": 4096,
+  "reasoning_effort": "none",
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "You are a conversion-test assistant. When the user asks for fresh or external facts and a matching tool is available, call exactly one tool before producing final prose."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Use the get_weather tool for Shanghai on 2025-11-10. Do not answer from memory. Return no final prose until the tool has been called."
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Look up historical weather for a city on a specific date.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name in English."
+            },
+            "date": {
+              "type": "string",
+              "description": "Date in YYYY-MM-DD format."
+            },
+            "units": {
+              "type": "string",
+              "description": "Temperature unit.",
+              "enum": [
+                "metric",
+                "imperial"
+              ]
+            }
+          },
+          "required": [
+            "city",
+            "date"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

@@ -45,8 +45,6 @@ const (
 	ContentPhase_CONTENT_PHASE_OUTCOME ContentPhase = 1
 	// Reasoning content.
 	ContentPhase_CONTENT_PHASE_REASONING ContentPhase = 2
-	// Reasoning summary content.
-	ContentPhase_CONTENT_PHASE_REASONING_SUMMARY ContentPhase = 3
 )
 
 // Enum value maps for ContentPhase.
@@ -55,13 +53,11 @@ var (
 		0: "CONTENT_PHASE_NORMAL",
 		1: "CONTENT_PHASE_OUTCOME",
 		2: "CONTENT_PHASE_REASONING",
-		3: "CONTENT_PHASE_REASONING_SUMMARY",
 	}
 	ContentPhase_value = map[string]int32{
-		"CONTENT_PHASE_NORMAL":            0,
-		"CONTENT_PHASE_OUTCOME":           1,
-		"CONTENT_PHASE_REASONING":         2,
-		"CONTENT_PHASE_REASONING_SUMMARY": 3,
+		"CONTENT_PHASE_NORMAL":    0,
+		"CONTENT_PHASE_OUTCOME":   1,
+		"CONTENT_PHASE_REASONING": 2,
 	}
 )
 
@@ -372,6 +368,8 @@ type Content struct {
 	Phase ContentPhase `protobuf:"varint,3,opt,name=phase,proto3,enum=neurouter.v1.ContentPhase" json:"phase,omitempty"`
 	// Provider-supplied verification signature for this content.
 	Signature string `protobuf:"bytes,4,opt,name=signature,proto3" json:"signature,omitempty"`
+	// Additional metadata for the content
+	Metadata map[string]string `protobuf:"bytes,9,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Types that are valid to be assigned to Content:
 	//
 	//	*Content_Text
@@ -440,6 +438,13 @@ func (x *Content) GetSignature() string {
 		return x.Signature
 	}
 	return ""
+}
+
+func (x *Content) GetMetadata() map[string]string {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
 }
 
 func (x *Content) GetContent() isContent_Content {
@@ -727,26 +732,29 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	" \x01(\tH\x00R\x04text\x12+\n" +
 	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05imageB\b\n" +
 	"\x06outputB\b\n" +
-	"\x06_index\"\xfb\x02\n" +
+	"\x06_index\"\xf9\x03\n" +
 	"\aContent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05index\x18\x02 \x01(\rH\x01R\x05index\x88\x01\x01\x120\n" +
 	"\x05phase\x18\x03 \x01(\x0e2\x1a.neurouter.v1.ContentPhaseR\x05phase\x12\x1c\n" +
-	"\tsignature\x18\x04 \x01(\tR\tsignature\x12(\n" +
+	"\tsignature\x18\x04 \x01(\tR\tsignature\x12?\n" +
+	"\bmetadata\x18\t \x03(\v2#.neurouter.v1.Content.MetadataEntryR\bmetadata\x12(\n" +
 	"\x04text\x18\n" +
 	" \x01(\v2\x12.neurouter.v1.TextH\x00R\x04text\x12+\n" +
 	"\x05image\x18\v \x01(\v2\x13.neurouter.v1.ImageH\x00R\x05image\x122\n" +
 	"\btool_use\x18\f \x01(\v2\x15.neurouter.v1.ToolUseH\x00R\atoolUse\x12;\n" +
 	"\vtool_result\x18\r \x01(\v2\x18.neurouter.v1.ToolResultH\x00R\n" +
 	"toolResult\x12\x18\n" +
-	"\x06opaque\x18\x0e \x01(\tH\x00R\x06opaqueB\t\n" +
+	"\x06opaque\x18\x0e \x01(\tH\x00R\x06opaque\x1a;\n" +
+	"\rMetadataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
 	"\acontentB\b\n" +
-	"\x06_index*\x85\x01\n" +
+	"\x06_index*`\n" +
 	"\fContentPhase\x12\x18\n" +
 	"\x14CONTENT_PHASE_NORMAL\x10\x00\x12\x19\n" +
 	"\x15CONTENT_PHASE_OUTCOME\x10\x01\x12\x1b\n" +
-	"\x17CONTENT_PHASE_REASONING\x10\x02\x12#\n" +
-	"\x1fCONTENT_PHASE_REASONING_SUMMARY\x10\x03B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
+	"\x17CONTENT_PHASE_REASONING\x10\x02B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
 	file_neurouter_v1_content_proto_rawDescOnce sync.Once
@@ -761,7 +769,7 @@ func file_neurouter_v1_content_proto_rawDescGZIP() []byte {
 }
 
 var file_neurouter_v1_content_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_neurouter_v1_content_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_neurouter_v1_content_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_neurouter_v1_content_proto_goTypes = []any{
 	(ContentPhase)(0),         // 0: neurouter.v1.ContentPhase
 	(*Text)(nil),              // 1: neurouter.v1.Text
@@ -771,21 +779,23 @@ var file_neurouter_v1_content_proto_goTypes = []any{
 	(*Content)(nil),           // 5: neurouter.v1.Content
 	(*ToolUse_Input)(nil),     // 6: neurouter.v1.ToolUse.Input
 	(*ToolResult_Output)(nil), // 7: neurouter.v1.ToolResult.Output
+	nil,                       // 8: neurouter.v1.Content.MetadataEntry
 }
 var file_neurouter_v1_content_proto_depIdxs = []int32{
 	6, // 0: neurouter.v1.ToolUse.inputs:type_name -> neurouter.v1.ToolUse.Input
 	7, // 1: neurouter.v1.ToolResult.outputs:type_name -> neurouter.v1.ToolResult.Output
 	0, // 2: neurouter.v1.Content.phase:type_name -> neurouter.v1.ContentPhase
-	1, // 3: neurouter.v1.Content.text:type_name -> neurouter.v1.Text
-	2, // 4: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
-	3, // 5: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
-	4, // 6: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
-	2, // 7: neurouter.v1.ToolResult.Output.image:type_name -> neurouter.v1.Image
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	8, // 3: neurouter.v1.Content.metadata:type_name -> neurouter.v1.Content.MetadataEntry
+	1, // 4: neurouter.v1.Content.text:type_name -> neurouter.v1.Text
+	2, // 5: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
+	3, // 6: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
+	4, // 7: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
+	2, // 8: neurouter.v1.ToolResult.Output.image:type_name -> neurouter.v1.Image
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_content_proto_init() }
@@ -818,7 +828,7 @@ func file_neurouter_v1_content_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_content_proto_rawDesc), len(file_neurouter_v1_content_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

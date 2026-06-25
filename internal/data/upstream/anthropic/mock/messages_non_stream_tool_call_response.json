@@ -1,0 +1,48 @@
+{
+  "id": "gen-1782639386-Li6vCZE4duB99RWBlwEB",
+  "type": "message",
+  "role": "assistant",
+  "container": null,
+  "content": [
+    {
+      "type": "text",
+      "text": "Sure! Let me fetch the weather data for Shanghai on 2025-11-10 right away.",
+      "citations": []
+    },
+    {
+      "type": "tool_use",
+      "id": "toolu_01EQKr5bPHvy92UvtzNbXFDu",
+      "caller": {
+        "type": "direct"
+      },
+      "name": "get_weather",
+      "input": {"city":"Shanghai","date":"2025-11-10"}
+    }
+  ],
+  "model": "anthropic/claude-4.6-sonnet-20260217",
+  "stop_reason": "tool_use",
+  "stop_details": null,
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 700,
+    "output_tokens": 98,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": null,
+    "inference_geo": null,
+    "server_tool_use": null,
+    "service_tier": "standard",
+    "speed": "standard",
+    "cost": 0.00357,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.00357,
+      "upstream_inference_prompt_cost": 0.0021,
+      "upstream_inference_completions_cost": 0.00147
+    }
+  },
+  "context_management": null
+}

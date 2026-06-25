@@ -169,7 +169,28 @@ func NewModelUseCase(
 	}
 }
 
-func modelSpecFromConfig(cfg *conf.Model) *entity.ModelSpec {
+func (uc *UseCaseImpl) ListAvailableModels(ctx context.Context) ([]*entity.ModelSpec, error) {
+	var specs []*entity.ModelSpec
+
+	for _, m := range uc.models {
+		specs = append(specs, convertModelConfigToSpec(m.config))
+	}
+
+	// Add virtual models from aliases
+	for _, a := range uc.aliases {
+		actual := a.models[0]
+		spec := convertModelConfigToSpec(actual.config)
+		spec.Id = a.config.Id
+		if a.config.Name != "" {
+			spec.Name = a.config.Name
+		}
+		specs = append(specs, spec)
+	}
+
+	return specs, nil
+}
+
+func convertModelConfigToSpec(cfg *conf.Model) *entity.ModelSpec {
 	modalities := make([]v1.Modality, 0, len(cfg.Modalities))
 	for _, modality := range cfg.Modalities {
 		modalities = append(modalities, v1.Modality(modality))
@@ -187,25 +208,4 @@ func modelSpecFromConfig(cfg *conf.Model) *entity.ModelSpec {
 		Capabilities:  capabilities,
 		ContextLength: cfg.ContextLength,
 	}
-}
-
-func (uc *UseCaseImpl) ListAvailableModels(ctx context.Context) ([]*entity.ModelSpec, error) {
-	var specs []*entity.ModelSpec
-
-	for _, m := range uc.models {
-		specs = append(specs, modelSpecFromConfig(m.config))
-	}
-
-	// Add virtual models from aliases
-	for _, a := range uc.aliases {
-		actual := a.models[0]
-		spec := modelSpecFromConfig(actual.config)
-		spec.Id = a.config.Id
-		if a.config.Name != "" {
-			spec.Name = a.config.Name
-		}
-		specs = append(specs, spec)
-	}
-
-	return specs, nil
 }

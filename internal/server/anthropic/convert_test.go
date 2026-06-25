@@ -214,11 +214,11 @@ func TestConvertGenerationConfigFromAnthropic(t *testing.T) {
 	})
 }
 
-func TestConvertSystemFromAnthropic(t *testing.T) {
+func TestConvertSystemMessageFromAnthropic(t *testing.T) {
 	Convey("Given Anthropic system blocks", t, func() {
 
 		Convey("When system blocks are empty", func() {
-			result := convertSystemFromAnthropic(nil)
+			result := convertSystemMessageFromAnthropic(nil)
 
 			Convey("Then result should be nil", func() {
 				So(result, ShouldBeNil)
@@ -230,7 +230,7 @@ func TestConvertSystemFromAnthropic(t *testing.T) {
 				{Text: "You are a helpful assistant."},
 				{Text: "Be concise."},
 			}
-			result := convertSystemFromAnthropic(system)
+			result := convertSystemMessageFromAnthropic(system)
 
 			Convey("Then a system message should be created with all texts", func() {
 				So(result, ShouldNotBeNil)
@@ -243,7 +243,7 @@ func TestConvertSystemFromAnthropic(t *testing.T) {
 	})
 }
 
-func TestConvertMessageFromAnthropic(t *testing.T) {
+func TestConvertMessageFromAnthropicParam(t *testing.T) {
 	Convey("Given an Anthropic message to convert", t, func() {
 
 		Convey("When converting a user message with text", func() {
@@ -253,7 +253,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					anthropic.NewTextBlock("Hello!"),
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a USER message with text", func() {
 				So(result.Role, ShouldEqual, v1.Role_USER)
@@ -269,7 +269,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					anthropic.NewTextBlock("I'm here to help!"),
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a MODEL message", func() {
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
@@ -287,7 +287,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					}),
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create an image content with URL", func() {
 				So(result.Contents, ShouldHaveLength, 1)
@@ -306,7 +306,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					anthropic.NewImageBlockBase64("image/png", "aW1hZ2VkYXRh"),
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create an image content with base64 source", func() {
 				So(result.Contents, ShouldHaveLength, 1)
@@ -326,7 +326,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					anthropic.NewThinkingBlock("sig-abc", "Let me think about this..."),
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a reasoning content with signature", func() {
 				So(result.Role, ShouldEqual, v1.Role_MODEL)
@@ -344,7 +344,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					anthropic.NewRedactedThinkingBlock("opaque-encrypted-data"),
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a redacted thinking content", func() {
 				So(result.Contents, ShouldHaveLength, 1)
@@ -360,7 +360,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					anthropic.NewToolUseBlock("tool-1", map[string]any{"city": "Shanghai"}, "get_weather"),
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a ToolUse content", func() {
 				So(result.Contents, ShouldHaveLength, 1)
@@ -395,7 +395,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					},
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a ToolResult content", func() {
 				So(result.Contents, ShouldHaveLength, 1)
@@ -430,7 +430,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					},
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a ToolResult image URL output", func() {
 				So(result.Contents, ShouldHaveLength, 1)
@@ -468,7 +468,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					},
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a ToolResult image output", func() {
 				So(result.Contents, ShouldHaveLength, 1)
@@ -494,7 +494,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 					anthropic.NewToolUseBlock("tool-2", map[string]any{"k": "v"}, "search"),
 				},
 			}
-			result := convertMessageFromAnthropic(msg)
+			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then all content types should be correctly converted", func() {
 				So(result.Contents, ShouldHaveLength, 4)
@@ -906,17 +906,15 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 	})
 }
 
-func TestConvertStatisticsToAnthropic(t *testing.T) {
-	Convey("Given statistics to convert", t, func() {
-		stats := &v1.Statistics{
-			Usage: &v1.Usage{
-				InputTokens:       100,
-				OutputTokens:      50,
-				CachedInputTokens: 20,
-			},
+func TestConvertUsageToAnthropic(t *testing.T) {
+	Convey("Given usage to convert", t, func() {
+		usage := &v1.Usage{
+			InputTokens:       100,
+			OutputTokens:      50,
+			CachedInputTokens: 20,
 		}
 
-		result := convertStatisticsToAnthropic(stats)
+		result := convertUsageToAnthropic(usage)
 
 		Convey("Then all usage fields should be mapped", func() {
 			So(result.InputTokens, ShouldEqual, 80)

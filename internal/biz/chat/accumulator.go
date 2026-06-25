@@ -1,163 +1,173 @@
+// Copyright 2024 Neurouter Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package chat
 
 import (
-	"reflect"
+	"github.com/go-kratos/kratos/v2/log"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-type ChatRespAccumulator struct {
-	resp *v1.ChatResp
+// ChatEventReducer rebuilds a complete ChatResp from a stream of ChatEvents.
+type ChatEventReducer struct {
+	resp   *v1.ChatResp
+	blocks map[uint32]*v1.Content
+	log    *log.Helper
 }
 
-func mergeContentSignature(last, current *v1.Content) {
-	if last == nil || current == nil || current.Signature == "" {
+func NewChatEventReducer(logger *log.Helper) *ChatEventReducer {
+	if logger == nil {
+		logger = log.NewHelper(log.DefaultLogger)
+	}
+
+	return &ChatEventReducer{
+		resp:   &v1.ChatResp{},
+		blocks: map[uint32]*v1.Content{},
+		log:    logger,
+	}
+}
+
+func (r *ChatEventReducer) Resp() *v1.ChatResp {
+	return r.resp
+}
+
+func (r *ChatEventReducer) ensureMessage() {
+	if r.resp.Message == nil {
+		r.resp.Message = &v1.Message{Role: v1.Role_MODEL}
+	}
+}
+
+func (r *ChatEventReducer) Reduce(event *v1.ChatEvent) {
+	if event == nil {
 		return
 	}
 
-	last.Signature += current.Signature
-}
-
-func NewChatRespAccumulator() *ChatRespAccumulator {
-	return &ChatRespAccumulator{
-		resp: &v1.ChatResp{},
+	if event.Id != "" {
+		r.resp.Id = event.Id
 	}
-}
+	r.reduceUsage(event.Usage)
 
-func (a *ChatRespAccumulator) Resp() *v1.ChatResp {
-	return a.resp
-}
-
-func (a *ChatRespAccumulator) Accumulate(resp *v1.ChatResp) {
-	if resp == nil {
-		return
-	}
-
-	a.resp.Id = resp.Id
-	a.resp.Model = resp.Model
-	a.resp.Status = resp.Status
-
-	a.accumulateMessage(resp.Message)
-	a.accumulateStatistics(resp.Statistics)
-}
-
-func (a *ChatRespAccumulator) lastContent() *v1.Content {
-	contents := a.resp.GetMessage().GetContents()
-	length := len(contents)
-	if length == 0 {
-		return nil
-	}
-	return contents[length-1]
-}
-
-func mayMergeContent(last, current *v1.Content) bool {
-	if last == nil || current == nil {
-		return false
-	}
-
-	// Different content types should not merge
-	if reflect.TypeOf(last.Content) != reflect.TypeOf(current.Content) {
-		return false
-	}
-
-	// Different phases should not merge
-	if last.GetPhase() != current.GetPhase() {
-		return false
-	}
-
-	// Check if content indices are the same
-	if last.Index == nil || current.Index == nil {
-		return last.Index == nil && current.Index == nil
-	}
-
-	return *last.Index == *current.Index
-}
-
-func (a *ChatRespAccumulator) accumulateMessage(message *v1.Message) {
-	if message == nil {
-		return
-	}
-
-	if a.resp.Message == nil {
-		a.resp.Message = &v1.Message{}
-	}
-
-	a.resp.Message.Id = message.Id
-	a.resp.Message.Role = message.Role
-	a.resp.Message.Name += message.Name
-
-	// Accumulate contents
-	for _, content := range message.Contents {
-		lastContent := a.lastContent()
-		if !mayMergeContent(lastContent, content) {
-			a.resp.Message.Contents = append(a.resp.Message.Contents, content)
-			continue
+	switch e := event.Event.(type) {
+	case *v1.ChatEvent_MessageStart:
+		r.ensureMessage()
+		r.resp.Model = e.MessageStart.GetModel()
+		r.resp.Message.Id = e.MessageStart.GetId()
+	case *v1.ChatEvent_MessageStop:
+		r.resp.Status = e.MessageStop.GetStatus()
+	case *v1.ChatEvent_ContentStart:
+		r.startContent(e.ContentStart)
+	case *v1.ChatEvent_ContentDelta:
+		r.applyDelta(e.ContentDelta)
+	case *v1.ChatEvent_ContentStop:
+		// The block is already materialized; nothing to merge.
+	case *v1.ChatEvent_ContentSnapshot:
+		r.ensureMessage()
+		content := e.ContentSnapshot
+		r.resp.Message.Contents = append(r.resp.Message.Contents, content)
+		if content.Index != nil {
+			r.blocks[*content.Index] = content
 		}
+	}
+}
 
-		switch c := content.Content.(type) {
-		case *v1.Content_Text:
-			lastText := lastContent.Content.(*v1.Content_Text)
-			if lastText.Text == nil {
-				lastText.Text = &v1.Text{Text: c.Text.GetText()}
-			} else {
-				lastText.Text.Text += c.Text.GetText()
+func (r *ChatEventReducer) startContent(start *v1.ContentStart) {
+	r.ensureMessage()
+
+	index := start.GetIndex()
+	content := &v1.Content{
+		Id:       start.GetId(),
+		Index:    new(uint32(index)),
+		Phase:    start.GetPhase(),
+		Metadata: start.GetMetadata(),
+	}
+
+	switch c := start.Content.(type) {
+	case *v1.ContentStart_Text:
+		content.Content = v1.NewTextContent("")
+	case *v1.ContentStart_ToolUse:
+		content.Content = &v1.Content_ToolUse{
+			ToolUse: &v1.ToolUse{
+				Id:   c.ToolUse.GetId(),
+				Name: c.ToolUse.GetName(),
+			},
+		}
+	}
+
+	r.resp.Message.Contents = append(r.resp.Message.Contents, content)
+	r.blocks[index] = content
+}
+
+func (r *ChatEventReducer) applyDelta(delta *v1.ContentDelta) {
+	index := delta.GetIndex()
+	content := r.blocks[index]
+	if content == nil {
+		r.log.Errorf("received content delta without content start: index=%d delta=%v", index, delta)
+		return
+	}
+
+	switch d := delta.Delta.(type) {
+	case *v1.ContentDelta_Text:
+		if text, ok := content.Content.(*v1.Content_Text); ok {
+			if text.Text == nil {
+				text.Text = &v1.Text{}
 			}
-			mergeContentSignature(lastContent, content)
-
-		case *v1.Content_ToolUse:
-			if c.ToolUse.Id != "" {
-				// A new function call, append as new content
-				a.resp.Message.Contents = append(a.resp.Message.Contents, content)
-				continue
+			text.Text.Text += d.Text
+		}
+	case *v1.ContentDelta_Signature:
+		content.Signature += d.Signature
+	case *v1.ContentDelta_ToolInputText:
+		if toolUse, ok := content.Content.(*v1.Content_ToolUse); ok {
+			t := toolUse.ToolUse
+			if len(t.Inputs) == 0 {
+				t.Inputs = append(t.Inputs, &v1.ToolUse_Input{
+					Input: &v1.ToolUse_Input_Text{Text: d.ToolInputText},
+				})
+				return
 			}
 
-			lastFunctionCall := lastContent.Content.(*v1.Content_ToolUse)
-			lastFunctionCall.ToolUse.Id += c.ToolUse.Id
-			lastFunctionCall.ToolUse.Name += c.ToolUse.Name
-			if len(c.ToolUse.Inputs) > 0 {
-				// TODO: Merge inputs more intelligently based on input index and types
-				if len(lastFunctionCall.ToolUse.Inputs) > 0 {
-					lastFunctionCall.ToolUse.Inputs[0].Input.(*v1.ToolUse_Input_Text).Text += c.ToolUse.GetTextualInput()
-				} else {
-					lastFunctionCall.ToolUse.Inputs = append(lastFunctionCall.ToolUse.Inputs, c.ToolUse.Inputs...)
-				}
+			if input, ok := t.Inputs[0].Input.(*v1.ToolUse_Input_Text); ok {
+				input.Text += d.ToolInputText
 			}
-			mergeContentSignature(lastContent, content)
-
-		default:
-			// Types without merge logic (e.g., Image) are appended as new content
-			a.resp.Message.Contents = append(a.resp.Message.Contents, content)
 		}
 	}
 }
 
-func (a *ChatRespAccumulator) accumulateStatistics(statistics *v1.Statistics) {
-	if statistics == nil {
+func (r *ChatEventReducer) reduceUsage(usage *v1.Usage) {
+	if usage == nil {
 		return
 	}
 
-	if a.resp.Statistics == nil {
-		a.resp.Statistics = &v1.Statistics{}
+	if r.resp.Statistics == nil {
+		r.resp.Statistics = &v1.Statistics{}
+	}
+	if r.resp.Statistics.Usage == nil {
+		r.resp.Statistics.Usage = &v1.Usage{}
 	}
 
-	if statistics.Usage != nil {
-		if a.resp.Statistics.Usage == nil {
-			a.resp.Statistics.Usage = &v1.Usage{}
-		}
-
-		// Streaming usage is cumulative, but some chunks only carry partial fields.
-		// Update only non-zero fields to avoid resetting previous counters to zero.
-		if statistics.Usage.InputTokens != 0 {
-			a.resp.Statistics.Usage.InputTokens = statistics.Usage.InputTokens
-		}
-		if statistics.Usage.OutputTokens != 0 {
-			a.resp.Statistics.Usage.OutputTokens = statistics.Usage.OutputTokens
-		}
-		if statistics.Usage.CachedInputTokens != 0 {
-			a.resp.Statistics.Usage.CachedInputTokens = statistics.Usage.CachedInputTokens
-		}
-		if statistics.Usage.ReasoningTokens != 0 {
-			a.resp.Statistics.Usage.ReasoningTokens = statistics.Usage.ReasoningTokens
-		}
+	// The usage snapshot is cumulative, but a single event rarely carries every
+	// field. Update only non-zero fields to avoid resetting previous counters.
+	if usage.InputTokens != 0 {
+		r.resp.Statistics.Usage.InputTokens = usage.InputTokens
+	}
+	if usage.OutputTokens != 0 {
+		r.resp.Statistics.Usage.OutputTokens = usage.OutputTokens
+	}
+	if usage.CachedInputTokens != 0 {
+		r.resp.Statistics.Usage.CachedInputTokens = usage.CachedInputTokens
+	}
+	if usage.ReasoningTokens != 0 {
+		r.resp.Statistics.Usage.ReasoningTokens = usage.ReasoningTokens
 	}
 }

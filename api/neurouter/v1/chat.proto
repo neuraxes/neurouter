@@ -29,7 +29,7 @@ service Chat {
       body: "*"
     };
   }
-  rpc ChatStream(ChatReq) returns (stream ChatResp) {}
+  rpc ChatStream(ChatReq) returns (stream ChatEvent) {}
 }
 
 enum Role {
@@ -86,10 +86,93 @@ message ChatResp {
   string id = 1;
   // The model used to generate the response
   string model = 2;
-  // The status of the response
+  // The final status of the chat turn
   ChatStatus status = 3;
   // The generated message
   Message message = 4;
   // The statistics for the generation
   Statistics statistics = 5;
+}
+
+message ChatEvent {
+  // The unique identifier of the chat session
+  string id = 1;
+  // The latest cumulative usage snapshot. A single event rarely carries every
+  // field, so reducers must overwrite only the non-zero fields and treat
+  // absent fields as unchanged.
+  Usage usage = 2;
+
+  oneof event {
+    // Opens a model turn and carries the message-level identity.
+    MessageStart message_start = 50;
+    // Terminates a model turn and carries the final status.
+    MessageStop message_stop = 51;
+
+    // Opens a content block for streamable content. ContentStart events are
+    // emitted in content index order; a later index never starts before an
+    // earlier index.
+    ContentStart content_start = 61;
+    // Carries an incremental update to the open content block at the given index.
+    // After multiple content blocks are open, their deltas may interleave until
+    // each block is stopped.
+    ContentDelta content_delta = 62;
+    // Closes the content block at the given index.
+    ContentStop content_stop = 63;
+    // Carries the full snapshot of a content, normally for non-streamable content.
+    Content content_snapshot = 64;
+  }
+}
+
+message MessageStart {
+  // The unique identifier of the message
+  string id = 1;
+  // The model used to generate the message
+  string model = 2;
+}
+
+message MessageStop {
+  // The final status of the turn.
+  ChatStatus status = 1;
+}
+
+message TextStart {}
+
+message ToolUseStart {
+  string id = 1;
+  string name = 2;
+}
+
+message ContentStart {
+  // The unique identifier of the content
+  string id = 1;
+  // The index of the content within the message.
+  uint32 index = 2;
+  // The semantic phase of the content
+  ContentPhase phase = 3;
+  // Additional metadata for the content
+  map<string, string> metadata = 9;
+  oneof content {
+    TextStart text = 10;
+    ToolUseStart tool_use = 11;
+  }
+}
+
+message ContentDelta {
+  // The index of the content within the message.
+  uint32 index = 1;
+
+  oneof delta {
+    // A fragment of text or reasoning content.
+    string text = 10;
+    // A fragment of the provider-supplied verification signature.
+    string signature = 11;
+    // A fragment of the tool-use input.
+    string tool_input_text = 12;
+  }
+}
+
+// Closes the content block at the given index.
+message ContentStop {
+  // The index of the content within the message.
+  uint32 index = 1;
 }

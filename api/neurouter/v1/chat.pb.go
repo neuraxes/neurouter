@@ -321,7 +321,7 @@ type ChatResp struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The model used to generate the response
 	Model string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
-	// The status of the response
+	// The final status of the chat turn
 	Status ChatStatus `protobuf:"varint,3,opt,name=status,proto3,enum=neurouter.v1.ChatStatus" json:"status,omitempty"`
 	// The generated message
 	Message *Message `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
@@ -396,6 +396,643 @@ func (x *ChatResp) GetStatistics() *Statistics {
 	return nil
 }
 
+type ChatEvent struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The unique identifier of the chat session
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The latest cumulative usage snapshot. A single event rarely carries every
+	// field, so reducers must overwrite only the non-zero fields and treat
+	// absent fields as unchanged.
+	Usage *Usage `protobuf:"bytes,2,opt,name=usage,proto3" json:"usage,omitempty"`
+	// Types that are valid to be assigned to Event:
+	//
+	//	*ChatEvent_MessageStart
+	//	*ChatEvent_MessageStop
+	//	*ChatEvent_ContentStart
+	//	*ChatEvent_ContentDelta
+	//	*ChatEvent_ContentStop
+	//	*ChatEvent_ContentSnapshot
+	Event         isChatEvent_Event `protobuf_oneof:"event"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChatEvent) Reset() {
+	*x = ChatEvent{}
+	mi := &file_neurouter_v1_chat_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChatEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChatEvent) ProtoMessage() {}
+
+func (x *ChatEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_chat_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChatEvent.ProtoReflect.Descriptor instead.
+func (*ChatEvent) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ChatEvent) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ChatEvent) GetUsage() *Usage {
+	if x != nil {
+		return x.Usage
+	}
+	return nil
+}
+
+func (x *ChatEvent) GetEvent() isChatEvent_Event {
+	if x != nil {
+		return x.Event
+	}
+	return nil
+}
+
+func (x *ChatEvent) GetMessageStart() *MessageStart {
+	if x != nil {
+		if x, ok := x.Event.(*ChatEvent_MessageStart); ok {
+			return x.MessageStart
+		}
+	}
+	return nil
+}
+
+func (x *ChatEvent) GetMessageStop() *MessageStop {
+	if x != nil {
+		if x, ok := x.Event.(*ChatEvent_MessageStop); ok {
+			return x.MessageStop
+		}
+	}
+	return nil
+}
+
+func (x *ChatEvent) GetContentStart() *ContentStart {
+	if x != nil {
+		if x, ok := x.Event.(*ChatEvent_ContentStart); ok {
+			return x.ContentStart
+		}
+	}
+	return nil
+}
+
+func (x *ChatEvent) GetContentDelta() *ContentDelta {
+	if x != nil {
+		if x, ok := x.Event.(*ChatEvent_ContentDelta); ok {
+			return x.ContentDelta
+		}
+	}
+	return nil
+}
+
+func (x *ChatEvent) GetContentStop() *ContentStop {
+	if x != nil {
+		if x, ok := x.Event.(*ChatEvent_ContentStop); ok {
+			return x.ContentStop
+		}
+	}
+	return nil
+}
+
+func (x *ChatEvent) GetContentSnapshot() *Content {
+	if x != nil {
+		if x, ok := x.Event.(*ChatEvent_ContentSnapshot); ok {
+			return x.ContentSnapshot
+		}
+	}
+	return nil
+}
+
+type isChatEvent_Event interface {
+	isChatEvent_Event()
+}
+
+type ChatEvent_MessageStart struct {
+	// Opens a model turn and carries the message-level identity.
+	MessageStart *MessageStart `protobuf:"bytes,50,opt,name=message_start,json=messageStart,proto3,oneof"`
+}
+
+type ChatEvent_MessageStop struct {
+	// Terminates a model turn and carries the final status.
+	MessageStop *MessageStop `protobuf:"bytes,51,opt,name=message_stop,json=messageStop,proto3,oneof"`
+}
+
+type ChatEvent_ContentStart struct {
+	// Opens a content block for streamable content. ContentStart events are
+	// emitted in content index order; a later index never starts before an
+	// earlier index.
+	ContentStart *ContentStart `protobuf:"bytes,61,opt,name=content_start,json=contentStart,proto3,oneof"`
+}
+
+type ChatEvent_ContentDelta struct {
+	// Carries an incremental update to the open content block at the given index.
+	// After multiple content blocks are open, their deltas may interleave until
+	// each block is stopped.
+	ContentDelta *ContentDelta `protobuf:"bytes,62,opt,name=content_delta,json=contentDelta,proto3,oneof"`
+}
+
+type ChatEvent_ContentStop struct {
+	// Closes the content block at the given index.
+	ContentStop *ContentStop `protobuf:"bytes,63,opt,name=content_stop,json=contentStop,proto3,oneof"`
+}
+
+type ChatEvent_ContentSnapshot struct {
+	// Carries the full snapshot of a content, normally for non-streamable content.
+	ContentSnapshot *Content `protobuf:"bytes,64,opt,name=content_snapshot,json=contentSnapshot,proto3,oneof"`
+}
+
+func (*ChatEvent_MessageStart) isChatEvent_Event() {}
+
+func (*ChatEvent_MessageStop) isChatEvent_Event() {}
+
+func (*ChatEvent_ContentStart) isChatEvent_Event() {}
+
+func (*ChatEvent_ContentDelta) isChatEvent_Event() {}
+
+func (*ChatEvent_ContentStop) isChatEvent_Event() {}
+
+func (*ChatEvent_ContentSnapshot) isChatEvent_Event() {}
+
+type MessageStart struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The unique identifier of the message
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The model used to generate the message
+	Model         string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MessageStart) Reset() {
+	*x = MessageStart{}
+	mi := &file_neurouter_v1_chat_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MessageStart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessageStart) ProtoMessage() {}
+
+func (x *MessageStart) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_chat_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessageStart.ProtoReflect.Descriptor instead.
+func (*MessageStart) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *MessageStart) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *MessageStart) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+type MessageStop struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The final status of the turn.
+	Status        ChatStatus `protobuf:"varint,1,opt,name=status,proto3,enum=neurouter.v1.ChatStatus" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MessageStop) Reset() {
+	*x = MessageStop{}
+	mi := &file_neurouter_v1_chat_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MessageStop) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessageStop) ProtoMessage() {}
+
+func (x *MessageStop) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_chat_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessageStop.ProtoReflect.Descriptor instead.
+func (*MessageStop) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *MessageStop) GetStatus() ChatStatus {
+	if x != nil {
+		return x.Status
+	}
+	return ChatStatus_CHAT_IN_PROGRESS
+}
+
+type TextStart struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TextStart) Reset() {
+	*x = TextStart{}
+	mi := &file_neurouter_v1_chat_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TextStart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TextStart) ProtoMessage() {}
+
+func (x *TextStart) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_chat_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TextStart.ProtoReflect.Descriptor instead.
+func (*TextStart) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{6}
+}
+
+type ToolUseStart struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToolUseStart) Reset() {
+	*x = ToolUseStart{}
+	mi := &file_neurouter_v1_chat_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToolUseStart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToolUseStart) ProtoMessage() {}
+
+func (x *ToolUseStart) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_chat_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToolUseStart.ProtoReflect.Descriptor instead.
+func (*ToolUseStart) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ToolUseStart) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ToolUseStart) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type ContentStart struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The unique identifier of the content
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The index of the content within the message.
+	Index uint32 `protobuf:"varint,2,opt,name=index,proto3" json:"index,omitempty"`
+	// The semantic phase of the content
+	Phase ContentPhase `protobuf:"varint,3,opt,name=phase,proto3,enum=neurouter.v1.ContentPhase" json:"phase,omitempty"`
+	// Additional metadata for the content
+	Metadata map[string]string `protobuf:"bytes,9,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Types that are valid to be assigned to Content:
+	//
+	//	*ContentStart_Text
+	//	*ContentStart_ToolUse
+	Content       isContentStart_Content `protobuf_oneof:"content"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ContentStart) Reset() {
+	*x = ContentStart{}
+	mi := &file_neurouter_v1_chat_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContentStart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContentStart) ProtoMessage() {}
+
+func (x *ContentStart) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_chat_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContentStart.ProtoReflect.Descriptor instead.
+func (*ContentStart) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ContentStart) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ContentStart) GetIndex() uint32 {
+	if x != nil {
+		return x.Index
+	}
+	return 0
+}
+
+func (x *ContentStart) GetPhase() ContentPhase {
+	if x != nil {
+		return x.Phase
+	}
+	return ContentPhase_CONTENT_PHASE_NORMAL
+}
+
+func (x *ContentStart) GetMetadata() map[string]string {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+func (x *ContentStart) GetContent() isContentStart_Content {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *ContentStart) GetText() *TextStart {
+	if x != nil {
+		if x, ok := x.Content.(*ContentStart_Text); ok {
+			return x.Text
+		}
+	}
+	return nil
+}
+
+func (x *ContentStart) GetToolUse() *ToolUseStart {
+	if x != nil {
+		if x, ok := x.Content.(*ContentStart_ToolUse); ok {
+			return x.ToolUse
+		}
+	}
+	return nil
+}
+
+type isContentStart_Content interface {
+	isContentStart_Content()
+}
+
+type ContentStart_Text struct {
+	Text *TextStart `protobuf:"bytes,10,opt,name=text,proto3,oneof"`
+}
+
+type ContentStart_ToolUse struct {
+	ToolUse *ToolUseStart `protobuf:"bytes,11,opt,name=tool_use,json=toolUse,proto3,oneof"`
+}
+
+func (*ContentStart_Text) isContentStart_Content() {}
+
+func (*ContentStart_ToolUse) isContentStart_Content() {}
+
+type ContentDelta struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The index of the content within the message.
+	Index uint32 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
+	// Types that are valid to be assigned to Delta:
+	//
+	//	*ContentDelta_Text
+	//	*ContentDelta_Signature
+	//	*ContentDelta_ToolInputText
+	Delta         isContentDelta_Delta `protobuf_oneof:"delta"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ContentDelta) Reset() {
+	*x = ContentDelta{}
+	mi := &file_neurouter_v1_chat_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContentDelta) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContentDelta) ProtoMessage() {}
+
+func (x *ContentDelta) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_chat_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContentDelta.ProtoReflect.Descriptor instead.
+func (*ContentDelta) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ContentDelta) GetIndex() uint32 {
+	if x != nil {
+		return x.Index
+	}
+	return 0
+}
+
+func (x *ContentDelta) GetDelta() isContentDelta_Delta {
+	if x != nil {
+		return x.Delta
+	}
+	return nil
+}
+
+func (x *ContentDelta) GetText() string {
+	if x != nil {
+		if x, ok := x.Delta.(*ContentDelta_Text); ok {
+			return x.Text
+		}
+	}
+	return ""
+}
+
+func (x *ContentDelta) GetSignature() string {
+	if x != nil {
+		if x, ok := x.Delta.(*ContentDelta_Signature); ok {
+			return x.Signature
+		}
+	}
+	return ""
+}
+
+func (x *ContentDelta) GetToolInputText() string {
+	if x != nil {
+		if x, ok := x.Delta.(*ContentDelta_ToolInputText); ok {
+			return x.ToolInputText
+		}
+	}
+	return ""
+}
+
+type isContentDelta_Delta interface {
+	isContentDelta_Delta()
+}
+
+type ContentDelta_Text struct {
+	// A fragment of text or reasoning content.
+	Text string `protobuf:"bytes,10,opt,name=text,proto3,oneof"`
+}
+
+type ContentDelta_Signature struct {
+	// A fragment of the provider-supplied verification signature.
+	Signature string `protobuf:"bytes,11,opt,name=signature,proto3,oneof"`
+}
+
+type ContentDelta_ToolInputText struct {
+	// A fragment of the tool-use input.
+	ToolInputText string `protobuf:"bytes,12,opt,name=tool_input_text,json=toolInputText,proto3,oneof"`
+}
+
+func (*ContentDelta_Text) isContentDelta_Delta() {}
+
+func (*ContentDelta_Signature) isContentDelta_Delta() {}
+
+func (*ContentDelta_ToolInputText) isContentDelta_Delta() {}
+
+// Closes the content block at the given index.
+type ContentStop struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The index of the content within the message.
+	Index         uint32 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ContentStop) Reset() {
+	*x = ContentStop{}
+	mi := &file_neurouter_v1_chat_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ContentStop) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ContentStop) ProtoMessage() {}
+
+func (x *ContentStop) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_chat_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ContentStop.ProtoReflect.Descriptor instead.
+func (*ContentStop) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ContentStop) GetIndex() uint32 {
+	if x != nil {
+		return x.Index
+	}
+	return 0
+}
+
 var File_neurouter_v1_chat_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_chat_proto_rawDesc = "" +
@@ -423,7 +1060,47 @@ const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\amessage\x18\x04 \x01(\v2\x15.neurouter.v1.MessageR\amessage\x128\n" +
 	"\n" +
 	"statistics\x18\x05 \x01(\v2\x18.neurouter.v1.StatisticsR\n" +
-	"statistics*'\n" +
+	"statistics\"\xdc\x03\n" +
+	"\tChatEvent\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12)\n" +
+	"\x05usage\x18\x02 \x01(\v2\x13.neurouter.v1.UsageR\x05usage\x12A\n" +
+	"\rmessage_start\x182 \x01(\v2\x1a.neurouter.v1.MessageStartH\x00R\fmessageStart\x12>\n" +
+	"\fmessage_stop\x183 \x01(\v2\x19.neurouter.v1.MessageStopH\x00R\vmessageStop\x12A\n" +
+	"\rcontent_start\x18= \x01(\v2\x1a.neurouter.v1.ContentStartH\x00R\fcontentStart\x12A\n" +
+	"\rcontent_delta\x18> \x01(\v2\x1a.neurouter.v1.ContentDeltaH\x00R\fcontentDelta\x12>\n" +
+	"\fcontent_stop\x18? \x01(\v2\x19.neurouter.v1.ContentStopH\x00R\vcontentStop\x12B\n" +
+	"\x10content_snapshot\x18@ \x01(\v2\x15.neurouter.v1.ContentH\x00R\x0fcontentSnapshotB\a\n" +
+	"\x05event\"4\n" +
+	"\fMessageStart\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\"?\n" +
+	"\vMessageStop\x120\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x18.neurouter.v1.ChatStatusR\x06status\"\v\n" +
+	"\tTextStart\"2\n" +
+	"\fToolUseStart\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xdc\x02\n" +
+	"\fContentStart\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05index\x18\x02 \x01(\rR\x05index\x120\n" +
+	"\x05phase\x18\x03 \x01(\x0e2\x1a.neurouter.v1.ContentPhaseR\x05phase\x12D\n" +
+	"\bmetadata\x18\t \x03(\v2(.neurouter.v1.ContentStart.MetadataEntryR\bmetadata\x12-\n" +
+	"\x04text\x18\n" +
+	" \x01(\v2\x17.neurouter.v1.TextStartH\x00R\x04text\x127\n" +
+	"\btool_use\x18\v \x01(\v2\x1a.neurouter.v1.ToolUseStartH\x00R\atoolUse\x1a;\n" +
+	"\rMetadataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\t\n" +
+	"\acontent\"\x8d\x01\n" +
+	"\fContentDelta\x12\x14\n" +
+	"\x05index\x18\x01 \x01(\rR\x05index\x12\x14\n" +
+	"\x04text\x18\n" +
+	" \x01(\tH\x00R\x04text\x12\x1e\n" +
+	"\tsignature\x18\v \x01(\tH\x00R\tsignature\x12(\n" +
+	"\x0ftool_input_text\x18\f \x01(\tH\x00R\rtoolInputTextB\a\n" +
+	"\x05delta\"#\n" +
+	"\vContentStop\x12\x14\n" +
+	"\x05index\x18\x01 \x01(\rR\x05index*'\n" +
 	"\x04Role\x12\n" +
 	"\n" +
 	"\x06SYSTEM\x10\x00\x12\b\n" +
@@ -437,11 +1114,11 @@ const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\fCHAT_REFUSED\x10\x03\x12\x12\n" +
 	"\x0eCHAT_CANCELLED\x10\x04\x12\x19\n" +
 	"\x15CHAT_PENDING_TOOL_USE\x10\x05\x12\x1c\n" +
-	"\x18CHAT_REACHED_TOKEN_LIMIT\x10\x062\x93\x01\n" +
+	"\x18CHAT_REACHED_TOKEN_LIMIT\x10\x062\x94\x01\n" +
 	"\x04Chat\x12J\n" +
-	"\x04Chat\x12\x15.neurouter.v1.ChatReq\x1a\x16.neurouter.v1.ChatResp\"\x13\x82\xd3\xe4\x93\x02\r:\x01*\"\b/v1/chat\x12?\n" +
+	"\x04Chat\x12\x15.neurouter.v1.ChatReq\x1a\x16.neurouter.v1.ChatResp\"\x13\x82\xd3\xe4\x93\x02\r:\x01*\"\b/v1/chat\x12@\n" +
 	"\n" +
-	"ChatStream\x12\x15.neurouter.v1.ChatReq\x1a\x16.neurouter.v1.ChatResp\"\x000\x01B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
+	"ChatStream\x12\x15.neurouter.v1.ChatReq\x1a\x17.neurouter.v1.ChatEvent\"\x000\x01B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
 	file_neurouter_v1_chat_proto_rawDescOnce sync.Once
@@ -456,38 +1133,61 @@ func file_neurouter_v1_chat_proto_rawDescGZIP() []byte {
 }
 
 var file_neurouter_v1_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_neurouter_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_neurouter_v1_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_neurouter_v1_chat_proto_goTypes = []any{
 	(Role)(0),                // 0: neurouter.v1.Role
 	(ChatStatus)(0),          // 1: neurouter.v1.ChatStatus
 	(*Message)(nil),          // 2: neurouter.v1.Message
 	(*ChatReq)(nil),          // 3: neurouter.v1.ChatReq
 	(*ChatResp)(nil),         // 4: neurouter.v1.ChatResp
-	nil,                      // 5: neurouter.v1.ChatReq.MetadataEntry
-	(*Content)(nil),          // 6: neurouter.v1.Content
-	(*GenerationConfig)(nil), // 7: neurouter.v1.GenerationConfig
-	(*Tool)(nil),             // 8: neurouter.v1.Tool
-	(*Statistics)(nil),       // 9: neurouter.v1.Statistics
+	(*ChatEvent)(nil),        // 5: neurouter.v1.ChatEvent
+	(*MessageStart)(nil),     // 6: neurouter.v1.MessageStart
+	(*MessageStop)(nil),      // 7: neurouter.v1.MessageStop
+	(*TextStart)(nil),        // 8: neurouter.v1.TextStart
+	(*ToolUseStart)(nil),     // 9: neurouter.v1.ToolUseStart
+	(*ContentStart)(nil),     // 10: neurouter.v1.ContentStart
+	(*ContentDelta)(nil),     // 11: neurouter.v1.ContentDelta
+	(*ContentStop)(nil),      // 12: neurouter.v1.ContentStop
+	nil,                      // 13: neurouter.v1.ChatReq.MetadataEntry
+	nil,                      // 14: neurouter.v1.ContentStart.MetadataEntry
+	(*Content)(nil),          // 15: neurouter.v1.Content
+	(*GenerationConfig)(nil), // 16: neurouter.v1.GenerationConfig
+	(*Tool)(nil),             // 17: neurouter.v1.Tool
+	(*Statistics)(nil),       // 18: neurouter.v1.Statistics
+	(*Usage)(nil),            // 19: neurouter.v1.Usage
+	(ContentPhase)(0),        // 20: neurouter.v1.ContentPhase
 }
 var file_neurouter_v1_chat_proto_depIdxs = []int32{
 	0,  // 0: neurouter.v1.Message.role:type_name -> neurouter.v1.Role
-	6,  // 1: neurouter.v1.Message.contents:type_name -> neurouter.v1.Content
-	7,  // 2: neurouter.v1.ChatReq.config:type_name -> neurouter.v1.GenerationConfig
+	15, // 1: neurouter.v1.Message.contents:type_name -> neurouter.v1.Content
+	16, // 2: neurouter.v1.ChatReq.config:type_name -> neurouter.v1.GenerationConfig
 	2,  // 3: neurouter.v1.ChatReq.messages:type_name -> neurouter.v1.Message
-	8,  // 4: neurouter.v1.ChatReq.tools:type_name -> neurouter.v1.Tool
-	5,  // 5: neurouter.v1.ChatReq.metadata:type_name -> neurouter.v1.ChatReq.MetadataEntry
+	17, // 4: neurouter.v1.ChatReq.tools:type_name -> neurouter.v1.Tool
+	13, // 5: neurouter.v1.ChatReq.metadata:type_name -> neurouter.v1.ChatReq.MetadataEntry
 	1,  // 6: neurouter.v1.ChatResp.status:type_name -> neurouter.v1.ChatStatus
 	2,  // 7: neurouter.v1.ChatResp.message:type_name -> neurouter.v1.Message
-	9,  // 8: neurouter.v1.ChatResp.statistics:type_name -> neurouter.v1.Statistics
-	3,  // 9: neurouter.v1.Chat.Chat:input_type -> neurouter.v1.ChatReq
-	3,  // 10: neurouter.v1.Chat.ChatStream:input_type -> neurouter.v1.ChatReq
-	4,  // 11: neurouter.v1.Chat.Chat:output_type -> neurouter.v1.ChatResp
-	4,  // 12: neurouter.v1.Chat.ChatStream:output_type -> neurouter.v1.ChatResp
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	18, // 8: neurouter.v1.ChatResp.statistics:type_name -> neurouter.v1.Statistics
+	19, // 9: neurouter.v1.ChatEvent.usage:type_name -> neurouter.v1.Usage
+	6,  // 10: neurouter.v1.ChatEvent.message_start:type_name -> neurouter.v1.MessageStart
+	7,  // 11: neurouter.v1.ChatEvent.message_stop:type_name -> neurouter.v1.MessageStop
+	10, // 12: neurouter.v1.ChatEvent.content_start:type_name -> neurouter.v1.ContentStart
+	11, // 13: neurouter.v1.ChatEvent.content_delta:type_name -> neurouter.v1.ContentDelta
+	12, // 14: neurouter.v1.ChatEvent.content_stop:type_name -> neurouter.v1.ContentStop
+	15, // 15: neurouter.v1.ChatEvent.content_snapshot:type_name -> neurouter.v1.Content
+	1,  // 16: neurouter.v1.MessageStop.status:type_name -> neurouter.v1.ChatStatus
+	20, // 17: neurouter.v1.ContentStart.phase:type_name -> neurouter.v1.ContentPhase
+	14, // 18: neurouter.v1.ContentStart.metadata:type_name -> neurouter.v1.ContentStart.MetadataEntry
+	8,  // 19: neurouter.v1.ContentStart.text:type_name -> neurouter.v1.TextStart
+	9,  // 20: neurouter.v1.ContentStart.tool_use:type_name -> neurouter.v1.ToolUseStart
+	3,  // 21: neurouter.v1.Chat.Chat:input_type -> neurouter.v1.ChatReq
+	3,  // 22: neurouter.v1.Chat.ChatStream:input_type -> neurouter.v1.ChatReq
+	4,  // 23: neurouter.v1.Chat.Chat:output_type -> neurouter.v1.ChatResp
+	5,  // 24: neurouter.v1.Chat.ChatStream:output_type -> neurouter.v1.ChatEvent
+	23, // [23:25] is the sub-list for method output_type
+	21, // [21:23] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_chat_proto_init() }
@@ -497,13 +1197,30 @@ func file_neurouter_v1_chat_proto_init() {
 	}
 	file_neurouter_v1_common_proto_init()
 	file_neurouter_v1_content_proto_init()
+	file_neurouter_v1_chat_proto_msgTypes[3].OneofWrappers = []any{
+		(*ChatEvent_MessageStart)(nil),
+		(*ChatEvent_MessageStop)(nil),
+		(*ChatEvent_ContentStart)(nil),
+		(*ChatEvent_ContentDelta)(nil),
+		(*ChatEvent_ContentStop)(nil),
+		(*ChatEvent_ContentSnapshot)(nil),
+	}
+	file_neurouter_v1_chat_proto_msgTypes[8].OneofWrappers = []any{
+		(*ContentStart_Text)(nil),
+		(*ContentStart_ToolUse)(nil),
+	}
+	file_neurouter_v1_chat_proto_msgTypes[9].OneofWrappers = []any{
+		(*ContentDelta_Text)(nil),
+		(*ContentDelta_Signature)(nil),
+		(*ContentDelta_ToolInputText)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_chat_proto_rawDesc), len(file_neurouter_v1_chat_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

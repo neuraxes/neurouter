@@ -95,7 +95,7 @@ components:
                     description: The model used to generate the response
                 status:
                     type: integer
-                    description: The status of the response
+                    description: The final status of the chat turn
                     format: enum
                 message:
                     allOf:
@@ -122,6 +122,11 @@ components:
                 signature:
                     type: string
                     description: Provider-supplied verification signature for this content.
+                metadata:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: Additional metadata for the content
                 text:
                     $ref: '#/components/schemas/neurouter.v1.Text'
                 image:

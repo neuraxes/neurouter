@@ -1,0 +1,66 @@
+{
+  "model": "anthropic/claude-sonnet-4.6",
+  "max_tokens": 2048,
+  "stream": true,
+  "metadata": {
+    "user_id": "anthropic-conversion-fixture-user"
+  },
+  "system": [
+    {
+      "type": "text",
+      "text": "You are a conversion-test assistant. Think briefly, then use the routing decision tool exactly once."
+    }
+  ],
+  "thinking": {
+    "type": "adaptive"
+  },
+  "output_config": {
+    "effort": "high"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Choose a provider for chat request req_fixture_stream_001. OpenAI has wait_ms=1800 and error_rate=0.12. Anthropic has wait_ms=120 and error_rate=0.01. Gemini has wait_ms=400 and error_rate=0.04. Call get_route_decision with the best provider and a short reason."
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "get_route_decision",
+      "description": "Record the selected upstream provider for a chat request.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "anthropic",
+              "gemini"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "observed_wait_ms": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "request_id",
+          "provider",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

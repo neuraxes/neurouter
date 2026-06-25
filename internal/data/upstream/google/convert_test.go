@@ -15,6 +15,7 @@
 package google
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"testing"
 
@@ -61,17 +62,17 @@ func TestConvertToolsToGoogle(t *testing.T) {
 	})
 }
 
-func TestConvertContentToGoogle(t *testing.T) {
-	Convey("convertContentToGoogle should convert text", t, func() {
+func TestConvertContentToGooglePart(t *testing.T) {
+	Convey("convertContentToGooglePart should convert text", t, func() {
 		content := &v1.Content{
 			Content: v1.NewTextContent("hello"),
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.Text, ShouldEqual, "hello")
 	})
 
-	Convey("convertContentToGoogle should convert image data", t, func() {
+	Convey("convertContentToGooglePart should convert image data", t, func() {
 		content := &v1.Content{
 			Content: &v1.Content_Image{
 				Image: &v1.Image{
@@ -81,13 +82,13 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.InlineData, ShouldNotBeNil)
 		So(part.InlineData.MIMEType, ShouldEqual, "image/png")
 	})
 
-	Convey("convertContentToGoogle should convert image data with explicit mime type", t, func() {
+	Convey("convertContentToGooglePart should convert image data with explicit mime type", t, func() {
 		content := &v1.Content{
 			Content: &v1.Content_Image{
 				Image: &v1.Image{
@@ -98,13 +99,13 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.InlineData, ShouldNotBeNil)
 		So(part.InlineData.MIMEType, ShouldEqual, "image/jpeg")
 	})
 
-	Convey("convertContentToGoogle should convert image base64 with explicit mime type", t, func() {
+	Convey("convertContentToGooglePart should convert image base64 with explicit mime type", t, func() {
 		content := &v1.Content{
 			Content: &v1.Content_Image{
 				Image: &v1.Image{
@@ -115,14 +116,14 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.InlineData, ShouldNotBeNil)
 		So(part.InlineData.MIMEType, ShouldEqual, "image/png")
 		So(string(part.InlineData.Data), ShouldEqual, "hello")
 	})
 
-	Convey("convertContentToGoogle should convert image URL", t, func() {
+	Convey("convertContentToGooglePart should convert image URL", t, func() {
 		content := &v1.Content{
 			Content: &v1.Content_Image{
 				Image: &v1.Image{
@@ -133,14 +134,14 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.FileData, ShouldNotBeNil)
 		So(part.FileData.FileURI, ShouldEqual, "https://example.com/image.png")
 		So(part.FileData.MIMEType, ShouldEqual, "image/png")
 	})
 
-	Convey("convertContentToGoogle should convert tool call with valid JSON", t, func() {
+	Convey("convertContentToGooglePart should convert tool call with valid JSON", t, func() {
 		args := map[string]any{"foo": "bar"}
 		argsJSON, _ := json.Marshal(args)
 		content := &v1.Content{
@@ -157,14 +158,14 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.FunctionCall, ShouldNotBeNil)
 		So(part.FunctionCall.Name, ShouldEqual, "fn")
 		So(part.FunctionCall.Args, ShouldResemble, args)
 	})
 
-	Convey("convertContentToGoogle should convert tool call with invalid JSON", t, func() {
+	Convey("convertContentToGooglePart should convert tool call with invalid JSON", t, func() {
 		content := &v1.Content{
 			Content: &v1.Content_ToolUse{
 				ToolUse: &v1.ToolUse{
@@ -179,14 +180,14 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.FunctionCall, ShouldNotBeNil)
 		So(part.FunctionCall.Name, ShouldEqual, "fn")
 		So(part.FunctionCall.Args, ShouldResemble, map[string]any{"args": "invalid json"})
 	})
 
-	Convey("convertContentToGoogle should convert tool result with valid JSON", t, func() {
+	Convey("convertContentToGooglePart should convert tool result with valid JSON", t, func() {
 		output := map[string]any{"status": "success"}
 		outputJSON, _ := json.Marshal(output)
 		content := &v1.Content{
@@ -203,14 +204,14 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.FunctionResponse, ShouldNotBeNil)
 		So(part.FunctionResponse.Name, ShouldEqual, "tool-id")
 		So(part.FunctionResponse.Response, ShouldResemble, output)
 	})
 
-	Convey("convertContentToGoogle should convert tool result with plain text", t, func() {
+	Convey("convertContentToGooglePart should convert tool result with plain text", t, func() {
 		content := &v1.Content{
 			Content: &v1.Content_ToolResult{
 				ToolResult: &v1.ToolResult{
@@ -225,19 +226,74 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		part := convertContentToGoogle(content)
+		part := convertContentToGooglePart(content)
 		So(part, ShouldNotBeNil)
 		So(part.FunctionResponse, ShouldNotBeNil)
 		So(part.FunctionResponse.Name, ShouldEqual, "tool-id")
 		So(part.FunctionResponse.Response, ShouldResemble, map[string]any{"result": "result text"})
 	})
 
-	Convey("convertContentToGoogle should return nil for unknown", t, func() {
-		content := &v1.Content{}
-		So(convertContentToGoogle(content), ShouldBeNil)
+	Convey("convertContentToGooglePart should convert tool result with image output", t, func() {
+		content := &v1.Content{
+			Content: &v1.Content_ToolResult{
+				ToolResult: &v1.ToolResult{
+					Id: "tool-id",
+					Outputs: []*v1.ToolResult_Output{
+						{
+							Output: &v1.ToolResult_Output_Text{
+								Text: `{"status":"ok"}`,
+							},
+						},
+						{
+							Output: &v1.ToolResult_Output_Image{
+								Image: &v1.Image{
+									MimeType: "image/png",
+									Source: &v1.Image_Data{
+										Data: []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		part := convertContentToGooglePart(content)
+		So(part, ShouldNotBeNil)
+		So(part.FunctionResponse, ShouldNotBeNil)
+		So(part.FunctionResponse.Name, ShouldEqual, "tool-id")
+		So(part.FunctionResponse.Response, ShouldResemble, map[string]any{"status": "ok"})
+		So(part.FunctionResponse.Parts, ShouldHaveLength, 1)
+		So(part.FunctionResponse.Parts[0].InlineData, ShouldNotBeNil)
+		So(part.FunctionResponse.Parts[0].InlineData.MIMEType, ShouldEqual, "image/png")
 	})
 
-	Convey("convertContentToGoogle should return nil for unknown image source", t, func() {
+	Convey("convertContentToGooglePart should drop reasoning content without a signature", t, func() {
+		content := &v1.Content{
+			Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+			Content: v1.NewTextContent("thinking..."),
+		}
+		So(convertContentToGooglePart(content), ShouldBeNil)
+	})
+
+	Convey("convertContentToGooglePart should replay reasoning content carrying a signature", t, func() {
+		content := &v1.Content{
+			Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+			Signature: base64.StdEncoding.EncodeToString([]byte("sig")),
+			Content:   v1.NewTextContent("thinking..."),
+		}
+		part := convertContentToGooglePart(content)
+		So(part, ShouldNotBeNil)
+		So(part.Thought, ShouldBeTrue)
+		So(part.Text, ShouldEqual, "thinking...")
+	})
+
+	Convey("convertContentToGooglePart should return nil for unknown", t, func() {
+		content := &v1.Content{}
+		So(convertContentToGooglePart(content), ShouldBeNil)
+	})
+
+	Convey("convertContentToGooglePart should return nil for unknown image source", t, func() {
 		content := &v1.Content{
 			Content: &v1.Content_Image{
 				Image: &v1.Image{
@@ -245,26 +301,26 @@ func TestConvertContentToGoogle(t *testing.T) {
 				},
 			},
 		}
-		So(convertContentToGoogle(content), ShouldBeNil)
+		So(convertContentToGooglePart(content), ShouldBeNil)
 	})
 }
 
-func TestConvertMessageToGoogle(t *testing.T) {
-	Convey("convertMessageToGoogle should convert user message", t, func() {
+func TestConvertMessageToGoogleContent(t *testing.T) {
+	Convey("convertMessageToGoogleContent should convert user message", t, func() {
 		msg := &v1.Message{
 			Role: v1.Role_USER,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("hi")},
 			},
 		}
-		result := convertMessageToGoogle(msg)
+		result := convertMessageToGoogleContent(msg)
 		So(result, ShouldNotBeNil)
 		So(result.Role, ShouldEqual, "user")
 		So(result.Parts, ShouldHaveLength, 1)
 		So(result.Parts[0].Text, ShouldEqual, "hi")
 	})
 
-	Convey("convertMessageToGoogle should convert user message with tool result", t, func() {
+	Convey("convertMessageToGoogleContent should convert user message with tool result", t, func() {
 		msg := &v1.Message{
 			Role: v1.Role_USER,
 			Contents: []*v1.Content{
@@ -284,7 +340,7 @@ func TestConvertMessageToGoogle(t *testing.T) {
 				},
 			},
 		}
-		result := convertMessageToGoogle(msg)
+		result := convertMessageToGoogleContent(msg)
 		So(result, ShouldNotBeNil)
 		So(result.Role, ShouldEqual, "user")
 		So(result.Parts, ShouldHaveLength, 1)
@@ -293,32 +349,50 @@ func TestConvertMessageToGoogle(t *testing.T) {
 		So(result.Parts[0].FunctionResponse.Response["result"], ShouldEqual, "result2")
 	})
 
-	Convey("convertMessageToGoogle should handle system role", t, func() {
+	Convey("convertMessageToGoogleContent should handle system role", t, func() {
 		msg := &v1.Message{
 			Role: v1.Role_SYSTEM,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("sys")},
 			},
 		}
-		result := convertMessageToGoogle(msg)
+		result := convertMessageToGoogleContent(msg)
 		So(result, ShouldNotBeNil)
 		So(result.Role, ShouldEqual, "user")
 		So(result.Parts, ShouldHaveLength, 1)
 		So(result.Parts[0].Text, ShouldEqual, "sys")
 	})
 
-	Convey("convertMessageToGoogle should handle model role", t, func() {
+	Convey("convertMessageToGoogleContent should handle model role", t, func() {
 		msg := &v1.Message{
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("model")},
 			},
 		}
-		result := convertMessageToGoogle(msg)
+		result := convertMessageToGoogleContent(msg)
 		So(result, ShouldNotBeNil)
 		So(result.Role, ShouldEqual, "model")
 		So(result.Parts, ShouldHaveLength, 1)
 		So(result.Parts[0].Text, ShouldEqual, "model")
+	})
+
+	Convey("convertMessageToGoogleContent should attach the reasoning thought signature", t, func() {
+		msg := &v1.Message{
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{
+				{
+					Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
+					Signature: base64.StdEncoding.EncodeToString([]byte("sig")),
+					Content:   v1.NewTextContent("thinking..."),
+				},
+			},
+		}
+		result := convertMessageToGoogleContent(msg)
+		So(result, ShouldNotBeNil)
+		So(result.Parts, ShouldHaveLength, 1)
+		So(result.Parts[0].Thought, ShouldBeTrue)
+		So(string(result.Parts[0].ThoughtSignature), ShouldEqual, "sig")
 	})
 }
 
@@ -416,25 +490,25 @@ func TestConvertStatusFromGoogle(t *testing.T) {
 	})
 }
 
-func TestConvertMessageFromGoogle(t *testing.T) {
-	Convey("convertMessageFromGoogle should convert text", t, func() {
+func TestConvertMessageFromGoogleContent(t *testing.T) {
+	Convey("convertMessageFromGoogleContent should convert text", t, func() {
 		content := &genai.Content{
 			Parts: []*genai.Part{{Text: "hello"}},
 			Role:  "model",
 		}
-		msg := convertMessageFromGoogle(content)
+		msg := convertMessageFromGoogleContent(content)
 		So(msg, ShouldNotBeNil)
 		So(msg.Role, ShouldEqual, v1.Role_MODEL)
 		So(msg.Contents, ShouldHaveLength, 1)
 		So(msg.Contents[0].GetText().GetText(), ShouldEqual, "hello")
 	})
 
-	Convey("convertMessageFromGoogle should convert reasoning (thought)", t, func() {
+	Convey("convertMessageFromGoogleContent should convert reasoning (thought)", t, func() {
 		content := &genai.Content{
 			Parts: []*genai.Part{{Text: "thinking...", Thought: true}},
 			Role:  "model",
 		}
-		msg := convertMessageFromGoogle(content)
+		msg := convertMessageFromGoogleContent(content)
 		So(msg, ShouldNotBeNil)
 		So(msg.Role, ShouldEqual, v1.Role_MODEL)
 		So(msg.Contents, ShouldHaveLength, 1)
@@ -442,17 +516,17 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 		So(msg.Contents[0].GetText().GetText(), ShouldEqual, "thinking...")
 	})
 
-	Convey("convertMessageFromGoogle should skip thought without text", t, func() {
+	Convey("convertMessageFromGoogleContent should skip thought without text", t, func() {
 		content := &genai.Content{
 			Parts: []*genai.Part{{Thought: true}},
 			Role:  "model",
 		}
-		msg := convertMessageFromGoogle(content)
+		msg := convertMessageFromGoogleContent(content)
 		So(msg, ShouldNotBeNil)
 		So(msg.Contents, ShouldBeEmpty)
 	})
 
-	Convey("convertMessageFromGoogle should convert function call", t, func() {
+	Convey("convertMessageFromGoogleContent should convert function call", t, func() {
 		part := &genai.FunctionCall{
 			Name: "fn",
 			Args: map[string]any{"foo": "bar"},
@@ -461,7 +535,7 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 			Parts: []*genai.Part{{FunctionCall: part}},
 			Role:  "model",
 		}
-		msg := convertMessageFromGoogle(content)
+		msg := convertMessageFromGoogleContent(content)
 		So(msg, ShouldNotBeNil)
 		So(msg.Contents, ShouldHaveLength, 1)
 		So(msg.Contents[0].GetToolUse().GetId(), ShouldEqual, "fn")
@@ -469,7 +543,7 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 		So(msg.Contents[0].GetToolUse().GetTextualInput(), ShouldEqual, `{"foo":"bar"}`)
 	})
 
-	Convey("convertMessageFromGoogle should skip function call with marshal error", t, func() {
+	Convey("convertMessageFromGoogleContent should skip function call with marshal error", t, func() {
 		// Use a value that cannot be marshaled to JSON (e.g., a channel)
 		part := &genai.FunctionCall{
 			Name: "fn",
@@ -479,7 +553,7 @@ func TestConvertMessageFromGoogle(t *testing.T) {
 			Parts: []*genai.Part{{FunctionCall: part}},
 			Role:  "model",
 		}
-		msg := convertMessageFromGoogle(content)
+		msg := convertMessageFromGoogleContent(content)
 		So(msg, ShouldNotBeNil)
 		So(msg.Contents, ShouldBeEmpty)
 	})

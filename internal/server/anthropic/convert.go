@@ -24,20 +24,56 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func convertEffortFromAnthropic(effort anthropic.OutputConfigEffort) v1.ReasoningEffort {
-	switch effort {
-	case anthropic.OutputConfigEffortLow:
-		return v1.ReasoningEffort_REASONING_EFFORT_LOW
-	case anthropic.OutputConfigEffortMedium:
-		return v1.ReasoningEffort_REASONING_EFFORT_MEDIUM
-	case anthropic.OutputConfigEffortHigh:
-		return v1.ReasoningEffort_REASONING_EFFORT_HIGH
-	case anthropic.OutputConfigEffortXhigh:
-		return v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH
-	case anthropic.OutputConfigEffortMax:
-		return v1.ReasoningEffort_REASONING_EFFORT_MAX
-	default:
-		return v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED
+func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
+	var messages []*v1.Message
+
+	system := convertSystemMessageFromAnthropic(req.System)
+	if system != nil {
+		messages = append(messages, system)
+	}
+
+	for _, message := range req.Messages {
+		messages = append(messages, convertMessageFromAnthropicParam(&message))
+	}
+
+	var tools []*v1.Tool
+	for _, tool := range req.Tools {
+		t := &v1.Tool{}
+		switch {
+		case tool.OfTool != nil:
+			inputSchema, err := util.StructFromAny(tool.OfTool.InputSchema)
+			if err != nil {
+				log.Errorf("failed to convert anthropic tool schema: %s", err.Error())
+				continue
+			}
+
+			t.Tool = &v1.Tool_Function_{
+				Function: &v1.Tool_Function{
+					Name:        tool.OfTool.Name,
+					Description: tool.OfTool.Description.Value,
+					InputSchema: inputSchema,
+				},
+			}
+		default:
+			log.Errorf("unsupported anthropic tool: %v", tool)
+			continue
+		}
+		tools = append(tools, t)
+	}
+
+	var metadata map[string]string
+	if req.Metadata.UserID.Valid() {
+		metadata = map[string]string{
+			"user_id": req.Metadata.UserID.Value,
+		}
+	}
+
+	return &v1.ChatReq{
+		Model:    string(req.Model),
+		Config:   convertGenerationConfigFromAnthropic(req),
+		Messages: messages,
+		Tools:    tools,
+		Metadata: metadata,
 	}
 }
 
@@ -65,7 +101,7 @@ func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.G
 		}
 	} else if req.Thinking.OfAdaptive != nil || req.OutputConfig.Effort != "" {
 		config.ReasoningConfig = &v1.ReasoningConfig{
-			Effort: convertEffortFromAnthropic(req.OutputConfig.Effort),
+			Effort: convertReasoningEffortFromAnthropic(req.OutputConfig.Effort),
 		}
 	}
 	if len(req.StopSequences) > 0 {
@@ -82,7 +118,24 @@ func convertGenerationConfigFromAnthropic(req *anthropic.MessageNewParams) *v1.G
 	return config
 }
 
-func convertSystemFromAnthropic(system []anthropic.TextBlockParam) *v1.Message {
+func convertReasoningEffortFromAnthropic(effort anthropic.OutputConfigEffort) v1.ReasoningEffort {
+	switch effort {
+	case anthropic.OutputConfigEffortLow:
+		return v1.ReasoningEffort_REASONING_EFFORT_LOW
+	case anthropic.OutputConfigEffortMedium:
+		return v1.ReasoningEffort_REASONING_EFFORT_MEDIUM
+	case anthropic.OutputConfigEffortHigh:
+		return v1.ReasoningEffort_REASONING_EFFORT_HIGH
+	case anthropic.OutputConfigEffortXhigh:
+		return v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH
+	case anthropic.OutputConfigEffortMax:
+		return v1.ReasoningEffort_REASONING_EFFORT_MAX
+	default:
+		return v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED
+	}
+}
+
+func convertSystemMessageFromAnthropic(system []anthropic.TextBlockParam) *v1.Message {
 	if len(system) == 0 {
 		return nil
 	}
@@ -98,7 +151,7 @@ func convertSystemFromAnthropic(system []anthropic.TextBlockParam) *v1.Message {
 	}
 }
 
-func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
+func convertMessageFromAnthropicParam(message *anthropic.MessageParam) *v1.Message {
 	var role v1.Role
 	switch message.Role {
 	case anthropic.MessageParamRoleUser:
@@ -223,75 +276,6 @@ func convertMessageFromAnthropic(message *anthropic.MessageParam) *v1.Message {
 	}
 }
 
-func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
-	var messages []*v1.Message
-
-	system := convertSystemFromAnthropic(req.System)
-	if system != nil {
-		messages = append(messages, system)
-	}
-
-	for _, message := range req.Messages {
-		messages = append(messages, convertMessageFromAnthropic(&message))
-	}
-
-	var tools []*v1.Tool
-	for _, tool := range req.Tools {
-		t := &v1.Tool{}
-		switch {
-		case tool.OfTool != nil:
-			inputSchema, err := util.StructFromAny(tool.OfTool.InputSchema)
-			if err != nil {
-				log.Errorf("failed to convert anthropic tool schema: %s", err.Error())
-				continue
-			}
-
-			t.Tool = &v1.Tool_Function_{
-				Function: &v1.Tool_Function{
-					Name:        tool.OfTool.Name,
-					Description: tool.OfTool.Description.Value,
-					InputSchema: inputSchema,
-				},
-			}
-		default:
-			log.Errorf("unsupported anthropic tool: %v", tool)
-			continue
-		}
-		tools = append(tools, t)
-	}
-
-	var metadata map[string]string
-	if req.Metadata.UserID.Valid() {
-		metadata = map[string]string{
-			"user_id": req.Metadata.UserID.Value,
-		}
-	}
-
-	return &v1.ChatReq{
-		Model:    string(req.Model),
-		Config:   convertGenerationConfigFromAnthropic(req),
-		Messages: messages,
-		Tools:    tools,
-		Metadata: metadata,
-	}
-}
-
-// convertStatusToAnthropic maps internal chat status to Anthropic stop reason.
-func convertStatusToAnthropic(status v1.ChatStatus) anthropic.StopReason {
-	switch status {
-	case v1.ChatStatus_CHAT_COMPLETED:
-		return anthropic.StopReasonEndTurn
-	case v1.ChatStatus_CHAT_REFUSED:
-		return anthropic.StopReasonRefusal
-	case v1.ChatStatus_CHAT_PENDING_TOOL_USE:
-		return anthropic.StopReasonToolUse
-	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
-		return anthropic.StopReasonMaxTokens
-	default:
-		return anthropic.StopReasonEndTurn
-	}
-}
-
 func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 	anthropicResp := &anthropic.Message{
 		Type:       "message",
@@ -303,9 +287,6 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 	if resp.Message != nil {
 		anthropicResp.ID = resp.Message.Id
 		for _, content := range resp.Message.Contents {
-			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY {
-				continue // Skip reasoning summary content since it's not supported by Anthropic API
-			}
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
 				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
@@ -341,16 +322,34 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 	}
 
 	if resp.Statistics != nil && resp.Statistics.Usage != nil {
-		anthropicResp.Usage = convertStatisticsToAnthropic(resp.Statistics)
+		anthropicResp.Usage = convertUsageToAnthropic(resp.Statistics.Usage)
 	}
 
 	return anthropicResp
 }
 
-func convertStatisticsToAnthropic(stats *v1.Statistics) anthropic.Usage {
+func convertStatusToAnthropic(status v1.ChatStatus) anthropic.StopReason {
+	switch status {
+	case v1.ChatStatus_CHAT_COMPLETED:
+		return anthropic.StopReasonEndTurn
+	case v1.ChatStatus_CHAT_REFUSED:
+		return anthropic.StopReasonRefusal
+	case v1.ChatStatus_CHAT_PENDING_TOOL_USE:
+		return anthropic.StopReasonToolUse
+	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
+		return anthropic.StopReasonMaxTokens
+	default:
+		return anthropic.StopReasonEndTurn
+	}
+}
+
+func convertUsageToAnthropic(usage *v1.Usage) anthropic.Usage {
+	if usage == nil {
+		return anthropic.Usage{}
+	}
 	return anthropic.Usage{
-		InputTokens:          max(int64(stats.Usage.InputTokens)-int64(stats.Usage.CachedInputTokens), 0),
-		OutputTokens:         int64(stats.Usage.OutputTokens),
-		CacheReadInputTokens: int64(stats.Usage.CachedInputTokens),
+		InputTokens:          max(int64(usage.InputTokens)-int64(usage.CachedInputTokens), 0),
+		OutputTokens:         int64(usage.OutputTokens),
+		CacheReadInputTokens: int64(usage.CachedInputTokens),
 	}
 }

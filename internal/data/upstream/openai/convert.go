@@ -23,8 +23,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-// convertEffortToOpenAI maps the internal reasoning effort to the OpenAI shared reasoning effort.
-func convertEffortToOpenAI(effort v1.ReasoningEffort) shared.ReasoningEffort {
+func convertReasoningEffortToOpenAI(effort v1.ReasoningEffort) shared.ReasoningEffort {
 	switch effort {
 	case v1.ReasoningEffort_REASONING_EFFORT_NONE:
 		return shared.ReasoningEffortNone
@@ -60,7 +59,7 @@ func convertImageToOpenAIURL(image *v1.Image) string {
 	return ""
 }
 
-func convertSchemaToMap(schema *structpb.Struct) openai.FunctionParameters {
+func convertSchemaToOpenAIParameters(schema *structpb.Struct) openai.FunctionParameters {
 	if schema == nil {
 		return nil
 	}

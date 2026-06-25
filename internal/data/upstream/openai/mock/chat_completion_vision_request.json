@@ -1,0 +1,31 @@
+{
+  "model": "openai/gpt-5.4-mini",
+  "max_completion_tokens": 1024,
+  "reasoning_effort": "none",
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "You are a conversion-test assistant. Inspect every image the user supplies and describe it briefly."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "The image below is provided as inline base64 data. State its source (base64) and give a one-sentence description of what you see, including any visible logo or shape."
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAD7klEQVR4AXSUWSitXRiA/3//FEIypYgMUSiZciFyIzMZbgyRREhChgtDIWS6MWQosVFkKDPlRmRIKZF5yFhbppQM4T/n+c7Sdg7O12tZ31rv+7zjt2U//v78/+X5u+4P2T/fPRgA4ebfXw8bTpQrm6/yPQg9mUwGBHuEDa9vb2/QWbn9Kt+A0Mby6OiosLAwMDDQ398/JydnZ2dHRUXlv18PFOisv8tn0OvrK85XVlZCQ0MXFha8vLxgHR4eRkVFVVdX19fXj4+PPz094QkWomT9ASJs3D48PGRnZzs7O09NTRFLUlKSlZXV7u5uf3//xMREXl4ePjY2NmApKWwkEGCEjAh8bm4O5zc3N6WlpXBbW1udnJwWFxdHRkaWl5cnJyfZaGtrp6SkXF5eYo8Vtmw+QGTU2NiI/62tLUtLSwMDA1hVVVWpqamzs7MmJibFxcVsLCws5HL58/Nzd3c3QX0GQVlaWqIKNTU1WVlZVOrl5eXs7KytrS05Obm2thbi9vZ2QkIC3Pv7e19fX8IkFkpBOIgMJBSOent73dzcAgICqCWvCCnMzMzExsY2NDTY2dn19PR0dnbu7e1BIUddXV0iQk2s0rCwQ05OTuzt7akLIPyoqaldXV2tr69nZGQMDAywIRxNTc3p6WlOzs/PUSMIQAjmHzXS0dE5PT2l3hoaGgqF4uLiwsjIKD8/n/Yh8fHxNI6qVVRUxMTE9PX1kRqdEdnAkr41wCCDg4O5wDMd8fb2Tk9PZ5rgkj9CyTw9PSkiCVIEd3d3BweHsbExCSGTIO+p8U51rK2tQ0JCRkdHS0pKmCBTU9Pm5ua1tTWcV1ZW3t7eGhoa0s3Hx0cqYGxsfH19TQS4YZVA7ISQFOkQf1BQkLq6OqXlFXRHRwfTRO3pOgjKR6Sbm5vm5uZEIESqERSQrPiMjIwkIn19/bCwsLi4uOPj49zc3JaWFldX17u7O9QoiqqqKkN0cHAQHh7OCYYcSiBe8MO1i4vL0NAQMbe3t9NyGxsbhpBmUZrMzEw+FHSwKSoqKi8v58rW1lbUV2Lxh8AiQmwIKjExke76+PgUFBSsrq56eHhQ3bKyMrrOiBCjo6OjXC6Pjo6GAhdz5D0i8U7OZLG/v89PB4IB2nST9rFhcJgGJpPakSlJCCuCeAfxTwhBocFnSdcARUREmJmZUdSmpibGhxgVCgXto9J8Q6zCSqxSRGIHGIGlpaVFp9LS0vDf1dWlp6c3PDw8Pz/v5+c3ODhI4ciI0RdWyvUDJI4Ei7AR3DJ1dXV1/Awxe3CZBjyJjIS+cv0M4gIWYaPNinOlJRteuUXnq3wDEkrCQKwgEM6hs34rPwEAAP//7YbYogAAAAZJREFUAwBVtqv1C0Z17QAAAABJRU5ErkJggg=="
+          }
+        }
+      ]
+    }
+  ]
+}

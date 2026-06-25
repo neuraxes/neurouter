@@ -659,12 +659,14 @@ type OpenAIConfig struct {
 	BaseUrl string                 `protobuf:"bytes,2,opt,name=base_url,json=baseUrl,proto3" json:"base_url,omitempty"`
 	Headers map[string]string      `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Use the Responses API instead of the Chat Completions API.
-	UseResponsesApi                 bool `protobuf:"varint,4,opt,name=use_responses_api,json=useResponsesApi,proto3" json:"use_responses_api,omitempty"`
-	PreferStringContentForSystem    bool `protobuf:"varint,5,opt,name=prefer_string_content_for_system,json=preferStringContentForSystem,proto3" json:"prefer_string_content_for_system,omitempty"`
-	PreferStringContentForUser      bool `protobuf:"varint,6,opt,name=prefer_string_content_for_user,json=preferStringContentForUser,proto3" json:"prefer_string_content_for_user,omitempty"`
-	PreferStringContentForAssistant bool `protobuf:"varint,7,opt,name=prefer_string_content_for_assistant,json=preferStringContentForAssistant,proto3" json:"prefer_string_content_for_assistant,omitempty"`
-	PreferStringContentForTool      bool `protobuf:"varint,8,opt,name=prefer_string_content_for_tool,json=preferStringContentForTool,proto3" json:"prefer_string_content_for_tool,omitempty"`
-	PreferSinglePartContent         bool `protobuf:"varint,9,opt,name=prefer_single_part_content,json=preferSinglePartContent,proto3" json:"prefer_single_part_content,omitempty"`
+	UseResponsesApi bool `protobuf:"varint,4,opt,name=use_responses_api,json=useResponsesApi,proto3" json:"use_responses_api,omitempty"`
+	// Whether to adapt the reasoning content as raw CoT instead of summary.
+	ResponsesUseRawReasoning        bool `protobuf:"varint,5,opt,name=responses_use_raw_reasoning,json=responsesUseRawReasoning,proto3" json:"responses_use_raw_reasoning,omitempty"`
+	PreferStringContentForSystem    bool `protobuf:"varint,6,opt,name=prefer_string_content_for_system,json=preferStringContentForSystem,proto3" json:"prefer_string_content_for_system,omitempty"`
+	PreferStringContentForUser      bool `protobuf:"varint,7,opt,name=prefer_string_content_for_user,json=preferStringContentForUser,proto3" json:"prefer_string_content_for_user,omitempty"`
+	PreferStringContentForAssistant bool `protobuf:"varint,8,opt,name=prefer_string_content_for_assistant,json=preferStringContentForAssistant,proto3" json:"prefer_string_content_for_assistant,omitempty"`
+	PreferStringContentForTool      bool `protobuf:"varint,9,opt,name=prefer_string_content_for_tool,json=preferStringContentForTool,proto3" json:"prefer_string_content_for_tool,omitempty"`
+	PreferSinglePartContent         bool `protobuf:"varint,10,opt,name=prefer_single_part_content,json=preferSinglePartContent,proto3" json:"prefer_single_part_content,omitempty"`
 	unknownFields                   protoimpl.UnknownFields
 	sizeCache                       protoimpl.SizeCache
 }
@@ -723,6 +725,13 @@ func (x *OpenAIConfig) GetHeaders() map[string]string {
 func (x *OpenAIConfig) GetUseResponsesApi() bool {
 	if x != nil {
 		return x.UseResponsesApi
+	}
+	return false
+}
+
+func (x *OpenAIConfig) GetResponsesUseRawReasoning() bool {
+	if x != nil {
+		return x.ResponsesUseRawReasoning
 	}
 	return false
 }
@@ -1051,17 +1060,19 @@ const file_conf_upstream_proto_rawDesc = "" +
 	"scheduling\x12%\n" +
 	"\x0econtext_length\x18\t \x01(\rR\rcontextLength\"-\n" +
 	"\x0fNeurouterConfig\x12\x1a\n" +
-	"\bendpoint\x18\x01 \x01(\tR\bendpoint\"\xcf\x04\n" +
+	"\bendpoint\x18\x01 \x01(\tR\bendpoint\"\x8e\x05\n" +
 	"\fOpenAIConfig\x12\x17\n" +
 	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x19\n" +
 	"\bbase_url\x18\x02 \x01(\tR\abaseUrl\x12H\n" +
 	"\aheaders\x18\x03 \x03(\v2..neurouter.config.v1.OpenAIConfig.HeadersEntryR\aheaders\x12*\n" +
-	"\x11use_responses_api\x18\x04 \x01(\bR\x0fuseResponsesApi\x12F\n" +
-	" prefer_string_content_for_system\x18\x05 \x01(\bR\x1cpreferStringContentForSystem\x12B\n" +
-	"\x1eprefer_string_content_for_user\x18\x06 \x01(\bR\x1apreferStringContentForUser\x12L\n" +
-	"#prefer_string_content_for_assistant\x18\a \x01(\bR\x1fpreferStringContentForAssistant\x12B\n" +
-	"\x1eprefer_string_content_for_tool\x18\b \x01(\bR\x1apreferStringContentForTool\x12;\n" +
-	"\x1aprefer_single_part_content\x18\t \x01(\bR\x17preferSinglePartContent\x1a:\n" +
+	"\x11use_responses_api\x18\x04 \x01(\bR\x0fuseResponsesApi\x12=\n" +
+	"\x1bresponses_use_raw_reasoning\x18\x05 \x01(\bR\x18responsesUseRawReasoning\x12F\n" +
+	" prefer_string_content_for_system\x18\x06 \x01(\bR\x1cpreferStringContentForSystem\x12B\n" +
+	"\x1eprefer_string_content_for_user\x18\a \x01(\bR\x1apreferStringContentForUser\x12L\n" +
+	"#prefer_string_content_for_assistant\x18\b \x01(\bR\x1fpreferStringContentForAssistant\x12B\n" +
+	"\x1eprefer_string_content_for_tool\x18\t \x01(\bR\x1apreferStringContentForTool\x12;\n" +
+	"\x1aprefer_single_part_content\x18\n" +
+	" \x01(\bR\x17preferSinglePartContent\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"M\n" +

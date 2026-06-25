@@ -54,7 +54,7 @@ func (m *mockChatRepo) Chat(context.Context, *entity.ChatReq) (*entity.ChatResp,
 	return nil, nil
 }
 
-func (m *mockChatRepo) ChatStream(context.Context, *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
+func (m *mockChatRepo) ChatStream(context.Context, *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
 	return nil
 }
 

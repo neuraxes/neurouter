@@ -3,7 +3,6 @@ package anthropic
 import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/util"
-	"k8s.io/utils/ptr"
 )
 
 var mockMessagesRequestBody = `{
@@ -102,8 +101,8 @@ var mockMessagesRequestBody = `{
 var mockChatReq = &v1.ChatReq{
 	Model: "claude-haiku-4-5-20251001-thinking",
 	Config: &v1.GenerationConfig{
-		MaxTokens:   ptr.To[int64](8192),
-		Temperature: ptr.To[float32](0),
+		MaxTokens:   new(int64(8192)),
+		Temperature: new(float32(0)),
 		ReasoningConfig: &v1.ReasoningConfig{
 			TokenBudget: 1024,
 		},
@@ -274,187 +273,38 @@ var mockMessagesResponseBody = `{
     }
 }`
 
-var mockChatStreamResp = []*v1.ChatResp{
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   new(uint32(0)),
-				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content: v1.NewTextContent("The user wants weather info for Shanghai."),
-			}},
-		},
-		Statistics: &v1.Statistics{
-			Usage: &v1.Usage{
-				InputTokens: 840,
-			},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:     new(uint32(0)),
-				Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Signature: "sig-stream-abc",
-				Content:   v1.NewTextContent(""),
-			}},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   new(uint32(1)),
-				Content: v1.NewTextContent("Now let me get the weather for Shanghai yesterday"),
-			}},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   new(uint32(1)),
-				Content: v1.NewTextContent(" (2025-11-10):"),
-			}},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Id:   "toolu_016VE91YZYshFFPSevawmcDH",
-						Name: "get_weather",
-					},
-				},
-			}},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: "",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: "{\"city\": \"Shanghai\"",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: ", \"date\": ",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: "\"2025-11-10",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: "\"}",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Model:  "claude-haiku-4-5-20251001",
-		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
-		Statistics: &v1.Statistics{
-			Usage: &v1.Usage{
-				OutputTokens: 93,
-			},
-		},
-	},
+func mockStreamEvent(event v1.ChatEventPayload) *v1.ChatEvent {
+	return v1.NewChatEvent("", event)
+}
+
+func mockStreamEventWithUsage(event v1.ChatEventPayload, usage *v1.Usage) *v1.ChatEvent {
+	e := mockStreamEvent(event)
+	e.Usage = usage
+	return e
+}
+
+var mockChatStreamEvents = []*v1.ChatEvent{
+	mockStreamEventWithUsage(
+		v1.NewMessageStartEvent("msg_016m3rsWB3U7eYBEKjTRSruv", "claude-haiku-4-5-20251001"),
+		&v1.Usage{InputTokens: 840},
+	),
+	mockStreamEvent(v1.NewContentStartTextEvent(0, v1.ContentPhase_CONTENT_PHASE_REASONING)),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "The user wants weather info for Shanghai.")),
+	mockStreamEvent(v1.NewContentDeltaSignatureEvent(0, "sig-stream-abc")),
+	mockStreamEvent(v1.NewContentStopEvent(0)),
+	mockStreamEvent(v1.NewContentStartTextEvent(1, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(1, "Now let me get the weather for Shanghai yesterday")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(1, " (2025-11-10):")),
+	mockStreamEvent(v1.NewContentStopEvent(1)),
+	mockStreamEvent(v1.NewContentStartToolUseEvent(2, "toolu_016VE91YZYshFFPSevawmcDH", "get_weather")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(2, "")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(2, "{\"city\": \"Shanghai\"")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(2, ", \"date\": ")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(2, "\"2025-11-10")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(2, "\"}")),
+	mockStreamEvent(v1.NewContentStopEvent(2)),
+	mockStreamEventWithUsage(
+		v1.NewMessageStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE),
+		&v1.Usage{OutputTokens: 93},
+	),
 }

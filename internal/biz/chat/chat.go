@@ -65,8 +65,8 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, serv
 	}
 	defer model.Close()
 
-	accumulator := NewChatRespAccumulator()
-	for resp, err := range model.ChatRepo().ChatStream(ctx, req) {
+	reducer := NewChatEventReducer(uc.log)
+	for event, err := range model.ChatRepo().ChatStream(ctx, req) {
 		if err != nil {
 			return err
 		}
@@ -75,14 +75,14 @@ func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, serv
 			break
 		}
 
-		accumulator.Accumulate(resp)
-		err = server.Send(resp)
+		reducer.Reduce(event)
+		err = server.Send(event)
 		if err != nil {
 			return err
 		}
 	}
 
-	finalResp := accumulator.Resp()
+	finalResp := reducer.Resp()
 	model.RecordUsage(ctx, finalResp.Statistics)
 	uc.printChat(req, finalResp)
 	return nil

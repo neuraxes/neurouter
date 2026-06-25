@@ -22,35 +22,101 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func convertEffortFromOpenAI(effort shared.ReasoningEffort) v1.ReasoningEffort {
-	switch effort {
-	case shared.ReasoningEffortNone:
-		return v1.ReasoningEffort_REASONING_EFFORT_NONE
-	case shared.ReasoningEffortMinimal:
-		return v1.ReasoningEffort_REASONING_EFFORT_MINIMAL
-	case shared.ReasoningEffortLow:
-		return v1.ReasoningEffort_REASONING_EFFORT_LOW
-	case shared.ReasoningEffortMedium:
-		return v1.ReasoningEffort_REASONING_EFFORT_MEDIUM
-	case shared.ReasoningEffortHigh:
-		return v1.ReasoningEffort_REASONING_EFFORT_HIGH
-	case shared.ReasoningEffortXhigh:
-		return v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH
-	default:
-		return v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED
+func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatReq {
+	config := &v1.GenerationConfig{}
+
+	if req.MaxCompletionTokens.Valid() {
+		config.MaxTokens = new(req.MaxCompletionTokens.Value)
+	} else if req.MaxTokens.Valid() {
+		config.MaxTokens = new(req.MaxTokens.Value)
+	}
+	if req.Temperature.Valid() {
+		config.Temperature = new(float32(req.Temperature.Value))
+	}
+	if req.TopP.Valid() {
+		config.TopP = new(float32(req.TopP.Value))
+	}
+	if req.FrequencyPenalty.Valid() {
+		config.FrequencyPenalty = new(float32(req.FrequencyPenalty.Value))
+	}
+	if req.PresencePenalty.Valid() {
+		config.PresencePenalty = new(float32(req.PresencePenalty.Value))
+	}
+
+	if req.ReasoningEffort != "" {
+		config.ReasoningConfig = &v1.ReasoningConfig{
+			Effort: convertReasoningEffortFromOpenAI(req.ReasoningEffort),
+		}
+	}
+
+	if req.ResponseFormat.OfJSONObject != nil {
+		config.Grammar = &v1.GenerationConfig_PresetGrammar{
+			PresetGrammar: "json_object",
+		}
+	} else if req.ResponseFormat.OfJSONSchema != nil {
+		schema, err := util.StructFromAny(req.ResponseFormat.OfJSONSchema.JSONSchema.Schema)
+		if err == nil {
+			config.Grammar = &v1.GenerationConfig_Schema{
+				Schema: schema,
+			}
+		}
+	}
+
+	if len(req.Stop.OfStringArray) > 0 {
+		config.StopSequences = req.Stop.OfStringArray
+	} else if req.Stop.OfString.Valid() {
+		config.StopSequences = []string{req.Stop.OfString.Value}
+	}
+
+	var messages []*v1.Message
+	for _, message := range req.Messages {
+		if m := convertChatMessageParamFromOpenAIChat(message); m != nil {
+			messages = append(messages, m)
+		}
+	}
+
+	var tools []*v1.Tool
+	for _, tool := range req.Tools {
+		if tool.OfFunction != nil {
+			fn := tool.OfFunction.Function
+			inputSchema, _ := util.StructFromMap(map[string]any(fn.Parameters))
+			tools = append(tools, &v1.Tool{
+				Tool: &v1.Tool_Function_{
+					Function: &v1.Tool_Function{
+						Name:        fn.Name,
+						Description: fn.Description.Value,
+						InputSchema: inputSchema,
+					},
+				},
+			})
+		}
+	}
+
+	return &v1.ChatReq{
+		Model:    string(req.Model),
+		Config:   config,
+		Messages: messages,
+		Tools:    tools,
 	}
 }
 
-func convertImageFromOpenAIURL(u string) *v1.Image {
-	if encoded, mimeType, err := util.ParseImageDataURL(u); err == nil {
-		return &v1.Image{
-			MimeType: mimeType,
-			Source:   &v1.Image_Base64{Base64: encoded},
-		}
+func convertChatMessageParamFromOpenAIChat(msg openai.ChatCompletionMessageParamUnion) *v1.Message {
+	if msg.OfDeveloper != nil {
+		return convertDeveloperMessageFromOpenAIChat(msg.OfDeveloper)
 	}
-	return &v1.Image{
-		Source: &v1.Image_Url{Url: u},
+	if msg.OfSystem != nil {
+		return convertSystemMessageFromOpenAIChat(msg.OfSystem)
 	}
+	if msg.OfUser != nil {
+		return convertUserMessageFromOpenAIChat(msg.OfUser)
+	}
+	if msg.OfAssistant != nil {
+		return convertAssistantMessageFromOpenAIChat(msg.OfAssistant)
+	}
+	if msg.OfTool != nil {
+		return convertToolMessageFromOpenAIChat(msg.OfTool)
+	}
+	return nil
 }
 
 func convertDeveloperMessageFromOpenAIChat(m *openai.ChatCompletionDeveloperMessageParam) *v1.Message {
@@ -205,132 +271,34 @@ func convertToolMessageFromOpenAIChat(m *openai.ChatCompletionToolMessageParam) 
 	}
 }
 
-func convertChatMessageFromOpenAIChat(msg openai.ChatCompletionMessageParamUnion) *v1.Message {
-	if msg.OfDeveloper != nil {
-		return convertDeveloperMessageFromOpenAIChat(msg.OfDeveloper)
-	}
-	if msg.OfSystem != nil {
-		return convertSystemMessageFromOpenAIChat(msg.OfSystem)
-	}
-	if msg.OfUser != nil {
-		return convertUserMessageFromOpenAIChat(msg.OfUser)
-	}
-	if msg.OfAssistant != nil {
-		return convertAssistantMessageFromOpenAIChat(msg.OfAssistant)
-	}
-	if msg.OfTool != nil {
-		return convertToolMessageFromOpenAIChat(msg.OfTool)
-	}
-	return nil
-}
-
-func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatReq {
-	config := &v1.GenerationConfig{}
-
-	if req.MaxCompletionTokens.Valid() {
-		config.MaxTokens = new(req.MaxCompletionTokens.Value)
-	} else if req.MaxTokens.Valid() {
-		config.MaxTokens = new(req.MaxTokens.Value)
-	}
-	if req.Temperature.Valid() {
-		config.Temperature = new(float32(req.Temperature.Value))
-	}
-	if req.TopP.Valid() {
-		config.TopP = new(float32(req.TopP.Value))
-	}
-	if req.FrequencyPenalty.Valid() {
-		config.FrequencyPenalty = new(float32(req.FrequencyPenalty.Value))
-	}
-	if req.PresencePenalty.Valid() {
-		config.PresencePenalty = new(float32(req.PresencePenalty.Value))
-	}
-
-	if req.ReasoningEffort != "" {
-		config.ReasoningConfig = &v1.ReasoningConfig{
-			Effort: convertEffortFromOpenAI(req.ReasoningEffort),
+func convertImageFromOpenAIURL(u string) *v1.Image {
+	if encoded, mimeType, err := util.ParseImageDataURL(u); err == nil {
+		return &v1.Image{
+			MimeType: mimeType,
+			Source:   &v1.Image_Base64{Base64: encoded},
 		}
 	}
-
-	if req.ResponseFormat.OfJSONObject != nil {
-		config.Grammar = &v1.GenerationConfig_PresetGrammar{
-			PresetGrammar: "json_object",
-		}
-	} else if req.ResponseFormat.OfJSONSchema != nil {
-		schema, err := util.StructFromAny(req.ResponseFormat.OfJSONSchema.JSONSchema.Schema)
-		if err == nil {
-			config.Grammar = &v1.GenerationConfig_Schema{
-				Schema: schema,
-			}
-		}
-	}
-
-	if len(req.Stop.OfStringArray) > 0 {
-		config.StopSequences = req.Stop.OfStringArray
-	} else if req.Stop.OfString.Valid() {
-		config.StopSequences = []string{req.Stop.OfString.Value}
-	}
-
-	var messages []*v1.Message
-	for _, message := range req.Messages {
-		if m := convertChatMessageFromOpenAIChat(message); m != nil {
-			messages = append(messages, m)
-		}
-	}
-
-	var tools []*v1.Tool
-	for _, tool := range req.Tools {
-		if tool.OfFunction != nil {
-			fn := tool.OfFunction.Function
-			inputSchema, _ := util.StructFromMap(map[string]any(fn.Parameters))
-			tools = append(tools, &v1.Tool{
-				Tool: &v1.Tool_Function_{
-					Function: &v1.Tool_Function{
-						Name:        fn.Name,
-						Description: fn.Description.Value,
-						InputSchema: inputSchema,
-					},
-				},
-			})
-		}
-	}
-
-	return &v1.ChatReq{
-		Model:    string(req.Model),
-		Config:   config,
-		Messages: messages,
-		Tools:    tools,
+	return &v1.Image{
+		Source: &v1.Image_Url{Url: u},
 	}
 }
 
-func convertStatusToOpenAIChat(status v1.ChatStatus) string {
-	switch status {
-	case v1.ChatStatus_CHAT_COMPLETED:
-		return "stop"
-	case v1.ChatStatus_CHAT_REFUSED:
-		return "content_filter"
-	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
-		return "length"
-	case v1.ChatStatus_CHAT_PENDING_TOOL_USE:
-		return "tool_calls"
+func convertReasoningEffortFromOpenAI(effort shared.ReasoningEffort) v1.ReasoningEffort {
+	switch effort {
+	case shared.ReasoningEffortNone:
+		return v1.ReasoningEffort_REASONING_EFFORT_NONE
+	case shared.ReasoningEffortMinimal:
+		return v1.ReasoningEffort_REASONING_EFFORT_MINIMAL
+	case shared.ReasoningEffortLow:
+		return v1.ReasoningEffort_REASONING_EFFORT_LOW
+	case shared.ReasoningEffortMedium:
+		return v1.ReasoningEffort_REASONING_EFFORT_MEDIUM
+	case shared.ReasoningEffortHigh:
+		return v1.ReasoningEffort_REASONING_EFFORT_HIGH
+	case shared.ReasoningEffortXhigh:
+		return v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH
 	default:
-		return ""
-	}
-}
-
-func convertUsageToOpenAIChat(u *v1.Usage) *openai.CompletionUsage {
-	if u == nil {
-		return nil
-	}
-	return &openai.CompletionUsage{
-		PromptTokens:     int64(u.InputTokens),
-		CompletionTokens: int64(u.OutputTokens),
-		TotalTokens:      int64(u.InputTokens) + int64(u.OutputTokens),
-		PromptTokensDetails: openai.CompletionUsagePromptTokensDetails{
-			CachedTokens: int64(u.CachedInputTokens),
-		},
-		CompletionTokensDetails: openai.CompletionUsageCompletionTokensDetails{
-			ReasoningTokens: int64(u.ReasoningTokens),
-		},
+		return v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED
 	}
 }
 
@@ -345,9 +313,6 @@ func convertChatRespToOpenAIChat(resp *v1.ChatResp) *chatCompletionResponse {
 		message := chatCompletionMessage{Role: "assistant"}
 
 		for _, content := range resp.Message.Contents {
-			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY {
-				continue // Skip reasoning summary content since it's not supported by chat completion API
-			}
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
 				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
@@ -382,38 +347,34 @@ func convertChatRespToOpenAIChat(resp *v1.ChatResp) *chatCompletionResponse {
 	return r
 }
 
-func convertEmbeddingReqFromOpenAIChat(req *openai.EmbeddingNewParams) *v1.EmbedReq {
-	var contents []*v1.Content
-
-	if req.Input.OfString.Valid() {
-		contents = append(contents, &v1.Content{
-			Content: v1.NewTextContent(req.Input.OfString.Value),
-		})
-	} else if len(req.Input.OfArrayOfStrings) > 0 {
-		contents = append(contents, &v1.Content{
-			Content: v1.NewTextContent(req.Input.OfArrayOfStrings[0]),
-		})
-	}
-
-	return &v1.EmbedReq{
-		Model:    string(req.Model),
-		Contents: contents,
+func convertStatusToOpenAIChat(status v1.ChatStatus) string {
+	switch status {
+	case v1.ChatStatus_CHAT_COMPLETED:
+		return "stop"
+	case v1.ChatStatus_CHAT_REFUSED:
+		return "content_filter"
+	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
+		return "length"
+	case v1.ChatStatus_CHAT_PENDING_TOOL_USE:
+		return "tool_calls"
+	default:
+		return ""
 	}
 }
 
-func convertEmbeddingRespToOpenAIChat(resp *v1.EmbedResp) *embeddingResponse {
-	embedding := make([]float64, len(resp.Embedding))
-	for i, v := range resp.Embedding {
-		embedding[i] = float64(v)
+func convertUsageToOpenAIChat(u *v1.Usage) *openai.CompletionUsage {
+	if u == nil {
+		return nil
 	}
-	return &embeddingResponse{
-		Object: "list",
-		Model:  resp.Model,
-		Data: []openai.Embedding{
-			{
-				Index:     0,
-				Embedding: embedding,
-			},
+	return &openai.CompletionUsage{
+		PromptTokens:     int64(u.InputTokens),
+		CompletionTokens: int64(u.OutputTokens),
+		TotalTokens:      int64(u.InputTokens) + int64(u.OutputTokens),
+		PromptTokensDetails: openai.CompletionUsagePromptTokensDetails{
+			CachedTokens: int64(u.CachedInputTokens),
+		},
+		CompletionTokensDetails: openai.CompletionUsageCompletionTokensDetails{
+			ReasoningTokens: int64(u.ReasoningTokens),
 		},
 	}
 }

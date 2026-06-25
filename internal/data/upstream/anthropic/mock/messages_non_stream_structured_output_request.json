@@ -1,0 +1,67 @@
+{
+  "model": "anthropic/claude-sonnet-4.6",
+  "max_tokens": 600,
+  "temperature": 0,
+  "metadata": {
+    "user_id": "anthropic-conversion-fixture-user"
+  },
+  "system": [
+    {
+      "type": "text",
+      "text": "You are a conversion-test assistant. Return content that conforms to the requested output schema."
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Classify this router incident: customer traffic is slow in us-east, the OpenAI upstream is rate limited, the Anthropic upstream is healthy, and retry pressure is rising."
+        }
+      ]
+    }
+  ],
+  "output_config": {
+    "format": {
+      "type": "json_schema",
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "affected_region": {
+            "type": "string"
+          },
+          "primary_cause": {
+            "type": "string"
+          },
+          "recommended_action": {
+            "type": "string"
+          },
+          "signals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "severity",
+          "affected_region",
+          "primary_cause",
+          "recommended_action",
+          "signals"
+        ]
+      }
+    }
+  }
+}

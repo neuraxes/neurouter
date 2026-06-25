@@ -17,26 +17,29 @@ package google
 import (
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 
 	"google.golang.org/genai"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func convertEffortToGoogleThinkingLevel(effort v1.ReasoningEffort) genai.ThinkingLevel {
-	switch effort {
-	case v1.ReasoningEffort_REASONING_EFFORT_MINIMAL:
-		return genai.ThinkingLevelMinimal
-	case v1.ReasoningEffort_REASONING_EFFORT_LOW:
-		return genai.ThinkingLevelLow
-	case v1.ReasoningEffort_REASONING_EFFORT_MEDIUM:
-		return genai.ThinkingLevelMedium
-	case v1.ReasoningEffort_REASONING_EFFORT_HIGH, v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH, v1.ReasoningEffort_REASONING_EFFORT_MAX:
-		return genai.ThinkingLevelHigh
-	default:
-		return genai.ThinkingLevelUnspecified
+func (r *upstream) convertRequestToGoogle(req *entity.ChatReq) (messages []*genai.Content, config *genai.GenerateContentConfig) {
+	config = &genai.GenerateContentConfig{
+		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
+		Tools:             convertToolsToGoogle(req.Tools),
 	}
+	convertGenerationConfigToGoogle(req.Config, config)
+
+	for _, msg := range req.Messages {
+		if msg.Role == v1.Role_SYSTEM && !r.config.SystemAsUser {
+			continue
+		}
+		messages = append(messages, convertMessageToGoogleContent(msg))
+	}
+	return
 }
 
 func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *genai.GenerateContentConfig) {
@@ -55,17 +58,20 @@ func convertGenerationConfigToGoogle(config *v1.GenerationConfig, googleConfig *
 	if config.TopK != nil {
 		googleConfig.TopK = new(float32(*config.TopK))
 	}
-	if c := config.ReasoningConfig; c != nil && c.Effort != v1.ReasoningEffort_REASONING_EFFORT_NONE {
-		gc := &genai.ThinkingConfig{
-			IncludeThoughts: true,
+	if c := config.ReasoningConfig; c != nil {
+		googleConfig.ThinkingConfig = &genai.ThinkingConfig{}
+		if c.Effort == v1.ReasoningEffort_REASONING_EFFORT_NONE {
+			// Explicitly turn thinking off on models that allow a zero budget.
+			googleConfig.ThinkingConfig.ThinkingBudget = new(int32(0))
+		} else {
+			googleConfig.ThinkingConfig.IncludeThoughts = true
+			if c.Effort > v1.ReasoningEffort_REASONING_EFFORT_NONE {
+				googleConfig.ThinkingConfig.ThinkingLevel = convertReasoningEffortToGoogleThinkingLevel(c.Effort)
+			}
+			if c.TokenBudget != 0 {
+				googleConfig.ThinkingConfig.ThinkingBudget = new(int32(c.TokenBudget))
+			}
 		}
-		if c.Effort > v1.ReasoningEffort_REASONING_EFFORT_NONE {
-			gc.ThinkingLevel = convertEffortToGoogleThinkingLevel(c.Effort)
-		}
-		if c.TokenBudget != 0 {
-			gc.ThinkingBudget = new(int32(c.TokenBudget))
-		}
-		googleConfig.ThinkingConfig = gc
 	}
 	if len(config.StopSequences) > 0 {
 		googleConfig.StopSequences = config.StopSequences
@@ -94,72 +100,31 @@ func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 	return []*genai.Tool{{FunctionDeclarations: functionDecls}}
 }
 
-func convertContentToGoogle(content *v1.Content) *genai.Part {
-	if content.IsReasoning() {
-		// Reasoning content should be ignored
-		return nil
+func (r *upstream) convertSystemInstructionToGoogle(messages []*v1.Message) (content *genai.Content) {
+	if r.config.SystemAsUser {
+		return
 	}
-
-	switch c := content.Content.(type) {
-	case *v1.Content_Text:
-		return genai.NewPartFromText(c.Text.GetText())
-	case *v1.Content_Image:
-		mimeType := c.Image.MimeType
-		switch source := c.Image.Source.(type) {
-		case *v1.Image_Url:
-			return genai.NewPartFromURI(source.Url, mimeType)
-		case *v1.Image_Data:
-			if mimeType == "" {
-				mimeType = util.InferImageMimeType(source.Data)
-			}
-			return genai.NewPartFromBytes(source.Data, mimeType)
-		case *v1.Image_Base64:
-			data, err := base64.StdEncoding.DecodeString(source.Base64)
-			if err != nil {
-				return nil
-			}
-			if mimeType == "" {
-				mimeType = util.InferImageMimeType(data)
-			}
-			return genai.NewPartFromBytes(data, mimeType)
-		default:
-			return nil
-		}
-	case *v1.Content_ToolUse:
-		textualInput := c.ToolUse.GetTextualInput()
-
-		var args map[string]any
-		if textualInput != "" {
-			if err := json.Unmarshal([]byte(textualInput), &args); err != nil {
-				args = map[string]any{
-					"args": textualInput,
+	content = &genai.Content{}
+	for _, msg := range messages {
+		if msg.Role == v1.Role_SYSTEM {
+			for _, c := range msg.Contents {
+				part := convertContentToGooglePart(c)
+				if part != nil {
+					content.Parts = append(content.Parts, part)
 				}
 			}
 		}
-
-		return genai.NewPartFromFunctionCall(c.ToolUse.Name, args)
-	case *v1.Content_ToolResult:
-		textualOutput := c.ToolResult.GetTextualOutput()
-
-		var output map[string]any
-		if textualOutput != "" {
-			if err := json.Unmarshal([]byte(textualOutput), &output); err != nil {
-				output = map[string]any{
-					"result": textualOutput,
-				}
-			}
-		}
-
-		return genai.NewPartFromFunctionResponse(c.ToolResult.Id, output)
-	default:
+	}
+	if len(content.Parts) == 0 {
 		return nil
 	}
+	return
 }
 
-func convertMessageToGoogle(msg *v1.Message) *genai.Content {
+func convertMessageToGoogleContent(msg *v1.Message) *genai.Content {
 	var parts []*genai.Part
 	for _, content := range msg.Contents {
-		if part := convertContentToGoogle(content); part != nil {
+		if part := convertContentToGooglePart(content); part != nil {
 			if content.Signature != "" {
 				sig, err := base64.StdEncoding.DecodeString(content.Signature)
 				if err == nil {
@@ -186,57 +151,104 @@ func convertMessageToGoogle(msg *v1.Message) *genai.Content {
 	}
 }
 
-func (r *upstream) convertSystemInstructionToGoogle(messages []*v1.Message) (content *genai.Content) {
-	if r.config.SystemAsUser {
-		return
+func convertContentToGooglePart(content *v1.Content) *genai.Part {
+	// Thought summaries are not replayed, except when one carries a thought
+	// signature that Gemini needs to restore thinking context across turns.
+	if content.IsReasoning() && content.Signature == "" {
+		return nil
 	}
-	content = &genai.Content{}
-	for _, msg := range messages {
-		if msg.Role == v1.Role_SYSTEM {
-			for _, c := range msg.Contents {
-				part := convertContentToGoogle(c)
-				if part != nil {
-					content.Parts = append(content.Parts, part)
+
+	var part *genai.Part
+	switch c := content.Content.(type) {
+	case *v1.Content_Text:
+		part = genai.NewPartFromText(c.Text.GetText())
+	case *v1.Content_Image:
+		part = convertImageToGooglePart(c.Image)
+	case *v1.Content_ToolUse:
+		textualInput := c.ToolUse.GetTextualInput()
+
+		var args map[string]any
+		if textualInput != "" {
+			if err := json.Unmarshal([]byte(textualInput), &args); err != nil {
+				args = map[string]any{
+					"args": textualInput,
 				}
 			}
 		}
-	}
-	if len(content.Parts) == 0 {
+
+		part = genai.NewPartFromFunctionCall(c.ToolUse.Name, args)
+	case *v1.Content_ToolResult:
+		part = convertToolResultToGooglePart(c.ToolResult)
+	default:
 		return nil
 	}
-	return
+
+	if part != nil && content.IsReasoning() {
+		part.Thought = true
+	}
+	return part
 }
 
-// convertStatusFromGoogle maps Google FinishReason to internal ChatStatus.
-// It also checks the content to determine if there are pending function calls.
-func convertStatusFromGoogle(reason genai.FinishReason, content *genai.Content) v1.ChatStatus {
-	// Check if the response contains function calls (tool use)
-	if reason == genai.FinishReasonStop && content != nil {
-		for _, part := range content.Parts {
-			if part.FunctionCall != nil {
-				return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+func convertImageToGooglePart(image *v1.Image) *genai.Part {
+	mimeType := image.MimeType
+	switch source := image.Source.(type) {
+	case *v1.Image_Url:
+		return genai.NewPartFromURI(source.Url, mimeType)
+	case *v1.Image_Data:
+		if mimeType == "" {
+			mimeType = util.InferImageMimeType(source.Data)
+		}
+		return genai.NewPartFromBytes(source.Data, mimeType)
+	case *v1.Image_Base64:
+		data, err := base64.StdEncoding.DecodeString(source.Base64)
+		if err != nil {
+			return nil
+		}
+		if mimeType == "" {
+			mimeType = util.InferImageMimeType(data)
+		}
+		return genai.NewPartFromBytes(data, mimeType)
+	default:
+		return nil
+	}
+}
+
+func convertToolResultToGooglePart(result *v1.ToolResult) *genai.Part {
+	var textParts strings.Builder
+	var mediaParts []*genai.FunctionResponsePart
+	for _, out := range result.GetOutputs() {
+		switch o := out.Output.(type) {
+		case *v1.ToolResult_Output_Text:
+			textParts.WriteString(o.Text)
+		case *v1.ToolResult_Output_Image:
+			if p := convertImageToGooglePart(o.Image); p != nil && p.InlineData != nil {
+				mediaParts = append(mediaParts, &genai.FunctionResponsePart{
+					InlineData: &genai.FunctionResponseBlob{
+						MIMEType: p.InlineData.MIMEType,
+						Data:     p.InlineData.Data,
+					},
+				})
 			}
 		}
 	}
 
-	switch reason {
-	case genai.FinishReasonStop:
-		return v1.ChatStatus_CHAT_COMPLETED
-	case genai.FinishReasonMaxTokens:
-		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
-	case genai.FinishReasonSafety,
-		genai.FinishReasonBlocklist,
-		genai.FinishReasonProhibitedContent,
-		genai.FinishReasonSPII,
-		genai.FinishReasonImageSafety,
-		genai.FinishReasonImageProhibitedContent:
-		return v1.ChatStatus_CHAT_REFUSED
-	default:
-		return v1.ChatStatus_CHAT_IN_PROGRESS
+	var response map[string]any
+	if textualOutput := textParts.String(); textualOutput != "" {
+		if err := json.Unmarshal([]byte(textualOutput), &response); err != nil {
+			response = map[string]any{
+				"result": textualOutput,
+			}
+		}
 	}
+
+	if len(mediaParts) > 0 {
+		return genai.NewPartFromFunctionResponseWithParts(result.Id, response, mediaParts)
+	}
+
+	return genai.NewPartFromFunctionResponse(result.Id, response)
 }
 
-func convertMessageFromGoogle(content *genai.Content) *v1.Message {
+func convertMessageFromGoogleContent(content *genai.Content) *v1.Message {
 	message := &v1.Message{
 		Role: v1.Role_MODEL,
 	}
@@ -289,6 +301,115 @@ func convertMessageFromGoogle(content *genai.Content) *v1.Message {
 	return message
 }
 
+func (c *googleChatStreamClient) convertStreamResponseFromGoogle(resp *genai.GenerateContentResponse) []*entity.ChatEvent {
+	candidate := resp.Candidates[0]
+	var events []*entity.ChatEvent
+
+	if !c.messageStarted {
+		c.messageStarted = true
+		events = append(events, c.newChatEvent(v1.NewMessageStartEvent(resp.ResponseID, resp.ModelVersion)))
+	}
+
+	for _, part := range candidate.Content.Parts {
+		phase := v1.ContentPhase_CONTENT_PHASE_NORMAL
+		if part.Thought {
+			phase = v1.ContentPhase_CONTENT_PHASE_REASONING
+		}
+
+		switch {
+		case part.Text != "":
+			index := c.openTextBlock(&events, phase)
+			events = append(events, c.newChatEvent(v1.NewContentDeltaTextEvent(index, part.Text)))
+			if len(part.ThoughtSignature) > 0 {
+				events = append(events, c.newChatEvent(v1.NewContentDeltaSignatureEvent(index, base64.StdEncoding.EncodeToString(part.ThoughtSignature))))
+			}
+
+		case part.FunctionCall != nil:
+			args, err := json.Marshal(part.FunctionCall.Args)
+			if err != nil {
+				continue
+			}
+			c.closeOpenBlock(&events)
+			index := c.nextIndex
+			c.nextIndex++
+			events = append(events, c.newChatEvent(v1.NewContentStartToolUseEvent(index, part.FunctionCall.Name, part.FunctionCall.Name)))
+			events = append(events, c.newChatEvent(v1.NewContentDeltaToolInputTextEvent(index, string(args))))
+			if len(part.ThoughtSignature) > 0 {
+				events = append(events, c.newChatEvent(v1.NewContentDeltaSignatureEvent(index, base64.StdEncoding.EncodeToString(part.ThoughtSignature))))
+			}
+			events = append(events, c.newChatEvent(v1.NewContentStopEvent(index)))
+		}
+	}
+
+	if statistics := convertStatisticsFromGoogle(resp.UsageMetadata); statistics != nil {
+		c.lastUsage = statistics.Usage
+	}
+
+	if candidate.FinishReason != "" {
+		c.closeOpenBlock(&events)
+		stop := c.newChatEvent(v1.NewMessageStopEvent(convertStatusFromGoogle(candidate.FinishReason, candidate.Content)))
+		stop.Usage = c.lastUsage
+		events = append(events, stop)
+	}
+
+	return events
+}
+
+func (c *googleChatStreamClient) newChatEvent(event v1.ChatEventPayload) *entity.ChatEvent {
+	return v1.NewChatEvent(c.req.GetId(), event)
+}
+
+func (c *googleChatStreamClient) closeOpenBlock(events *[]*entity.ChatEvent) {
+	if c.hasOpen {
+		*events = append(*events, c.newChatEvent(v1.NewContentStopEvent(c.openIndex)))
+		c.hasOpen = false
+	}
+}
+
+// openTextBlock ensures a streamable text block of the given phase is open,
+// reusing the current one when the phase matches and closing it otherwise.
+func (c *googleChatStreamClient) openTextBlock(events *[]*entity.ChatEvent, phase v1.ContentPhase) uint32 {
+	if c.hasOpen && c.openPhase == phase {
+		return c.openIndex
+	}
+	c.closeOpenBlock(events)
+
+	index := c.nextIndex
+	c.nextIndex++
+	c.hasOpen = true
+	c.openPhase = phase
+	c.openIndex = index
+	*events = append(*events, c.newChatEvent(v1.NewContentStartTextEvent(index, phase)))
+	return index
+}
+
+func convertStatusFromGoogle(reason genai.FinishReason, content *genai.Content) v1.ChatStatus {
+	// Google returns Stop for completed turns and tool calls, so inspect content first.
+	if reason == genai.FinishReasonStop && content != nil {
+		for _, part := range content.Parts {
+			if part.FunctionCall != nil {
+				return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+			}
+		}
+	}
+
+	switch reason {
+	case genai.FinishReasonStop:
+		return v1.ChatStatus_CHAT_COMPLETED
+	case genai.FinishReasonMaxTokens:
+		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+	case genai.FinishReasonSafety,
+		genai.FinishReasonBlocklist,
+		genai.FinishReasonProhibitedContent,
+		genai.FinishReasonSPII,
+		genai.FinishReasonImageSafety,
+		genai.FinishReasonImageProhibitedContent:
+		return v1.ChatStatus_CHAT_REFUSED
+	default:
+		return v1.ChatStatus_CHAT_IN_PROGRESS
+	}
+}
+
 func convertStatisticsFromGoogle(usage *genai.GenerateContentResponseUsageMetadata) *v1.Statistics {
 	if usage == nil {
 		return nil
@@ -301,5 +422,20 @@ func convertStatisticsFromGoogle(usage *genai.GenerateContentResponseUsageMetada
 			CachedInputTokens: uint32(usage.CachedContentTokenCount),
 			ReasoningTokens:   uint32(usage.ThoughtsTokenCount),
 		},
+	}
+}
+
+func convertReasoningEffortToGoogleThinkingLevel(effort v1.ReasoningEffort) genai.ThinkingLevel {
+	switch effort {
+	case v1.ReasoningEffort_REASONING_EFFORT_MINIMAL:
+		return genai.ThinkingLevelMinimal
+	case v1.ReasoningEffort_REASONING_EFFORT_LOW:
+		return genai.ThinkingLevelLow
+	case v1.ReasoningEffort_REASONING_EFFORT_MEDIUM:
+		return genai.ThinkingLevelMedium
+	case v1.ReasoningEffort_REASONING_EFFORT_HIGH, v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH, v1.ReasoningEffort_REASONING_EFFORT_MAX:
+		return genai.ThinkingLevelHigh
+	default:
+		return genai.ThinkingLevelUnspecified
 	}
 }

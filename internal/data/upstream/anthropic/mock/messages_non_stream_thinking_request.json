@@ -1,0 +1,28 @@
+{
+  "model": "anthropic/claude-sonnet-4.6",
+  "max_tokens": 4096,
+  "metadata": {
+    "user_id": "anthropic-conversion-fixture-user"
+  },
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 2048
+  },
+  "system": [
+    {
+      "type": "text",
+      "text": "You are a conversion-test assistant. Reason through the trade-offs before giving a final recommendation."
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "A router can send a request to one of three upstreams. OpenAI: wait 1800 ms, error rate 0.12. Anthropic: wait 120 ms, error rate 0.01. Gemini: wait 400 ms, error rate 0.04. A failed request is retried once on the same upstream. Reason step by step about which upstream minimizes expected total latency including the retry, then end with a single sentence starting with 'Recommendation:'."
+        }
+      ]
+    }
+  ]
+}

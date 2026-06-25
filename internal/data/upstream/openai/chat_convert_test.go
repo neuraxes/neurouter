@@ -751,13 +751,13 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 	})
 }
 
-func TestConvertChunkFromOpenAIChat(t *testing.T) {
-	client := &openAIChatStreamClient{}
-
-	Convey("Test convertChunkFromOpenAIChat", t, func() {
+func TestConvertStreamChunkFromOpenAIChat(t *testing.T) {
+	Convey("Test convertStreamChunkFromOpenAIChat", t, func() {
 		Convey("with content", func() {
+			client := &openAIChatStreamClient{}
 			chunk := &openai.ChatCompletionChunk{
-				ID: "chatcmpl-1",
+				ID:    "chatcmpl-1",
+				Model: "gpt-4o",
 				Choices: []openai.ChatCompletionChunkChoice{
 					{
 						Delta: openai.ChatCompletionChunkChoiceDelta{
@@ -767,13 +767,19 @@ func TestConvertChunkFromOpenAIChat(t *testing.T) {
 				},
 			}
 
-			resp := client.convertChunkFromOpenAIChat(chunk)
-			So(resp.Id, ShouldEqual, "chatcmpl-1")
-			So(resp.Message.Id, ShouldBeEmpty)
-			So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Hello")
+			events := client.convertStreamChunkFromOpenAIChat(chunk)
+			So(len(events), ShouldEqual, 3)
+			So(events[0].GetMessageStart(), ShouldNotBeNil)
+			So(events[0].GetMessageStart().GetModel(), ShouldEqual, "gpt-4o")
+			So(events[1].GetContentStart(), ShouldNotBeNil)
+			So(events[1].GetContentStart().Index, ShouldEqual, 0)
+			So(events[1].GetContentStart().GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_NORMAL)
+			So(events[2].GetContentDelta().Index, ShouldEqual, 0)
+			So(events[2].GetContentDelta().GetText(), ShouldEqual, "Hello")
 		})
 
 		Convey("with usage statistics", func() {
+			client := &openAIChatStreamClient{}
 			chunk := &openai.ChatCompletionChunk{
 				ID: "msg-1",
 				Choices: []openai.ChatCompletionChunkChoice{
@@ -789,12 +795,15 @@ func TestConvertChunkFromOpenAIChat(t *testing.T) {
 				},
 			}
 
-			resp := client.convertChunkFromOpenAIChat(chunk)
-			So(resp.Statistics.Usage.InputTokens, ShouldEqual, 5)
-			So(resp.Statistics.Usage.OutputTokens, ShouldEqual, 10)
+			events := client.convertStreamChunkFromOpenAIChat(chunk)
+			last := events[len(events)-1]
+			So(last.GetMessageStop(), ShouldNotBeNil)
+			So(last.GetUsage().GetInputTokens(), ShouldEqual, 5)
+			So(last.GetUsage().GetOutputTokens(), ShouldEqual, 10)
 		})
 
 		Convey("with function tool call", func() {
+			client := &openAIChatStreamClient{}
 			chunk := &openai.ChatCompletionChunk{
 				ID: "chatcmpl-1",
 				Choices: []openai.ChatCompletionChunkChoice{
@@ -816,22 +825,18 @@ func TestConvertChunkFromOpenAIChat(t *testing.T) {
 				},
 			}
 
-			resp := client.convertChunkFromOpenAIChat(chunk)
-			So(resp.Id, ShouldEqual, "chatcmpl-1")
-			So(resp.Message.Id, ShouldBeEmpty)
-			So(resp.Message.Contents, ShouldHaveLength, 1)
-			So(resp.Message.Contents[0].Index, ShouldNotBeNil)
-			So(*resp.Message.Contents[0].Index, ShouldEqual, 1)
-			functionCall := resp.Message.Contents[0].GetToolUse()
-			So(functionCall.GetId(), ShouldEqual, "tool-1")
-			So(functionCall.GetName(), ShouldEqual, "my_func")
-			So(functionCall.GetTextualInput(), ShouldEqual, "{\"foo\":1}")
+			events := client.convertStreamChunkFromOpenAIChat(chunk)
+			So(len(events), ShouldEqual, 3)
+			So(events[1].GetContentStart(), ShouldNotBeNil)
+			So(events[1].GetContentStart().GetToolUse().GetId(), ShouldEqual, "tool-1")
+			So(events[1].GetContentStart().GetToolUse().GetName(), ShouldEqual, "my_func")
+			So(events[2].GetContentDelta().GetToolInputText(), ShouldEqual, "{\"foo\":1}")
 		})
 	})
 }
 
-func TestConvertStatisticsFromOpenAI(t *testing.T) {
-	Convey("Test convertStatisticsFromOpenAI", t, func() {
+func TestConvertStatisticsFromOpenAIChat(t *testing.T) {
+	Convey("Test convertStatisticsFromOpenAIChat", t, func() {
 		Convey("with nil usage", func() {
 			result := convertStatisticsFromOpenAIChat(nil)
 

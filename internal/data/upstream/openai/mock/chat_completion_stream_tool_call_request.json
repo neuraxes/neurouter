@@ -1,0 +1,64 @@
+{
+  "model": "openai/gpt-5.4-mini",
+  "max_completion_tokens": 1024,
+  "reasoning_effort": "none",
+  "stream": true,
+  "stream_options": {
+    "include_usage": true
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "You are a conversion-test assistant. Briefly note the date, then call the weather tool exactly once."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "First state today's date in one short sentence, then call get_weather for Shanghai on 2025-11-10. Do not answer the weather from memory."
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Look up historical weather for a city on a specific date.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name in English."
+            },
+            "date": {
+              "type": "string",
+              "description": "Date in YYYY-MM-DD format."
+            },
+            "units": {
+              "type": "string",
+              "description": "Temperature unit.",
+              "enum": [
+                "metric",
+                "imperial"
+              ]
+            }
+          },
+          "required": [
+            "city",
+            "date"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

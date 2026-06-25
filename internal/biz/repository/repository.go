@@ -21,9 +21,9 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-// ChatStreamServer defines the server-side interface for sending chat responses.
+// ChatStreamServer defines the server-side interface for sending chat events.
 type ChatStreamServer interface {
-	Send(*entity.ChatResp) error
+	Send(*entity.ChatEvent) error
 }
 
 type Repo any
@@ -35,7 +35,7 @@ type ChatRepo interface {
 	// Chat performs a synchronous chat interaction.
 	Chat(context.Context, *entity.ChatReq) (*entity.ChatResp, error)
 	// ChatStream initiates a streaming chat interaction.
-	ChatStream(context.Context, *entity.ChatReq) iter.Seq2[*entity.ChatResp, error]
+	ChatStream(context.Context, *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error]
 }
 
 // EmbeddingRepo defines the interface for embedding operations.

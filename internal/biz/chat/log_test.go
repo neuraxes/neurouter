@@ -19,7 +19,6 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
-	"k8s.io/utils/ptr"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/util"
@@ -32,12 +31,12 @@ func TestPrintChat(t *testing.T) {
 			Id:    "req-id",
 			Model: "gemini-2.5-pro",
 			Config: &v1.GenerationConfig{
-				MaxTokens:        ptr.To[int64](128),
-				Temperature:      ptr.To[float32](0.7),
-				TopP:             ptr.To[float32](0.1),
-				TopK:             ptr.To[int64](40),
-				FrequencyPenalty: ptr.To[float32](0.1),
-				PresencePenalty:  ptr.To[float32](0.2),
+				MaxTokens:        new(int64(128)),
+				Temperature:      new(float32(0.7)),
+				TopP:             new(float32(0.1)),
+				TopK:             new(int64(40)),
+				FrequencyPenalty: new(float32(0.1)),
+				PresencePenalty:  new(float32(0.2)),
 				ReasoningConfig: &v1.ReasoningConfig{
 					Effort:      v1.ReasoningEffort_REASONING_EFFORT_MEDIUM,
 					TokenBudget: 2048,
@@ -149,7 +148,7 @@ func TestPrintChat(t *testing.T) {
 								Name: "get_weather",
 								Inputs: []*v1.ToolUse_Input{
 									{
-										Index: ptr.To[uint32](0),
+										Index: new(uint32(0)),
 										Input: &v1.ToolUse_Input_Text{
 											Text: `{"location": "San Francisco"}`,
 										},

@@ -72,8 +72,6 @@ enum ContentPhase {
   CONTENT_PHASE_OUTCOME = 1;
   // Reasoning content.
   CONTENT_PHASE_REASONING = 2;
-  // Reasoning summary content.
-  CONTENT_PHASE_REASONING_SUMMARY = 3;
 }
 
 // Multi-modality content
@@ -86,6 +84,8 @@ message Content {
   ContentPhase phase = 3;
   // Provider-supplied verification signature for this content.
   string signature = 4;
+  // Additional metadata for the content
+  map<string, string> metadata = 9;
   oneof content {
     Text text = 10;
     Image image = 11;

@@ -1,0 +1,84 @@
+event: message_start
+data: {"type":"message_start","message":{"id":"gen-1782639618-FBlJV7iR8SzgzHP8zhu2","type":"message","role":"assistant","container":null,"content":[],"model":"anthropic/claude-4.6-sonnet-20260217","stop_reason":null,"stop_details":null,"stop_sequence":null,"usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":null,"cache_read_input_tokens":null,"cache_creation":null,"inference_geo":null,"server_tool_use":null,"service_tier":null,"speed":"standard"},"provider":"Anthropic"}}
+
+event: content_block_start
+data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"The"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" user wants me to choose the best provider based on wait_ms and error_rate metrics:\n\n- OpenAI: wait_ms=1800, error_rate="}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"0.12\n- Anthropic: wait_ms=120, error_rate=0.01\n- Gemini: wait_ms=400, error_rate=0.04\n\nAnthropic clearly"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" wins on both metrics - lowest wait time (120ms) and lowest error rate"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" (0.01). I'll route to Anthropic."}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"EpMECmUIDxgCKkAMzSFbICKIRiy28yCmtpHD3W9xVqM7a1tdgOfnhh2zP4kJNR+mpQvy1AYiedPeMPVurbAPgpsmE0T9mUQRP90lMhFjbGF1ZGUtc29ubmV0LTQtNjgAQgh0aGlua2luZxIMbRhXZGm0zbkQLdU7GgyvCHsg1q7KPIAqmSsiMF9xvEpD7sZkb8t4vAYmEv2iYzDJ7n1vZJoMsPW/AkGYSkmPESFMHkfgSQEVZOJigSrbAmEtLfVMUEl8cv/vC6wEtvygtHjSqgj5kkgGD/ZBVEpAphcir6NrXzkl5LrkxSLoXBB9rjE1TrLdFOol57PRiNuedenRQTyIR94yBdGymzmTXNjOBAeCkNEF0VQgPA5zN982qnvDH5h0vfp8f+JVue02J3sCZOdRQ9fQGLIqK2zNxk5AKbFxYTZSOG1zdAth26ZhVdrElqUpw/4KKm0Z7bYHjVwa1nbBzKMFWOVgPhwSPUoyTwM96OP8vjsj3aoLtSfxyLebJQYn6RGz/IxjtHMOn6uhLTMQoPC4yRDUXpOYnpSdnjayU5uTAIIND22SNc3px1KPagoBbjq9MFmB3eCRsisiIw6GSqshd8IJEH/nn3BWRy1dmuc2T4wyYKdAiaDWwfZ2eY7ZhBL1t+Pq1JB7JJGICMLqz456kj3r1hqDCqMq04vHPFrPIttjY2RUIPSP4JhENa7emTkkGAE="}}
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":0}
+
+event: content_block_start
+data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":"","citations":[]}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Anthropic is the clear winner here —"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" it has both the **lowest wait time** (120 ms vs. 400"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" ms and 1800 ms) and the **lowest error rate** (0.01 vs. 0.04 and 0.12). No"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" trade-off needed; I'll route straight to Anthropic."}}
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":1}
+
+event: content_block_start
+data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"toolu_01GqmkpGoJRfAT2zBdva1bgV","caller":{"type":"direct"},"name":"get_route_decision","input":{}}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"request_id\": \"req_fixture_stream_001"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\", \"provider\": \"anthropic"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\", \"observed_wait_ms\": 120"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":", \"reason\": \"Anthropic has the lowest wait time (120 ms) and the lowest error rate (0.01),"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":" outperforming both OpenAI and Gemini on every relevant metric."}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"}"}}
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":2}
+
+event: content_block_start
+data: {"type":"content_block_start","index":3,"content_block":{"type":"redacted_thinking","data":"openrouter.reasoning:eyJzaWduYXR1cmUiOiJFcE1FQ21VSUR4Z0NLa0FNelNGYklDS0lSaXkyOHlDbXRwSEQzVzl4VnFNN2ExdGRnT2ZuaGgyelA0a0pOUittcFF2eTFBWWllZFBlTVBWdXJiQVBncHNtRTBUOW1VUVJQOTBsTWhGamJHRjFaR1V0YzI5dWJtVjBMVFF0TmpnQVFnaDBhR2x1YTJsdVp4SU1iUmhYWkdtMHpia1FMZFU3R2d5dkNIc2cxcTdLUElBcW1Tc2lNRjl4dkVwRDdzWmtiOHQ0dkFZbUV2MmlZekRKN24xdlpKb01zUFcvQWtHWVNrbVBFU0ZNSGtmZ1NRRVZaT0ppZ1NyYkFtRXRMZlZNVUVsOGN2L3ZDNndFdHZ5Z3RIalNxZ2o1a2tnR0QvWkJWRXBBcGhjaXI2TnJYemtsNUxya3hTTG9YQkI5cmpFMVRyTGRGT29sNTdQUmlOdWVkZW5SUVR5SVI5NHlCZEd5bXptVFhOak9CQWVDa05FRjBWUWdQQTV6Tjk4MnFudkRINWgwdmZwOGYrSlZ1ZTAySjNzQ1pPZFJROWZRR0xJcUsyek54azVBS2JGeFlUWlNPRzF6ZEF0aDI2WmhWZHJFbHFVcHcvNEtLbTBaN2JZSGpWd2ExbmJCektNRldPVmdQaHdTUFVveVR3TTk2T1A4dmpzajNhb0x0U2Z4eUxlYkpRWW42Ukd6L0l4anRITU9uNnVoTFRNUW9QQzR5UkRVWHBPWW5wU2RuamF5VTV1VEFJSU5EMjJTTmMzcHgxS1BhZ29CYmpxOU1GbUIzZUNSc2lzaUl3NkdTcXNoZDhJSkVIL25uM0JXUnkxZG11YzJUNHd5WUtkQWlhRFd3ZloyZVk3WmhCTDF0K1BxMUpCN0pKR0lDTUxxejQ1NmtqM3IxaHFEQ3FNcTA0dkhQRnJQSXR0alkyUlVJUFNQNEpoRU5hN2VtVGtrR0FFPSIsInRleHQiOiJUaGUgdXNlciB3YW50cyBtZSB0byBjaG9vc2UgdGhlIGJlc3QgcHJvdmlkZXIgYmFzZWQgb24gd2FpdF9tcyBhbmQgZXJyb3JfcmF0ZSBtZXRyaWNzOlxuXG4tIE9wZW5BSTogd2FpdF9tcz0xODAwLCBlcnJvcl9yYXRlPTAuMTJcbi0gQW50aHJvcGljOiB3YWl0X21zPTEyMCwgZXJyb3JfcmF0ZT0wLjAxXG4tIEdlbWluaTogd2FpdF9tcz00MDAsIGVycm9yX3JhdGU9MC4wNFxuXG5BbnRocm9waWMgY2xlYXJseSB3aW5zIG9uIGJvdGggbWV0cmljcyAtIGxvd2VzdCB3YWl0IHRpbWUgKDEyMG1zKSBhbmQgbG93ZXN0IGVycm9yIHJhdGUgKDAuMDEpLiBJJ2xsIHJvdXRlIHRvIEFudGhyb3BpYy4iLCJ0eXBlIjoicmVhc29uaW5nLnRleHQifQ=="}}
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":3}
+
+event: message_delta
+data: {"type":"message_delta","delta":{"container":null,"stop_details":null,"stop_reason":"tool_use","stop_sequence":null},"usage":{"input_tokens":743,"output_tokens":360,"output_tokens_details":{"thinking_tokens":87},"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"server_tool_use":null,"service_tier":"standard","speed":"standard","cost":0.007629,"is_byok":false,"cost_details":{"upstream_inference_cost":0.007629,"upstream_inference_prompt_cost":0.002229,"upstream_inference_completions_cost":0.0054}},"context_management":null}
+
+event: message_stop
+data: {"type":"message_stop"}
+
+event: data
+data: [DONE]
+

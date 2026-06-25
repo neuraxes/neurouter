@@ -103,11 +103,13 @@ message OpenAIConfig {
   map<string, string> headers = 3;
   // Use the Responses API instead of the Chat Completions API.
   bool use_responses_api = 4;
-  bool prefer_string_content_for_system = 5;
-  bool prefer_string_content_for_user = 6;
-  bool prefer_string_content_for_assistant = 7;
-  bool prefer_string_content_for_tool = 8;
-  bool prefer_single_part_content = 9;
+  // Whether to adapt the reasoning content as raw CoT instead of summary.
+  bool responses_use_raw_reasoning = 5;
+  bool prefer_string_content_for_system = 6;
+  bool prefer_string_content_for_user = 7;
+  bool prefer_string_content_for_assistant = 8;
+  bool prefer_string_content_for_tool = 9;
+  bool prefer_single_part_content = 10;
 }
 
 message GoogleConfig {

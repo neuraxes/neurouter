@@ -1,637 +1,175 @@
+// Copyright 2024 Neurouter Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package anthropic
 
 import (
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"testing"
+
+	"github.com/go-kratos/kratos/v2/log"
+	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/neuraxes/neurouter/internal/biz/entity"
-	"github.com/neuraxes/neurouter/internal/util"
-	"k8s.io/utils/ptr"
+	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic/mock"
 )
 
-var mockChatReq = &entity.ChatReq{
-	Id:    "mock_chat_id",
-	Model: "claude-haiku-4-5-20251001-thinking",
-	Config: &v1.GenerationConfig{
-		Temperature: ptr.To[float32](0),
-		ReasoningConfig: &v1.ReasoningConfig{
-			Effort: v1.ReasoningEffort_REASONING_EFFORT_HIGH,
-		},
-	},
-	Messages: []*v1.Message{
-		{
-			Role: v1.Role_SYSTEM,
-			Contents: []*v1.Content{
-				{
-					Content: v1.NewTextContent("You are helpful assistant."),
-				},
-			},
-		},
-		{
-			Role: v1.Role_USER,
-			Contents: []*v1.Content{
-				{
-					Content: v1.NewTextContent("hi, how are you?"),
-				},
-				{
-					Content: v1.NewTextContent("and how is the weather yesterday in shanghai?"),
-				},
-			},
-		},
-		{
-			Id:   "msg_01FeLCgp5aXpvMXRV6pxB9FS",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Signature: "Ep4ECkgICRABGAIqQPDbGoDv1NFNPOMhf8vnh3ThJJnizSYc3/qCq21j8CAwGCwTEcrY/ctoXRntgx/1cvl3mEfFEECC5LMfgJLVcQESDHKtOYoRTWm6f2jcRhoM9h+b/XKb6bxWHrScIjBD/7A9wL/wrdLHbMSM4YVrMXw7ZUQIMpTkYRWAhCMhY25FVp5KkkV2FoHQ29XQ7nAqgwMXVaVyxVPJJMQHhat2xNtBfsOafMu5TBeR+f1LjPMqdoz55nrTWGE5K2yO00BTDIFv4wf8jtbZHC1EskLkqWej1lt/wIL2fS3ZbcgPkaclKlPjGtWrGaCdgcjLYeK1BiiepbwepZWGSPfEduaLqQBkJSFB7ykbqbSk+gCKFfV1nQVRuBWQ5fJnK/59a9YjrBlizasV4d0QRA4Z1+NniaZh7Zh2s6/hOGFJHb3Aqypxiy/GFb34tkCojj6u8tF2tyBL0J/d09z+lZ/Sc4rCkfjya9/rx4QRKy42v2Cn+1fO5f90Fs5Dw8sL4czPVoD6bYNZE1AVHb5Vgu7tN22hYdxFzaR+vhhEtIwGs32IgWS5jRRR5LsZoEzaDFo3HyE5R1sZyE0E79tojMFmndvIvYQuybOEb/nqyJm1ua9jdmL+M1yNHBuO0NWB2Jh0c0IlsTre5enlLQrjTiwCmtMacdrsVJViUW2nkBEOUBudHu6bZkS1Fqe0Ro/7dSjYQyhBqUeJnvYYAQ==",
-					Content:   v1.NewTextContent("The user is asking two things:\n1. How am I? - This is a greeting\n2. What was the weather yesterday in Shanghai?\n\nFor the second part, I need to:\n1. First get today's date using get_date\n2. Then calculate yesterday's date\n3. Then get the weather for Shanghai on yesterday's date\n\nLet me start by getting today's date first, since I need that to determine yesterday's date."),
-				},
-				{
-					Content: &v1.Content_ToolUse{
-						ToolUse: &v1.ToolUse{
-							Id:   "toolu_011QvMN77rhma12jw2ETcneN",
-							Name: "get_date",
-							Inputs: []*v1.ToolUse_Input{
-								{
-									Input: &v1.ToolUse_Input_Text{
-										Text: "{}",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Role: v1.Role_USER,
-			Contents: []*v1.Content{
-				{
-					Content: &v1.Content_ToolResult{
-						ToolResult: &v1.ToolResult{
-							Id: "toolu_011QvMN77rhma12jw2ETcneN",
-							Outputs: []*v1.ToolResult_Output{
-								{
-									Output: &v1.ToolResult_Output_Text{
-										Text: `{"date":"2025-11-11"}`,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
-	Tools: []*v1.Tool{
-		{
-			Tool: &v1.Tool_Function_{
-				Function: &v1.Tool_Function{
-					Name:        "get_date",
-					Description: "Get today's date",
-					InputSchema: util.MustStructFromMap(map[string]any{
-						"type":       "object",
-						"properties": map[string]any{},
-					}),
-				},
-			},
-		},
-		{
-			Tool: &v1.Tool_Function_{
-				Function: &v1.Tool_Function{
-					Name:        "get_weather",
-					Description: "Get weather for specific date",
-					InputSchema: util.MustStructFromMap(map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"city": map[string]any{
-								"type":        "string",
-								"description": "The name of the city",
-							},
-							"date": map[string]any{
-								"type":        "string",
-								"description": "The date to get the weather for",
-							},
-						},
-						"required": []string{"city", "date"},
-					}),
-				},
-			},
-		},
-	},
+var testConfig = &conf.AnthropicConfig{
+	BaseUrl: "https://api.anthropic.com/",
+	ApiKey:  "test-key",
 }
 
-var mockMessagesRequetBody = `{
-    "max_tokens": 8192,
-    "messages": [
-        {
-            "content": [
-                {
-                    "text": "hi, how are you?",
-                    "type": "text"
-                },
-				{
-                    "text": "and how is the weather yesterday in shanghai?",
-                    "type": "text"
-                }
-            ],
-            "role": "user"
-        },
-        {
-            "content": [
-                {
-                    "signature": "Ep4ECkgICRABGAIqQPDbGoDv1NFNPOMhf8vnh3ThJJnizSYc3/qCq21j8CAwGCwTEcrY/ctoXRntgx/1cvl3mEfFEECC5LMfgJLVcQESDHKtOYoRTWm6f2jcRhoM9h+b/XKb6bxWHrScIjBD/7A9wL/wrdLHbMSM4YVrMXw7ZUQIMpTkYRWAhCMhY25FVp5KkkV2FoHQ29XQ7nAqgwMXVaVyxVPJJMQHhat2xNtBfsOafMu5TBeR+f1LjPMqdoz55nrTWGE5K2yO00BTDIFv4wf8jtbZHC1EskLkqWej1lt/wIL2fS3ZbcgPkaclKlPjGtWrGaCdgcjLYeK1BiiepbwepZWGSPfEduaLqQBkJSFB7ykbqbSk+gCKFfV1nQVRuBWQ5fJnK/59a9YjrBlizasV4d0QRA4Z1+NniaZh7Zh2s6/hOGFJHb3Aqypxiy/GFb34tkCojj6u8tF2tyBL0J/d09z+lZ/Sc4rCkfjya9/rx4QRKy42v2Cn+1fO5f90Fs5Dw8sL4czPVoD6bYNZE1AVHb5Vgu7tN22hYdxFzaR+vhhEtIwGs32IgWS5jRRR5LsZoEzaDFo3HyE5R1sZyE0E79tojMFmndvIvYQuybOEb/nqyJm1ua9jdmL+M1yNHBuO0NWB2Jh0c0IlsTre5enlLQrjTiwCmtMacdrsVJViUW2nkBEOUBudHu6bZkS1Fqe0Ro/7dSjYQyhBqUeJnvYYAQ==",
-                    "thinking": "The user is asking two things:\n1. How am I? - This is a greeting\n2. What was the weather yesterday in Shanghai?\n\nFor the second part, I need to:\n1. First get today's date using get_date\n2. Then calculate yesterday's date\n3. Then get the weather for Shanghai on yesterday's date\n\nLet me start by getting today's date first, since I need that to determine yesterday's date.",
-                    "type": "thinking"
-                },
-                {
-                    "id": "toolu_011QvMN77rhma12jw2ETcneN",
-                    "input": {},
-                    "name": "get_date",
-                    "type": "tool_use"
-                }
-            ],
-            "role": "assistant"
-        },
-        {
-            "content": [
-                {
-                    "tool_use_id": "toolu_011QvMN77rhma12jw2ETcneN",
-                    "content": [
-                        {
-                            "text": "{\"date\":\"2025-11-11\"}",
-                            "type": "text"
-                        }
-                    ],
-                    "type": "tool_result"
-                }
-            ],
-            "role": "user"
-        }
-    ],
-    "model": "claude-haiku-4-5-20251001-thinking",
-    "output_config": {
-        "effort": "high"
-    },
-    "temperature": 0,
-    "system": [
-        {
-            "text": "You are helpful assistant.",
-            "type": "text"
-        }
-    ],
-    "thinking": {
-        "type": "adaptive"
-    },
-    "tools": [
-        {
-            "input_schema": {
-                "properties": {},
-                "type": "object"
-            },
-            "name": "get_date",
-            "description": "Get today's date"
-        },
-        {
-            "input_schema": {
-                "properties": {
-                    "city": {
-                        "type": "string",
-                        "description": "The name of the city"
-                    },
-                    "date": {
-                        "type": "string",
-                        "description": "The date to get the weather for"
-                    }
-                },
-                "required": [
-                    "city",
-                    "date"
-                ],
-                "type": "object"
-            },
-            "name": "get_weather",
-            "description": "Get weather for specific date"
-        }
-    ]
-}`
-
-var mockMessagesResponseBody = `{
-    "model": "claude-haiku-4-5-20251001-thinking",
-    "id": "msg_01WoXFLH9R6UTE86iV53LFwk",
-    "type": "message",
-    "role": "assistant",
-    "content": [
-        {
-            "type": "text",
-            "text": "Now let me get the weather for Shanghai yesterday:"
-        },
-        {
-            "type": "tool_use",
-            "id": "toolu_01RVxboZAP9EKN3ShcyL8tN6",
-            "name": "get_weather",
-            "input": {"city":"Shanghai","date":"2025-11-10"}
-        }
-    ],
-    "stop_reason": "tool_use",
-    "stop_sequence": null,
-    "usage": {
-        "input_tokens": 840,
-        "cache_creation_input_tokens": 0,
-        "cache_read_input_tokens": 0,
-        "output_tokens": 86
-    }
-}`
-
-var mockChatResp = &entity.ChatResp{
-	Id:     "mock_chat_id",
-	Model:  "claude-haiku-4-5-20251001-thinking",
-	Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
-	Message: &v1.Message{
-		Id:   "msg_01WoXFLH9R6UTE86iV53LFwk",
-		Role: v1.Role_MODEL,
-		Contents: []*v1.Content{
-			{
-				Content: v1.NewTextContent("Now let me get the weather for Shanghai yesterday:"),
-			},
-			{
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Id:   "toolu_01RVxboZAP9EKN3ShcyL8tN6",
-						Name: "get_weather",
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: `{"city":"Shanghai","date":"2025-11-10"}`,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
-	Statistics: &v1.Statistics{
-		Usage: &v1.Usage{
-			InputTokens:  840,
-			OutputTokens: 86,
-		},
-	},
+// jsonMap unmarshals a JSON document into a map for order-independent comparison.
+func jsonMap(data []byte) map[string]any {
+	var m map[string]any
+	So(json.Unmarshal(data, &m), ShouldBeNil)
+	return m
 }
 
-var mockMessagesStreamRequetBody = `{
-    "max_tokens": 8192,
-    "messages": [
-        {
-            "content": [
-                {
-                    "text": "hi, how are you?",
-                    "type": "text"
-                },
-				{
-                    "text": "and how is the weather yesterday in shanghai?",
-                    "type": "text"
-                }
-            ],
-            "role": "user"
-        },
-        {
-            "content": [
-                {
-                    "signature": "Ep4ECkgICRABGAIqQPDbGoDv1NFNPOMhf8vnh3ThJJnizSYc3/qCq21j8CAwGCwTEcrY/ctoXRntgx/1cvl3mEfFEECC5LMfgJLVcQESDHKtOYoRTWm6f2jcRhoM9h+b/XKb6bxWHrScIjBD/7A9wL/wrdLHbMSM4YVrMXw7ZUQIMpTkYRWAhCMhY25FVp5KkkV2FoHQ29XQ7nAqgwMXVaVyxVPJJMQHhat2xNtBfsOafMu5TBeR+f1LjPMqdoz55nrTWGE5K2yO00BTDIFv4wf8jtbZHC1EskLkqWej1lt/wIL2fS3ZbcgPkaclKlPjGtWrGaCdgcjLYeK1BiiepbwepZWGSPfEduaLqQBkJSFB7ykbqbSk+gCKFfV1nQVRuBWQ5fJnK/59a9YjrBlizasV4d0QRA4Z1+NniaZh7Zh2s6/hOGFJHb3Aqypxiy/GFb34tkCojj6u8tF2tyBL0J/d09z+lZ/Sc4rCkfjya9/rx4QRKy42v2Cn+1fO5f90Fs5Dw8sL4czPVoD6bYNZE1AVHb5Vgu7tN22hYdxFzaR+vhhEtIwGs32IgWS5jRRR5LsZoEzaDFo3HyE5R1sZyE0E79tojMFmndvIvYQuybOEb/nqyJm1ua9jdmL+M1yNHBuO0NWB2Jh0c0IlsTre5enlLQrjTiwCmtMacdrsVJViUW2nkBEOUBudHu6bZkS1Fqe0Ro/7dSjYQyhBqUeJnvYYAQ==",
-                    "thinking": "The user is asking two things:\n1. How am I? - This is a greeting\n2. What was the weather yesterday in Shanghai?\n\nFor the second part, I need to:\n1. First get today's date using get_date\n2. Then calculate yesterday's date\n3. Then get the weather for Shanghai on yesterday's date\n\nLet me start by getting today's date first, since I need that to determine yesterday's date.",
-                    "type": "thinking"
-                },
-                {
-                    "id": "toolu_011QvMN77rhma12jw2ETcneN",
-                    "input": {},
-                    "name": "get_date",
-                    "type": "tool_use"
-                }
-            ],
-            "role": "assistant"
-        },
-        {
-            "content": [
-                {
-                    "tool_use_id": "toolu_011QvMN77rhma12jw2ETcneN",
-                    "content": [
-                        {
-                            "text": "{\"date\":\"2025-11-11\"}",
-                            "type": "text"
-                        }
-                    ],
-                    "type": "tool_result"
-                }
-            ],
-            "role": "user"
-        }
-    ],
-    "model": "claude-haiku-4-5-20251001-thinking",
-    "output_config": {
-        "effort": "high"
-    },
-	"stream": true,
-    "temperature": 0,
-    "system": [
-        {
-            "text": "You are helpful assistant.",
-            "type": "text"
-        }
-    ],
-    "thinking": {
-        "type": "adaptive"
-    },
-    "tools": [
-        {
-            "input_schema": {
-                "properties": {},
-                "type": "object"
-            },
-            "name": "get_date",
-            "description": "Get today's date"
-        },
-        {
-            "input_schema": {
-                "properties": {
-                    "city": {
-                        "type": "string",
-                        "description": "The name of the city"
-                    },
-                    "date": {
-                        "type": "string",
-                        "description": "The date to get the weather for"
-                    }
-                },
-                "required": [
-                    "city",
-                    "date"
-                ],
-                "type": "object"
-            },
-            "name": "get_weather",
-            "description": "Get weather for specific date"
-        }
-    ]
-}`
+// mockResponder builds a DoFunc that asserts the outgoing request envelope
+// (method, endpoint, auth and content-type headers), records the request body
+// into captured, and replies with the given response content type and body.
+func mockResponder(responseContentType string, responseBody []byte, captured *[]byte) func(*http.Request) (*http.Response, error) {
+	return func(httpReq *http.Request) (*http.Response, error) {
+		So(httpReq.Method, ShouldEqual, http.MethodPost)
+		So(httpReq.URL.String(), ShouldEqual, "https://api.anthropic.com/v1/messages")
+		So(httpReq.Header.Get("x-api-key"), ShouldEqual, "test-key")
+		So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
 
-var mockMessagesStreamResponseBody = `event: message_start
-data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_016m3rsWB3U7eYBEKjTRSruv","type":"message","role":"assistant","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":840,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":1}}}
+		body, err := io.ReadAll(httpReq.Body)
+		So(err, ShouldBeNil)
+		*captured = body
 
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{responseContentType}},
+			Body:       io.NopCloser(bytes.NewReader(responseBody)),
+		}, nil
+	}
+}
 
-event: content_block_start
-data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}
+func TestChat(t *testing.T) {
+	Convey("Given the anthropic upstream conversion fixtures", t, func() {
+		for _, fixture := range mock.Fixtures {
+			if fixture.Stream {
+				continue
+			}
 
+			Convey("When Chat runs the "+fixture.Name+" fixture", func() {
+				mockClient := &mockHTTPClient{}
+				repo, err := newAnthropicUpstreamWithClient(testConfig, mockClient, log.DefaultLogger)
+				So(err, ShouldBeNil)
 
-event: content_block_delta
-data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"OK~ "}}
+				var capturedBody []byte
+				mockClient.DoFunc = mockResponder("application/json", fixture.Response, &capturedBody)
 
+				resp, err := repo.Chat(context.Background(), fixture.ChatReq)
+				So(err, ShouldBeNil)
 
-event: content_block_stop
-data: {"type":"content_block_stop","index":0}
+				Convey("Then the request body matches the fixture request", func() {
+					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
+				})
 
+				Convey("Then the response converts to the expected ChatResp", func() {
+					So(proto.Equal(resp, fixture.ChatResp), ShouldBeTrue)
+				})
+			})
+		}
 
-event: content_block_start
-data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Now"}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" let me get the weather for Shanghai yesterday"}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" (2025-11-10):"}}
-
-
-event: content_block_stop
-data: {"type":"content_block_stop","index":1}
-
-
-event: content_block_start
-data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"toolu_016VE91YZYshFFPSevawmcDH","name":"get_weather","input":{}}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":""}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"city\": \"Shanghai\""}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":", \"date\": "}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"2025-11-10"}}
-
-
-event: content_block_delta
-data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"}"}}
-
-
-event: content_block_stop
-data: {"type":"content_block_stop","index":2}
-
-
-event: message_delta
-data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null},"usage":{"output_tokens":93}}
-
-
-event: message_stop
-data: {"type":"message_stop","amazon-bedrock-invocationMetrics":{"inputTokenCount":840,"outputTokenCount":93,"invocationLatency":876,"firstByteLatency":455}}
-
-`
-
-var mockChatStreamResp = []*entity.ChatResp{
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   new(uint32(0)),
-				Content: v1.NewTextContent("OK~ "),
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   new(uint32(1)),
-				Content: v1.NewTextContent("Now"),
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   new(uint32(1)),
-				Content: v1.NewTextContent(" let me get the weather for Shanghai yesterday"),
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index:   new(uint32(1)),
-				Content: v1.NewTextContent(" (2025-11-10):"),
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Id:   "toolu_016VE91YZYshFFPSevawmcDH",
-						Name: "get_weather",
-					},
+		Convey("When the API call fails", func() {
+			mockClient := &mockHTTPClient{
+				DoFunc: func(*http.Request) (*http.Response, error) {
+					return nil, errors.New("network error")
 				},
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: "",
-								},
-							},
-						},
-					},
+			}
+			repo, err := newAnthropicUpstreamWithClient(testConfig, mockClient, log.DefaultLogger)
+			So(err, ShouldBeNil)
+
+			_, err = repo.Chat(context.Background(), mock.NonStreamMaxTokens.ChatReq)
+
+			Convey("Then it should return an error", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "network error")
+			})
+		})
+	})
+}
+
+func TestChatStream(t *testing.T) {
+	Convey("Given the anthropic upstream conversion fixtures", t, func() {
+		for _, fixture := range mock.Fixtures {
+			if !fixture.Stream {
+				continue
+			}
+
+			Convey("When ChatStream runs the "+fixture.Name+" fixture", func() {
+				mockClient := &mockHTTPClient{}
+				repo, err := newAnthropicUpstreamWithClient(testConfig, mockClient, log.DefaultLogger)
+				So(err, ShouldBeNil)
+
+				var capturedBody []byte
+				mockClient.DoFunc = mockResponder("text/event-stream", fixture.Response, &capturedBody)
+
+				seq := repo.ChatStream(context.Background(), fixture.ChatReq)
+				So(seq, ShouldNotBeNil)
+
+				var events []*entity.ChatEvent
+				for event, err := range seq {
+					So(err, ShouldBeNil)
+					So(event, ShouldNotBeNil)
+					events = append(events, event)
+				}
+
+				Convey("Then the request body matches the fixture request", func() {
+					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
+				})
+
+				Convey("Then the stream converts to the expected ChatEvents", func() {
+					So(len(events), ShouldEqual, len(fixture.ChatEvents))
+					for i := range events {
+						So(proto.Equal(events[i], fixture.ChatEvents[i]), ShouldBeTrue)
+					}
+				})
+			})
+		}
+
+		Convey("When the API call fails", func() {
+			mockClient := &mockHTTPClient{
+				DoFunc: func(*http.Request) (*http.Response, error) {
+					return nil, errors.New("network error")
 				},
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: "{\"city\": \"Shanghai\"",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: ", \"date\": ",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: "\"2025-11-10",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "claude-haiku-4-5-20251001",
-		Message: &v1.Message{
-			Id:   "msg_016m3rsWB3U7eYBEKjTRSruv",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Index: new(uint32(2)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: "\"}",
-								},
-							},
-						},
-					},
-				},
-			}},
-		},
-	},
-	{
-		Id:     "mock_chat_id",
-		Model:  "claude-haiku-4-5-20251001",
-		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
-		Statistics: &v1.Statistics{
-			Usage: &v1.Usage{
-				InputTokens:  840,
-				OutputTokens: 93,
-			},
-		},
-	},
+			}
+			repo, err := newAnthropicUpstreamWithClient(testConfig, mockClient, log.DefaultLogger)
+			So(err, ShouldBeNil)
+
+			seq := repo.ChatStream(context.Background(), mock.StreamThinkingText.ChatReq)
+			So(seq, ShouldNotBeNil)
+
+			Convey("Then it should return an error in the iterator", func() {
+				for resp, err := range seq {
+					So(resp, ShouldBeNil)
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldContainSubstring, "network error")
+				}
+			})
+		})
+	})
 }

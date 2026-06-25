@@ -518,7 +518,7 @@ func TestConvertToolMessageFromOpenAIChat(t *testing.T) {
 	})
 }
 
-func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
+func TestConvertChatMessageParamFromOpenAIChat(t *testing.T) {
 	Convey("Given a ChatCompletionMessageParamUnion to dispatch", t, func() {
 
 		Convey("When it is a developer message", func() {
@@ -529,7 +529,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatMessageFromOpenAIChat(msg)
+			result := convertChatMessageParamFromOpenAIChat(msg)
 
 			Convey("Then it should dispatch to developer converter", func() {
 				So(result, ShouldNotBeNil)
@@ -546,7 +546,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatMessageFromOpenAIChat(msg)
+			result := convertChatMessageParamFromOpenAIChat(msg)
 
 			Convey("Then it should dispatch to system converter", func() {
 				So(result, ShouldNotBeNil)
@@ -563,7 +563,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatMessageFromOpenAIChat(msg)
+			result := convertChatMessageParamFromOpenAIChat(msg)
 
 			Convey("Then it should dispatch to user converter", func() {
 				So(result, ShouldNotBeNil)
@@ -580,7 +580,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatMessageFromOpenAIChat(msg)
+			result := convertChatMessageParamFromOpenAIChat(msg)
 
 			Convey("Then it should dispatch to assistant converter", func() {
 				So(result, ShouldNotBeNil)
@@ -598,7 +598,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatMessageFromOpenAIChat(msg)
+			result := convertChatMessageParamFromOpenAIChat(msg)
 
 			Convey("Then it should dispatch to tool converter", func() {
 				So(result, ShouldNotBeNil)
@@ -611,7 +611,7 @@ func TestConvertChatMessageFromOpenAIChat(t *testing.T) {
 
 		Convey("When all fields are nil", func() {
 			msg := openai.ChatCompletionMessageParamUnion{}
-			result := convertChatMessageFromOpenAIChat(msg)
+			result := convertChatMessageParamFromOpenAIChat(msg)
 
 			Convey("Then it should return nil", func() {
 				So(result, ShouldBeNil)
@@ -1146,7 +1146,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 	})
 }
 
-func TestConvertEmbeddingReqFromOpenAIChat(t *testing.T) {
+func TestConvertEmbeddingReqFromOpenAI(t *testing.T) {
 	Convey("Given an OpenAI EmbeddingNewParams to convert", t, func() {
 
 		Convey("When input is a single string", func() {
@@ -1156,7 +1156,7 @@ func TestConvertEmbeddingReqFromOpenAIChat(t *testing.T) {
 					OfString: openai.Opt("Hello world"),
 				},
 			}
-			result := convertEmbeddingReqFromOpenAIChat(req)
+			result := convertEmbeddingReqFromOpenAI(req)
 
 			Convey("Then it should create an EmbedReq with text content", func() {
 				So(result.Model, ShouldEqual, "text-embedding-3-small")
@@ -1172,7 +1172,7 @@ func TestConvertEmbeddingReqFromOpenAIChat(t *testing.T) {
 					OfArrayOfStrings: []string{"first", "second"},
 				},
 			}
-			result := convertEmbeddingReqFromOpenAIChat(req)
+			result := convertEmbeddingReqFromOpenAI(req)
 
 			Convey("Then it should use the first string", func() {
 				So(result.Model, ShouldEqual, "text-embedding-3-large")
@@ -1188,7 +1188,7 @@ func TestConvertEmbeddingReqFromOpenAIChat(t *testing.T) {
 					OfArrayOfStrings: []string{},
 				},
 			}
-			result := convertEmbeddingReqFromOpenAIChat(req)
+			result := convertEmbeddingReqFromOpenAI(req)
 
 			Convey("Then contents should be empty", func() {
 				So(result.Contents, ShouldBeEmpty)
@@ -1199,7 +1199,7 @@ func TestConvertEmbeddingReqFromOpenAIChat(t *testing.T) {
 			req := &openai.EmbeddingNewParams{
 				Model: "text-embedding-3-small",
 			}
-			result := convertEmbeddingReqFromOpenAIChat(req)
+			result := convertEmbeddingReqFromOpenAI(req)
 
 			Convey("Then contents should be empty", func() {
 				So(result.Contents, ShouldBeEmpty)
@@ -1208,7 +1208,7 @@ func TestConvertEmbeddingReqFromOpenAIChat(t *testing.T) {
 	})
 }
 
-func TestConvertEmbeddingRespToOpenAIChat(t *testing.T) {
+func TestConvertEmbeddingRespToOpenAI(t *testing.T) {
 	Convey("Given an internal EmbedResp to convert", t, func() {
 
 		Convey("When embedding has values", func() {
@@ -1216,7 +1216,7 @@ func TestConvertEmbeddingRespToOpenAIChat(t *testing.T) {
 				Model:     "text-embedding-3-small",
 				Embedding: []float32{0.1, 0.2, 0.3, -0.5},
 			}
-			result := convertEmbeddingRespToOpenAIChat(resp)
+			result := convertEmbeddingRespToOpenAI(resp)
 
 			Convey("Then the response should have correct fields", func() {
 				So(result.Object, ShouldEqual, "list")
@@ -1236,7 +1236,7 @@ func TestConvertEmbeddingRespToOpenAIChat(t *testing.T) {
 				Model:     "text-embedding-3-small",
 				Embedding: []float32{},
 			}
-			result := convertEmbeddingRespToOpenAIChat(resp)
+			result := convertEmbeddingRespToOpenAI(resp)
 
 			Convey("Then the embedding should be empty", func() {
 				So(result.Data, ShouldHaveLength, 1)

@@ -1,0 +1,28 @@
+{
+  "model": "openai/gpt-4o",
+  "max_completion_tokens": 64,
+  "reasoning_effort": "none",
+  "stop": [
+    "5"
+  ],
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "You are a conversion-test assistant. Follow formatting instructions exactly and output nothing else."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Output the digits one through nine separated by single spaces, exactly like this: 1 2 3 4 5 6 7 8 9. Output only those digits and spaces, with no other words."
+        }
+      ]
+    }
+  ]
+}

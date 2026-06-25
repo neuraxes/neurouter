@@ -25,7 +25,44 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatCompletionNewParams) {
+func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCompletionNewParams {
+	openAIReq := openai.ChatCompletionNewParams{
+		Model: req.Model,
+	}
+
+	if req.Config != nil {
+		convertGenerationConfigToOpenAIChat(req.Config, &openAIReq)
+	}
+
+	for _, message := range req.Messages {
+		m := r.convertMessageToOpenAIChat(message)
+		openAIReq.Messages = append(openAIReq.Messages, m...)
+	}
+
+	if req.Tools != nil {
+		var tools []openai.ChatCompletionToolUnionParam
+		for _, tool := range req.Tools {
+			switch t := tool.Tool.(type) {
+			case *v1.Tool_Function_:
+				ot := openai.FunctionDefinitionParam{
+					Name:       t.Function.Name,
+					Parameters: convertSchemaToOpenAIParameters(t.Function.InputSchema),
+				}
+				if t.Function.Description != "" {
+					ot.Description = openai.Opt(t.Function.Description)
+				}
+				tools = append(tools, openai.ChatCompletionFunctionTool(ot))
+			default:
+				r.log.Errorf("unsupported tool: %v", t)
+			}
+		}
+		openAIReq.Tools = tools
+	}
+
+	return openAIReq
+}
+
+func convertGenerationConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatCompletionNewParams) {
 	if config == nil {
 		return
 	}
@@ -45,7 +82,7 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 		req.PresencePenalty = openai.Opt(float64(*config.PresencePenalty))
 	}
 	if c := config.ReasoningConfig; c != nil && c.Effort > v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED {
-		req.ReasoningEffort = convertEffortToOpenAI(c.Effort)
+		req.ReasoningEffort = convertReasoningEffortToOpenAI(c.Effort)
 	}
 	if len(config.StopSequences) > 0 {
 		req.Stop = openai.ChatCompletionNewParamsStopUnion{OfStringArray: config.StopSequences}
@@ -63,7 +100,7 @@ func convertConfigToOpenAIChat(config *v1.GenerationConfig, req *openai.ChatComp
 			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
 				JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
 					Name:   "custom_schema",
-					Schema: convertSchemaToMap(g.Schema),
+					Schema: convertSchemaToOpenAIParameters(g.Schema),
 				},
 			},
 		}
@@ -263,62 +300,24 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 	}
 }
 
-func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCompletionNewParams {
-	openAIReq := openai.ChatCompletionNewParams{
-		Model: req.Model,
+func (r *upstream) convertResponseFromOpenAIChat(openAIResp *openai.ChatCompletion) (resp *entity.ChatResp) {
+	resp = &entity.ChatResp{
+		Id:         openAIResp.ID,
+		Model:      openAIResp.Model,
+		Statistics: convertStatisticsFromOpenAIChat(&openAIResp.Usage),
 	}
 
-	if req.Config != nil {
-		convertConfigToOpenAIChat(req.Config, &openAIReq)
+	if len(openAIResp.Choices) > 0 {
+		resp.Status = convertStatusFromOpenAIChat(openAIResp.Choices[0].FinishReason)
+		resp.Message = r.convertMessageFromOpenAIChat(&openAIResp.Choices[0].Message)
 	}
 
-	for _, message := range req.Messages {
-		m := r.convertMessageToOpenAIChat(message)
-		openAIReq.Messages = append(openAIReq.Messages, m...)
-	}
-
-	if req.Tools != nil {
-		var tools []openai.ChatCompletionToolUnionParam
-		for _, tool := range req.Tools {
-			switch t := tool.Tool.(type) {
-			case *v1.Tool_Function_:
-				ot := openai.FunctionDefinitionParam{
-					Name:       t.Function.Name,
-					Parameters: convertSchemaToMap(t.Function.InputSchema),
-				}
-				if t.Function.Description != "" {
-					ot.Description = openai.Opt(t.Function.Description)
-				}
-				tools = append(tools, openai.ChatCompletionFunctionTool(ot))
-			default:
-				r.log.Errorf("unsupported tool: %v", t)
-			}
-		}
-		openAIReq.Tools = tools
-	}
-
-	return openAIReq
+	return
 }
 
-func convertStatusFromOpenAIChat(finishReason string) v1.ChatStatus {
-	switch finishReason {
-	case "stop":
-		return v1.ChatStatus_CHAT_COMPLETED
-	case "length":
-		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
-	case "tool_calls", "function_call":
-		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
-	case "content_filter":
-		return v1.ChatStatus_CHAT_REFUSED
-	default:
-		return v1.ChatStatus_CHAT_IN_PROGRESS
-	}
-}
-
-// convertMessageFromOpenAIChat converts an OpenAI chat completion message to an internal message.
-// The message ID will be generated using UUID.
 func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
 	message := &v1.Message{
+		// OpenAI chat responses do not provide message IDs, so generate one for the internal event model.
 		Id:   uuid.NewString(),
 		Role: v1.Role_MODEL,
 	}
@@ -368,36 +367,16 @@ func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatComple
 	return message
 }
 
-func (r *upstream) convertResponseFromOpenAIChat(openAIResp *openai.ChatCompletion) (resp *entity.ChatResp) {
-	resp = &entity.ChatResp{
-		Id:         openAIResp.ID,
-		Model:      openAIResp.Model,
-		Statistics: convertStatisticsFromOpenAIChat(&openAIResp.Usage),
-	}
+func (c *openAIChatStreamClient) convertStreamChunkFromOpenAIChat(chunk *openai.ChatCompletionChunk) []*entity.ChatEvent {
+	var events []*entity.ChatEvent
 
-	if len(openAIResp.Choices) > 0 {
-		resp.Status = convertStatusFromOpenAIChat(openAIResp.Choices[0].FinishReason)
-		resp.Message = r.convertMessageFromOpenAIChat(&openAIResp.Choices[0].Message)
-	}
-
-	return
-}
-
-func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCompletionChunk) *entity.ChatResp {
-	resp := &entity.ChatResp{
-		Id:    chunk.ID,
-		Model: chunk.Model,
+	if !c.messageStarted {
+		c.messageStarted = true
+		events = append(events, c.newChatEvent(v1.NewMessageStartEvent(c.messageID, chunk.Model)))
 	}
 
 	if len(chunk.Choices) > 0 {
 		msg := chunk.Choices[0]
-		var contents []*v1.Content
-
-		if msg.Delta.Content != "" {
-			contents = append(contents, &v1.Content{
-				Content: v1.NewTextContent(msg.Delta.Content),
-			})
-		}
 
 		// Support reasoning content from DeepSeek / OpenRouter
 		if msg.Delta.JSON.ExtraFields != nil {
@@ -408,51 +387,112 @@ func (c *openAIChatStreamClient) convertChunkFromOpenAIChat(chunk *openai.ChatCo
 			if ok {
 				rc := gjson.Parse(reasoning.Raw()).String()
 				if rc != "" {
-					contents = append(contents, &v1.Content{
-						Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-						Content: v1.NewTextContent(rc),
-					})
+					index := c.openTextBlock(&events, v1.ContentPhase_CONTENT_PHASE_REASONING)
+					events = append(events, c.newChatEvent(v1.NewContentDeltaTextEvent(index, rc)))
 				}
 			}
 		}
 
-		for _, toolCall := range msg.Delta.ToolCalls {
-			contents = append(contents, &v1.Content{
-				Index: new(uint32(toolCall.Index)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Id:   toolCall.ID,
-						Name: toolCall.Function.Name,
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: toolCall.Function.Arguments,
-								},
-							},
-						},
-					},
-				},
-			})
+		if msg.Delta.Content != "" {
+			index := c.openTextBlock(&events, v1.ContentPhase_CONTENT_PHASE_NORMAL)
+			events = append(events, c.newChatEvent(v1.NewContentDeltaTextEvent(index, msg.Delta.Content)))
 		}
 
-		c.status = convertStatusFromOpenAIChat(msg.FinishReason)
-		resp.Status = c.status
-		resp.Message = &v1.Message{
-			Id:       c.messageID,
-			Role:     v1.Role_MODEL,
-			Contents: contents,
+		for _, toolCall := range msg.Delta.ToolCalls {
+			index := c.openToolBlock(&events, toolCall)
+			if toolCall.Function.Arguments != "" {
+				events = append(events, c.newChatEvent(v1.NewContentDeltaToolInputTextEvent(index, toolCall.Function.Arguments)))
+			}
 		}
-	} else {
-		resp.Status = c.status // Keep previous status
+
+		if msg.FinishReason != "" {
+			c.status = convertStatusFromOpenAIChat(msg.FinishReason)
+		}
 	}
 
-	resp.Statistics = convertStatisticsFromOpenAIChat(&chunk.Usage)
+	if statistics := convertStatisticsFromOpenAIChat(&chunk.Usage); statistics != nil {
+		c.closeOpenBlock(&events)
+		stop := c.newChatEvent(v1.NewMessageStopEvent(c.status))
+		stop.Usage = statistics.Usage
+		events = append(events, stop)
+		c.stopEmitted = true
+	}
 
-	if resp.Message == nil && resp.Statistics == nil {
+	return events
+}
+
+// finish emits the closing events when the upstream ends without a usage chunk.
+func (c *openAIChatStreamClient) finish() []*entity.ChatEvent {
+	if !c.messageStarted || c.stopEmitted {
 		return nil
 	}
 
-	return resp
+	var events []*entity.ChatEvent
+	c.closeOpenBlock(&events)
+	events = append(events, c.newChatEvent(v1.NewMessageStopEvent(c.status)))
+	c.stopEmitted = true
+	return events
+}
+
+func (c *openAIChatStreamClient) newChatEvent(event v1.ChatEventPayload) *entity.ChatEvent {
+	return v1.NewChatEvent(c.req.GetId(), event)
+}
+
+func (c *openAIChatStreamClient) closeOpenBlock(events *[]*entity.ChatEvent) {
+	if c.hasOpen {
+		*events = append(*events, c.newChatEvent(v1.NewContentStopEvent(c.openIndex)))
+		c.hasOpen = false
+	}
+}
+
+// openTextBlock ensures a streamable text block of the given phase is open,
+// closing any previously open block of a different kind, and returns its index.
+func (c *openAIChatStreamClient) openTextBlock(events *[]*entity.ChatEvent, phase v1.ContentPhase) uint32 {
+	if c.hasOpen && !c.openIsTool && c.openPhase == phase {
+		return c.openIndex
+	}
+	c.closeOpenBlock(events)
+
+	index := c.nextIndex
+	c.nextIndex++
+	c.hasOpen = true
+	c.openIsTool = false
+	c.openPhase = phase
+	c.openIndex = index
+	*events = append(*events, c.newChatEvent(v1.NewContentStartTextEvent(index, phase)))
+	return index
+}
+
+func (c *openAIChatStreamClient) openToolBlock(events *[]*entity.ChatEvent, toolCall openai.ChatCompletionChunkChoiceDeltaToolCall) uint32 {
+	providerIndex := int64(toolCall.Index)
+	if c.hasOpen && c.openIsTool && c.openToolIndex == providerIndex {
+		return c.openIndex
+	}
+	c.closeOpenBlock(events)
+
+	index := c.nextIndex
+	c.nextIndex++
+	c.hasOpen = true
+	c.openIsTool = true
+	c.openIndex = index
+	c.openToolIndex = providerIndex
+	*events = append(*events, c.newChatEvent(v1.NewContentStartToolUseEvent(index, toolCall.ID, toolCall.Function.Name)))
+	return index
+}
+
+func convertStatusFromOpenAIChat(finishReason string) v1.ChatStatus {
+	switch finishReason {
+	case "stop":
+		return v1.ChatStatus_CHAT_COMPLETED
+	case "length":
+		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+	case "tool_calls", "function_call":
+		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+	case "content_filter":
+		return v1.ChatStatus_CHAT_REFUSED
+	default:
+		return v1.ChatStatus_CHAT_IN_PROGRESS
+	}
 }
 
 func convertStatisticsFromOpenAIChat(usage *openai.CompletionUsage) *v1.Statistics {

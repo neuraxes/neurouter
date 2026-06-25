@@ -1,0 +1,39 @@
+{
+  "id": "gen-1782639582-oek2KOHtknQikB373dVF",
+  "type": "message",
+  "role": "assistant",
+  "container": null,
+  "content": [
+    {
+      "type": "text",
+      "text": "**Source:** Base64-encoded inline image\n\n**Description:** The image shows the **OpenAI logo** — a small, dark icon featuring the distinctive interlocking/swirling circular knot symbol associated with OpenAI, rendered in dark gray or black on a light background.",
+      "citations": []
+    }
+  ],
+  "model": "anthropic/claude-4.6-sonnet-20260217",
+  "stop_reason": "end_turn",
+  "stop_details": null,
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 70,
+    "output_tokens": 63,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": null,
+    "inference_geo": null,
+    "server_tool_use": null,
+    "service_tier": "standard",
+    "speed": "standard",
+    "cost": 0.001155,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.001155,
+      "upstream_inference_prompt_cost": 0.00021,
+      "upstream_inference_completions_cost": 0.000945
+    }
+  },
+  "context_management": null
+}

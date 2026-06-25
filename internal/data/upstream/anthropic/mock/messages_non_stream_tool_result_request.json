@@ -1,0 +1,94 @@
+{
+  "model": "anthropic/claude-sonnet-4.6",
+  "max_tokens": 512,
+  "temperature": 0,
+  "metadata": {
+    "user_id": "anthropic-conversion-fixture-user"
+  },
+  "system": [
+    {
+      "type": "text",
+      "text": "You are a conversion-test assistant. Use prior tool results exactly and keep the final answer concise."
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Use the get_weather tool for Shanghai on 2025-11-10. Do not answer from memory. Return no final prose until the tool has been called."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Sure! Let me fetch the weather data for Shanghai on 2025-11-10 right away."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_01EQKr5bPHvy92UvtzNbXFDu",
+          "name": "get_weather",
+          "input": {
+            "city": "Shanghai",
+            "date": "2025-11-10"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_01EQKr5bPHvy92UvtzNbXFDu",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"city\":\"Shanghai\",\"date\":\"2025-11-10\",\"condition\":\"Cloudy\",\"high_c\":18,\"low_c\":11,\"precip_mm\":2.3,\"humidity\":0.74}"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Using only the tool result, give the city, date, condition, high and low temperature in Celsius, and precipitation in one sentence. Do not call another tool."
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Look up historical weather for a city on a specific date.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name in English."
+          },
+          "date": {
+            "type": "string",
+            "description": "Date in YYYY-MM-DD format."
+          },
+          "units": {
+            "type": "string",
+            "description": "Temperature unit.",
+            "enum": [
+              "metric",
+              "imperial"
+            ]
+          }
+        },
+        "required": [
+          "city",
+          "date"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

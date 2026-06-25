@@ -1,0 +1,39 @@
+{
+  "id": "gen-1782639842-oi4uhCV6FgqoD7s1IGrX",
+  "type": "message",
+  "role": "assistant",
+  "container": null,
+  "content": [
+    {
+      "type": "text",
+      "text": "On **2025-11-10**, **Shanghai** experienced **cloudy** conditions with a high of **18°C** and a low of **11°C**, and **2.3 mm** of precipitation.",
+      "citations": []
+    }
+  ],
+  "model": "anthropic/claude-4.6-sonnet-20260217",
+  "stop_reason": "end_turn",
+  "stop_details": null,
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 883,
+    "output_tokens": 50,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": null,
+    "inference_geo": null,
+    "server_tool_use": null,
+    "service_tier": "standard",
+    "speed": "standard",
+    "cost": 0.003399,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.003399,
+      "upstream_inference_prompt_cost": 0.002649,
+      "upstream_inference_completions_cost": 0.00075
+    }
+  },
+  "context_management": null
+}

@@ -1,0 +1,39 @@
+{
+  "id": "gen-1782639366-sxvOUZF4maUOUI6sgtQy",
+  "type": "message",
+  "role": "assistant",
+  "container": null,
+  "content": [
+    {
+      "type": "text",
+      "text": "# How an LLM Router Balances Load Across Multiple Upstream",
+      "citations": []
+    }
+  ],
+  "model": "anthropic/claude-4.6-sonnet-20260217",
+  "stop_reason": "max_tokens",
+  "stop_details": null,
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 58,
+    "output_tokens": 16,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": null,
+    "inference_geo": null,
+    "server_tool_use": null,
+    "service_tier": "standard",
+    "speed": "standard",
+    "cost": 0.000414,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.000414,
+      "upstream_inference_prompt_cost": 0.000174,
+      "upstream_inference_completions_cost": 0.00024
+    }
+  },
+  "context_management": null
+}

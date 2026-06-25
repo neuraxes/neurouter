@@ -23,20 +23,17 @@ import (
 
 // Embed creates embeddings for the given contents using the specified model.
 func (s *RouterService) Embed(ctx context.Context, req *v1.EmbedReq) (resp *v1.EmbedResp, err error) {
-	// Convert API request to entity
 	embedReq := &entity.EmbedReq{
 		Id:       req.Id,
 		Model:    req.Model,
 		Contents: req.Contents,
 	}
 
-	// Call use case
 	r, err := s.embedding.Embed(ctx, embedReq)
 	if err != nil {
 		return
 	}
 
-	// Convert entity response to API response
 	resp = &v1.EmbedResp{
 		Id:        r.Id,
 		Embedding: r.Embedding,

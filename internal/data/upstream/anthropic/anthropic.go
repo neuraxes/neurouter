@@ -89,17 +89,17 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 }
 
 type anthropicChatStreamClient struct {
-	req       *entity.ChatReq
-	upstream  *ssestream.Stream[anthropic.MessageStreamEventUnion]
-	messageID string
-	model     string
+	req                  *entity.ChatReq
+	upstream             *ssestream.Stream[anthropic.MessageStreamEventUnion]
+	messageID            string
+	model                string
+	pendingSnapshotStops map[uint32]struct{}
 }
 
-func (c *anthropicChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
-	return func(yield func(*entity.ChatResp, error) bool) {
+func (c *anthropicChatStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error] {
+	return func(yield func(*entity.ChatEvent, error) bool) {
 		defer c.upstream.Close()
 		for {
-		next:
 			if !c.upstream.Next() {
 				if err := c.upstream.Err(); err != nil {
 					yield(nil, err)
@@ -107,20 +107,16 @@ func (c *anthropicChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
 				return
 			}
 
-			resp := c.convertChunkFromAnthropic(new(c.upstream.Current()))
-			if resp == nil {
-				// The chunk is ignored, jump to the next one.
-				goto next
-			}
-
-			if !yield(resp, nil) {
-				return
+			for _, event := range c.convertStreamEventFromAnthropic(new(c.upstream.Current())) {
+				if !yield(event, nil) {
+					return
+				}
 			}
 		}
 	}
 }
 
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
 	anthropicReq := r.convertRequestToAnthropic(req)
 	stream := r.client.Messages.NewStreaming(ctx, anthropicReq)
 

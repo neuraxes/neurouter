@@ -28,37 +28,51 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-// convertStatusFromAnthropic maps Anthropic stop reasons to internal chat status.
-func convertStatusFromAnthropic(stopReason anthropic.StopReason) v1.ChatStatus {
-	switch stopReason {
-	case anthropic.StopReasonToolUse:
-		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
-	case anthropic.StopReasonEndTurn, anthropic.StopReasonStopSequence:
-		return v1.ChatStatus_CHAT_COMPLETED
-	case anthropic.StopReasonMaxTokens:
-		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
-	case anthropic.StopReasonRefusal:
-		return v1.ChatStatus_CHAT_REFUSED
-	default:
-		return v1.ChatStatus_CHAT_IN_PROGRESS
+func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.MessageNewParams {
+	params := anthropic.MessageNewParams{
+		Model: anthropic.Model(req.Model),
 	}
-}
 
-func convertEffortToAnthropic(effort v1.ReasoningEffort) anthropic.OutputConfigEffort {
-	switch effort {
-	case v1.ReasoningEffort_REASONING_EFFORT_MINIMAL, v1.ReasoningEffort_REASONING_EFFORT_LOW:
-		return anthropic.OutputConfigEffortLow
-	case v1.ReasoningEffort_REASONING_EFFORT_MEDIUM:
-		return anthropic.OutputConfigEffortMedium
-	case v1.ReasoningEffort_REASONING_EFFORT_HIGH:
-		return anthropic.OutputConfigEffortHigh
-	case v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH:
-		return anthropic.OutputConfigEffortXhigh
-	case v1.ReasoningEffort_REASONING_EFFORT_MAX:
-		return anthropic.OutputConfigEffortMax
-	default:
-		return ""
+	r.convertGenerationConfigToAnthropic(req.Config, &params)
+
+	if !r.config.SystemAsUser {
+		params.System = r.convertSystemMessagesToAnthropic(req.Messages)
 	}
+
+	for _, message := range req.Messages {
+		if !r.config.SystemAsUser && message.Role == v1.Role_SYSTEM {
+			continue
+		}
+		params.Messages = append(params.Messages, r.convertMessageToAnthropic(message))
+	}
+
+	if req.Tools != nil {
+		var tools []anthropic.ToolUnionParam
+		for _, tool := range req.Tools {
+			switch t := tool.Tool.(type) {
+			case *v1.Tool_Function_:
+				at := &anthropic.ToolParam{
+					Name:        t.Function.Name,
+					InputSchema: convertSchemaToAnthropicToolInputSchema(t.Function.InputSchema),
+				}
+				if t.Function.Description != "" {
+					at.Description = anthropic.Opt(t.Function.Description)
+				}
+				tools = append(tools, anthropic.ToolUnionParam{OfTool: at})
+			default:
+				r.log.Errorf("unsupported tool: %v", t)
+			}
+		}
+		params.Tools = tools
+	}
+
+	if req.Metadata != nil {
+		if userID, ok := req.Metadata["user_id"]; ok {
+			params.Metadata.UserID = anthropic.Opt(userID)
+		}
+	}
+
+	return params
 }
 
 func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfig, req *anthropic.MessageNewParams) {
@@ -79,8 +93,11 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 	if config.TopK != nil {
 		req.TopK = anthropic.Opt(*config.TopK)
 	}
-	if c := config.ReasoningConfig; c != nil && c.Effort != v1.ReasoningEffort_REASONING_EFFORT_NONE {
-		if c.TokenBudget > 0 {
+	if c := config.ReasoningConfig; c != nil {
+		switch {
+		case c.Effort == v1.ReasoningEffort_REASONING_EFFORT_NONE:
+			req.Thinking.OfDisabled = &anthropic.ThinkingConfigDisabledParam{}
+		case c.TokenBudget > 0:
 			budgetTokens := int64(1024)
 			if c.TokenBudget > 1024 {
 				budgetTokens = int64(c.TokenBudget)
@@ -88,9 +105,9 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 			req.Thinking.OfEnabled = &anthropic.ThinkingConfigEnabledParam{
 				BudgetTokens: budgetTokens,
 			}
-		} else {
+		default:
 			req.Thinking.OfAdaptive = &anthropic.ThinkingConfigAdaptiveParam{}
-			req.OutputConfig.Effort = convertEffortToAnthropic(c.Effort)
+			req.OutputConfig.Effort = convertReasoningEffortToAnthropic(c.Effort)
 		}
 	}
 	if len(config.StopSequences) > 0 {
@@ -104,8 +121,7 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 	}
 }
 
-// convertSystemToAnthropic converts system messages to Anthropic format.
-func (r *upstream) convertSystemToAnthropic(messages []*v1.Message) []anthropic.TextBlockParam {
+func (r *upstream) convertSystemMessagesToAnthropic(messages []*v1.Message) []anthropic.TextBlockParam {
 	var parts []anthropic.TextBlockParam
 	for _, message := range messages {
 		if message.Role != v1.Role_SYSTEM {
@@ -123,13 +139,9 @@ func (r *upstream) convertSystemToAnthropic(messages []*v1.Message) []anthropic.
 	return parts
 }
 
-// convertMessageToAnthropic converts a neurouter message to Anthropic format.
 func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.MessageParam {
 	var parts []anthropic.ContentBlockParamUnion
 	for _, content := range message.Contents {
-		if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY {
-			continue // Skip reasoning summary content since it's not supported by Anthropic API
-		}
 		switch c := content.GetContent().(type) {
 		case *v1.Content_Text:
 			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
@@ -237,7 +249,7 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 	}
 }
 
-func (r *upstream) convertInputSchemaToAnthropic(params *structpb.Struct) (schema anthropic.ToolInputSchemaParam) {
+func convertSchemaToAnthropicToolInputSchema(params *structpb.Struct) (schema anthropic.ToolInputSchemaParam) {
 	if params == nil {
 		return
 	}
@@ -265,54 +277,6 @@ func (r *upstream) convertInputSchemaToAnthropic(params *structpb.Struct) (schem
 		schema.ExtraFields = extraFields
 	}
 	return
-}
-
-// convertRequestToAnthropic converts a neurouter request to Anthropic format.
-func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.MessageNewParams {
-	params := anthropic.MessageNewParams{
-		Model: anthropic.Model(req.Model),
-	}
-
-	r.convertGenerationConfigToAnthropic(req.Config, &params)
-
-	if !r.config.SystemAsUser {
-		params.System = r.convertSystemToAnthropic(req.Messages)
-	}
-
-	for _, message := range req.Messages {
-		if !r.config.SystemAsUser && message.Role == v1.Role_SYSTEM {
-			continue
-		}
-		params.Messages = append(params.Messages, r.convertMessageToAnthropic(message))
-	}
-
-	if req.Tools != nil {
-		var tools []anthropic.ToolUnionParam
-		for _, tool := range req.Tools {
-			switch t := tool.Tool.(type) {
-			case *v1.Tool_Function_:
-				at := &anthropic.ToolParam{
-					Name:        t.Function.Name,
-					InputSchema: r.convertInputSchemaToAnthropic(t.Function.InputSchema),
-				}
-				if t.Function.Description != "" {
-					at.Description = anthropic.Opt(t.Function.Description)
-				}
-				tools = append(tools, anthropic.ToolUnionParam{OfTool: at})
-			default:
-				r.log.Errorf("unsupported tool: %v", t)
-			}
-		}
-		params.Tools = tools
-	}
-
-	if req.Metadata != nil {
-		if userID, ok := req.Metadata["user_id"]; ok {
-			params.Metadata.UserID = anthropic.Opt(userID)
-		}
-	}
-
-	return params
 }
 
 func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
@@ -360,128 +324,119 @@ func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 	return message
 }
 
-func (c *anthropicChatStreamClient) newResp() *entity.ChatResp {
-	return &entity.ChatResp{
-		Id:    c.req.Id,
-		Model: c.model,
-		Message: &v1.Message{
-			Id:   c.messageID,
-			Role: v1.Role_MODEL,
-		},
+func (c *anthropicChatStreamClient) convertStreamEventFromAnthropic(event *anthropic.MessageStreamEventUnion) []*entity.ChatEvent {
+	switch event.Type {
+	case "message_start":
+		c.messageID = event.Message.ID
+		c.model = event.Message.Model
+		chatEvent := c.newChatEvent(v1.NewMessageStartEvent(c.messageID, c.model))
+		// Anthropic reports input and cache token counts only in message_start;
+		// message_delta carries only output tokens. Capture them here so the
+		// cumulative usage snapshot retains the input accounting.
+		if statistics := convertStatisticsFromAnthropic(&event.Message.Usage); statistics != nil {
+			chatEvent.Usage = statistics.Usage
+		}
+		return []*entity.ChatEvent{chatEvent}
+
+	case "content_block_start":
+		index := uint32(event.Index)
+		switch event.ContentBlock.Type {
+		case "text":
+			events := []*entity.ChatEvent{c.newChatEvent(v1.NewContentStartTextEvent(index, v1.ContentPhase_CONTENT_PHASE_NORMAL))}
+			if event.ContentBlock.Text != "" {
+				events = append(events, c.newChatEvent(v1.NewContentDeltaTextEvent(index, event.ContentBlock.Text)))
+			}
+			return events
+		case "thinking":
+			events := []*entity.ChatEvent{c.newChatEvent(v1.NewContentStartTextEvent(index, v1.ContentPhase_CONTENT_PHASE_REASONING))}
+			if event.ContentBlock.Thinking != "" {
+				events = append(events, c.newChatEvent(v1.NewContentDeltaTextEvent(index, event.ContentBlock.Thinking)))
+			}
+			if event.ContentBlock.Signature != "" {
+				events = append(events, c.newChatEvent(v1.NewContentDeltaSignatureEvent(index, event.ContentBlock.Signature)))
+			}
+			return events
+		case "redacted_thinking":
+			if c.pendingSnapshotStops == nil {
+				c.pendingSnapshotStops = map[uint32]struct{}{}
+			}
+			c.pendingSnapshotStops[index] = struct{}{}
+			return []*entity.ChatEvent{c.newChatEvent(v1.NewContentSnapshotEvent(&v1.Content{
+				Index:   &index,
+				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+				Content: &v1.Content_Opaque{Opaque: event.ContentBlock.Data},
+			}))}
+		case "tool_use":
+			return []*entity.ChatEvent{c.newChatEvent(v1.NewContentStartToolUseEvent(index, event.ContentBlock.ID, event.ContentBlock.Name))}
+		}
+		return nil
+
+	case "content_block_delta":
+		index := uint32(event.Index)
+		switch event.Delta.Type {
+		case "thinking_delta":
+			return []*entity.ChatEvent{c.newChatEvent(v1.NewContentDeltaTextEvent(index, event.Delta.Thinking))}
+		case "signature_delta":
+			return []*entity.ChatEvent{c.newChatEvent(v1.NewContentDeltaSignatureEvent(index, event.Delta.Signature))}
+		case "text_delta":
+			return []*entity.ChatEvent{c.newChatEvent(v1.NewContentDeltaTextEvent(index, event.Delta.Text))}
+		case "input_json_delta":
+			return []*entity.ChatEvent{c.newChatEvent(v1.NewContentDeltaToolInputTextEvent(index, event.Delta.PartialJSON))}
+		}
+		return nil
+
+	case "content_block_stop":
+		index := uint32(event.Index)
+		if _, ok := c.pendingSnapshotStops[index]; ok {
+			delete(c.pendingSnapshotStops, index)
+			return nil
+		}
+		return []*entity.ChatEvent{c.newChatEvent(v1.NewContentStopEvent(index))}
+
+	case "message_delta":
+		hasUsage := event.Usage.InputTokens != 0 || event.Usage.OutputTokens != 0 ||
+			event.Usage.CacheReadInputTokens != 0 || event.Usage.CacheCreationInputTokens != 0
+		if !hasUsage && event.Delta.StopReason == "" {
+			return nil
+		}
+
+		var chatEvent *entity.ChatEvent
+		if event.Delta.StopReason != "" {
+			chatEvent = c.newChatEvent(v1.NewMessageStopEvent(convertStatusFromAnthropic(event.Delta.StopReason)))
+		} else {
+			chatEvent = c.newChatEvent(nil)
+		}
+		if hasUsage {
+			cachedInput := uint32(max(event.Usage.CacheReadInputTokens+event.Usage.CacheCreationInputTokens, 0))
+			chatEvent.Usage = &v1.Usage{
+				InputTokens:       uint32(max(event.Usage.InputTokens, 0)) + cachedInput,
+				OutputTokens:      uint32(max(event.Usage.OutputTokens, 0)),
+				CachedInputTokens: cachedInput,
+			}
+		}
+		return []*entity.ChatEvent{chatEvent}
+
+	default:
+		return nil
 	}
 }
 
-// convertChunkFromAnthropic converts an Anthropic streaming chunk to an internal response.
-func (c *anthropicChatStreamClient) convertChunkFromAnthropic(chunk *anthropic.MessageStreamEventUnion) *entity.ChatResp {
-	switch chunk.Type {
-	case "message_start":
-		c.messageID = chunk.Message.ID
-		c.model = chunk.Message.Model
-		return nil
-	case "content_block_start":
-		var resp *entity.ChatResp
-		switch chunk.ContentBlock.Type {
-		case "text":
-			if chunk.ContentBlock.Text != "" {
-				resp = c.newResp()
-				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-					Index:   new(uint32(chunk.Index)),
-					Content: v1.NewTextContent(chunk.ContentBlock.Text),
-				})
-			}
-		case "thinking":
-			if chunk.ContentBlock.Thinking != "" || chunk.ContentBlock.Signature != "" {
-				resp = c.newResp()
-				resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-					Index:     new(uint32(chunk.Index)),
-					Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Signature: chunk.ContentBlock.Signature,
-					Content:   v1.NewTextContent(chunk.ContentBlock.Thinking),
-				})
-			}
-		case "redacted_thinking":
-			resp = c.newResp()
-			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index:   new(uint32(chunk.Index)),
-				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content: &v1.Content_Opaque{Opaque: chunk.ContentBlock.Data},
-			})
-		case "tool_use":
-			resp = c.newResp()
-			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: new(uint32(chunk.Index)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Id:   chunk.ContentBlock.ID,
-						Name: chunk.ContentBlock.Name,
-						// Inputs will be sent in deltas.
-					},
-				},
-			})
-		}
-		return resp
-	case "content_block_delta":
-		resp := c.newResp()
-		switch chunk.Delta.Type {
-		case "thinking_delta":
-			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index:   new(uint32(chunk.Index)),
-				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content: v1.NewTextContent(chunk.Delta.Thinking),
-			})
-		case "signature_delta":
-			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index:     new(uint32(chunk.Index)),
-				Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Signature: chunk.Delta.Signature,
-				Content:   v1.NewTextContent(""),
-			})
-		case "text_delta":
-			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index:   new(uint32(chunk.Index)),
-				Content: v1.NewTextContent(chunk.Delta.Text),
-			})
-		case "input_json_delta":
-			resp.Message.Contents = append(resp.Message.Contents, &v1.Content{
-				Index: new(uint32(chunk.Index)),
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: chunk.Delta.PartialJSON,
-								},
-							},
-						},
-					},
-				},
-			})
-		default:
-			return nil
-		}
-		return resp
-	case "message_delta":
-		if chunk.Usage.InputTokens != 0 || chunk.Usage.OutputTokens != 0 ||
-			chunk.Usage.CacheReadInputTokens != 0 || chunk.Usage.CacheCreationInputTokens != 0 ||
-			chunk.Delta.StopReason != "" {
-			resp := c.newResp()
-			resp.Message = nil
-			cachedInput := uint32(max(chunk.Usage.CacheReadInputTokens+chunk.Usage.CacheCreationInputTokens, 0))
-			resp.Statistics = &v1.Statistics{
-				Usage: &v1.Usage{
-					InputTokens:       uint32(max(chunk.Usage.InputTokens, 0)) + cachedInput,
-					OutputTokens:      uint32(max(chunk.Usage.OutputTokens, 0)),
-					CachedInputTokens: cachedInput,
-				},
-			}
-			if chunk.Delta.StopReason != "" {
-				resp.Status = convertStatusFromAnthropic(chunk.Delta.StopReason)
-			}
-			return resp
-		}
-		fallthrough
+func (c *anthropicChatStreamClient) newChatEvent(event v1.ChatEventPayload) *entity.ChatEvent {
+	return v1.NewChatEvent(c.req.GetId(), event)
+}
+
+func convertStatusFromAnthropic(stopReason anthropic.StopReason) v1.ChatStatus {
+	switch stopReason {
+	case anthropic.StopReasonToolUse:
+		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+	case anthropic.StopReasonEndTurn, anthropic.StopReasonStopSequence:
+		return v1.ChatStatus_CHAT_COMPLETED
+	case anthropic.StopReasonMaxTokens:
+		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+	case anthropic.StopReasonRefusal:
+		return v1.ChatStatus_CHAT_REFUSED
 	default:
-		return nil
+		return v1.ChatStatus_CHAT_IN_PROGRESS
 	}
 }
 
@@ -502,5 +457,22 @@ func convertStatisticsFromAnthropic(usage *anthropic.Usage) *v1.Statistics {
 			OutputTokens:      uint32(max(usage.OutputTokens, 0)),
 			CachedInputTokens: cachedInput,
 		},
+	}
+}
+
+func convertReasoningEffortToAnthropic(effort v1.ReasoningEffort) anthropic.OutputConfigEffort {
+	switch effort {
+	case v1.ReasoningEffort_REASONING_EFFORT_MINIMAL, v1.ReasoningEffort_REASONING_EFFORT_LOW:
+		return anthropic.OutputConfigEffortLow
+	case v1.ReasoningEffort_REASONING_EFFORT_MEDIUM:
+		return anthropic.OutputConfigEffortMedium
+	case v1.ReasoningEffort_REASONING_EFFORT_HIGH:
+		return anthropic.OutputConfigEffortHigh
+	case v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH:
+		return anthropic.OutputConfigEffortXhigh
+	case v1.ReasoningEffort_REASONING_EFFORT_MAX:
+		return anthropic.OutputConfigEffortMax
+	default:
+		return ""
 	}
 }

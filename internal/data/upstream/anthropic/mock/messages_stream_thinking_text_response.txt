@@ -1,0 +1,102 @@
+event: message_start
+data: {"type":"message_start","message":{"id":"gen-1782640358-8xpFd0HzF6SZnlURyaC9","type":"message","role":"assistant","container":null,"content":[],"model":"anthropic/claude-4.6-sonnet-20260217","stop_reason":null,"stop_details":null,"stop_sequence":null,"usage":{"input_tokens":0,"output_tokens":0,"cache_creation_input_tokens":null,"cache_read_input_tokens":null,"cache_creation":null,"inference_geo":null,"server_tool_use":null,"service_tier":null,"speed":"standard"},"provider":"Anthropic"}}
+
+event: content_block_start
+data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":""}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"Let me calculate"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" the expected latency for each upstream with one retry on failure.\n\nFor a single attempt:\n- Success on"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" first try: latency = L\n- Failure on first try, then retry:\n  - Success on retry: latency = L + L"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" = 2L\n  - Failure on retry: latency = 2L (we stop after one"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" retry)\n\nExpected latency = L * (1 - e) + 2L * e = L * (1 +"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" e)\n\nWhere e is the error rate and L is latency.\n\nWait, but on"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" failure we still incur the latency of the failed request"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" before retrying.\n"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"Expected"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" latency = L + e * L = L(1 + e)\n\nNow I can plug in the numbers"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" for each upstream. Upstream A has 200ms latency with"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" 5% error rate, giving 210ms expected latency. Upstream B has 150ms latency with 9"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"% error rate, giving 163.5ms expected latency. So B is the better choice despite the"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":" higher error rate."}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"EokHCmUIDxgCKkBX0fNiSjOUrJmGbxV0gtSJSwQ6iA4GCxEd3KATwjOiKyL/kEjzcGo+7kk7r59j3iJ+dEGVxEXj23styoJlumN4MhFjbGF1ZGUtc29ubmV0LTQtNjgAQgh0aGlua2luZxIMpinNifR8Sh/XrEz/Ggwz+4BQnUaL8+jRLywiMO7Yi60rgGjTerXaUNE3ycpGVky/QwgSeB+e9IV2eUL4U1hQ2R5Ly2tqGNhUjcX3JirRBaFBIDtpe7VAyeyIXp1TDYIt4Poew+DVbX3DFoL9qTjCm2C1SLXZ5joeL0iYUqSul9eAWsCdLhjJ23LSofjuwhEr5LD1XfJtA+bzSCdlWkusvqCzte8g4+1WJi1ILCrLuqYwfxmSALCXCQiANrftVn+941cKPV1ZGUAootkX4Lj68Tkig+ngmM/WnZmVPoy3rCJcOyxwufpmpaQPQiL0SrPVYRlu+9Q2qX42ggdfJF9FebMpl76UFBqz1f0gFDnlkFc+MabKLwQPE+zsZwJFGdmvwgdE7aR/2RHA8JCnMF5FFh9RGk0nMAMjqbyv2DpPuazsxQqyJQMb36OeBY/1jn6B9GnusAiPHCPXOuq1jJLLyhfqnhY/NZhSxBBz6nZiZVVFxrzhadQrOdKfLfFxRw58vCD8pw2IAE90xsBjMWGsTTsK7/UH/JBrYwFd/MEE9LeGyvhWYl5aLIA+gqrtPxV/5oKnTOCgEkLu1xJe0RcaFeWqr2saQRm28JDXDv2xKQEfTs/POhFec8zrIDrIysKQhonqtrsmFej3bZu3dXoDcNwJHnMyGhcPjSxGKImtoJrs64pgZK/QOHr+Vlyy90qTjOhXFgtPUNWndHGocxfxqaNy/sA96rV1niYzCEtwioTeBtk8jxE+lA7Gso7W5yhna8CmdI04qCFatshj3/tTPPdgjmLNJjAqXyrmz8pY7fE4s6KsXomH48B3D+Fh/T/uPFscmP3Pnck+sNcSqW/lcEh/ONBXAjvwBhPskY5uitr4hLMVjs/EzuETMu0zWEtvndvvfucaQjiUqGx6f0rcWtrjQPxKcM8bsMLTqlZNb+k0vSpWSrMWPTMis/IcV3bs5SfLHYzy2LzPYItiibX1xnPBjjt+vjumWQ5UeyQ89nR8jIKXwjMcR8XmCAzr1cJKKlji62p6ZvIiBBJgOrnVh8H332qnTgXjy6TLvJAGAQIYAQ=="}}
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":0}
+
+event: content_block_start
+data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":"","citations":[]}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"## Reasoning\n\nWith"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" one retry on failure, expected latency = L × (1 + e), since a failed attempt still cons"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"umes full latency before the retry.\n\n- **A:** 200 × (1 + 0.05) = **210 ms**\n- **B"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":":** 150 × (1 + 0.09) = **163.5 ms**\n\nDespite B's higher error rate, its lower base latency domin"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"ates; the retry penalty (9% × 150 ms = 13.5 ms) is smaller"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" than A's retry penalty (5% × 200 ms = 10 ms) in absolute terms, but B's base"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" is so much faster that it wins comfortably.\n\n**Pick B**,"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":" as its expected latency of ~163.5 ms is well below A's ~"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"210 ms when accounting for one retry on failure."}}
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":1}
+
+event: content_block_start
+data: {"type":"content_block_start","index":2,"content_block":{"type":"redacted_thinking","data":"openrouter.reasoning:eyJzaWduYXR1cmUiOiJFb2tIQ21VSUR4Z0NLa0JYMGZOaVNqT1VySm1HYnhWMGd0U0pTd1E2aUE0R0N4RWQzS0FUd2pPaUt5TC9rRWp6Y0dvKzdrazdyNTlqM2lKK2RFR1Z4RVhqMjNzdHlvSmx1bU40TWhGamJHRjFaR1V0YzI5dWJtVjBMVFF0TmpnQVFnaDBhR2x1YTJsdVp4SU1waW5OaWZSOFNoL1hyRXovR2d3eis0QlFuVWFMOCtqUkx5d2lNTzdZaTYwcmdHalRlclhhVU5FM3ljcEdWa3kvUXdnU2VCK2U5SVYyZVVMNFUxaFEyUjVMeTJ0cUdOaFVqY1gzSmlyUkJhRkJJRHRwZTdWQXlleUlYcDFURFlJdDRQb2V3K0RWYlgzREZvTDlxVGpDbTJDMVNMWFo1am9lTDBpWVVxU3VsOWVBV3NDZExoakoyM0xTb2ZqdXdoRXI1TEQxWGZKdEErYnpTQ2RsV2t1c3ZxQ3p0ZThnNCsxV0ppMUlMQ3JMdXFZd2Z4bVNBTENYQ1FpQU5yZnRWbis5NDFjS1BWMVpHVUFvb3RrWDRMajY4VGtpZytuZ21NL1duWm1WUG95M3JDSmNPeXh3dWZwbXBhUVBRaUwwU3JQVllSbHUrOVEycVg0MmdnZGZKRjlGZWJNcGw3NlVGQnF6MWYwZ0ZEbmxrRmMrTWFiS0x3UVBFK3pzWndKRkdkbXZ3Z2RFN2FSLzJSSEE4SkNuTUY1RkZoOVJHazBuTUFNanFieXYyRHBQdWF6c3hRcXlKUU1iMzZPZUJZLzFqbjZCOUdudXNBaVBIQ1BYT3VxMWpKTEx5aGZxbmhZL05aaFN4QkJ6Nm5aaVpWVkZ4cnpoYWRRck9kS2ZMZkZ4Unc1OHZDRDhwdzJJQUU5MHhzQmpNV0dzVFRzSzcvVUgvSkJyWXdGZC9NRUU5TGVHeXZoV1lsNWFMSUErZ3FydFB4Vi81b0tuVE9DZ0VrTHUxeEplMFJjYUZlV3FyMnNhUVJtMjhKRFhEdjJ4S1FFZlRzL1BPaEZlYzh6cklEckl5c0tRaG9ucXRyc21GZWozYlp1M2RYb0RjTndKSG5NeUdoY1BqU3hHS0ltdG9KcnM2NHBnWksvUU9IcitWbHl5OTBxVGpPaFhGZ3RQVU5XbmRIR29jeGZ4cWFOeS9zQTk2clYxbmlZekNFdHdpb1RlQnRrOGp4RStsQTdHc283VzV5aG5hOENtZEkwNHFDRmF0c2hqMy90VFBQZGdqbUxOSmpBcVh5cm16OHBZN2ZFNHM2S3NYb21INDhCM0QrRmgvVC91UEZzY21QM1BuY2src05jU3FXL2xjRWgvT05CWEFqdndCaFBza1k1dWl0cjRoTE1WanMvRXp1RVRNdTB6V0V0dm5kdnZmdWNhUWppVXFHeDZmMHJjV3RyalFQeEtjTThic01MVHFsWk5iK2swdlNwV1NyTVdQVE1pcy9JY1YzYnM1U2ZMSFl6eTJMelBZSXRpaWJYMXhuUEJqanQrdmp1bVdRNVVleVE4OW5SOGpJS1h3ak1jUjhYbUNBenIxY0pLS2xqaTYycDZadklpQkJKZ09yblZoOEgzMzJxblRnWGp5NlRMdkpBR0FRSVlBUT09IiwidGV4dCI6IkxldCBtZSBjYWxjdWxhdGUgdGhlIGV4cGVjdGVkIGxhdGVuY3kgZm9yIGVhY2ggdXBzdHJlYW0gd2l0aCBvbmUgcmV0cnkgb24gZmFpbHVyZS5cblxuRm9yIGEgc2luZ2xlIGF0dGVtcHQ6XG4tIFN1Y2Nlc3Mgb24gZmlyc3QgdHJ5OiBsYXRlbmN5ID0gTFxuLSBGYWlsdXJlIG9uIGZpcnN0IHRyeSwgdGhlbiByZXRyeTpcbiAgLSBTdWNjZXNzIG9uIHJldHJ5OiBsYXRlbmN5ID0gTCArIEwgPSAyTFxuICAtIEZhaWx1cmUgb24gcmV0cnk6IGxhdGVuY3kgPSAyTCAod2Ugc3RvcCBhZnRlciBvbmUgcmV0cnkpXG5cbkV4cGVjdGVkIGxhdGVuY3kgPSBMICogKDEgLSBlKSArIDJMICogZSA9IEwgKiAoMSArIGUpXG5cbldoZXJlIGUgaXMgdGhlIGVycm9yIHJhdGUgYW5kIEwgaXMgbGF0ZW5jeS5cblxuV2FpdCwgYnV0IG9uIGZhaWx1cmUgd2Ugc3RpbGwgaW5jdXIgdGhlIGxhdGVuY3kgb2YgdGhlIGZhaWxlZCByZXF1ZXN0IGJlZm9yZSByZXRyeWluZy5cbkV4cGVjdGVkIGxhdGVuY3kgPSBMICsgZSAqIEwgPSBMKDEgKyBlKVxuXG5Ob3cgSSBjYW4gcGx1ZyBpbiB0aGUgbnVtYmVycyBmb3IgZWFjaCB1cHN0cmVhbS4gVXBzdHJlYW0gQSBoYXMgMjAwbXMgbGF0ZW5jeSB3aXRoIDUlIGVycm9yIHJhdGUsIGdpdmluZyAyMTBtcyBleHBlY3RlZCBsYXRlbmN5LiBVcHN0cmVhbSBCIGhhcyAxNTBtcyBsYXRlbmN5IHdpdGggOSUgZXJyb3IgcmF0ZSwgZ2l2aW5nIDE2My41bXMgZXhwZWN0ZWQgbGF0ZW5jeS4gU28gQiBpcyB0aGUgYmV0dGVyIGNob2ljZSBkZXNwaXRlIHRoZSBoaWdoZXIgZXJyb3IgcmF0ZS4iLCJ0eXBlIjoicmVhc29uaW5nLnRleHQifQ=="}}
+
+event: content_block_stop
+data: {"type":"content_block_stop","index":2}
+
+event: message_delta
+data: {"type":"message_delta","delta":{"container":null,"stop_details":null,"stop_reason":"end_turn","stop_sequence":null},"usage":{"input_tokens":123,"output_tokens":459,"output_tokens_details":{"thinking_tokens":206},"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"server_tool_use":null,"service_tier":"standard","speed":"standard","cost":0.007254,"is_byok":false,"cost_details":{"upstream_inference_cost":0.007254,"upstream_inference_prompt_cost":0.000369,"upstream_inference_completions_cost":0.006885}},"context_management":null}
+
+event: message_stop
+data: {"type":"message_stop"}
+
+event: data
+data: [DONE]
+

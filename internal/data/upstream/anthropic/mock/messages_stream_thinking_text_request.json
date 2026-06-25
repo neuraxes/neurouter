@@ -1,0 +1,29 @@
+{
+  "model": "anthropic/claude-sonnet-4.6",
+  "max_tokens": 4096,
+  "stream": true,
+  "metadata": {
+    "user_id": "anthropic-conversion-fixture-user"
+  },
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 2048
+  },
+  "system": [
+    {
+      "type": "text",
+      "text": "You are a conversion-test assistant. Think briefly, then give a short final answer."
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Two upstreams are available. A: 200 ms latency, 5% error rate. B: 150 ms latency, 9% error rate. Assuming one retry on failure, briefly reason which has the lower expected latency, then give your answer in a single sentence starting with 'Pick'."
+        }
+      ]
+    }
+  ]
+}

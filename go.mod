@@ -28,7 +28,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260618152121-87f3d3e198d3
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
-	k8s.io/utils v0.0.0-20260617174310-a95e086a2553
 )
 
 require (

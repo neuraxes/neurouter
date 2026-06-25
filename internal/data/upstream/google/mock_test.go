@@ -4,14 +4,13 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/util"
-	"k8s.io/utils/ptr"
 )
 
 var mockChatReq = &entity.ChatReq{
 	Id:    "mock_chat_id",
-	Model: "gemini-2.5-flash",
+	Model: "gemini-3-flash",
 	Config: &v1.GenerationConfig{
-		Temperature: ptr.To[float32](0),
+		Temperature: new(float32(0)),
 		ReasoningConfig: &v1.ReasoningConfig{
 			Effort: v1.ReasoningEffort_REASONING_EFFORT_HIGH,
 		},
@@ -251,13 +250,13 @@ const mockGenerateContentResponseBody = `{
         ],
         "thoughtsTokenCount": 102
     },
-    "modelVersion": "gemini-2.5-flash",
+    "modelVersion": "gemini-3-flash",
     "responseId": "gC8Saaa0BOmL2roP5LPX4Q4"
 }`
 
 var mockChatResp = &entity.ChatResp{
 	Id:     "mock_chat_id",
-	Model:  "gemini-2.5-flash",
+	Model:  "gemini-3-flash",
 	Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
 	Message: &v1.Message{
 		Id:   "gC8Saaa0BOmL2roP5LPX4Q4",
@@ -297,110 +296,41 @@ var mockChatResp = &entity.ChatResp{
 	},
 }
 
-const mockStreamGenerateContentResponseBody = `data: {"candidates": [{"content": {"parts": [{"text": "**Calculating Yesterday's Date**\n\nI've successfully retrieved today's date, 2025-11-11. My current focus is to determine yesterday's date, which I've now calculated as 2025-11-10. This is a crucial step towards providing the requested weather information, and I'm on track to deliver a complete and accurate response.\n\n\n","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 391,"totalTokenCount": 463,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 391}],"thoughtsTokenCount": 72},"modelVersion": "gemini-2.5-flash","responseId": "HTESab3lIJWe0-kP6_Wh4Ao"}
+const mockStreamGenerateContentResponseBody = `data: {"candidates": [{"content": {"parts": [{"text": "**Calculating Yesterday's Date**\n\nI've successfully retrieved today's date, 2025-11-11. My current focus is to determine yesterday's date, which I've now calculated as 2025-11-10. This is a crucial step towards providing the requested weather information, and I'm on track to deliver a complete and accurate response.\n\n\n","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 391,"totalTokenCount": 463,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 391}],"thoughtsTokenCount": 72},"modelVersion": "gemini-3-flash","responseId": "HTESab3lIJWe0-kP6_Wh4Ao"}
 
-data: {"candidates": [{"content": {"parts": [{"text": "**Refining Date Parameters**\n\nI've determined yesterday's date, 2025-11-10, crucial for getting the weather. I'm building on that success. My task now is to integrate this date into the 'get_weather' tool with \"shanghai\" as the location. This will allow me to finally provide the requested information, which I will then report back.\n\n\n","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 391,"totalTokenCount": 493,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 391}],"thoughtsTokenCount": 102},"modelVersion": "gemini-2.5-flash","responseId": "HTESab3lIJWe0-kP6_Wh4Ao"}
+data: {"candidates": [{"content": {"parts": [{"text": "**Refining Date Parameters**\n\nI've determined yesterday's date, 2025-11-10, crucial for getting the weather. I'm building on that success. My task now is to integrate this date into the 'get_weather' tool with \"shanghai\" as the location. This will allow me to finally provide the requested information, which I will then report back.\n\n\n","thought": true}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 391,"totalTokenCount": 493,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 391}],"thoughtsTokenCount": 102},"modelVersion": "gemini-3-flash","responseId": "HTESab3lIJWe0-kP6_Wh4Ao"}
 
-data: {"candidates": [{"content": {"parts": [{"text": "Yesterday was 2025-11-10.\n","thoughtSignature": "CikB0e2KbwvEqAUe/Jbf3zx5lg6fKQe382RFpFzHXfaI7x59tkpEUrWQ0Qp6AdHtim93jg0+fEbEV+4yvK/XAUKtsxzs/NjSKNdVB9bE6QiZZgun3CCrEMtOnvI0c0YPeSh7cD7pbCYrEdJAedfO0qLEkLB0Txf7vP8CCXFdVRfid8HX5vATXDgmJBvsb+oNBJMtbYKmvT89CvcceFYWtWUxQPVE7p0KsAEB0e2Kb7CsrMats3mXW9aOqkSbuS3kM3a6YTOQymYEfIsWmRNpM/1wvZsg8rfBSQ4rNtnKoXsRLhYdmpR4T3h5xV/UpclCduXabEjl4BV4lhln1Rp0CdAzW4j60NUv85NKR9Z0rt1sPZwwJ9B+XAgLnqz3aHWGImJG5ZXMa9FRmTIdV3ko8bAgup1nLYrl7UeOb/+QFSEMxqgZ0a9IPAJN/gB1BSBCRAzvZ/xvP3F3tgppAdHtim9mSHTlqsHDzXB6eIXcG+ciJayNMWdfVwrJ1RLK5aXwNgaeQb7p8QANO3gH9GpY5bIIazL+w20wnKM8xFP5rFD8T/x4LNhe+0sXh4Y7aJewaR8C6DN2ocob8zKi1qxqXyEaJL9I"}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 391,"candidatesTokenCount": 12,"totalTokenCount": 505,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 391}],"thoughtsTokenCount": 102},"modelVersion": "gemini-2.5-flash","responseId": "HTESab3lIJWe0-kP6_Wh4Ao"}
+data: {"candidates": [{"content": {"parts": [{"text": "Yesterday was 2025-11-10.\n","thoughtSignature": "CikB0e2KbwvEqAUe/Jbf3zx5lg6fKQe382RFpFzHXfaI7x59tkpEUrWQ0Qp6AdHtim93jg0+fEbEV+4yvK/XAUKtsxzs/NjSKNdVB9bE6QiZZgun3CCrEMtOnvI0c0YPeSh7cD7pbCYrEdJAedfO0qLEkLB0Txf7vP8CCXFdVRfid8HX5vATXDgmJBvsb+oNBJMtbYKmvT89CvcceFYWtWUxQPVE7p0KsAEB0e2Kb7CsrMats3mXW9aOqkSbuS3kM3a6YTOQymYEfIsWmRNpM/1wvZsg8rfBSQ4rNtnKoXsRLhYdmpR4T3h5xV/UpclCduXabEjl4BV4lhln1Rp0CdAzW4j60NUv85NKR9Z0rt1sPZwwJ9B+XAgLnqz3aHWGImJG5ZXMa9FRmTIdV3ko8bAgup1nLYrl7UeOb/+QFSEMxqgZ0a9IPAJN/gB1BSBCRAzvZ/xvP3F3tgppAdHtim9mSHTlqsHDzXB6eIXcG+ciJayNMWdfVwrJ1RLK5aXwNgaeQb7p8QANO3gH9GpY5bIIazL+w20wnKM8xFP5rFD8T/x4LNhe+0sXh4Y7aJewaR8C6DN2ocob8zKi1qxqXyEaJL9I"}],"role": "model"},"index": 0}],"usageMetadata": {"promptTokenCount": 391,"candidatesTokenCount": 12,"totalTokenCount": 505,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 391}],"thoughtsTokenCount": 102},"modelVersion": "gemini-3-flash","responseId": "HTESab3lIJWe0-kP6_Wh4Ao"}
 
-data: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "get_weather","args": {"city": "shanghai","date": "2025-11-10"}}}],"role": "model"},"finishReason": "STOP","index": 0,"finishMessage": "Model generated function call(s)."}],"usageMetadata": {"promptTokenCount": 391,"candidatesTokenCount": 43,"totalTokenCount": 536,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 391}],"thoughtsTokenCount": 102},"modelVersion": "gemini-2.5-flash","responseId": "HTESab3lIJWe0-kP6_Wh4Ao"}
+data: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "get_weather","args": {"city": "shanghai","date": "2025-11-10"}}}],"role": "model"},"finishReason": "STOP","index": 0,"finishMessage": "Model generated function call(s)."}],"usageMetadata": {"promptTokenCount": 391,"candidatesTokenCount": 43,"totalTokenCount": 536,"promptTokensDetails": [{"modality": "TEXT","tokenCount": 391}],"thoughtsTokenCount": 102},"modelVersion": "gemini-3-flash","responseId": "HTESab3lIJWe0-kP6_Wh4Ao"}
 `
 
-var mockStreamChatResp = []*entity.ChatResp{
-	{
-		Id:    "mock_chat_id",
-		Model: "gemini-2.5-flash",
-		Message: &v1.Message{
-			Id:   "HTESab3lIJWe0-kP6_Wh4Ao",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Content: v1.NewTextContent("**Calculating Yesterday's Date**\n\nI've successfully retrieved today's date, 2025-11-11. My current focus is to determine yesterday's date, which I've now calculated as 2025-11-10. This is a crucial step towards providing the requested weather information, and I'm on track to deliver a complete and accurate response.\n\n\n"),
-				},
-			},
-		},
-		Statistics: &v1.Statistics{
-			Usage: &v1.Usage{
-				InputTokens:     391,
-				OutputTokens:    72,
-				ReasoningTokens: 72,
-			},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "gemini-2.5-flash",
-		Message: &v1.Message{
-			Id:   "HTESab3lIJWe0-kP6_Wh4Ao",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-					Content: v1.NewTextContent("**Refining Date Parameters**\n\nI've determined yesterday's date, 2025-11-10, crucial for getting the weather. I'm building on that success. My task now is to integrate this date into the 'get_weather' tool with \"shanghai\" as the location. This will allow me to finally provide the requested information, which I will then report back.\n\n\n"),
-				},
-			},
-		},
-		Statistics: &v1.Statistics{
-			Usage: &v1.Usage{
-				InputTokens:     391,
-				OutputTokens:    102,
-				ReasoningTokens: 102,
-			},
-		},
-	},
-	{
-		Id:    "mock_chat_id",
-		Model: "gemini-2.5-flash",
-		Message: &v1.Message{
-			Id:   "HTESab3lIJWe0-kP6_Wh4Ao",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Signature: "CikB0e2KbwvEqAUe/Jbf3zx5lg6fKQe382RFpFzHXfaI7x59tkpEUrWQ0Qp6AdHtim93jg0+fEbEV+4yvK/XAUKtsxzs/NjSKNdVB9bE6QiZZgun3CCrEMtOnvI0c0YPeSh7cD7pbCYrEdJAedfO0qLEkLB0Txf7vP8CCXFdVRfid8HX5vATXDgmJBvsb+oNBJMtbYKmvT89CvcceFYWtWUxQPVE7p0KsAEB0e2Kb7CsrMats3mXW9aOqkSbuS3kM3a6YTOQymYEfIsWmRNpM/1wvZsg8rfBSQ4rNtnKoXsRLhYdmpR4T3h5xV/UpclCduXabEjl4BV4lhln1Rp0CdAzW4j60NUv85NKR9Z0rt1sPZwwJ9B+XAgLnqz3aHWGImJG5ZXMa9FRmTIdV3ko8bAgup1nLYrl7UeOb/+QFSEMxqgZ0a9IPAJN/gB1BSBCRAzvZ/xvP3F3tgppAdHtim9mSHTlqsHDzXB6eIXcG+ciJayNMWdfVwrJ1RLK5aXwNgaeQb7p8QANO3gH9GpY5bIIazL+w20wnKM8xFP5rFD8T/x4LNhe+0sXh4Y7aJewaR8C6DN2ocob8zKi1qxqXyEaJL9I",
-					Content:   v1.NewTextContent("Yesterday was 2025-11-10.\n"),
-				},
-			},
-		},
-		Statistics: &v1.Statistics{
-			Usage: &v1.Usage{
-				InputTokens:     391,
-				OutputTokens:    114,
-				ReasoningTokens: 102,
-			},
-		},
-	},
-	{
-		Id:     "mock_chat_id",
-		Model:  "gemini-2.5-flash",
-		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
-		Message: &v1.Message{
-			Id:   "HTESab3lIJWe0-kP6_Wh4Ao",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Content: &v1.Content_ToolUse{
-						ToolUse: &v1.ToolUse{
-							Id:   "get_weather",
-							Name: "get_weather",
-							Inputs: []*v1.ToolUse_Input{
-								{
-									Input: &v1.ToolUse_Input_Text{
-										Text: `{"city":"shanghai","date":"2025-11-10"}`,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Statistics: &v1.Statistics{
-			Usage: &v1.Usage{
-				InputTokens:     391,
-				OutputTokens:    145,
-				ReasoningTokens: 102,
-			},
-		},
-	},
+func mockStreamEvent(event v1.ChatEventPayload) *entity.ChatEvent {
+	return v1.NewChatEvent("mock_chat_id", event)
+}
+
+func mockStreamStopEvent(status v1.ChatStatus, usage *v1.Usage) *entity.ChatEvent {
+	e := mockStreamEvent(v1.NewMessageStopEvent(status))
+	e.Usage = usage
+	return e
+}
+
+var mockStreamChatEvents = []*entity.ChatEvent{
+	mockStreamEvent(v1.NewMessageStartEvent("HTESab3lIJWe0-kP6_Wh4Ao", "gemini-3-flash")),
+	mockStreamEvent(v1.NewContentStartTextEvent(0, v1.ContentPhase_CONTENT_PHASE_REASONING)),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "**Calculating Yesterday's Date**\n\nI've successfully retrieved today's date, 2025-11-11. My current focus is to determine yesterday's date, which I've now calculated as 2025-11-10. This is a crucial step towards providing the requested weather information, and I'm on track to deliver a complete and accurate response.\n\n\n")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "**Refining Date Parameters**\n\nI've determined yesterday's date, 2025-11-10, crucial for getting the weather. I'm building on that success. My task now is to integrate this date into the 'get_weather' tool with \"shanghai\" as the location. This will allow me to finally provide the requested information, which I will then report back.\n\n\n")),
+	mockStreamEvent(v1.NewContentStopEvent(0)),
+	mockStreamEvent(v1.NewContentStartTextEvent(1, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(1, "Yesterday was 2025-11-10.\n")),
+	mockStreamEvent(v1.NewContentDeltaSignatureEvent(1, "CikB0e2KbwvEqAUe/Jbf3zx5lg6fKQe382RFpFzHXfaI7x59tkpEUrWQ0Qp6AdHtim93jg0+fEbEV+4yvK/XAUKtsxzs/NjSKNdVB9bE6QiZZgun3CCrEMtOnvI0c0YPeSh7cD7pbCYrEdJAedfO0qLEkLB0Txf7vP8CCXFdVRfid8HX5vATXDgmJBvsb+oNBJMtbYKmvT89CvcceFYWtWUxQPVE7p0KsAEB0e2Kb7CsrMats3mXW9aOqkSbuS3kM3a6YTOQymYEfIsWmRNpM/1wvZsg8rfBSQ4rNtnKoXsRLhYdmpR4T3h5xV/UpclCduXabEjl4BV4lhln1Rp0CdAzW4j60NUv85NKR9Z0rt1sPZwwJ9B+XAgLnqz3aHWGImJG5ZXMa9FRmTIdV3ko8bAgup1nLYrl7UeOb/+QFSEMxqgZ0a9IPAJN/gB1BSBCRAzvZ/xvP3F3tgppAdHtim9mSHTlqsHDzXB6eIXcG+ciJayNMWdfVwrJ1RLK5aXwNgaeQb7p8QANO3gH9GpY5bIIazL+w20wnKM8xFP5rFD8T/x4LNhe+0sXh4Y7aJewaR8C6DN2ocob8zKi1qxqXyEaJL9I")),
+	mockStreamEvent(v1.NewContentStopEvent(1)),
+	mockStreamEvent(v1.NewContentStartToolUseEvent(2, "get_weather", "get_weather")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(2, `{"city":"shanghai","date":"2025-11-10"}`)),
+	mockStreamEvent(v1.NewContentStopEvent(2)),
+	mockStreamStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE, &v1.Usage{
+		InputTokens:     391,
+		OutputTokens:    145,
+		ReasoningTokens: 102,
+	}),
 }

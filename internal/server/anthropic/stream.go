@@ -25,26 +25,12 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-// contentBlockKind distinguishes different content block types for streaming.
-type contentBlockKind int
-
-const (
-	contentBlockNone contentBlockKind = iota
-	contentBlockText
-	contentBlockThinking
-	contentBlockRedactedThinking
-	contentBlockToolUse
-)
-
 type messageStreamServer struct {
 	v1.Chat_ChatStreamServer
-	ctx                 context.Context
-	httpCtx             http.Context
-	buffer              *bytes.Buffer
-	messageStarted      bool
-	contentBlockStarted bool
-	contentIndex        int64
-	contentKind         contentBlockKind
+	ctx         context.Context
+	httpCtx     http.Context
+	buffer      *bytes.Buffer
+	blockPhases map[uint32]v1.ContentPhase
 }
 
 func (s *messageStreamServer) Context() context.Context {
@@ -76,34 +62,146 @@ func (s *messageStreamServer) sendJSONEvent(event string, v any) (err error) {
 	return s.sendEvent(event, data)
 }
 
-func (s *messageStreamServer) sendMessageStartEvent(resp *v1.ChatResp) {
+func (s *messageStreamServer) Send(event *v1.ChatEvent) error {
+	switch e := event.Event.(type) {
+	case *v1.ChatEvent_MessageStart:
+		s.startMessage(e.MessageStart, event.Usage)
+
+	case *v1.ChatEvent_ContentStart:
+		s.startContentBlock(e.ContentStart)
+
+	case *v1.ChatEvent_ContentDelta:
+		s.deltaContentBlock(e.ContentDelta)
+
+	case *v1.ChatEvent_ContentStop:
+		s.sendContentBlockStopEvent(int64(e.ContentStop.GetIndex()))
+
+	case *v1.ChatEvent_ContentSnapshot:
+		s.snapshotContentBlock(e.ContentSnapshot)
+
+	case *v1.ChatEvent_MessageStop:
+		var usage anthropic.MessageDeltaUsage
+		if event.Usage != nil {
+			u := convertUsageToAnthropic(event.Usage)
+			usage = anthropic.MessageDeltaUsage{
+				InputTokens:          u.InputTokens,
+				OutputTokens:         u.OutputTokens,
+				CacheReadInputTokens: u.CacheReadInputTokens,
+			}
+		}
+		deltaEvent := anthropic.MessageDeltaEvent{
+			Delta: anthropic.MessageDeltaEventDelta{
+				StopReason: convertStatusToAnthropic(e.MessageStop.GetStatus()),
+			},
+			Usage: usage,
+		}
+		s.sendJSONEvent("message_delta", deltaEvent)
+	}
+
+	return nil
+}
+
+func (s *messageStreamServer) startMessage(start *v1.MessageStart, usage *v1.Usage) {
 	event := anthropic.MessageStartEvent{
 		Message: anthropic.Message{
-			ID:      resp.Message.Id,
-			Model:   anthropic.Model(resp.Model),
+			ID:      start.GetId(),
+			Model:   anthropic.Model(start.GetModel()),
 			Role:    "assistant",
 			Content: []anthropic.ContentBlockUnion{},
 		},
 	}
-	if resp.Statistics != nil && resp.Statistics.Usage != nil {
-		event.Message.Usage = convertStatisticsToAnthropic(resp.Statistics)
+	if usage != nil {
+		event.Message.Usage = convertUsageToAnthropic(usage)
 	}
 	s.sendJSONEvent("message_start", event)
 }
 
-func (s *messageStreamServer) sendContentBlockStartEvent(contentBlockType string) {
-	event := anthropic.ContentBlockStartEvent{
-		Index: s.contentIndex,
-		ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
-			Type: contentBlockType,
-		},
+func (s *messageStreamServer) startContentBlock(start *v1.ContentStart) {
+	if s.blockPhases == nil {
+		s.blockPhases = map[uint32]v1.ContentPhase{}
 	}
-	s.sendJSONEvent("content_block_start", event)
+	s.blockPhases[start.GetIndex()] = start.GetPhase()
+
+	contentBlock := anthropic.ContentBlockStartEventContentBlockUnion{}
+	switch c := start.Content.(type) {
+	case *v1.ContentStart_Text:
+		if start.GetPhase() == v1.ContentPhase_CONTENT_PHASE_REASONING {
+			contentBlock.Type = "thinking"
+		} else {
+			contentBlock.Type = "text"
+		}
+	case *v1.ContentStart_ToolUse:
+		contentBlock.Type = "tool_use"
+		contentBlock.ID = c.ToolUse.GetId()
+		contentBlock.Name = c.ToolUse.GetName()
+	}
+	s.sendJSONEvent("content_block_start", anthropic.ContentBlockStartEvent{
+		Index:        int64(start.GetIndex()),
+		ContentBlock: contentBlock,
+	})
 }
 
-func (s *messageStreamServer) sendContentBlockStopEvent() {
+func (s *messageStreamServer) deltaContentBlock(delta *v1.ContentDelta) {
+	index := int64(delta.GetIndex())
+
+	switch d := delta.Delta.(type) {
+	case *v1.ContentDelta_Text:
+		deltaUnion := anthropic.RawContentBlockDeltaUnion{}
+		if s.blockPhases[delta.GetIndex()] == v1.ContentPhase_CONTENT_PHASE_REASONING {
+			deltaUnion.Type = "thinking_delta"
+			deltaUnion.Thinking = d.Text
+		} else {
+			deltaUnion.Type = "text_delta"
+			deltaUnion.Text = d.Text
+		}
+		s.sendJSONEvent("content_block_delta", anthropic.ContentBlockDeltaEvent{
+			Index: index,
+			Delta: deltaUnion,
+		})
+	case *v1.ContentDelta_Signature:
+		s.sendJSONEvent("content_block_delta", anthropic.ContentBlockDeltaEvent{
+			Index: index,
+			Delta: anthropic.RawContentBlockDeltaUnion{
+				Type:      "signature_delta",
+				Signature: d.Signature,
+			},
+		})
+	case *v1.ContentDelta_ToolInputText:
+		s.sendJSONEvent("content_block_delta", anthropic.ContentBlockDeltaEvent{
+			Index: index,
+			Delta: anthropic.RawContentBlockDeltaUnion{
+				Type:        "input_json_delta",
+				PartialJSON: d.ToolInputText,
+			},
+		})
+	}
+}
+
+func (s *messageStreamServer) snapshotContentBlock(content *v1.Content) {
+	index := int64(content.GetIndex())
+
+	switch c := content.Content.(type) {
+	case *v1.Content_Opaque:
+		s.sendJSONEvent("content_block_start", anthropic.ContentBlockStartEvent{
+			Index: index,
+			ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
+				Type: "redacted_thinking",
+				Data: c.Opaque,
+			},
+		})
+	default:
+		return
+	}
+
+	s.sendContentBlockStopEvent(index)
+}
+
+func (s *messageStreamServer) sendContentBlockStopEvent(index int64) {
+	if s.blockPhases != nil {
+		delete(s.blockPhases, uint32(index))
+	}
 	event := anthropic.ContentBlockStopEvent{
-		Index: s.contentIndex,
+		Index: index,
 	}
 	s.sendJSONEvent("content_block_stop", event)
 }
@@ -111,156 +209,4 @@ func (s *messageStreamServer) sendContentBlockStopEvent() {
 func (s *messageStreamServer) sendMessageStopEvent() {
 	event := anthropic.MessageStopEvent{}
 	s.sendJSONEvent("message_stop", event)
-}
-
-func (s *messageStreamServer) Send(resp *v1.ChatResp) error {
-	// Send message_start event if this is the first response
-	if !s.messageStarted && resp.Message != nil {
-		s.messageStarted = true
-		s.sendMessageStartEvent(resp)
-	}
-
-	// Send content block events
-	if resp.Message != nil && len(resp.Message.Contents) > 0 {
-		for _, content := range resp.Message.Contents {
-			if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY {
-				continue // Skip reasoning summary content since it's not supported by Anthropic API
-			}
-
-			// Determine the kind of the current content block
-			currentKind := contentBlockNone
-			switch content.Content.(type) {
-			case *v1.Content_Text:
-				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
-					currentKind = contentBlockThinking
-				} else {
-					currentKind = contentBlockText
-				}
-			case *v1.Content_Opaque:
-				currentKind = contentBlockRedactedThinking
-			case *v1.Content_ToolUse:
-				currentKind = contentBlockToolUse
-			}
-
-			// Switch content block type
-			if content.Index != nil {
-				currentContentIndex := int64(*content.Index)
-				if s.contentBlockStarted && s.contentIndex != currentContentIndex {
-					s.sendContentBlockStopEvent()
-					s.contentBlockStarted = false
-				}
-				s.contentIndex = currentContentIndex
-			} else {
-				if s.contentBlockStarted && s.contentKind != currentKind {
-					s.sendContentBlockStopEvent()
-					s.contentBlockStarted = false
-					s.contentIndex += 1
-				}
-			}
-			s.contentKind = currentKind
-
-			switch c := content.Content.(type) {
-
-			case *v1.Content_Text:
-				if content.Phase == v1.ContentPhase_CONTENT_PHASE_REASONING {
-					if !s.contentBlockStarted {
-						s.contentBlockStarted = true
-						s.sendContentBlockStartEvent("thinking")
-					}
-					if c.Text.GetText() != "" {
-						event := anthropic.ContentBlockDeltaEvent{
-							Index: s.contentIndex,
-							Delta: anthropic.RawContentBlockDeltaUnion{
-								Type:     "thinking_delta",
-								Thinking: c.Text.GetText(),
-							},
-						}
-						s.sendJSONEvent("content_block_delta", event)
-					}
-					if content.Signature != "" {
-						event := anthropic.ContentBlockDeltaEvent{
-							Index: s.contentIndex,
-							Delta: anthropic.RawContentBlockDeltaUnion{
-								Type:      "signature_delta",
-								Signature: content.Signature,
-							},
-						}
-						s.sendJSONEvent("content_block_delta", event)
-					}
-				} else {
-					if !s.contentBlockStarted {
-						s.contentBlockStarted = true
-						s.sendContentBlockStartEvent("text")
-					}
-					event := anthropic.ContentBlockDeltaEvent{
-						Index: s.contentIndex,
-						Delta: anthropic.RawContentBlockDeltaUnion{
-							Type: "text_delta",
-							Text: c.Text.GetText(),
-						},
-					}
-					s.sendJSONEvent("content_block_delta", event)
-				}
-			case *v1.Content_Opaque:
-				if !s.contentBlockStarted {
-					s.contentBlockStarted = true
-					event := anthropic.ContentBlockStartEvent{
-						Index: s.contentIndex,
-						ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
-							Type: "redacted_thinking",
-							Data: c.Opaque,
-						},
-					}
-					s.sendJSONEvent("content_block_start", event)
-				}
-			case *v1.Content_ToolUse:
-				if !s.contentBlockStarted {
-					s.contentBlockStarted = true
-					event := anthropic.ContentBlockStartEvent{
-						Index: s.contentIndex,
-						ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{
-							Type: "tool_use",
-							ID:   c.ToolUse.GetId(),
-							Name: c.ToolUse.GetName(),
-						},
-					}
-					s.sendJSONEvent("content_block_start", event)
-				}
-				if len(c.ToolUse.Inputs) > 0 {
-					event := anthropic.ContentBlockDeltaEvent{
-						Index: s.contentIndex,
-						Delta: anthropic.RawContentBlockDeltaUnion{
-							Type:        "input_json_delta",
-							PartialJSON: c.ToolUse.GetTextualInput(),
-						},
-					}
-					s.sendJSONEvent("content_block_delta", event)
-				}
-			}
-		}
-	}
-
-	// When we receive a stats-only response (no message), it means we're at the end
-	if resp.Message == nil && resp.Statistics != nil && resp.Statistics.Usage != nil {
-		if s.contentBlockStarted {
-			s.sendContentBlockStopEvent()
-			s.contentBlockStarted = false
-			s.contentIndex += 1
-		}
-
-		usage := convertStatisticsToAnthropic(resp.Statistics)
-		deltaEvent := anthropic.MessageDeltaEvent{
-			Delta: anthropic.MessageDeltaEventDelta{
-				StopReason: convertStatusToAnthropic(resp.Status),
-			},
-			Usage: anthropic.MessageDeltaUsage{
-				InputTokens:          usage.InputTokens,
-				OutputTokens:         usage.OutputTokens,
-				CacheReadInputTokens: usage.CacheReadInputTokens,
-			},
-		}
-		s.sendJSONEvent("message_delta", deltaEvent)
-	}
-
-	return nil
 }

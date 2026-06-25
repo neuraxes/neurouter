@@ -24,8 +24,8 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func TestConvertEffortToOpenAI(t *testing.T) {
-	Convey("Test convertEffortToOpenAI", t, func() {
+func TestConvertReasoningEffortToOpenAI(t *testing.T) {
+	Convey("Test convertReasoningEffortToOpenAI", t, func() {
 		cases := []struct {
 			effort   v1.ReasoningEffort
 			expected shared.ReasoningEffort
@@ -41,7 +41,7 @@ func TestConvertEffortToOpenAI(t *testing.T) {
 		}
 
 		for _, c := range cases {
-			So(convertEffortToOpenAI(c.effort), ShouldEqual, c.expected)
+			So(convertReasoningEffortToOpenAI(c.effort), ShouldEqual, c.expected)
 		}
 	})
 }
@@ -69,8 +69,8 @@ func TestConvertImageToOpenAIURL(t *testing.T) {
 	})
 }
 
-func TestConvertSchemaToMap(t *testing.T) {
-	Convey("Test convertSchemaToMap", t, func() {
+func TestConvertSchemaToOpenAIParameters(t *testing.T) {
+	Convey("Test convertSchemaToOpenAIParameters", t, func() {
 		Convey("with object schema and properties", func() {
 			schema := util.MustStructFromMap(map[string]any{
 				"type": "object",
@@ -80,7 +80,7 @@ func TestConvertSchemaToMap(t *testing.T) {
 				"required": []string{"name"},
 			})
 
-			params := convertSchemaToMap(schema)
+			params := convertSchemaToOpenAIParameters(schema)
 			So(params["type"], ShouldEqual, "object")
 			So(params["required"], ShouldResemble, []any{"name"})
 			props := params["properties"].(map[string]any)
@@ -97,7 +97,7 @@ func TestConvertSchemaToMap(t *testing.T) {
 				},
 			})
 
-			params := convertSchemaToMap(schema)
+			params := convertSchemaToOpenAIParameters(schema)
 			So(params["additionalProperties"], ShouldEqual, false)
 			So(params["$defs"], ShouldContainKey, "city")
 		})

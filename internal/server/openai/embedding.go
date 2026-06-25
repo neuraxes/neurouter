@@ -37,7 +37,7 @@ func (s *Server) handleEmbedding(httpCtx http.Context) error {
 		return err
 	}
 
-	req := convertEmbeddingReqFromOpenAIChat(&openAIReq)
+	req := convertEmbeddingReqFromOpenAI(&openAIReq)
 
 	m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 		return s.embedSvc.Embed(ctx, req.(*v1.EmbedReq))
@@ -47,6 +47,6 @@ func (s *Server) handleEmbedding(httpCtx http.Context) error {
 		return err
 	}
 
-	openAIResp := convertEmbeddingRespToOpenAIChat(resp.(*v1.EmbedResp))
+	openAIResp := convertEmbeddingRespToOpenAI(resp.(*v1.EmbedResp))
 	return httpCtx.Result(200, openAIResp)
 }

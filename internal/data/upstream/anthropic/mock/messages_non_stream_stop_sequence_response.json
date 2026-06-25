@@ -1,0 +1,39 @@
+{
+  "id": "gen-1782639367-LWXTlYSwUf9TmicH9TYr",
+  "type": "message",
+  "role": "assistant",
+  "container": null,
+  "content": [
+    {
+      "type": "text",
+      "text": "1 2 3 4 ",
+      "citations": []
+    }
+  ],
+  "model": "anthropic/claude-4.6-sonnet-20260217",
+  "stop_reason": "stop_sequence",
+  "stop_details": null,
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 71,
+    "output_tokens": 10,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": null,
+    "inference_geo": null,
+    "server_tool_use": null,
+    "service_tier": "standard",
+    "speed": "standard",
+    "cost": 0.000363,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.000363,
+      "upstream_inference_prompt_cost": 0.000213,
+      "upstream_inference_completions_cost": 0.00015
+    }
+  },
+  "context_management": null
+}

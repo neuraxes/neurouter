@@ -1,0 +1,39 @@
+{
+  "id": "gen-1782639574-Xno06ITSrNECtJCEjTXG",
+  "type": "message",
+  "role": "assistant",
+  "container": null,
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"severity\":\"high\",\"affected_region\":\"us-east\",\"primary_cause\":\"OpenAI upstream rate limiting causing increased retry pressure and degraded customer traffic throughput\",\"recommended_action\":\"Immediately shift us-east customer traffic from OpenAI upstream to the healthy Anthropic upstream, implement backoff strategies to reduce retry pressure, and monitor OpenAI rate limit recovery before rebalancing\",\"signals\":[\"Customer traffic slow in us-east\",\"OpenAI upstream is rate limited\",\"Anthropic upstream is healthy\",\"Retry pressure is rising\"]}",
+      "citations": []
+    }
+  ],
+  "model": "anthropic/claude-4.6-sonnet-20260217",
+  "stop_reason": "end_turn",
+  "stop_details": null,
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 356,
+    "output_tokens": 118,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": null,
+    "inference_geo": null,
+    "server_tool_use": null,
+    "service_tier": "standard",
+    "speed": "standard",
+    "cost": 0.002838,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.002838,
+      "upstream_inference_prompt_cost": 0.001068,
+      "upstream_inference_completions_cost": 0.00177
+    }
+  },
+  "context_management": null
+}

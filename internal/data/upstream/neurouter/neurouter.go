@@ -64,10 +64,10 @@ type neurouterChatStreamClient struct {
 	stream v1.Chat_ChatStreamClient
 }
 
-func (c *neurouterChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
-	return func(yield func(*entity.ChatResp, error) bool) {
+func (c *neurouterChatStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error] {
+	return func(yield func(*entity.ChatEvent, error) bool) {
 		for {
-			resp, err := c.stream.Recv()
+			event, err := c.stream.Recv()
 			if err != nil {
 				if err == io.EOF {
 					return
@@ -76,17 +76,17 @@ func (c *neurouterChatStreamClient) AsSeq() iter.Seq2[*entity.ChatResp, error] {
 				return
 			}
 
-			if !yield(resp, nil) {
+			if !yield(event, nil) {
 				return
 			}
 		}
 	}
 }
 
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatResp, error] {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
 	stream, err := r.chatClient.ChatStream(ctx, req)
 	if err != nil {
-		return func(yield func(*entity.ChatResp, error) bool) {
+		return func(yield func(*entity.ChatEvent, error) bool) {
 			yield(nil, err)
 		}
 	}

@@ -350,135 +350,6 @@ var mockChatResp = &entity.ChatResp{
 	},
 }
 
-var mockResponsesResponseBody = `{
-    "id": "resp_0dd30283291d2ea70169d0e9b95d488193a445876892202e22",
-    "model": "gpt-4o-mini",
-    "object": "response",
-    "output": [
-        {
-            "type": "reasoning",
-            "id": "rs_0dd30283291d2ea70169d0e9b9b3f08193a563e455f75eef7f",
-            "summary": [
-                {
-                    "text": "**Looking up yesterday's weather**\n\nThe user greeted me with \"hi, how are you?\" and asked about the weather in Shanghai yesterday. Since today is November 11, 2025, I can easily calculate that yesterday's date was November 10, 2025. I need to use the weather tool to get that information, specifically checking for the weather conditions in Shanghai on that date. Let's proceed with that!",
-                    "type": "summary_text"
-                }
-            ],
-            "encrypted_content": "gAAAAABp0Om8ygrVlzOfI4jMt3tSNBZ-XBbU3uK_9f3ev0EGMZH2er5Pt1mpadlQpmXxYiK81yfuaPzZs2pgFeuTQMByY1qZd_lIeHQtX1m8Yt-Bkh49goZaUiXXPysITbkK9_8Z0tK7VzEfbE1wg6aVYN70pNVD5LM2K8TUD7rHX7VB9UpyVLJdNX6Pj0AdxbjPdpVZCieHB8wM4oNEUFmlLtOgw5CfOSHBAS3o3ewC2AFFVal-DXurw4Mu_c8_8zPBKNj_355wjT-1k-DdK6TrjRbfSUnkfKyIKCQHzPs0rVuC3kvLL2prLAsI1TqU1Al4JFFm3aTiViChdkf_bDtf-oo1NtDCRdSMYU0Vyj5qoHPnPnKuFCVzERJ3QE7Rz1-aYBb9DCDbvg-aWF-nqeLroclts6Fhu7ZBDYEJtLqzZvn67VrBcQEX0SUEO1rX5nwknxka0kxwo7wYmtKJAyK1F-TioSCBnfdorVIfMSDkiDTB6oc9Ddu82U6HLNX_oX4Ls1mfjo3sjNnRvXaS4vhtjqqH6xlwgEwWLg21ezSDPBHHKlNrqcUiU2Y9NXbZvv6mcZS8kUohNKSf8arGSZj60W58g77VGzMs292uqyTexCJSgFRk41mGmoVM8Nd757PEiaYw7AdYPQKrNzqbSeLk4ZOi2kpFPwsfGfpwVLQInZQ6iyCXCKLj7wR8qkHi4r4dwEjHPwfolyjJZMCjAlASZ5gxDYPztthffu8ju-4vBr1JtvO_f9dk7bys1vwG-zknbhWKz_w8hjeIqHq-KCLbCTvWmQI0SqWNOkDXbDmIdyfslQkFqW-A8wjABCOo1S271N6WzPcXMmqoT9qXwDhpWrZTkcUx7VSWKPRdiY5mH4_Y3EFUsHOFAmpPiuuuEwwBvULeNJhYuW4AyeWhGSs5b6iJapLfUqghsl1GpTqauOn8motlFUWQY0ynAtaUHmoS_jf0eAyLXymm6F3mdk1YjhnddOuGT5by-MoiQlj8XCksn3D11HFJOmeiNtCMZPggAUxNfHKjowt3C6a7fjQn0OmpSfoa5EL30hQiC3T51bzXohq8pBg="
-        },
-        {
-            "type": "function_call",
-            "id": "fc_0dd30283291d2ea70169d0e9bc4f948193a7ed1ab06c9f04f9",
-            "status": "completed",
-            "arguments": "{\"city\":\"Shanghai\",\"date\":\"2025-11-10\"}",
-            "call_id": "call_MaEJJBhEY01WIMrgrTn4j32q",
-            "name": "get_weather"
-        }
-    ],
-    "reasoning": {
-        "effort": "high",
-        "summary": "detailed"
-    },
-    "status": "completed",
-    "temperature": 1,
-    "tool_choice": "auto",
-    "tools": [
-        {
-            "type": "function",
-            "name": "get_today_date",
-            "description": "Get today's date",
-            "parameters": {
-                "properties": {},
-                "type": "object",
-                "additionalProperties": false,
-                "required": []
-            },
-            "strict": true
-        },
-        {
-            "type": "function",
-            "name": "get_weather",
-            "description": "Get weather for specific date",
-            "parameters": {
-                "properties": {
-                    "city": {
-                        "description": "The name of the city",
-                        "type": "string"
-                    },
-                    "date": {
-                        "description": "The date to get the weather for",
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "city",
-                    "date"
-                ],
-                "type": "object",
-                "additionalProperties": false
-            },
-            "strict": true
-        }
-    ],
-    "top_p": 0.98,
-    "truncation": "disabled",
-    "usage": {
-        "total_tokens": 281,
-        "input_tokens": 196,
-        "output_tokens": 85,
-        "input_tokens_details": {
-            "cached_tokens": 0
-        },
-        "output_tokens_details": {
-            "reasoning_tokens": 56
-        }
-    }
-}`
-
-var mockResponsesResp = &entity.ChatResp{
-	Id:     "mock_chat_id",
-	Model:  "gpt-4o-mini",
-	Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
-	Message: &v1.Message{
-		Id:   "resp_0dd30283291d2ea70169d0e9b95d488193a445876892202e22",
-		Role: v1.Role_MODEL,
-		Contents: []*v1.Content{
-			{
-				Id:      "rs_0dd30283291d2ea70169d0e9b9b3f08193a563e455f75eef7f",
-				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
-				Content: &v1.Content_Opaque{Opaque: "gAAAAABp0Om8ygrVlzOfI4jMt3tSNBZ-XBbU3uK_9f3ev0EGMZH2er5Pt1mpadlQpmXxYiK81yfuaPzZs2pgFeuTQMByY1qZd_lIeHQtX1m8Yt-Bkh49goZaUiXXPysITbkK9_8Z0tK7VzEfbE1wg6aVYN70pNVD5LM2K8TUD7rHX7VB9UpyVLJdNX6Pj0AdxbjPdpVZCieHB8wM4oNEUFmlLtOgw5CfOSHBAS3o3ewC2AFFVal-DXurw4Mu_c8_8zPBKNj_355wjT-1k-DdK6TrjRbfSUnkfKyIKCQHzPs0rVuC3kvLL2prLAsI1TqU1Al4JFFm3aTiViChdkf_bDtf-oo1NtDCRdSMYU0Vyj5qoHPnPnKuFCVzERJ3QE7Rz1-aYBb9DCDbvg-aWF-nqeLroclts6Fhu7ZBDYEJtLqzZvn67VrBcQEX0SUEO1rX5nwknxka0kxwo7wYmtKJAyK1F-TioSCBnfdorVIfMSDkiDTB6oc9Ddu82U6HLNX_oX4Ls1mfjo3sjNnRvXaS4vhtjqqH6xlwgEwWLg21ezSDPBHHKlNrqcUiU2Y9NXbZvv6mcZS8kUohNKSf8arGSZj60W58g77VGzMs292uqyTexCJSgFRk41mGmoVM8Nd757PEiaYw7AdYPQKrNzqbSeLk4ZOi2kpFPwsfGfpwVLQInZQ6iyCXCKLj7wR8qkHi4r4dwEjHPwfolyjJZMCjAlASZ5gxDYPztthffu8ju-4vBr1JtvO_f9dk7bys1vwG-zknbhWKz_w8hjeIqHq-KCLbCTvWmQI0SqWNOkDXbDmIdyfslQkFqW-A8wjABCOo1S271N6WzPcXMmqoT9qXwDhpWrZTkcUx7VSWKPRdiY5mH4_Y3EFUsHOFAmpPiuuuEwwBvULeNJhYuW4AyeWhGSs5b6iJapLfUqghsl1GpTqauOn8motlFUWQY0ynAtaUHmoS_jf0eAyLXymm6F3mdk1YjhnddOuGT5by-MoiQlj8XCksn3D11HFJOmeiNtCMZPggAUxNfHKjowt3C6a7fjQn0OmpSfoa5EL30hQiC3T51bzXohq8pBg="},
-			},
-			{
-				Id:      "rs_0dd30283291d2ea70169d0e9b9b3f08193a563e455f75eef7f",
-				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING_SUMMARY,
-				Content: v1.NewTextContent("**Looking up yesterday's weather**\n\nThe user greeted me with \"hi, how are you?\" and asked about the weather in Shanghai yesterday. Since today is November 11, 2025, I can easily calculate that yesterday's date was November 10, 2025. I need to use the weather tool to get that information, specifically checking for the weather conditions in Shanghai on that date. Let's proceed with that!"),
-			},
-			{
-				Id: "fc_0dd30283291d2ea70169d0e9bc4f948193a7ed1ab06c9f04f9",
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Id:   "call_MaEJJBhEY01WIMrgrTn4j32q",
-						Name: "get_weather",
-						Inputs: []*v1.ToolUse_Input{{
-							Input: &v1.ToolUse_Input_Text{
-								Text: "{\"city\":\"Shanghai\",\"date\":\"2025-11-10\"}",
-							},
-						}},
-					},
-				},
-			},
-		},
-	},
-	Statistics: &v1.Statistics{
-		Usage: &v1.Usage{
-			InputTokens:       196,
-			OutputTokens:      85,
-			CachedInputTokens: 0,
-			ReasoningTokens:   56,
-		},
-	},
-}
-
 var mockChatCompletionStreamRequestBody = `{
     "messages": [
         {
@@ -609,198 +480,35 @@ data: [DONE]
 
 `
 
-var mockChatStreamResp = []*entity.ChatResp{
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:   "mock_message_id",
-			Role: v1.Role_MODEL,
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:       "mock_message_id",
-			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: v1.NewTextContent("Today is November 11,")}},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:       "mock_message_id",
-			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: v1.NewTextContent(" ")}},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:       "mock_message_id",
-			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: v1.NewTextContent("2025. Therefore, yesterday was November 10, 2025.")}},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:       "mock_message_id",
-			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: v1.NewTextContent(" \n\n")}},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:       "mock_message_id",
-			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: v1.NewTextContent("Now, I will check the weather in Shanghai for November")}},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:       "mock_message_id",
-			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: v1.NewTextContent(" ")}},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:       "mock_message_id",
-			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: v1.NewTextContent("10, 2025")}},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:       "mock_message_id",
-			Role:     v1.Role_MODEL,
-			Contents: []*v1.Content{{Content: v1.NewTextContent(".")}},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:   "mock_message_id",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Index: new(uint32(0)),
-					Content: &v1.Content_ToolUse{
-						ToolUse: &v1.ToolUse{
-							Id:   "call_CzJFKEw26rJ6McvhRnMq1Izg",
-							Name: "get_weather",
-							Inputs: []*v1.ToolUse_Input{
-								{
-									Input: &v1.ToolUse_Input_Text{},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:   "mock_message_id",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Index: new(uint32(0)),
-					Content: &v1.Content_ToolUse{
-						ToolUse: &v1.ToolUse{
-							Inputs: []*v1.ToolUse_Input{
-								{
-									Input: &v1.ToolUse_Input_Text{Text: "{\"city\":\"Shanghai\",\""},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:   "mock_message_id",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Index: new(uint32(0)),
-					Content: &v1.Content_ToolUse{
-						ToolUse: &v1.ToolUse{
-							Inputs: []*v1.ToolUse_Input{
-								{
-									Input: &v1.ToolUse_Input_Text{Text: "date\":\"2025-11-10"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:   "mock_message_id",
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Index: new(uint32(0)),
-					Content: &v1.Content_ToolUse{
-						ToolUse: &v1.ToolUse{
-							Inputs: []*v1.ToolUse_Input{
-								{
-									Input: &v1.ToolUse_Input_Text{Text: "\"}"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
-	{
-		Id:     "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model:  "gpt-4o-mini",
-		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
-		Message: &v1.Message{
-			Id:   "mock_message_id",
-			Role: v1.Role_MODEL,
-		},
-	},
-	{
-		Id:    "chatcmpl-tZZ2ljb9Bz4BoRIcS6cL",
-		Model: "gpt-4o-mini",
-		Message: &v1.Message{
-			Id:   "mock_message_id",
-			Role: v1.Role_MODEL,
-		},
-		Statistics: &v1.Statistics{
-			Usage: &v1.Usage{
-				InputTokens:  192,
-				OutputTokens: 65,
-			},
-		},
-	},
+func mockStreamEvent(event v1.ChatEventPayload) *entity.ChatEvent {
+	return v1.NewChatEvent("mock_chat_id", event)
+}
+
+func mockStreamStopEvent(status v1.ChatStatus, usage *v1.Usage) *entity.ChatEvent {
+	e := mockStreamEvent(v1.NewMessageStopEvent(status))
+	e.Usage = usage
+	return e
+}
+
+var mockChatStreamEvents = []*entity.ChatEvent{
+	mockStreamEvent(v1.NewMessageStartEvent("mock_message_id", "gpt-4o-mini")),
+	mockStreamEvent(v1.NewContentStartTextEvent(0, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "Today is November 11,")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, " ")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "2025. Therefore, yesterday was November 10, 2025.")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, " \n\n")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "Now, I will check the weather in Shanghai for November")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, " ")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "10, 2025")),
+	mockStreamEvent(v1.NewContentDeltaTextEvent(0, ".")),
+	mockStreamEvent(v1.NewContentStopEvent(0)),
+	mockStreamEvent(v1.NewContentStartToolUseEvent(1, "call_CzJFKEw26rJ6McvhRnMq1Izg", "get_weather")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(1, "{\"city\":\"Shanghai\",\"")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(1, "date\":\"2025-11-10")),
+	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(1, "\"}")),
+	mockStreamEvent(v1.NewContentStopEvent(1)),
+	mockStreamStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE, &v1.Usage{
+		InputTokens:  192,
+		OutputTokens: 65,
+	}),
 }

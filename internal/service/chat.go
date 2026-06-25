@@ -39,8 +39,8 @@ type wrappedChatStreamServer struct {
 	srv v1.Chat_ChatStreamServer
 }
 
-func (w *wrappedChatStreamServer) Send(resp *entity.ChatResp) error {
-	return w.srv.Send(resp)
+func (w *wrappedChatStreamServer) Send(event *entity.ChatEvent) error {
+	return w.srv.Send(event)
 }
 
 func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer) error {

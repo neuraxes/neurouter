@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -75,7 +74,7 @@ func TestChat(t *testing.T) {
 
 		Convey("When Chat is called and the request is successful", func() {
 			mockRoundTripper.RoundTripFunc = func(req *http.Request) (*http.Response, error) {
-				So(req.URL.Path, ShouldContainSubstring, "/gemini-2.5-flash:generateContent")
+				So(req.URL.Path, ShouldContainSubstring, "/gemini-3-flash:generateContent")
 				So(req.Header.Get("X-Goog-Api-Key"), ShouldEqual, "test-api-key")
 
 				body, err := io.ReadAll(req.Body)
@@ -127,7 +126,7 @@ func TestChat(t *testing.T) {
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Header:     http.Header{"Content-Type": []string{"application/json"}},
-					Body:       io.NopCloser(strings.NewReader(`{"candidates": [], "modelVersion": "gemini-2.5-flash"}`)),
+					Body:       io.NopCloser(strings.NewReader(`{"candidates": [], "modelVersion": "gemini-3-flash"}`)),
 				}, nil
 			}
 
@@ -155,7 +154,7 @@ func TestChatStream(t *testing.T) {
 
 		Convey("When ChatStream is called and the request is successful", func() {
 			mockRoundTripper.RoundTripFunc = func(req *http.Request) (*http.Response, error) {
-				So(req.URL.Path, ShouldContainSubstring, "/gemini-2.5-flash:streamGenerateContent")
+				So(req.URL.Path, ShouldContainSubstring, "/gemini-3-flash:streamGenerateContent")
 				So(req.Header.Get("X-Goog-Api-Key"), ShouldEqual, "test-api-key")
 
 				body, err := io.ReadAll(req.Body)
@@ -184,21 +183,18 @@ func TestChatStream(t *testing.T) {
 			Convey("Then it should return a sequence and no error", func() {
 				So(seq, ShouldNotBeNil)
 
-				var responses []*entity.ChatResp
-				for resp, err := range seq {
+				var events []*entity.ChatEvent
+				for event, err := range seq {
 					So(err, ShouldBeNil)
-					So(resp, ShouldNotBeNil)
+					So(event, ShouldNotBeNil)
 
-					responses = append(responses, resp)
+					events = append(events, event)
 				}
 
-				So(responses, ShouldHaveLength, len(mockStreamChatResp))
+				So(events, ShouldHaveLength, len(mockStreamChatEvents))
 
-				for i, resp := range responses {
-					if !proto.Equal(resp, mockStreamChatResp[i]) {
-						fmt.Println("\n", resp.String(), "\n", mockStreamChatResp[i].String())
-					}
-					So(proto.Equal(resp, mockStreamChatResp[i]), ShouldBeTrue)
+				for i, event := range events {
+					So(proto.Equal(event, mockStreamChatEvents[i]), ShouldBeTrue)
 				}
 			})
 		})
