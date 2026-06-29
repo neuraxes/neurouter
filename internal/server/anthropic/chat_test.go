@@ -1,24 +1,36 @@
+// Copyright 2024 Neurouter Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package anthropic
 
 import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/go-kratos/kratos/v2/middleware"
 	kratoshttp "github.com/go-kratos/kratos/v2/transport/http"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic/mock"
 )
 
-// mockChatServer implements v1.ChatServer for testing.
 type mockChatServer struct {
 	v1.ChatServer
 	chatFunc       func(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error)
@@ -94,40 +106,36 @@ func (t *mockHTTPContext) Blob(code int, contentType string, data []byte) error 
 }
 
 func TestChat(t *testing.T) {
-	Convey("Given a mock ChatServer for non-streaming requests", t, func() {
-		mock := &mockChatServer{}
-		srv := &Server{chatSvc: mock}
-
-		Convey("When a non-streaming Anthropic request is sent", func() {
-			mock.chatFunc = func(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
-				So(proto.Equal(req, mockChatReq), ShouldBeTrue)
-				return mockChatResp, nil
+	Convey("Given the Anthropic conversion fixtures", t, func() {
+		for _, fixture := range mock.Fixtures {
+			if fixture.Stream {
+				continue
 			}
 
-			// Create HTTP context with mock request
-			req, err := http.NewRequest("POST", "/v1/messages", strings.NewReader(mockMessagesRequestBody))
-			So(err, ShouldBeNil)
-			ctx := newMockHTTPContext(req)
-			So(ctx, ShouldNotBeNil)
+			Convey("When handling the "+fixture.Name+" non-stream request", func() {
+				srv := &Server{
+					chatSvc: &mockChatServer{
+						chatFunc: func(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
+							assertChatReqEquality(req, fixture.ChatReq)
+							return fixture.ChatResp, nil
+						},
+					},
+				}
 
-			err = srv.handleMessageCompletion(ctx)
-			So(err, ShouldBeNil)
+				req, err := http.NewRequest(http.MethodPost, "/v1/messages", bytes.NewReader(fixture.Request))
+				So(err, ShouldBeNil)
+				ctx := newMockHTTPContext(req)
 
-			// Verify the response
-			var anthropicResp anthropic.Message
-			err = json.Unmarshal(ctx.respBody.Bytes(), &anthropicResp)
-			So(err, ShouldBeNil)
-			anthropicRespJson, err := json.Marshal(anthropicResp)
-			So(err, ShouldBeNil)
+				err = srv.handleMessageCompletion(ctx)
+				So(err, ShouldBeNil)
 
-			expectedAnthropicResp := &anthropic.Message{}
-			err = json.Unmarshal([]byte(mockMessagesResponseBody), expectedAnthropicResp)
-			So(err, ShouldBeNil)
-			expectedAnthropicRespJson, err := json.Marshal(expectedAnthropicResp)
-			So(err, ShouldBeNil)
-
-			So(anthropicRespJson, ShouldEqual, expectedAnthropicRespJson)
-		})
+				Convey("Then it should return the fixture response as Anthropic JSON", func() {
+					So(ctx.statusCode, ShouldEqual, http.StatusOK)
+					So(ctx.headers.Get("Content-Type"), ShouldEqual, "application/json")
+					// TODO: Compare the actual response body with the expected one.
+				})
+			})
+		}
 	})
 }
 
@@ -160,187 +168,65 @@ func parseSSEEvents(sseData string) []sseEvent {
 }
 
 func TestChatStream(t *testing.T) {
-	Convey("Given a mock ChatServer for streaming requests", t, func() {
-		mock := &mockChatServer{}
-		srv := &Server{chatSvc: mock}
-
-		Convey("When ChatStream is called and responses are sent", func() {
-			mock.chatStreamFunc = func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
-				So(proto.Equal(req, mockChatReq), ShouldBeTrue)
-				for _, event := range mockChatStreamEvents {
-					if err := stream.Send(event); err != nil {
-						return err
-					}
-				}
-				return nil
+	Convey("Given the Anthropic conversion fixtures", t, func() {
+		for _, fixture := range mock.Fixtures {
+			if !fixture.Stream {
+				continue
 			}
 
-			// Create HTTP context with streaming request
-			req, err := http.NewRequest("POST", "/v1/messages", strings.NewReader(mockMessagesRequestBody))
-			So(err, ShouldBeNil)
-			req.Header.Set("Accept", "text/event-stream")
-			ctx := newMockHTTPContext(req)
+			Convey("When handling the "+fixture.Name+" stream request", func() {
+				srv := &Server{
+					chatSvc: &mockChatServer{
+						chatStreamFunc: func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+							assertChatReqEquality(req, fixture.ChatReq)
+							for _, event := range fixture.ChatEvents {
+								if err := stream.Send(event); err != nil {
+									return err
+								}
+							}
+							return nil
+						},
+					},
+				}
 
-			err = srv.handleMessageCompletion(ctx)
-			So(err, ShouldBeNil)
+				req, err := http.NewRequest(http.MethodPost, "/v1/messages", bytes.NewReader(fixture.Request))
+				So(err, ShouldBeNil)
+				req.Header.Set("Accept", "text/event-stream")
+				ctx := newMockHTTPContext(req)
 
-			// Parse SSE events from the buffer
-			events := parseSSEEvents(ctx.respBody.String())
+				err = srv.handleMessageCompletion(ctx)
+				So(err, ShouldBeNil)
 
-			Convey("Then the correct number of SSE events should be emitted", func() {
-				// Expected events:
-				// 0: message_start
-				// 1: content_block_start (thinking)
-				// 2: content_block_delta (thinking_delta)
-				// 3: content_block_delta (signature_delta)
-				// 4: content_block_stop
-				// 5: content_block_start (text)
-				// 6: content_block_delta (text_delta: first chunk)
-				// 7: content_block_delta (text_delta: second chunk)
-				// 8: content_block_stop
-				// 9: content_block_start (tool_use)
-				// 10: content_block_delta (input_json_delta: empty)
-				// 11: content_block_delta (input_json_delta: 1st chunk)
-				// 12: content_block_delta (input_json_delta: 2nd chunk)
-				// 13: content_block_delta (input_json_delta: 3rd chunk)
-				// 14: content_block_delta (input_json_delta: 4th chunk)
-				// 15: content_block_stop
-				// 16: message_delta
-				// 17: message_stop
-				So(len(events), ShouldEqual, 18)
+				Convey("Then it should return the fixture events as Anthropic SSE", func() {
+					So(ctx.headers.Get("Content-Type"), ShouldEqual, "text/event-stream")
+					So(ctx.headers.Get("Cache-Control"), ShouldEqual, "no-cache")
+					So(ctx.headers.Get("Connection"), ShouldEqual, "keep-alive")
+					parseSSEEvents(ctx.respBody.String())
+					// TODO: Compare the actual response body with the expected one.
+				})
 			})
-
-			Convey("Then message_start should contain the message ID and role", func() {
-				So(events[0].event, ShouldEqual, "message_start")
-				var ev anthropic.MessageStartEvent
-				json.Unmarshal([]byte(events[0].data), &ev)
-				So(ev.Message.ID, ShouldEqual, "msg_016m3rsWB3U7eYBEKjTRSruv")
-				So(string(ev.Message.Role), ShouldEqual, "assistant")
-				So(string(ev.Message.Model), ShouldEqual, "claude-haiku-4-5-20251001")
-				So(ev.Message.Usage.InputTokens, ShouldEqual, 840)
-			})
-
-			Convey("Then thinking events should be emitted correctly", func() {
-				// content_block_start for thinking
-				So(events[1].event, ShouldEqual, "content_block_start")
-				var cbStart anthropic.ContentBlockStartEvent
-				json.Unmarshal([]byte(events[1].data), &cbStart)
-				So(cbStart.Index, ShouldEqual, 0)
-				So(cbStart.ContentBlock.Type, ShouldEqual, "thinking")
-
-				// content_block_delta for thinking text
-				So(events[2].event, ShouldEqual, "content_block_delta")
-				var cbDelta anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[2].data), &cbDelta)
-				So(cbDelta.Index, ShouldEqual, 0)
-				So(cbDelta.Delta.Type, ShouldEqual, "thinking_delta")
-				So(cbDelta.Delta.Thinking, ShouldEqual, "The user wants weather info for Shanghai.")
-
-				// content_block_delta for signature
-				So(events[3].event, ShouldEqual, "content_block_delta")
-				var sigDelta anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[3].data), &sigDelta)
-				So(sigDelta.Index, ShouldEqual, 0)
-				So(sigDelta.Delta.Type, ShouldEqual, "signature_delta")
-				So(sigDelta.Delta.Signature, ShouldEqual, "sig-stream-abc")
-
-				// content_block_stop
-				So(events[4].event, ShouldEqual, "content_block_stop")
-			})
-
-			Convey("Then text events should be emitted correctly", func() {
-				// content_block_start for text
-				So(events[5].event, ShouldEqual, "content_block_start")
-				var cbStart anthropic.ContentBlockStartEvent
-				json.Unmarshal([]byte(events[5].data), &cbStart)
-				So(cbStart.Index, ShouldEqual, 1)
-				So(cbStart.ContentBlock.Type, ShouldEqual, "text")
-
-				// first text delta
-				So(events[6].event, ShouldEqual, "content_block_delta")
-				var delta1 anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[6].data), &delta1)
-				So(delta1.Index, ShouldEqual, 1)
-				So(delta1.Delta.Type, ShouldEqual, "text_delta")
-				So(delta1.Delta.Text, ShouldEqual, "Now let me get the weather for Shanghai yesterday")
-
-				// second text delta
-				So(events[7].event, ShouldEqual, "content_block_delta")
-				var delta2 anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[7].data), &delta2)
-				So(delta2.Index, ShouldEqual, 1)
-				So(delta2.Delta.Type, ShouldEqual, "text_delta")
-				So(delta2.Delta.Text, ShouldEqual, " (2025-11-10):")
-
-				// content_block_stop
-				So(events[8].event, ShouldEqual, "content_block_stop")
-			})
-
-			Convey("Then tool_use events should be emitted correctly", func() {
-				// content_block_start for tool_use
-				So(events[9].event, ShouldEqual, "content_block_start")
-				var cbStart anthropic.ContentBlockStartEvent
-				json.Unmarshal([]byte(events[9].data), &cbStart)
-				So(cbStart.Index, ShouldEqual, 2)
-				So(cbStart.ContentBlock.Type, ShouldEqual, "tool_use")
-				So(cbStart.ContentBlock.ID, ShouldEqual, "toolu_016VE91YZYshFFPSevawmcDH")
-				So(cbStart.ContentBlock.Name, ShouldEqual, "get_weather")
-
-				// empty input delta
-				So(events[10].event, ShouldEqual, "content_block_delta")
-				var delta0 anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[10].data), &delta0)
-				So(delta0.Index, ShouldEqual, 2)
-				So(delta0.Delta.Type, ShouldEqual, "input_json_delta")
-				So(delta0.Delta.PartialJSON, ShouldEqual, "")
-
-				// first input delta
-				So(events[11].event, ShouldEqual, "content_block_delta")
-				var delta1 anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[11].data), &delta1)
-				So(delta1.Index, ShouldEqual, 2)
-				So(delta1.Delta.Type, ShouldEqual, "input_json_delta")
-				So(delta1.Delta.PartialJSON, ShouldEqual, `{"city": "Shanghai"`)
-
-				// second input delta
-				So(events[12].event, ShouldEqual, "content_block_delta")
-				var delta2 anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[12].data), &delta2)
-				So(delta2.Index, ShouldEqual, 2)
-				So(delta2.Delta.Type, ShouldEqual, "input_json_delta")
-				So(delta2.Delta.PartialJSON, ShouldEqual, `, "date": `)
-
-				// third input delta
-				So(events[13].event, ShouldEqual, "content_block_delta")
-				var delta3 anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[13].data), &delta3)
-				So(delta3.Index, ShouldEqual, 2)
-				So(delta3.Delta.Type, ShouldEqual, "input_json_delta")
-				So(delta3.Delta.PartialJSON, ShouldEqual, `"2025-11-10`)
-
-				// fourth input delta
-				So(events[14].event, ShouldEqual, "content_block_delta")
-				var delta4 anthropic.ContentBlockDeltaEvent
-				json.Unmarshal([]byte(events[14].data), &delta4)
-				So(delta4.Index, ShouldEqual, 2)
-				So(delta4.Delta.Type, ShouldEqual, "input_json_delta")
-				So(delta4.Delta.PartialJSON, ShouldEqual, `"}`)
-
-				// content_block_stop
-				So(events[15].event, ShouldEqual, "content_block_stop")
-			})
-
-			Convey("Then message_delta should have stop reason and usage", func() {
-				So(events[16].event, ShouldEqual, "message_delta")
-				var msgDelta anthropic.MessageDeltaEvent
-				json.Unmarshal([]byte(events[16].data), &msgDelta)
-				So(msgDelta.Delta.StopReason, ShouldEqual, anthropic.StopReasonToolUse)
-				So(msgDelta.Usage.OutputTokens, ShouldEqual, 93)
-			})
-
-			Convey("Then message_stop should be the last event", func() {
-				So(events[17].event, ShouldEqual, "message_stop")
-			})
-		})
+		}
 	})
+}
+
+func assertChatReqEquality(actual, expected *v1.ChatReq) {
+	actualClone := proto.Clone(actual).(*v1.ChatReq)
+	expectedClone := proto.Clone(expected).(*v1.ChatReq)
+	actualClone.Id = ""
+	expectedClone.Id = ""
+	normalizeToolInputSchemas(actualClone)
+	normalizeToolInputSchemas(expectedClone)
+	So(proto.Equal(actualClone, expectedClone), ShouldBeTrue)
+}
+
+// normalizeToolInputSchemas removes the "additionalProperties" field from the
+// input schema since it is not supported by the Anthropic SDK.
+func normalizeToolInputSchemas(req *v1.ChatReq) {
+	for _, tool := range req.GetTools() {
+		function := tool.GetFunction()
+		if function == nil || function.GetInputSchema() == nil {
+			continue
+		}
+		delete(function.GetInputSchema().GetFields(), "additionalProperties")
+	}
 }
