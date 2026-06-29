@@ -1,0 +1,46 @@
+{
+  "id": "gen-1782736289-Jbmm6j69oJCX7yvuuT7d",
+  "object": "chat.completion",
+  "created": 1782736289,
+  "model": "openai/gpt-4o",
+  "provider": "OpenAI",
+  "system_fingerprint": "fp_683410201e",
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "stop",
+      "native_finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "{\"severity\":\"medium\",\"affected_region\":\"us-east\",\"primary_cause\":\"Rate limiting of the OpenAI upstream\",\"recommended_action\":\"Investigate and adjust rate limiting settings or policies for the OpenAI upstream to alleviate traffic congestion and reduce retry pressure.\",\"signals\":[\"Slow customer traffic in us-east\",\"OpenAI upstream is rate limited\",\"Anthropic upstream is healthy\",\"Rising retry pressure\"]}",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 135,
+    "completion_tokens": 77,
+    "total_tokens": 212,
+    "cost": 0.0011075,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.0011075,
+      "upstream_inference_prompt_cost": 0.0003375,
+      "upstream_inference_completions_cost": 0.00077
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

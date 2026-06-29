@@ -1,514 +1,189 @@
+// Copyright 2024 Neurouter Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package openai
 
 import (
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"testing"
+
+	"github.com/go-kratos/kratos/v2/log"
+	. "github.com/smartystreets/goconvey/convey"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/neuraxes/neurouter/internal/biz/entity"
-	"github.com/neuraxes/neurouter/internal/util"
+	"github.com/neuraxes/neurouter/internal/conf"
+	"github.com/neuraxes/neurouter/internal/data/upstream/openai/mock"
 )
 
-var mockChatReq = &entity.ChatReq{
-	Id:    "mock_chat_id",
-	Model: "gpt-4o-mini",
-	Config: &v1.GenerationConfig{
-		Temperature: new(float32(0)),
-		ReasoningConfig: &v1.ReasoningConfig{
-			Effort: v1.ReasoningEffort_REASONING_EFFORT_HIGH,
-		},
-	},
-	Messages: []*v1.Message{
-		{
-			Role: v1.Role_SYSTEM,
-			Contents: []*v1.Content{
-				{
-					Content: v1.NewTextContent("You are helpful assistant."),
-				},
-			},
-		},
-		{
-			Role: v1.Role_USER,
-			Contents: []*v1.Content{
-				{
-					Content: v1.NewTextContent("hi, how are you? and how is the weather yesterday in shanghai?"),
-				},
-			},
-		},
-		{
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{
-				{
-					Content: v1.NewTextContent("Hello! I'm doing well, thank you for asking. \n\nTo check the weather in Shanghai for yesterday, I'll need to know what date yesterday was. Let me get today's date first, and then I can look up the weather for the previous day."),
-				},
-				{
-					Content: &v1.Content_ToolUse{
-						ToolUse: &v1.ToolUse{
-							Id:   "call_xJAu30R2cdheI331NUxp6CqL",
-							Name: "get_today_date",
-							Inputs: []*v1.ToolUse_Input{
-								{
-									Input: &v1.ToolUse_Input_Text{
-										Text: "{}",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Role: v1.Role_USER,
-			Contents: []*v1.Content{
-				{
-					Content: &v1.Content_ToolResult{
-						ToolResult: &v1.ToolResult{
-							Id: "call_xJAu30R2cdheI331NUxp6CqL",
-							Outputs: []*v1.ToolResult_Output{
-								{
-									Output: &v1.ToolResult_Output_Text{
-										Text: `{"date":"2025-11-11"}`,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	},
-	Tools: []*v1.Tool{
-		{
-			Tool: &v1.Tool_Function_{
-				Function: &v1.Tool_Function{
-					Name:        "get_today_date",
-					Description: "Get today's date",
-					InputSchema: util.MustStructFromMap(map[string]any{
-						"type":       "object",
-						"properties": map[string]any{},
-					}),
-				},
-			},
-		},
-		{
-			Tool: &v1.Tool_Function_{
-				Function: &v1.Tool_Function{
-					Name:        "get_weather",
-					Description: "Get weather for specific date",
-					InputSchema: util.MustStructFromMap(map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"city": map[string]any{
-								"type":        "string",
-								"description": "The name of the city",
-							},
-							"date": map[string]any{
-								"type":        "string",
-								"description": "The date to get the weather for",
-							},
-						},
-						"required": []string{"city", "date"},
-					}),
-				},
-			},
-		},
-	},
+var mockTestConfig = &conf.OpenAIConfig{
+	BaseUrl: "https://api.openai.com/v1/",
+	ApiKey:  "test-key",
 }
 
-var mockChatCompletionRequestBody = `{
-    "messages": [
-        {
-            "content": [
-                {
-                    "text": "You are helpful assistant.",
-                    "type": "text"
-                }
-            ],
-            "role": "system"
-        },
-        {
-            "content": [
-                {
-                    "text": "hi, how are you? and how is the weather yesterday in shanghai?",
-                    "type": "text"
-                }
-            ],
-            "role": "user"
-        },
-        {
-            "content": [
-                {
-                    "text": "Hello! I'm doing well, thank you for asking. \n\nTo check the weather in Shanghai for yesterday, I'll need to know what date yesterday was. Let me get today's date first, and then I can look up the weather for the previous day.",
-                    "type": "text"
-                }
-            ],
-            "tool_calls": [
-                {
-                    "id": "call_xJAu30R2cdheI331NUxp6CqL",
-                    "function": {
-                        "arguments": "{}",
-                        "name": "get_today_date"
-                    },
-                    "type": "function"
-                }
-            ],
-            "role": "assistant"
-        },
-        {
-            "content": [
-                {
-                    "text": "{\"date\":\"2025-11-11\"}",
-                    "type": "text"
-                }
-            ],
-            "tool_call_id": "call_xJAu30R2cdheI331NUxp6CqL",
-            "role": "tool"
-        }
-    ],
-    "model": "gpt-4o-mini",
-    "temperature": 0,
-    "reasoning_effort": "high",
-    "tools": [
-        {
-            "function": {
-                "name": "get_today_date",
-                "description": "Get today's date",
-                "parameters": {
-                    "properties": {},
-                    "type": "object"
-                }
-            },
-            "type": "function"
-        },
-        {
-            "function": {
-                "name": "get_weather",
-                "description": "Get weather for specific date",
-                "parameters": {
-                    "properties": {
-                        "city": {
-                            "description": "The name of the city",
-                            "type": "string"
-                        },
-                        "date": {
-                            "description": "The date to get the weather for",
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "city",
-                        "date"
-                    ],
-                    "type": "object"
-                }
-            },
-            "type": "function"
-        }
-    ]
-}`
+// jsonMap unmarshals a JSON document into a map for order-independent comparison.
+func jsonMap(data []byte) map[string]any {
+	var m map[string]any
+	So(json.Unmarshal(data, &m), ShouldBeNil)
+	return m
+}
 
-var mockResponsesRequestBody = `{
-  "store": false,
-  "temperature": 0,
-  "include": ["reasoning.encrypted_content"],
-  "input": [
-    {
-      "content": [
-        { "text": "You are helpful assistant.", "type": "input_text" }
-      ],
-      "role": "system"
-    },
-    {
-      "content": [
-        {
-          "text": "hi, how are you? and how is the weather yesterday in shanghai?",
-          "type": "input_text"
-        }
-      ],
-      "role": "user"
-    },
-    {
-      "content": [
-        {
-          "text": "Hello! I'm doing well, thank you for asking. \n\nTo check the weather in Shanghai for yesterday, I'll need to know what date yesterday was. Let me get today's date first, and then I can look up the weather for the previous day.",
-          "type": "output_text"
-        }
-      ],
-      "role": "assistant",
-      "type": "message"
-    },
-    {
-      "arguments": "{}",
-      "call_id": "call_xJAu30R2cdheI331NUxp6CqL",
-      "name": "get_today_date",
-      "type": "function_call"
-    },
-    {
-      "call_id": "call_xJAu30R2cdheI331NUxp6CqL",
-      "output": [{ "text": "{\"date\":\"2025-11-11\"}", "type": "input_text" }],
-      "type": "function_call_output"
-    }
-  ],
-  "model": "gpt-4o-mini",
-  "reasoning": { "effort": "high", "summary": "auto" },
-  "tools": [
-    {
-      "parameters": { "properties": {}, "type": "object" },
-      "name": "get_today_date",
-      "description": "Get today's date",
-      "type": "function"
-    },
-    {
-      "parameters": {
-        "properties": {
-          "city": { "description": "The name of the city", "type": "string" },
-          "date": {
-            "description": "The date to get the weather for",
-            "type": "string"
-          }
-        },
-        "required": ["city", "date"],
-        "type": "object"
-      },
-      "name": "get_weather",
-      "description": "Get weather for specific date",
-      "type": "function"
-    }
-  ]
-}`
+// mockResponder builds a DoFunc that asserts the outgoing request envelope
+// (method, endpoint, auth and content-type headers), records the request body
+// into captured, and replies with the given response content type and body.
+func mockResponder(responseContentType string, responseBody []byte, captured *[]byte) func(*http.Request) (*http.Response, error) {
+	return func(httpReq *http.Request) (*http.Response, error) {
+		So(httpReq.Method, ShouldEqual, http.MethodPost)
+		So(httpReq.URL.String(), ShouldEqual, "https://api.openai.com/v1/chat/completions")
+		So(httpReq.Header.Get("Authorization"), ShouldEqual, "Bearer test-key")
+		So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
 
-var mockChatCompletionResponseBody = `{
-    "id": "chatcmpl-vcH3X0yomLBqyz4Ox0he",
-    "object": "chat.completion",
-    "created": 1762970559,
-    "model": "gpt-4o-mini",
-    "choices": [
-        {
-            "index": 0,
-            "message": {
-                "role": "assistant",
-                "content": "Now I'll check the weather for Shanghai for yesterday (November 10th, 2025):",
-                "tool_calls": [
-                    {
-                        "index": 0,
-                        "id": "call_ASrYNiguEOTadw8mGyP8cVwp",
-                        "type": "function",
-                        "function": {
-                            "name": "get_weather",
-                            "arguments": "{\"city\":\"Shanghai\",\"date\":\"2025-11-10\"}"
-                        }
-                    }
-                ]
-            },
-            "logprobs": null,
-            "finish_reason": "tool_calls"
-        }
-    ],
-    "usage": {
-        "prompt_tokens": 303,
-        "completion_tokens": 46,
-        "total_tokens": 349,
-        "prompt_tokens_details": {
-            "cached_tokens": 256
-        }
-    },
-    "system_fingerprint": "fp_560af6e559"
-}`
+		body, err := io.ReadAll(httpReq.Body)
+		So(err, ShouldBeNil)
+		*captured = body
 
-var mockChatResp = &entity.ChatResp{
-	Id:     "chatcmpl-vcH3X0yomLBqyz4Ox0he",
-	Model:  "gpt-4o-mini",
-	Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
-	Message: &v1.Message{
-		Id:   "mock_message_id",
-		Role: v1.Role_MODEL,
-		Contents: []*v1.Content{
-			{
-				Content: v1.NewTextContent("Now I'll check the weather for Shanghai for yesterday (November 10th, 2025):"),
-			},
-			{
-				Content: &v1.Content_ToolUse{
-					ToolUse: &v1.ToolUse{
-						Id:   "call_ASrYNiguEOTadw8mGyP8cVwp",
-						Name: "get_weather",
-						Inputs: []*v1.ToolUse_Input{
-							{
-								Input: &v1.ToolUse_Input_Text{
-									Text: `{"city":"Shanghai","date":"2025-11-10"}`,
-								},
-							},
-						},
-					},
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{responseContentType}},
+			Body:       io.NopCloser(bytes.NewReader(responseBody)),
+		}, nil
+	}
+}
+
+func TestChat(t *testing.T) {
+	Convey("Given the openai chat completion conversion fixtures", t, func() {
+		for _, fixture := range mock.Fixtures {
+			if fixture.Stream {
+				continue
+			}
+
+			Convey("When Chat runs the "+fixture.Name+" fixture", func() {
+				mockClient := &mockHTTPClient{}
+				repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+				So(err, ShouldBeNil)
+
+				var capturedBody []byte
+				mockClient.DoFunc = mockResponder("application/json", fixture.Response, &capturedBody)
+
+				resp, err := repo.Chat(context.Background(), fixture.ChatReq)
+				So(err, ShouldBeNil)
+				So(resp, ShouldNotBeNil)
+
+				// OpenAI replies carry no message id, so the conversion generates
+				// a random one; normalize it before comparing.
+				if resp.Message != nil {
+					So(resp.Message.Id, ShouldHaveLength, 36)
+					resp.Message.Id = "mock_message_id"
+				}
+
+				Convey("Then the request body matches the fixture request", func() {
+					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
+				})
+
+				Convey("Then the response converts to the expected ChatResp", func() {
+					So(proto.Equal(resp, fixture.ChatResp), ShouldBeTrue)
+				})
+			})
+		}
+
+		Convey("When the API call fails", func() {
+			mockClient := &mockHTTPClient{
+				DoFunc: func(*http.Request) (*http.Response, error) {
+					return nil, errors.New("network error")
 				},
-			},
-		},
-	},
-	Statistics: &v1.Statistics{
-		Usage: &v1.Usage{
-			InputTokens:       303,
-			OutputTokens:      46,
-			CachedInputTokens: 256,
-		},
-	},
+			}
+			repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+			So(err, ShouldBeNil)
+
+			_, err = repo.Chat(context.Background(), mock.ToolCall.ChatReq)
+
+			Convey("Then it should return an error", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "network error")
+			})
+		})
+	})
 }
 
-var mockChatCompletionStreamRequestBody = `{
-    "messages": [
-        {
-            "content": [
-                {
-                    "text": "You are helpful assistant.",
-                    "type": "text"
-                }
-            ],
-            "role": "system"
-        },
-        {
-            "content": [
-                {
-                    "text": "hi, how are you? and how is the weather yesterday in shanghai?",
-                    "type": "text"
-                }
-            ],
-            "role": "user"
-        },
-        {
-            "content": [
-                {
-                    "text": "Hello! I'm doing well, thank you for asking. \n\nTo check the weather in Shanghai for yesterday, I'll need to know what date yesterday was. Let me get today's date first, and then I can look up the weather for the previous day.",
-                    "type": "text"
-                }
-            ],
-            "tool_calls": [
-                {
-                    "id": "call_xJAu30R2cdheI331NUxp6CqL",
-                    "function": {
-                        "arguments": "{}",
-                        "name": "get_today_date"
-                    },
-                    "type": "function"
-                }
-            ],
-            "role": "assistant"
-        },
-        {
-            "content": [
-                {
-                    "text": "{\"date\":\"2025-11-11\"}",
-                    "type": "text"
-                }
-            ],
-            "tool_call_id": "call_xJAu30R2cdheI331NUxp6CqL",
-            "role": "tool"
-        }
-    ],
-    "model": "gpt-4o-mini",
-	"reasoning_effort": "high",
-	"stream": true,
-	"stream_options": {
-		"include_usage": true
-	},
-    "temperature": 0,
-    "tools": [
-        {
-            "function": {
-                "name": "get_today_date",
-                "description": "Get today's date",
-                "parameters": {
-                    "properties": {},
-                    "type": "object"
-                }
-            },
-            "type": "function"
-        },
-        {
-            "function": {
-                "name": "get_weather",
-                "description": "Get weather for specific date",
-                "parameters": {
-                    "properties": {
-                        "city": {
-                            "type": "string",
-                            "description": "The name of the city"
-                        },
-                        "date": {
-                            "type": "string",
-                            "description": "The date to get the weather for"
-                        }
-                    },
-                    "required": [
-                        "city",
-                        "date"
-                    ],
-                    "type": "object"
-                }
-            },
-            "type": "function"
-        }
-    ]
-}`
+func TestChatStream(t *testing.T) {
+	Convey("Given the openai chat completion conversion fixtures", t, func() {
+		for _, fixture := range mock.Fixtures {
+			if !fixture.Stream {
+				continue
+			}
 
-var mockChatCompletionStreamResponseBody = `data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+			Convey("When ChatStream runs the "+fixture.Name+" fixture", func() {
+				mockClient := &mockHTTPClient{}
+				repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+				So(err, ShouldBeNil)
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":"Today is November 11,"},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+				var capturedBody []byte
+				mockClient.DoFunc = mockResponder("text/event-stream", fixture.Response, &capturedBody)
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":" "},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+				seq := repo.ChatStream(context.Background(), fixture.ChatReq)
+				So(seq, ShouldNotBeNil)
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":"2025. Therefore, yesterday was November 10, 2025."},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+				var events []*entity.ChatEvent
+				for event, err := range seq {
+					So(err, ShouldBeNil)
+					So(event, ShouldNotBeNil)
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":" \n\n"},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+					// OpenAI streams carry no message id; normalize the generated one.
+					if ms := event.GetMessageStart(); ms != nil {
+						So(ms.GetId(), ShouldHaveLength, 36)
+						ms.Id = "mock_message_id"
+					}
+					events = append(events, event)
+				}
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":"Now, I will check the weather in Shanghai for November"},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+				Convey("Then the request body matches the fixture request", func() {
+					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
+				})
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":" "},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+				Convey("Then the stream converts to the expected ChatEvents", func() {
+					So(len(events), ShouldEqual, len(fixture.ChatEvents))
+					for i := range events {
+						So(proto.Equal(events[i], fixture.ChatEvents[i]), ShouldBeTrue)
+					}
+				})
+			})
+		}
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":"10, 2025"},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+		Convey("When the API call fails", func() {
+			mockClient := &mockHTTPClient{
+				DoFunc: func(*http.Request) (*http.Response, error) {
+					return nil, errors.New("network error")
+				},
+			}
+			repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+			So(err, ShouldBeNil)
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":"."},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
+			seq := repo.ChatStream(context.Background(), mock.StreamToolCall.ChatReq)
+			So(seq, ShouldNotBeNil)
 
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"id":"call_CzJFKEw26rJ6McvhRnMq1Izg","type":"function","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
-
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"function":{"arguments":"{\"city\":\"Shanghai\",\""},"type":"function"}]},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
-
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"function":{"arguments":"date\":\"2025-11-10"},"type":"function"}]},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
-
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"function":{"arguments":"\"}"},"type":"function"}]},"finish_reason":null,"logprobs":null}],"system_fingerprint":"fp_560af6e559"}
-
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":"tool_calls","logprobs":null}],"system_fingerprint":"fp_560af6e559"}
-
-data: {"id":"chatcmpl-tZZ2ljb9Bz4BoRIcS6cL","model":"gpt-4o-mini","object":"chat.completion.chunk","created":1763047385,"choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null,"logprobs":null}],"usage":{"prompt_tokens":192,"completion_tokens":65,"total_tokens":257,"prompt_tokens_details":{"cached_tokens":0}}}
-
-data: [DONE]
-
-`
-
-func mockStreamEvent(event v1.ChatEventPayload) *entity.ChatEvent {
-	return v1.NewChatEvent("mock_chat_id", event)
-}
-
-func mockStreamStopEvent(status v1.ChatStatus, usage *v1.Usage) *entity.ChatEvent {
-	e := mockStreamEvent(v1.NewMessageStopEvent(status))
-	e.Usage = usage
-	return e
-}
-
-var mockChatStreamEvents = []*entity.ChatEvent{
-	mockStreamEvent(v1.NewMessageStartEvent("mock_message_id", "gpt-4o-mini")),
-	mockStreamEvent(v1.NewContentStartTextEvent(0, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
-	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "Today is November 11,")),
-	mockStreamEvent(v1.NewContentDeltaTextEvent(0, " ")),
-	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "2025. Therefore, yesterday was November 10, 2025.")),
-	mockStreamEvent(v1.NewContentDeltaTextEvent(0, " \n\n")),
-	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "Now, I will check the weather in Shanghai for November")),
-	mockStreamEvent(v1.NewContentDeltaTextEvent(0, " ")),
-	mockStreamEvent(v1.NewContentDeltaTextEvent(0, "10, 2025")),
-	mockStreamEvent(v1.NewContentDeltaTextEvent(0, ".")),
-	mockStreamEvent(v1.NewContentStopEvent(0)),
-	mockStreamEvent(v1.NewContentStartToolUseEvent(1, "call_CzJFKEw26rJ6McvhRnMq1Izg", "get_weather")),
-	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(1, "{\"city\":\"Shanghai\",\"")),
-	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(1, "date\":\"2025-11-10")),
-	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(1, "\"}")),
-	mockStreamEvent(v1.NewContentStopEvent(1)),
-	mockStreamStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE, &v1.Usage{
-		InputTokens:  192,
-		OutputTokens: 65,
-	}),
+			Convey("Then it should return an error in the iterator", func() {
+				for resp, err := range seq {
+					So(resp, ShouldBeNil)
+					So(err, ShouldNotBeNil)
+					So(err.Error(), ShouldContainSubstring, "network error")
+				}
+			})
+		})
+	})
 }

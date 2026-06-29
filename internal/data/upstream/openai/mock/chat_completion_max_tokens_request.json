@@ -1,5 +1,5 @@
 {
-  "model": "openai/gpt-5.4-mini",
+  "model": "openai/gpt-4o",
   "max_completion_tokens": 64,
   "reasoning_effort": "none",
   "messages": [

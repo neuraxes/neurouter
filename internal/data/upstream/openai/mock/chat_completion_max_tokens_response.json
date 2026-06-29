@@ -1,0 +1,46 @@
+{
+  "id": "gen-1782736293-pjqokdGS8Qo3GXjW4x9E",
+  "object": "chat.completion",
+  "created": 1782736293,
+  "model": "openai/gpt-4o",
+  "provider": "OpenAI",
+  "system_fingerprint": "fp_a77e540149",
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "length",
+      "native_finish_reason": "length",
+      "message": {
+        "role": "assistant",
+        "content": "A Large Language Model (LLM) router balances the load across multiple upstream providers through a sophisticated process that involves probing, ranking, reservation, and rate limiting. These steps ensure optimized utilization of resources, reduced latency, and improved performance.\n\n**Probing:** The LLM router begins by continuously monitoring the health and performance of",
+        "refusal": null,
+        "reasoning": null
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 56,
+    "completion_tokens": 64,
+    "total_tokens": 120,
+    "cost": 0.00078,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.00078,
+      "upstream_inference_prompt_cost": 0.00014,
+      "upstream_inference_completions_cost": 0.00064
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

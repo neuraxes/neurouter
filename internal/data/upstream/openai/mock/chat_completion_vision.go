@@ -1,0 +1,84 @@
+// Copyright 2024 Neurouter Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package mock
+
+import (
+	_ "embed"
+
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+)
+
+//go:embed chat_completion_vision_request.json
+var visionRequest []byte
+
+//go:embed chat_completion_vision_response.json
+var visionResponse []byte
+
+// openAILogoPNG is the base64 OpenAI logo supplied as an inline image input.
+const openAILogoPNG = "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAD7klEQVR4AXSUWSitXRiA/3//FEIypYgMUSiZciFyIzMZbgyRREhChgtDIWS6MWQosVFkKDPlRmRIKZF5yFhbppQM4T/n+c7Sdg7O12tZ31rv+7zjt2U//v78/+X5u+4P2T/fPRgA4ebfXw8bTpQrm6/yPQg9mUwGBHuEDa9vb2/QWbn9Kt+A0Mby6OiosLAwMDDQ398/JydnZ2dHRUXlv18PFOisv8tn0OvrK85XVlZCQ0MXFha8vLxgHR4eRkVFVVdX19fXj4+PPz094QkWomT9ASJs3D48PGRnZzs7O09NTRFLUlKSlZXV7u5uf3//xMREXl4ePjY2NmApKWwkEGCEjAh8bm4O5zc3N6WlpXBbW1udnJwWFxdHRkaWl5cnJyfZaGtrp6SkXF5eYo8Vtmw+QGTU2NiI/62tLUtLSwMDA1hVVVWpqamzs7MmJibFxcVsLCws5HL58/Nzd3c3QX0GQVlaWqIKNTU1WVlZVOrl5eXs7KytrS05Obm2thbi9vZ2QkIC3Pv7e19fX8IkFkpBOIgMJBSOent73dzcAgICqCWvCCnMzMzExsY2NDTY2dn19PR0dnbu7e1BIUddXV0iQk2s0rCwQ05OTuzt7akLIPyoqaldXV2tr69nZGQMDAywIRxNTc3p6WlOzs/PUSMIQAjmHzXS0dE5PT2l3hoaGgqF4uLiwsjIKD8/n/Yh8fHxNI6qVVRUxMTE9PX1kRqdEdnAkr41wCCDg4O5wDMd8fb2Tk9PZ5rgkj9CyTw9PSkiCVIEd3d3BweHsbExCSGTIO+p8U51rK2tQ0JCRkdHS0pKmCBTU9Pm5ua1tTWcV1ZW3t7eGhoa0s3Hx0cqYGxsfH19TQS4YZVA7ISQFOkQf1BQkLq6OqXlFXRHRwfTRO3pOgjKR6Sbm5vm5uZEIESqERSQrPiMjIwkIn19/bCwsLi4uOPj49zc3JaWFldX17u7O9QoiqqqKkN0cHAQHh7OCYYcSiBe8MO1i4vL0NAQMbe3t9NyGxsbhpBmUZrMzEw+FHSwKSoqKi8v58rW1lbUV2Lxh8AiQmwIKjExke76+PgUFBSsrq56eHhQ3bKyMrrOiBCjo6OjXC6Pjo6GAhdz5D0i8U7OZLG/v89PB4IB2nST9rFhcJgGJpPakSlJCCuCeAfxTwhBocFnSdcARUREmJmZUdSmpibGhxgVCgXto9J8Q6zCSqxSRGIHGIGlpaVFp9LS0vDf1dWlp6c3PDw8Pz/v5+c3ODhI4ciI0RdWyvUDJI4Ei7AR3DJ1dXV1/Awxe3CZBjyJjIS+cv0M4gIWYaPNinOlJRteuUXnq3wDEkrCQKwgEM6hs34rPwEAAP//7YbYogAAAAZJREFUAwBVtqv1C0Z17QAAAABJRU5ErkJggg=="
+
+// Vision covers an image input supplied as inline base64 data, which converts to
+// an image_url content part holding a data URL, and a plain text description
+// response with finish reason stop.
+var Vision = &Fixture{
+	Name:     "vision",
+	Request:  visionRequest,
+	Response: visionResponse,
+	ChatReq: &v1.ChatReq{
+		Id:    "vision",
+		Model: "openai/gpt-4o",
+		Config: &v1.GenerationConfig{
+			MaxTokens:       new(int64(1024)),
+			ReasoningConfig: &v1.ReasoningConfig{Effort: v1.ReasoningEffort_REASONING_EFFORT_NONE},
+		},
+		Messages: []*v1.Message{
+			{
+				Role: v1.Role_SYSTEM,
+				Contents: []*v1.Content{
+					{Content: v1.NewTextContent("You are a conversion-test assistant. Inspect every image the user supplies and describe it briefly.")},
+				},
+			},
+			{
+				Role: v1.Role_USER,
+				Contents: []*v1.Content{
+					{Content: v1.NewTextContent("The image below is provided as inline base64 data. State its source (base64) and give a one-sentence description of what you see, including any visible logo or shape.")},
+					{
+						Content: &v1.Content_Image{
+							Image: &v1.Image{
+								MimeType: "image/png",
+								Source:   &v1.Image_Base64{Base64: openAILogoPNG},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+	ChatResp: &v1.ChatResp{
+		Id:     "gen-1782736297-9nj6EnXIeEITDo4DtY0I",
+		Model:  "openai/gpt-4o",
+		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Message: &v1.Message{
+			Id:   "mock_message_id",
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{
+				{Content: v1.NewTextContent("Source: base64\n\nDescription: A small, black and white geometric logo resembling an intricate knot or flower shape.")},
+			},
+		},
+		Statistics: &v1.Statistics{
+			Usage: &v1.Usage{InputTokens: 321, OutputTokens: 23},
+		},
+	},
+}

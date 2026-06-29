@@ -1,6 +1,6 @@
 {
   "model": "openai/gpt-4o",
-  "max_completion_tokens": 4096,
+  "max_completion_tokens": 1024,
   "reasoning_effort": "none",
   "messages": [
     {
@@ -8,7 +8,7 @@
       "content": [
         {
           "type": "text",
-          "text": "You are a conversion-test assistant. When the user asks for fresh or external facts and a matching tool is available, call exactly one tool before producing final prose."
+          "text": "You are a conversion-test assistant. Use prior tool results exactly and keep the final answer concise."
         }
       ]
     },
@@ -18,6 +18,38 @@
         {
           "type": "text",
           "text": "Use the get_weather tool for Shanghai on 2025-11-10. Do not answer from memory. Return no final prose until the tool has been called."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "call_3ErPbH5DIz3E8M4hevb9tMg7",
+          "type": "function",
+          "function": {
+            "name": "get_weather",
+            "arguments": "{\"city\":\"Shanghai\",\"date\":\"2025-11-10\",\"units\":\"metric\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_3ErPbH5DIz3E8M4hevb9tMg7",
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"city\":\"Shanghai\",\"date\":\"2025-11-10\",\"condition\":\"Cloudy\",\"high_c\":18,\"low_c\":11,\"precip_mm\":2.3,\"humidity\":0.74,\"units\":\"metric\"}"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Using only the tool result, give the city, date, condition, high and low temperature in Celsius, and precipitation in one sentence. Do not call another tool."
         }
       ]
     }

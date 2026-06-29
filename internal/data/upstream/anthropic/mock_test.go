@@ -32,7 +32,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic/mock"
 )
 
-var testConfig = &conf.AnthropicConfig{
+var mockTestConfig = &conf.AnthropicConfig{
 	BaseUrl: "https://api.anthropic.com/",
 	ApiKey:  "test-key",
 }
@@ -75,7 +75,7 @@ func TestChat(t *testing.T) {
 
 			Convey("When Chat runs the "+fixture.Name+" fixture", func() {
 				mockClient := &mockHTTPClient{}
-				repo, err := newAnthropicUpstreamWithClient(testConfig, mockClient, log.DefaultLogger)
+				repo, err := newAnthropicUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
 				So(err, ShouldBeNil)
 
 				var capturedBody []byte
@@ -100,7 +100,7 @@ func TestChat(t *testing.T) {
 					return nil, errors.New("network error")
 				},
 			}
-			repo, err := newAnthropicUpstreamWithClient(testConfig, mockClient, log.DefaultLogger)
+			repo, err := newAnthropicUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
 			So(err, ShouldBeNil)
 
 			_, err = repo.Chat(context.Background(), mock.NonStreamMaxTokens.ChatReq)
@@ -122,7 +122,7 @@ func TestChatStream(t *testing.T) {
 
 			Convey("When ChatStream runs the "+fixture.Name+" fixture", func() {
 				mockClient := &mockHTTPClient{}
-				repo, err := newAnthropicUpstreamWithClient(testConfig, mockClient, log.DefaultLogger)
+				repo, err := newAnthropicUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
 				So(err, ShouldBeNil)
 
 				var capturedBody []byte
@@ -157,7 +157,7 @@ func TestChatStream(t *testing.T) {
 					return nil, errors.New("network error")
 				},
 			}
-			repo, err := newAnthropicUpstreamWithClient(testConfig, mockClient, log.DefaultLogger)
+			repo, err := newAnthropicUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
 			So(err, ShouldBeNil)
 
 			seq := repo.ChatStream(context.Background(), mock.StreamThinkingText.ChatReq)
