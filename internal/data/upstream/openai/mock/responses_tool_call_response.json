@@ -1,0 +1,109 @@
+{
+  "id": "gen-1785502387-oWD8DH4G5icXqqD2oDOf",
+  "object": "response",
+  "created_at": 1785502387,
+  "model": "openai/gpt-5-mini",
+  "status": "completed",
+  "completed_at": 1785502390,
+  "output": [
+    {
+      "id": "rs_08b5de5c9cfca3ba016a6c9ab440b08192a79b2b9279b4dcfb",
+      "type": "reasoning",
+      "status": "completed",
+      "summary": [],
+      "encrypted_content": "gAAAAABqbJq1D9JzSZUSaZEqzoM0k6uayFu5t_lMusofFnNAt4tnMBS4kHfGgelEcGGlsl7q9JuVjBjDRGjmvK4VBRNCPIzDXuB7ZIu_smp8G6TsBe4QOFz-0WExHDY6Ok07s_nCYqOPJVTdYgOiKkffr2pxyjtZOs39nZjTJQJa9esagoH-I-Uf5hjncgX6rIs1oL_73ldzs0cw-hVZP1u-oPddDsK9dBJKefW6xwv6zjDqMLAXpwV5iRCvIcjrqlQc2Vdd1wwhx5Kf1ChiC-MhPJgOxiugO7igKgCwU61kQ65zGC6z3XU0ftWJDBSzyozzxji1uZVfnfjp5XNrWclEiAcVb6qk-7CPTzvJTpqxOOjW673rMdBp343BwYRT1FkXk1U3KsBBvojM3O7B6eyIlFu1xnFHn1qEPbOwaxkIhbM9TPfAQlIywQnxkGu1075R5Px6V_zH37NDP5YPn8Pn5v0HYFey1j2AXbe_qrxVXSzxjL2zD3NVzr1H_mA_ZVAUCA3F5eh-y0lFkjrojdva5j1xCV56jrDHeDlxmQ3N0eKrn4pW0c2OHptOH_FxBoGKK2FSdftre5EKnGrMFcWZ05DItJXDOcgFXxbxJdhj-9YgTtoNZlRvd4ukWp9amX2sVOsPj2lh7hP0k8H4n28Qs-iZwQ6Z3CEklXh4LJSSR6C21oCs6Jiu2CXzNRn2lk8EU35Jq8j2SHPRV3mxUvKFH7F8MwXl_IeW17t2QO_2y1x_WlN71EWPqREI_FnoFE3KfOyBgqYtGZHrNXhP1jD7XyDeD9y8h0rPMWXD8pBNBncS1rWl9YNxeso0FgHogV-tFK5lN6UfIm8u73s6IbzJIfmNEShdKzm6D0DPaK904yUozBGb5eZfPV3yvtrXeEWiXmeGNGo7MgIbQuwfksnJ3UQCQAlG--s0IQL8Ht9AUQXWfSG6_AcewlOAnQIkftSv7E8RxCRv-Dxda49YIDaPakpmMrKrzeoVn1cDAfTEF7hiDeOKjjRlpffFdczO33CFgbsOEYm3MXefm81ZY9Ov9KVilO0ow1VmU5_fZMOdkxNWwXzNmDVqy0c_bmlExVTtaQswAiKBz7_hXv6zAd3AmkBXg8qRNBmwv2B53ADiZRKRZ_P6nxWXecJPBL_rGxEX7HNN96oQwnwkem594laYaVxdC8vGrcE2T5mylvN8IthYRnPKBbT5W1E9i2dAT1BgDzdMsbUozYJrV2l480C1954qCgS3Oq00HJ4lG3rAiSRr0aEQdUtICeiuDnpgjWgdiMuSk93bSr9yDV5YqNgzO3bHNj18rZ9gzVoigO9qJBMx-GAR1a01O8mGjs4YjzyJRf0xfNd71hUvi32dU1ZEA7qUW2Bn_6he9qKq3jQDwNOmOlS8NJ-kQVIDnlch0HxmW1Gmb5hn6X_8uhQvF7gzegeu4ZsXU9ikfpvGuQCfzE2CQUPyfzx9dxKVMa_bsT54u1YeQb-E",
+    },
+    {
+      "id": "fc_tmp_e0qtpyr71w",
+      "type": "function_call",
+      "status": "completed",
+      "call_id": "call_HuTyMtN6jtA1RB2cVXNI1obq",
+      "name": "get_weather",
+      "arguments": "{\"city\":\"Shanghai\",\"date\":\"2025-11-10\",\"units\":\"metric\"}"
+    }
+  ],
+  "error": null,
+  "incomplete_details": null,
+  "tools": [
+    {
+      "type": "function",
+      "name": "get_weather",
+      "description": "Look up historical weather for a city on a specific date.",
+      "strict": false,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string",
+            "description": "City name in English."
+          },
+          "date": {
+            "type": "string",
+            "description": "Date in YYYY-MM-DD format."
+          },
+          "units": {
+            "type": "string",
+            "description": "Temperature unit.",
+            "enum": [
+              "metric",
+              "imperial"
+            ]
+          }
+        },
+        "required": [
+          "city",
+          "date"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true,
+  "max_output_tokens": 2048,
+  "temperature": 1,
+  "top_p": 1,
+  "presence_penalty": 0,
+  "frequency_penalty": 0,
+  "top_logprobs": 0,
+  "max_tool_calls": null,
+  "metadata": {},
+  "background": false,
+  "previous_response_id": null,
+  "service_tier": "default",
+  "truncation": "disabled",
+  "store": false,
+  "instructions": null,
+  "text": {
+    "format": {
+      "type": "text"
+    }
+  },
+  "reasoning": {
+    "effort": "low",
+    "summary": "detailed",
+    "context": "current_turn",
+    "mode": "standard"
+  },
+  "safety_identifier": null,
+  "prompt_cache_key": null,
+  "prompt_cache_options": null,
+  "usage": {
+    "input_tokens": 130,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 118,
+    "output_tokens_details": {
+      "reasoning_tokens": 64
+    },
+    "total_tokens": 248,
+    "cost": 0.0002685,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.0002685,
+      "upstream_inference_input_cost": 0.0000325,
+      "upstream_inference_output_cost": 0.000236
+    }
+  }
+}

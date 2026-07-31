@@ -1,0 +1,82 @@
+{
+  "id": "gen-1785502390-uWUQAQNqsj1Ocw0q6uQk",
+  "object": "response",
+  "created_at": 1785502390,
+  "model": "openai/gpt-5-mini",
+  "status": "completed",
+  "completed_at": 1785502394,
+  "output": [
+    {
+      "id": "rs_01969eef50f6c980016a6c9ab75de8819fa975bc775b833f4f",
+      "type": "reasoning",
+      "status": "completed",
+      "summary": [],
+      "encrypted_content": "gAAAAABqbJq3gNByFtjiMDsRgZymiPXje54G2e6_ufgtt1Mtm-Jqoky1_nFAkU3kVvqd457ZZHaoyJx3aMrz0k9XafMWdLId08khC_EwSg2zM0YBZd-hg1MMtjSCsN__LZpeS4gUnKcLtnc5hDwSOLqwqpCPf5NK1X3TwMVR1gNAcki-0CLvKvlPZhazC5zO9wXMb7GPVo4fowRTW25JZeCllBB86F3omukVqxqNMMg-8Dx8j1IXvwjC51kXCKNAPbqBPj0ogiRpQZUf95wnxC4PEWdgS18o6KsHfxMtbFPGkVlwth0UWnEt9D_Mo0h6NFClgUfmqqYJmENA4sk-epoP7ma6TMQxPHalr0T4ScmZtdfTBt-tkjUG6YOeiTtP5DXXdGhpqNDalhGon20Gs2zP33Ejxlyw4EhyapmavWpX6BS2HhuFvQMxurIr_AL1PHhRSt7o1tWCYOEy7mFgz6LvaZxGr95BgRd-DrQh_QYmery7BeEzrxS4dTwqeTsFSAnJsUGaipElJVYenR35FP9CCjNrfR65o-Uc0RQGgWydarM4QxcX0Kf4NV_kzesJTOhqUQRrtYi_pr9iOMWJeYonbmXAyzkxcLZmvH1_NcBW5sxIafz0x5WZ7oEfJoJXN7fiGAgrp_Dp7NL0L0LInUTwNdSbzjbDomIci17ZNr4OCGLfUQ5o5-k00zSOHtf4egmSNcWyKHySk_gSwr79y9SiptEQbFISyvywyhhY4DnP9NQqCQwjKJiDtN1NEnCRQCWjt0V8-89G8RJqiFXBl7OHsTJXzD5LiPNYTmmSW4sw4HFhtUx9pqirv-zv99KjjYL2VgiLTxkXaEV0yegXmrqzNlFBSUo3UpRer9_9oaLJK8dGgcaBisfWGpIjyqY5DMMMudIvtjybWoxqSv8N6JoP1TVaMhkkhrs-1eL_1-Ytg64UCE8zvGwMQj18hH4-3cASg9rCGBRK4WAPe1Shm5MUOEovXoTGyHS1srfu4BytWE9Wkkfgv_4=",
+    },
+    {
+      "id": "msg_tmp_9wt3kgyj5l",
+      "type": "message",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Source (base64): data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAnFBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8/ZvTFAAAAMXRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMlJicoKSorLC0uLzAxMjM0NwAAAEpJREFUGNNjYGBgYGRkYGBgZmBjYGBgYGBgYGJgYGBkYWBkZGBg6GBkYGBgYGBgYGD4DgkAG4YCgABBgA5FQyS9wAAAABJRU5ErkJggg==\n\nOne-sentence description: A small square icon showing the OpenAI swirl logo in dark lines on a white background with a thin rounded gray border.",
+          "annotations": [],
+          "logprobs": []
+        }
+      ]
+    }
+  ],
+  "error": null,
+  "incomplete_details": null,
+  "tools": [],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true,
+  "max_output_tokens": 1024,
+  "temperature": 1,
+  "top_p": 1,
+  "presence_penalty": 0,
+  "frequency_penalty": 0,
+  "top_logprobs": 0,
+  "max_tool_calls": null,
+  "metadata": {},
+  "background": false,
+  "previous_response_id": null,
+  "service_tier": "default",
+  "truncation": "disabled",
+  "store": false,
+  "instructions": null,
+  "text": {
+    "format": {
+      "type": "text"
+    }
+  },
+  "reasoning": {
+    "effort": "minimal",
+    "context": "current_turn",
+    "mode": "standard",
+    "summary": "detailed"
+  },
+  "safety_identifier": null,
+  "prompt_cache_key": null,
+  "prompt_cache_options": null,
+  "usage": {
+    "input_tokens": 67,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 223,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 290,
+    "cost": 0.00046275,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.00046275,
+      "upstream_inference_input_cost": 0.00001675,
+      "upstream_inference_output_cost": 0.000446
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "model": "openai/gpt-5-mini",
+  "store": false,
+  "max_output_tokens": 64,
+  "reasoning": {
+    "effort": "minimal"
+  },
+  "input": [
+    {
+      "type": "message",
+      "role": "system",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "You are a conversion-test assistant. Answer in long, detailed prose."
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Write a detailed 300-word explanation of how an LLM router balances load across multiple upstream providers, covering probing, ranking, reservation, and rate limiting."
+        }
+      ]
+    }
+  ]
+}

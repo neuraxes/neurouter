@@ -38,8 +38,15 @@ func NewMessageStopEvent(status ChatStatus) *ChatEvent_MessageStop {
 
 // NewContentStartTextEvent opens a streamable text content block.
 func NewContentStartTextEvent(index uint32, phase ContentPhase) *ChatEvent_ContentStart {
+	return NewIdentifiedContentStartTextEvent("", index, phase)
+}
+
+// NewIdentifiedContentStartTextEvent opens a streamable text content block that
+// carries the identity the provider assigned to it.
+func NewIdentifiedContentStartTextEvent(id string, index uint32, phase ContentPhase) *ChatEvent_ContentStart {
 	return &ChatEvent_ContentStart{
 		ContentStart: &ContentStart{
+			Id:      id,
 			Index:   index,
 			Phase:   phase,
 			Content: &ContentStart_Text{Text: &TextStart{}},

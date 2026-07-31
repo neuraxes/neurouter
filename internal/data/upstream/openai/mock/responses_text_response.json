@@ -1,0 +1,84 @@
+{
+  "id": "gen-1785502322-iD3pWMHAKB2iRN8OtooU",
+  "object": "response",
+  "created_at": 1785502322,
+  "model": "openai/gpt-5-mini",
+  "status": "completed",
+  "completed_at": 1785502323,
+  "output": [
+    {
+      "id": "rs_03802c004f5713db016a6c9a72decc81a09a8090abfd176c62",
+      "type": "reasoning",
+      "status": "completed",
+      "summary": [],
+      "encrypted_content": "gAAAAABqbJpzLJzi_lmKfuNMi51LbjdWpKSSgETp7r5XGu8ytH5JGPykbyT9G_SBFQA--cwvIyCEOICyoh6BFGBI_WwM-_NKcwtgl54UwSlBqsk7R87OLCKyuF9MqxGUVn2Q6A2NdynuJCKy-3-0oVMdelSuj6dJu_JhQokgPTd3t_y2uhEvJJguQmjFFjks0j-lFB-SiiXsW-FG2XHKT0DeTXDAILYAHnx9Fu-S2OFTwGzRxfj-TJZsmuqgn7b5tucAzaQYB7nAJz3uD35SRyRukzrZihahUR6PiLwILG3Ta3MXZSL8PSjwq0whLQgI0aQE-4-s1ZG9X2-uz54BQ-blp9g4lg5-WZlW2FxDC0dFCWAAqQthhw7oEHyfvJM6-cmbDs8zwgnUTKjtyGWABC1D97U0-Wh-dsHzpxAc3yszxHybDgW-jG2pjeUTEnZUAo26u8w0rnEO3qp8wLZY674if1P4NKk3JwJIhZhv78Fbq2bpMbW4afW8FJEnD2KojJesI-hAceIYj28CO5sGuCGN2a-gVjFIEiS3b5ThyMO9zxpI7-_phLVp7aE4cHqECGCULMDy3_dASm7HfkLCMQJMihQ3_yKEzZPfYIohae5JAgeYv2vCcJTkKaJASxM7V7_ejZGaXLNdPDTmIE68Y5o6GBrL6mO1Iesl-NJ8p7MN1vr1Rx2pONLizNCfUK5haYXT5XYyjDtxTqLA6Wk-aUbcJNB4_erODsNcaj5fJwFA1Vf2LlHVj5kx9xMFi0IogS3SZ6Rt72k8tGr1En7t_qve6Qp98zi1XQykVqe96sDYPyL42NgKNFotD-vSBobGeVdFjh2d_iKIoW-pnsRS8snUYitPS7Qzn38y7jJ8yInbKVB5BSJRIT1DCk1QoH1s-QUwEJWh0uQDEHbqwBdY_XeZIZWHHElxdShOYRG5w3y2dURNwm0-H9xowC5_zNXbq-6v3wVu3nbKq1QI1ZyDMQ5vnwRfyVpo7J5ANjSm3zo0oR-qeiHzJjg=",
+    },
+    {
+      "id": "msg_tmp_tpg6005j0r",
+      "type": "message",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Neurouter successfully routed this Responses API request.",
+          "annotations": [],
+          "logprobs": []
+        }
+      ]
+    }
+  ],
+  "error": null,
+  "incomplete_details": null,
+  "tools": [],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true,
+  "max_output_tokens": 512,
+  "temperature": 1,
+  "top_p": 1,
+  "presence_penalty": 0,
+  "frequency_penalty": 0,
+  "top_logprobs": 0,
+  "max_tool_calls": null,
+  "metadata": {
+    "fixture": "responses_text"
+  },
+  "background": false,
+  "previous_response_id": null,
+  "service_tier": "default",
+  "truncation": "disabled",
+  "store": false,
+  "instructions": null,
+  "text": {
+    "format": {
+      "type": "text"
+    }
+  },
+  "reasoning": {
+    "effort": "minimal",
+    "context": "current_turn",
+    "mode": "standard",
+    "summary": "detailed"
+  },
+  "safety_identifier": null,
+  "prompt_cache_key": null,
+  "prompt_cache_options": null,
+  "usage": {
+    "input_tokens": 38,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 28,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 66,
+    "cost": 0.0000655,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.0000655,
+      "upstream_inference_input_cost": 0.0000095,
+      "upstream_inference_output_cost": 0.000056
+    }
+  }
+}

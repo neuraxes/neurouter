@@ -1,0 +1,84 @@
+{
+  "id": "gen-1785502363-1OIGKSAZ6DupYJGniSP8",
+  "object": "response",
+  "created_at": 1785502363,
+  "model": "openai/gpt-5-mini",
+  "status": "incomplete",
+  "completed_at": 1785502364,
+  "output": [
+    {
+      "id": "rs_0ceb79d4157e81e4016a6c9a9c0b9c81a1aaba69cfa1664a3d",
+      "type": "reasoning",
+      "status": "completed",
+      "summary": [],
+      "encrypted_content": "gAAAAABqbJqcy2ECr5Rg0-Fawu_sXUVrhTJh5tGMvz7ilDu1PtqkBiDRq4pmkQBCtA-yTpBV-fmKs7r6cD0TvrBC-7FnOxkDSrYRcdqwBQV0ZJP5V5Y0E_PdtHPkFPahDvYePNgl5R-SeQnieBaWhDdIQOqM92duvquQNcsR_ccUliY61_97179tnx2GleNy1l_2_NbLUQcYWSzJR8BMckvqCNcmoo5V-eIZF3WX6VItlwkUhWOTDsPGSyRsJlKbiuZLAHo-zxEwKX0slRcE7N0bXSdnTFsd7Ir7EqLDIAznzWoka6OI--O_LZgUDEsl8DduwTSwATsoMZ4MX-DfNha1fg24gC1Ll6u_Exmw1fUSlfWFY9MLyjbsLJATnTGh3eco7yKQCXedaSdYCpJ-PAVZKkmFml9cV9bVxRkZl5qDHdayAx-nu8kSy4TLdhM7vMQS6hHF9ptzBI66DoHfSIZRBkuabzqJs6PsiF_aZ1PE9I-UzM9i4FkOufwAztFa0a38Q7CmjkyLgnahIXUSJC0bQPqE3NgCFZvvz_ETUYDh9JDr6msWotltUKl1l_yTP9zj8yabKoyRCMr89ehK82RQWgWiV4Lx0ul2khBEjCwRKNfaYi923Bt_PLAZH_-JIawtzapPxNcyTXRuOeI7gDC18NEfGfprSNEecOaJoCch5TQ819dGh2EuzOE1h_OXgojmjvMNtHL_pJedo366u-Squ9ouTnF44GP7b7-luCNYe2gdpBgks2S3te8rUKQngA4AJ_IyDEDJ8YSAugyWW6ZbZLG_NzJdEY3J165v0zal98-ilfd1i8rR3xtc1CKqa3p6yB0C5uHN8IoQUYqyGSAHeBLxGu2AsBvyulaNXWx7pJS9GDSw-GW3XnB5xNR5tud1hrZBUCmZ3ol9W8PnZ4trR3RZxib7K0C9jjGpvWXRX85fk7uSuybBB9MpHPjou808EhurDl4QNDAAHywIKuZPiGysDA4aJiFQrNJ9x3js2RG_RlLiJuY=",
+    },
+    {
+      "id": "msg_tmp_plskzzg08f",
+      "type": "message",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "An LLM router balances load across multiple upstream providers by implementing a coordinated sequence of probing, ranking, reservation, and rate-limiting mechanisms that together maximize throughput, minimize latency, and ensure reliability and cost-effectiveness. First, continuous",
+          "annotations": [],
+          "logprobs": []
+        }
+      ]
+    }
+  ],
+  "error": null,
+  "incomplete_details": {
+    "reason": "max_output_tokens"
+  },
+  "tools": [],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true,
+  "max_output_tokens": 64,
+  "temperature": 1,
+  "top_p": 1,
+  "presence_penalty": 0,
+  "frequency_penalty": 0,
+  "top_logprobs": 0,
+  "max_tool_calls": null,
+  "metadata": {},
+  "background": false,
+  "previous_response_id": null,
+  "service_tier": "default",
+  "truncation": "disabled",
+  "store": false,
+  "instructions": null,
+  "text": {
+    "format": {
+      "type": "text"
+    }
+  },
+  "reasoning": {
+    "effort": "minimal",
+    "context": "current_turn",
+    "mode": "standard",
+    "summary": "detailed"
+  },
+  "safety_identifier": null,
+  "prompt_cache_key": null,
+  "prompt_cache_options": null,
+  "usage": {
+    "input_tokens": 55,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 64,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 119,
+    "cost": 0.00014175,
+    "is_byok": false,
+    "cost_details": {
+      "upstream_inference_cost": 0.00014175,
+      "upstream_inference_input_cost": 0.00001375,
+      "upstream_inference_output_cost": 0.000128
+    }
+  }
+}

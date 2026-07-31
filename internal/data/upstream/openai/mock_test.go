@@ -68,7 +68,7 @@ func mockResponder(responseContentType string, responseBody []byte, captured *[]
 
 func TestChat(t *testing.T) {
 	Convey("Given the openai chat completion conversion fixtures", t, func() {
-		for _, fixture := range mock.Fixtures {
+		for _, fixture := range mock.ChatCompletionFixtures {
 			if fixture.Stream {
 				continue
 			}
@@ -123,7 +123,7 @@ func TestChat(t *testing.T) {
 
 func TestChatStream(t *testing.T) {
 	Convey("Given the openai chat completion conversion fixtures", t, func() {
-		for _, fixture := range mock.Fixtures {
+		for _, fixture := range mock.ChatCompletionFixtures {
 			if !fixture.Stream {
 				continue
 			}

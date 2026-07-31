@@ -1,0 +1,32 @@
+{
+  "model": "openai/gpt-5-mini",
+  "store": false,
+  "stream": true,
+  "max_output_tokens": 2048,
+  "reasoning": {
+    "effort": "medium",
+    "summary": "auto"
+  },
+  "input": [
+    {
+      "type": "message",
+      "role": "system",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "You are a conversion-test assistant. Work through the arithmetic carefully and end with one concise sentence."
+        }
+      ]
+    },
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "A router receives 240 requests. It sends 45% to upstream A, 35% to upstream B, and the rest to upstream C. Upstream C retries 25% of its requests exactly once. How many total attempts does upstream C make?"
+        }
+      ]
+    }
+  ]
+}

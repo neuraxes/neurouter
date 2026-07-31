@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mock holds captured OpenAI Chat Completions API request/response
-// pairs together with the neurouter entity values that the openai upstream
-// conversion must produce for them.
+// Package mock holds captured OpenAI API request/response pairs together with
+// the neurouter entity values that the openai upstream conversion must produce
+// for them.
 package mock
 
 import (
@@ -23,14 +23,13 @@ import (
 )
 
 // Fixture pairs captured OpenAI payloads with the neurouter entities that the
-// upstream conversion must produce in both directions.
+// matching upstream conversion must produce in both directions.
 type Fixture struct {
 	// Name identifies the fixture in test output.
 	Name string
-	// Request is the hand-authored ground-truth Chat Completions request body.
-	// It is the expected output of convertRequestToOpenAIChat for ChatReq.
+	// Request is the ground-truth upstream request body.
 	Request []byte
-	// Response is the captured upstream reply: a JSON completion for non-stream
+	// Response is the captured upstream reply: a JSON response for non-stream
 	// fixtures, or a raw SSE event stream for stream fixtures.
 	Response []byte
 	// Stream reports whether Response is an SSE stream that converts into
@@ -44,9 +43,9 @@ type Fixture struct {
 	ChatEvents []*v1.ChatEvent
 }
 
-// Fixtures is the full conversion fixture set, aggregated from the per-fixture
-// files in this package.
-var Fixtures = []*Fixture{
+// ChatCompletionFixtures is the conversion fixture set for the Chat Completions
+// API, aggregated from the per-fixture files in this package.
+var ChatCompletionFixtures = []*Fixture{
 	ToolCall,
 	ToolResult,
 	StructuredOutput,
@@ -54,6 +53,20 @@ var Fixtures = []*Fixture{
 	MaxTokens,
 	StopSequence,
 	StreamToolCall,
+}
+
+// ResponsesFixtures is the conversion fixture set for the Responses API,
+// aggregated from the per-fixture files in this package.
+var ResponsesFixtures = []*Fixture{
+	ResponsesText,
+	ResponsesReasoning,
+	ResponsesStructuredOutput,
+	ResponsesVision,
+	ResponsesMaxOutputTokens,
+	ResponsesToolCall,
+	ResponsesToolResult,
+	ResponsesStreamReasoning,
+	ResponsesStreamToolCall,
 }
 
 // eventBuilder constructs ChatEvents that all carry the same request id.
