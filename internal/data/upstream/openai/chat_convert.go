@@ -17,7 +17,6 @@ package openai
 import (
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/openai/openai-go/v3"
 	"github.com/tidwall/gjson"
 
@@ -300,9 +299,9 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 	}
 }
 
-func (r *upstream) convertResponseFromOpenAIChat(openAIResp *openai.ChatCompletion) (resp *entity.ChatResp) {
+func (r *upstream) convertResponseFromOpenAIChat(req *entity.ChatReq, openAIResp *openai.ChatCompletion) (resp *entity.ChatResp) {
 	resp = &entity.ChatResp{
-		Id:         openAIResp.ID,
+		Id:         req.Id,
 		Model:      openAIResp.Model,
 		Statistics: convertStatisticsFromOpenAIChat(&openAIResp.Usage),
 	}
@@ -310,6 +309,7 @@ func (r *upstream) convertResponseFromOpenAIChat(openAIResp *openai.ChatCompleti
 	if len(openAIResp.Choices) > 0 {
 		resp.Status = convertStatusFromOpenAIChat(openAIResp.Choices[0].FinishReason)
 		resp.Message = r.convertMessageFromOpenAIChat(&openAIResp.Choices[0].Message)
+		resp.Message.Id = openAIResp.ID
 	}
 
 	return
@@ -317,8 +317,6 @@ func (r *upstream) convertResponseFromOpenAIChat(openAIResp *openai.ChatCompleti
 
 func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
 	message := &v1.Message{
-		// OpenAI chat responses do not provide message IDs, so generate one for the internal event model.
-		Id:   uuid.NewString(),
 		Role: v1.Role_MODEL,
 	}
 
@@ -372,7 +370,7 @@ func (c *openAIChatStreamClient) convertStreamChunkFromOpenAIChat(chunk *openai.
 
 	if !c.messageStarted {
 		c.messageStarted = true
-		events = append(events, c.newChatEvent(v1.NewMessageStartEvent(c.messageID, chunk.Model)))
+		events = append(events, c.newChatEvent(v1.NewMessageStartEvent(chunk.ID, chunk.Model)))
 	}
 
 	if len(chunk.Choices) > 0 {

@@ -77,11 +77,11 @@ var StructuredOutput = &Fixture{
 		},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1782736289-Jbmm6j69oJCX7yvuuT7d",
+		Id:     "structured_output",
 		Model:  "openai/gpt-4o",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{
-			Id:   "mock_message_id",
+			Id:   "gen-1782736289-Jbmm6j69oJCX7yvuuT7d",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent(`{"severity":"medium","affected_region":"us-east","primary_cause":"Rate limiting of the OpenAI upstream","recommended_action":"Investigate and adjust rate limiting settings or policies for the OpenAI upstream to alleviate traffic congestion and reduce retry pressure.","signals":["Slow customer traffic in us-east","OpenAI upstream is rate limited","Anthropic upstream is healthy","Rising retry pressure"]}`)},

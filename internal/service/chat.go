@@ -18,11 +18,23 @@ import (
 	"context"
 
 	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
+
+// acceptChatReq copies the inbound request so the caller's message is never
+// mutated, and assigns the request id that every response and event of the turn
+// echoes back.
+func acceptChatReq(req *v1.ChatReq) *v1.ChatReq {
+	chatReq := proto.Clone(req).(*v1.ChatReq)
+	if chatReq.Id == "" {
+		chatReq.Id = uuid.NewString()
+	}
+	return chatReq
+}
 
 func (s *RouterService) Chat(ctx context.Context, req *v1.ChatReq) (resp *v1.ChatResp, err error) {
 	if claims, ok := jwt.FromContext(ctx); ok {
@@ -30,8 +42,7 @@ func (s *RouterService) Chat(ctx context.Context, req *v1.ChatReq) (resp *v1.Cha
 		s.log.Infof("jwt authenticated for: %s", sub)
 	}
 
-	chatReq := proto.Clone(req).(*v1.ChatReq)
-	resp, err = s.chat.Chat(ctx, chatReq)
+	resp, err = s.chat.Chat(ctx, acceptChatReq(req))
 	return
 }
 
@@ -49,7 +60,6 @@ func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer
 		s.log.Infof("jwt authenticated for: %s", sub)
 	}
 
-	chatReq := proto.Clone(req).(*v1.ChatReq)
-	err := s.chat.ChatStream(srv.Context(), chatReq, &wrappedChatStreamServer{srv})
+	err := s.chat.ChatStream(srv.Context(), acceptChatReq(req), &wrappedChatStreamServer{srv})
 	return err
 }

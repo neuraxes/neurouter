@@ -701,7 +701,7 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 			}
 
 			msg := repo.convertMessageFromOpenAIChat(openAIMsg)
-			So(msg.Id, ShouldHaveLength, 36)
+			So(msg.Id, ShouldBeEmpty)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents[0].GetText().GetText(), ShouldEqual, " Hello world ")
 		})
@@ -721,7 +721,7 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 			}
 
 			msg := repo.convertMessageFromOpenAIChat(openAIMsg)
-			So(msg.Id, ShouldHaveLength, 36)
+			So(msg.Id, ShouldBeEmpty)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldHaveLength, 1)
 			So(msg.Contents[0].GetToolUse().GetId(), ShouldEqual, "call-1")
@@ -736,7 +736,7 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 			}
 
 			msg := repo.convertMessageFromOpenAIChat(openAIMsg)
-			So(msg.Id, ShouldHaveLength, 36)
+			So(msg.Id, ShouldBeEmpty)
 			So(msg.Role, ShouldEqual, v1.Role_MODEL)
 			So(msg.Contents, ShouldBeNil)
 			// No tool calls, so no Content_ToolUse in Contents

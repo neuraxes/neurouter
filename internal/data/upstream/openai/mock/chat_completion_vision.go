@@ -67,11 +67,11 @@ var Vision = &Fixture{
 		},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1782736297-9nj6EnXIeEITDo4DtY0I",
+		Id:     "vision",
 		Model:  "openai/gpt-4o",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{
-			Id:   "mock_message_id",
+			Id:   "gen-1782736297-9nj6EnXIeEITDo4DtY0I",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("Source: base64\n\nDescription: A small, black and white geometric logo resembling an intricate knot or flower shape.")},

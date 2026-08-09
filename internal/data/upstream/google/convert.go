@@ -26,6 +26,12 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
+// Gemini requires the function name on every function response, but a ToolResult
+// carries only the id of the call it answers. The name is therefore packed into
+// that id, ahead of the call id Gemini assigns when it issues parallel calls. A
+// function name cannot contain a colon, so the first one separates the two.
+const googleToolUseIDSeparator = ":"
+
 func (r *upstream) convertRequestToGoogle(req *entity.ChatReq) (messages []*genai.Content, config *genai.GenerateContentConfig) {
 	config = &genai.GenerateContentConfig{
 		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
@@ -151,6 +157,22 @@ func convertMessageToGoogleContent(msg *v1.Message) *genai.Content {
 	}
 }
 
+// toolUseIDFromGoogle builds the handle a client uses to answer a function call.
+func toolUseIDFromGoogle(call *genai.FunctionCall) string {
+	if call.ID == "" {
+		return call.Name
+	}
+	return call.Name + googleToolUseIDSeparator + call.ID
+}
+
+// splitToolUseID unpacks what toolUseIDFromGoogle built. An id from another
+// provider has no separator and is read as a bare function name, which is the
+// best guess available for a conversation replayed across providers.
+func splitToolUseID(toolUseID string) (name, id string) {
+	name, id, _ = strings.Cut(toolUseID, googleToolUseIDSeparator)
+	return
+}
+
 func convertContentToGooglePart(content *v1.Content) *genai.Part {
 	// Thought summaries are not replayed, except when one carries a thought
 	// signature that Gemini needs to restore thinking context across turns.
@@ -176,7 +198,12 @@ func convertContentToGooglePart(content *v1.Content) *genai.Part {
 			}
 		}
 
-		part = genai.NewPartFromFunctionCall(c.ToolUse.Name, args)
+		_, id := splitToolUseID(c.ToolUse.Id)
+		part = &genai.Part{FunctionCall: &genai.FunctionCall{
+			ID:   id,
+			Name: c.ToolUse.Name,
+			Args: args,
+		}}
 	case *v1.Content_ToolResult:
 		part = convertToolResultToGooglePart(c.ToolResult)
 	default:
@@ -241,11 +268,13 @@ func convertToolResultToGooglePart(result *v1.ToolResult) *genai.Part {
 		}
 	}
 
-	if len(mediaParts) > 0 {
-		return genai.NewPartFromFunctionResponseWithParts(result.Id, response, mediaParts)
-	}
-
-	return genai.NewPartFromFunctionResponse(result.Id, response)
+	name, id := splitToolUseID(result.Id)
+	return &genai.Part{FunctionResponse: &genai.FunctionResponse{
+		ID:       id,
+		Name:     name,
+		Response: response,
+		Parts:    mediaParts,
+	}}
 }
 
 func convertMessageFromGoogleContent(content *genai.Content) *v1.Message {
@@ -273,7 +302,7 @@ func convertMessageFromGoogleContent(content *genai.Content) *v1.Message {
 			content = &v1.Content{
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
-						Id:   part.FunctionCall.Name,
+						Id:   toolUseIDFromGoogle(part.FunctionCall),
 						Name: part.FunctionCall.Name,
 						Inputs: []*v1.ToolUse_Input{
 							{
@@ -332,7 +361,7 @@ func (c *googleChatStreamClient) convertStreamResponseFromGoogle(resp *genai.Gen
 			c.closeOpenBlock(&events)
 			index := c.nextIndex
 			c.nextIndex++
-			events = append(events, c.newChatEvent(v1.NewContentStartToolUseEvent(index, part.FunctionCall.Name, part.FunctionCall.Name)))
+			events = append(events, c.newChatEvent(v1.NewContentStartToolUseEvent(index, toolUseIDFromGoogle(part.FunctionCall), part.FunctionCall.Name)))
 			events = append(events, c.newChatEvent(v1.NewContentDeltaToolInputTextEvent(index, string(args))))
 			if len(part.ThoughtSignature) > 0 {
 				events = append(events, c.newChatEvent(v1.NewContentDeltaSignatureEvent(index, base64.StdEncoding.EncodeToString(part.ThoughtSignature))))

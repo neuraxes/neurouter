@@ -55,11 +55,11 @@ var MaxTokens = &Fixture{
 		},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1782736293-pjqokdGS8Qo3GXjW4x9E",
+		Id:     "max_tokens",
 		Model:  "openai/gpt-4o",
 		Status: v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT,
 		Message: &v1.Message{
-			Id:   "mock_message_id",
+			Id:   "gen-1782736293-pjqokdGS8Qo3GXjW4x9E",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("A Large Language Model (LLM) router balances the load across multiple upstream providers through a sophisticated process that involves probing, ranking, reservation, and rate limiting. These steps ensure optimized utilization of resources, reduced latency, and improved performance.\n\n**Probing:** The LLM router begins by continuously monitoring the health and performance of")},

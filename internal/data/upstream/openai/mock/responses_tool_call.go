@@ -56,7 +56,7 @@ var ResponsesToolCall = &Fixture{
 		Tools: []*v1.Tool{getWeatherTool()},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1785502387-oWD8DH4G5icXqqD2oDOf",
+		Id:     "responses_tool_call",
 		Model:  "openai/gpt-5-mini",
 		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
 		Message: &v1.Message{

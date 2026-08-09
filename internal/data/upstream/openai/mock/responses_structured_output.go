@@ -76,7 +76,7 @@ var ResponsesStructuredOutput = &Fixture{
 		},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1785502384-ednipl8xASaFIwjUjxAV",
+		Id:     "responses_structured_output",
 		Model:  "openai/gpt-5-mini",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{

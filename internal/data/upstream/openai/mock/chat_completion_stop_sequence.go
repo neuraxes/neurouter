@@ -55,11 +55,11 @@ var StopSequence = &Fixture{
 		},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1782736296-MRi1skRx6CDE9SAebYi6",
+		Id:     "stop_sequence",
 		Model:  "openai/gpt-4o",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{
-			Id:   "mock_message_id",
+			Id:   "gen-1782736296-MRi1skRx6CDE9SAebYi6",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("1 2 3 4 ")},

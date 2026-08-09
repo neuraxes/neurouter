@@ -85,13 +85,6 @@ func TestChat(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
 
-				// OpenAI replies carry no message id, so the conversion generates
-				// a random one; normalize it before comparing.
-				if resp.Message != nil {
-					So(resp.Message.Id, ShouldHaveLength, 36)
-					resp.Message.Id = "mock_message_id"
-				}
-
 				Convey("Then the request body matches the fixture request", func() {
 					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
 				})
@@ -143,12 +136,6 @@ func TestChatStream(t *testing.T) {
 				for event, err := range seq {
 					So(err, ShouldBeNil)
 					So(event, ShouldNotBeNil)
-
-					// OpenAI streams carry no message id; normalize the generated one.
-					if ms := event.GetMessageStart(); ms != nil {
-						So(ms.GetId(), ShouldHaveLength, 36)
-						ms.Id = "mock_message_id"
-					}
 					events = append(events, event)
 				}
 

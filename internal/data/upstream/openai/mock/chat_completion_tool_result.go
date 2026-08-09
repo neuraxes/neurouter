@@ -89,11 +89,11 @@ var ToolResult = &Fixture{
 		Tools: []*v1.Tool{getWeatherTool()},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1782736825-52jMHSQnqyXGTxw7F3CD",
+		Id:     "tool_result",
 		Model:  "openai/gpt-4o",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{
-			Id:   "mock_message_id",
+			Id:   "gen-1782736825-52jMHSQnqyXGTxw7F3CD",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("On November 10, 2025, in Shanghai, the weather was cloudy with a high of 18°C, a low of 11°C, and 2.3 mm of precipitation.")},

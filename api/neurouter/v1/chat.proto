@@ -56,7 +56,9 @@ enum ChatStatus {
 }
 
 message Message {
-  // The unique identifier of the message
+  // The identifier the upstream assigned to this message. Empty when the
+  // upstream exposes none; Neurouter never synthesizes one. Ignored on inbound
+  // requests.
   string id = 1;
   // The role of the message sender
   Role role = 2;
@@ -67,7 +69,9 @@ message Message {
 }
 
 message ChatReq {
-  // The unique identifier of the chat session
+  // The identifier of this chat request, assigned by whichever entry point
+  // accepts it. Every ChatResp and ChatEvent produced for the request echoes
+  // it unchanged, which is what correlates them across layers.
   string id = 1;
   // The requested model to use
   string model = 2;
@@ -82,7 +86,7 @@ message ChatReq {
 }
 
 message ChatResp {
-  // The unique identifier of the chat session
+  // The id of the request this response answers.
   string id = 1;
   // The model used to generate the response
   string model = 2;
@@ -95,7 +99,7 @@ message ChatResp {
 }
 
 message ChatEvent {
-  // The unique identifier of the chat session
+  // The id of the request this event belongs to.
   string id = 1;
   // The latest cumulative usage snapshot. A single event rarely carries every
   // field, so reducers must overwrite only the non-zero fields and treat
@@ -124,7 +128,8 @@ message ChatEvent {
 }
 
 message MessageStart {
-  // The unique identifier of the message
+  // The identifier the upstream assigned to the message being generated. Empty
+  // when the upstream exposes none.
   string id = 1;
   // The model used to generate the message
   string model = 2;
@@ -143,7 +148,8 @@ message ToolUseStart {
 }
 
 message ContentStart {
-  // The unique identifier of the content
+  // The upstream item this content is derived from, as in Content.id. Contents
+  // that the upstream packs into one item share the value.
   string id = 1;
   // The index of the content within the message.
   uint32 index = 2;

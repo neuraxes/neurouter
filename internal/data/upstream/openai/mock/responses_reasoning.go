@@ -55,7 +55,7 @@ var ResponsesReasoning = &Fixture{
 		},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1785502365-TGaPDCczhSq5BUQNfGH5",
+		Id:     "responses_reasoning",
 		Model:  "openai/gpt-5-mini",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{

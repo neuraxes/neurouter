@@ -55,7 +55,7 @@ var ResponsesMaxOutputTokens = &Fixture{
 		},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1785502363-1OIGKSAZ6DupYJGniSP8",
+		Id:     "responses_max_output_tokens",
 		Model:  "openai/gpt-5-mini",
 		Status: v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT,
 		Message: &v1.Message{

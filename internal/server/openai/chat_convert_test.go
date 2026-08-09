@@ -972,10 +972,11 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 
 		Convey("When converting a response with text content", func() {
 			resp := &v1.ChatResp{
-				Id:     "chatcmpl-1",
+				Id:     "req-1",
 				Model:  "gpt-4o",
 				Status: v1.ChatStatus_CHAT_COMPLETED,
 				Message: &v1.Message{
+					Id:   "chatcmpl-1",
 					Role: v1.Role_MODEL,
 					Contents: []*v1.Content{
 						{Content: v1.NewTextContent("Hello!")},

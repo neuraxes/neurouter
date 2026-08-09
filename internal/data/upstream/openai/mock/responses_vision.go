@@ -62,7 +62,7 @@ var ResponsesVision = &Fixture{
 		},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1785502390-uWUQAQNqsj1Ocw0q6uQk",
+		Id:     "responses_vision",
 		Model:  "openai/gpt-5-mini",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{

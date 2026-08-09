@@ -304,7 +304,7 @@ func convertReasoningEffortFromOpenAI(effort shared.ReasoningEffort) v1.Reasonin
 
 func convertChatRespToOpenAIChat(resp *v1.ChatResp) *chatCompletionResponse {
 	r := &chatCompletionResponse{
-		ID:     resp.Id,
+		ID:     resp.Message.GetId(),
 		Object: "chat.completion",
 		Model:  resp.Model,
 	}

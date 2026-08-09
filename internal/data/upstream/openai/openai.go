@@ -19,7 +19,6 @@ import (
 	"iter"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"github.com/google/uuid"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/ssestream"
@@ -77,7 +76,7 @@ func (r *upstream) chatWithCompletion(ctx context.Context, req *entity.ChatReq) 
 		return
 	}
 
-	resp = r.convertResponseFromOpenAIChat(openAIResp)
+	resp = r.convertResponseFromOpenAIChat(req, openAIResp)
 
 	return
 }
@@ -97,7 +96,6 @@ type openAIChatStreamClient struct {
 	req      *entity.ChatReq
 	upstream *ssestream.Stream[openai.ChatCompletionChunk]
 
-	messageID      string
 	status         v1.ChatStatus
 	messageStarted bool
 	stopEmitted    bool
@@ -142,9 +140,8 @@ func (r *upstream) chatStreamWithCompletion(ctx context.Context, req *entity.Cha
 	stream := r.client.Chat.Completions.NewStreaming(ctx, openAIReq)
 
 	client := &openAIChatStreamClient{
-		req:       req,
-		upstream:  stream,
-		messageID: uuid.NewString(),
+		req:      req,
+		upstream: stream,
 	}
 
 	return client.AsSeq()

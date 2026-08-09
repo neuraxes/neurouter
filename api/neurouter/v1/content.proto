@@ -76,7 +76,10 @@ enum ContentPhase {
 
 // Multi-modality content
 message Content {
-  // The unique identifier of the content
+  // The upstream item this content was derived from. Several contents share one
+  // value when the upstream packs them into a single item. Neurouter replays it
+  // to upstreams that require items to be referenced by id, and leaves it
+  // empty for upstreams that expose no item identity.
   string id = 1;
   // The index of current content
   optional uint32 index = 2;

@@ -29,7 +29,7 @@ var streamToolCallResponse []byte
 func streamToolCallChatEvents() []*v1.ChatEvent {
 	id := eventBuilder("stream_tool_call")
 	return []*v1.ChatEvent{
-		id.of(v1.NewMessageStartEvent("mock_message_id", "openai/gpt-4o")),
+		id.of(v1.NewMessageStartEvent("gen-1782736358-UGNSyKHEUEJgOuspL0cf", "openai/gpt-4o")),
 		id.of(v1.NewContentStartTextEvent(0, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
 		id.of(v1.NewContentDeltaTextEvent(0, "Today's")),
 		id.of(v1.NewContentDeltaTextEvent(0, " date")),

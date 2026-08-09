@@ -95,7 +95,7 @@ var ResponsesToolResult = &Fixture{
 		Tools: []*v1.Tool{getWeatherTool()},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1785502446-Gkxi8IHY2X1TDnhyveUP",
+		Id:     "responses_tool_result",
 		Model:  "openai/gpt-5-mini",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{

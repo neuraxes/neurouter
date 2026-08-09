@@ -61,7 +61,10 @@ components:
             properties:
                 id:
                     type: string
-                    description: The unique identifier of the chat session
+                    description: |-
+                        The identifier of this chat request, assigned by whichever entry point
+                         accepts it. Every ChatResp and ChatEvent produced for the request echoes
+                         it unchanged, which is what correlates them across layers.
                 model:
                     type: string
                     description: The requested model to use
@@ -89,7 +92,7 @@ components:
             properties:
                 id:
                     type: string
-                    description: The unique identifier of the chat session
+                    description: The id of the request this response answers.
                 model:
                     type: string
                     description: The model used to generate the response
@@ -110,7 +113,11 @@ components:
             properties:
                 id:
                     type: string
-                    description: The unique identifier of the content
+                    description: |-
+                        The upstream item this content was derived from. Several contents share one
+                         value when the upstream packs them into a single item. Neurouter replays it
+                         to upstreams that require items to be referenced by id, and leaves it
+                         empty for upstreams that expose no item identity.
                 index:
                     type: integer
                     description: The index of current content
@@ -235,7 +242,10 @@ components:
             properties:
                 id:
                     type: string
-                    description: The unique identifier of the message
+                    description: |-
+                        The identifier the upstream assigned to this message. Empty when the
+                         upstream exposes none; Neurouter never synthesizes one. Ignored on inbound
+                         requests.
                 role:
                     type: integer
                     description: The role of the message sender

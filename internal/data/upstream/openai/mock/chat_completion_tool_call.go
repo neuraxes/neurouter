@@ -55,11 +55,11 @@ var ToolCall = &Fixture{
 		Tools: []*v1.Tool{getWeatherTool()},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1782736288-lXdveO1kqMfsE8T6qkFS",
+		Id:     "tool_call",
 		Model:  "openai/gpt-4o",
 		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
 		Message: &v1.Message{
-			Id:   "mock_message_id",
+			Id:   "gen-1782736288-lXdveO1kqMfsE8T6qkFS",
 			Role: v1.Role_MODEL,
 			Contents: []*v1.Content{
 				{

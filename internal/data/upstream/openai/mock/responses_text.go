@@ -56,7 +56,7 @@ var ResponsesText = &Fixture{
 		Metadata: map[string]string{"fixture": "responses_text"},
 	},
 	ChatResp: &v1.ChatResp{
-		Id:     "gen-1785502322-iD3pWMHAKB2iRN8OtooU",
+		Id:     "responses_text",
 		Model:  "openai/gpt-5-mini",
 		Status: v1.ChatStatus_CHAT_COMPLETED,
 		Message: &v1.Message{
