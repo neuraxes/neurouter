@@ -19,7 +19,7 @@ func NewKratosLogExporter(logger log.Logger) sdklog.Exporter {
 func (e *KratosLogExporter) Export(ctx context.Context, records []sdklog.Record) error {
 	for _, r := range records {
 		e.log.WithContext(ctx).Log(
-			log.LevelDebug, "event", r.EventName(), "body", string(r.Body().AsBytes()),
+			log.LevelDebug, "event", r.EventName(), "body", string(r.Body().AsByteSlice()),
 		)
 	}
 	return nil

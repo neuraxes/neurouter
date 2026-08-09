@@ -228,7 +228,7 @@ func responsesStreamReasoningChatEvents() []*v1.ChatEvent {
 				},
 			},
 		)),
-		id.of(v1.NewContentStartTextEvent(2, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
+		id.of(v1.NewIdentifiedContentStartTextEvent("msg_tmp_c0at63qvb7i", 2, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
 		id.of(v1.NewContentDeltaTextEvent(2, "240")),
 		id.of(v1.NewContentDeltaTextEvent(2, " requests")),
 		id.of(v1.NewContentDeltaTextEvent(2, " ×")),

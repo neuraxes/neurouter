@@ -36,7 +36,7 @@ func TestConvertReasoningEffortToOpenAI(t *testing.T) {
 			{v1.ReasoningEffort_REASONING_EFFORT_MEDIUM, shared.ReasoningEffortMedium},
 			{v1.ReasoningEffort_REASONING_EFFORT_HIGH, shared.ReasoningEffortHigh},
 			{v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH, shared.ReasoningEffortXhigh},
-			{v1.ReasoningEffort_REASONING_EFFORT_MAX, shared.ReasoningEffortXhigh},
+			{v1.ReasoningEffort_REASONING_EFFORT_MAX, shared.ReasoningEffortMax},
 			{v1.ReasoningEffort_REASONING_EFFORT_UNSPECIFIED, shared.ReasoningEffort("")},
 		}
 

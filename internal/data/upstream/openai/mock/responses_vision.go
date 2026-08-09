@@ -76,9 +76,12 @@ var ResponsesVision = &Fixture{
 						Opaque: "gAAAAABqbJq3gNByFtjiMDsRgZymiPXje54G2e6_ufgtt1Mtm-Jqoky1_nFAkU3kVvqd457ZZHaoyJx3aMrz0k9XafMWdLId08khC_EwSg2zM0YBZd-hg1MMtjSCsN__LZpeS4gUnKcLtnc5hDwSOLqwqpCPf5NK1X3TwMVR1gNAcki-0CLvKvlPZhazC5zO9wXMb7GPVo4fowRTW25JZeCllBB86F3omukVqxqNMMg-8Dx8j1IXvwjC51kXCKNAPbqBPj0ogiRpQZUf95wnxC4PEWdgS18o6KsHfxMtbFPGkVlwth0UWnEt9D_Mo0h6NFClgUfmqqYJmENA4sk-epoP7ma6TMQxPHalr0T4ScmZtdfTBt-tkjUG6YOeiTtP5DXXdGhpqNDalhGon20Gs2zP33Ejxlyw4EhyapmavWpX6BS2HhuFvQMxurIr_AL1PHhRSt7o1tWCYOEy7mFgz6LvaZxGr95BgRd-DrQh_QYmery7BeEzrxS4dTwqeTsFSAnJsUGaipElJVYenR35FP9CCjNrfR65o-Uc0RQGgWydarM4QxcX0Kf4NV_kzesJTOhqUQRrtYi_pr9iOMWJeYonbmXAyzkxcLZmvH1_NcBW5sxIafz0x5WZ7oEfJoJXN7fiGAgrp_Dp7NL0L0LInUTwNdSbzjbDomIci17ZNr4OCGLfUQ5o5-k00zSOHtf4egmSNcWyKHySk_gSwr79y9SiptEQbFISyvywyhhY4DnP9NQqCQwjKJiDtN1NEnCRQCWjt0V8-89G8RJqiFXBl7OHsTJXzD5LiPNYTmmSW4sw4HFhtUx9pqirv-zv99KjjYL2VgiLTxkXaEV0yegXmrqzNlFBSUo3UpRer9_9oaLJK8dGgcaBisfWGpIjyqY5DMMMudIvtjybWoxqSv8N6JoP1TVaMhkkhrs-1eL_1-Ytg64UCE8zvGwMQj18hH4-3cASg9rCGBRK4WAPe1Shm5MUOEovXoTGyHS1srfu4BytWE9Wkkfgv_4=",
 					},
 				},
-				{Content: v1.NewTextContent(`Source (base64): data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAnFBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8/ZvTFAAAAMXRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMlJicoKSorLC0uLzAxMjM0NwAAAEpJREFUGNNjYGBgYGRkYGBgZmBjYGBgYGBgYGJgYGBkYWBkZGBg6GBkYGBgYGBgYGD4DgkAG4YCgABBgA5FQyS9wAAAABJRU5ErkJggg==
+				{
+					Id: "msg_tmp_9wt3kgyj5l",
+					Content: v1.NewTextContent(`Source (base64): data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAnFBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8/ZvTFAAAAMXRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMlJicoKSorLC0uLzAxMjM0NwAAAEpJREFUGNNjYGBgYGRkYGBgZmBjYGBgYGBgYGJgYGBkYWBkZGBg6GBkYGBgYGBgYGD4DgkAG4YCgABBgA5FQyS9wAAAABJRU5ErkJggg==
 
-One-sentence description: A small square icon showing the OpenAI swirl logo in dark lines on a white background with a thin rounded gray border.`)},
+One-sentence description: A small square icon showing the OpenAI swirl logo in dark lines on a white background with a thin rounded gray border.`),
+				},
 			},
 		},
 		Statistics: &v1.Statistics{

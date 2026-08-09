@@ -109,7 +109,10 @@ var ResponsesToolResult = &Fixture{
 						Opaque: "gAAAAABqbJrx7o1iCxEaxKbipe0cFHtnNVthhyklgpvCaBuyJA-Tb-hb4xCeJLWG5D2Si9rRajjURjW5SSb39t8u5eKvOYLBZeUc0VORpb8Qs-UtD3kedJ1wlXYErT7n3rsk64CsmrgWI8ec8U8bUimnY6lzolPfW6aNeIbudWRe3wbFBE3rnFNxO261yuTC8DKZXZ1MR-shFvY6WzxiwHqDAd5Lqdrg5fB4K-ds5U2Ya-83xenuNqq9IkdYeFxrndpheyb-GItbnCFUf4JoNkn6-7GNVUrmZ8SWzZcmZjCVijYpOhaIgUkLV3c7e6GlQJtOeInXGCpT289_AxVa2eWsP90Y0nlx39Fnhq4Ihbx8VmovF2UeHGm3FwYDMHZX3OuxRPaHTnGtqH3E939FKahDwFrp05mICEUsVUbFHol5Z82Naoi3JutQlOQ6GMroV27KfiTsqE19mkAWyDW94LUvKGPWtl188NdFLFd5Gh_owx4zd4Uv9pNNQ6ZaqgLSHcsNNlqIxnFY_1QaXTMEFOBo2oLvhUc5e2yugvgFA1mOdUi-uNifX0T8HmTf5EZTRveXf_J5ksb9n_cxYmKRtONXrYYUlRIMlfWcsfz4pE_DLMTCmPhPmFcaX5SvO1gSVn-LEnH3WTwCNGRIWVyTjMtyCcExFAYmyZhwYYkMx2tEC26iF4PXx4rM_CZhFMRolJLmCUY6auZq01H0Z5yvTNUde8TNAw69l8ii2JNRe_F-Y6uhGZKngh7hufApEfW1W8ZLbbw1OxG88pBjP5Mr4YKALbP021FSrx8lonXnsglXDMbFAbMWDQUKKBvB03RlxGwaCMMue4wEEIwIqEQ4N3NdcrH5CeP1dlZi5WfPloDHyFobB43215_EnibSGjdC2rSegmiFM26kTjXzChXgN476x-oVf_2NWh2_HPj8kP3a96rhWiYVDoDUwhPq-Yxipa_3NrY5taBHSRpKDCw3URtuHNomXXuumuawnoEIQRi9Tp12iQVm5YQ-KN-pvR5tjyc3W-ArGy0UDaCPxKudtFr4BI9S0r75lIgmL-Iy0oVsT1hcAvbWYh6Hh3bH4FUWHs9v6hRcL7BLVdVHk0_KQBx2TcBhdVaS6QDmFafAxGDftu4AFa7UZGULUjzPLGQ3J4qIEgYEpi5423F5KSCjUlO4mGfIWZn-tQUs9IGaYdtW1G4nwGNhCB_AxeVizU59Q6v9m-F6O3P-VNaFSS4UexHpxEAkSpz8vss9t0X_J8ovx_HGQ38iKCC0MAO3Oh9FHX4rzS_Bm1SYje-Ull6xRKKMJmOX7zqWeu8v2_kNq4acEK9vlNWyuoE=",
 					},
 				},
-				{Content: v1.NewTextContent("Shanghai on 2025-11-10: Cloudy, high 18°C, low 11°C, precipitation 2.3 mm.")},
+				{
+					Id:      "msg_tmp_ajx0hfv1ret",
+					Content: v1.NewTextContent("Shanghai on 2025-11-10: Cloudy, high 18°C, low 11°C, precipitation 2.3 mm."),
+				},
 			},
 		},
 		Statistics: &v1.Statistics{

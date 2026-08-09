@@ -71,6 +71,7 @@ var ResponsesToolCall = &Fixture{
 					},
 				},
 				{
+					Id: "fc_tmp_e0qtpyr71w",
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
 							Id:   "call_HuTyMtN6jtA1RB2cVXNI1obq",

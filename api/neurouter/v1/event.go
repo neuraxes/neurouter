@@ -56,11 +56,18 @@ func NewIdentifiedContentStartTextEvent(id string, index uint32, phase ContentPh
 
 // NewContentStartToolUseEvent opens a streamable tool-use content block.
 // The content phase is NORMAL by default.
-func NewContentStartToolUseEvent(index uint32, id, name string) *ChatEvent_ContentStart {
+func NewContentStartToolUseEvent(index uint32, callID, name string) *ChatEvent_ContentStart {
+	return NewIdentifiedContentStartToolUseEvent("", index, callID, name)
+}
+
+// NewIdentifiedContentStartToolUseEvent opens a streamable tool-use content
+// block that carries both the provider item identity and the tool call identity.
+func NewIdentifiedContentStartToolUseEvent(itemID string, index uint32, callID, name string) *ChatEvent_ContentStart {
 	return &ChatEvent_ContentStart{
 		ContentStart: &ContentStart{
+			Id:      itemID,
 			Index:   index,
-			Content: &ContentStart_ToolUse{ToolUse: &ToolUseStart{Id: id, Name: name}},
+			Content: &ContentStart_ToolUse{ToolUse: &ToolUseStart{Id: callID, Name: name}},
 		},
 	}
 }

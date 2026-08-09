@@ -69,7 +69,10 @@ var ResponsesMaxOutputTokens = &Fixture{
 						Opaque: "gAAAAABqbJqcy2ECr5Rg0-Fawu_sXUVrhTJh5tGMvz7ilDu1PtqkBiDRq4pmkQBCtA-yTpBV-fmKs7r6cD0TvrBC-7FnOxkDSrYRcdqwBQV0ZJP5V5Y0E_PdtHPkFPahDvYePNgl5R-SeQnieBaWhDdIQOqM92duvquQNcsR_ccUliY61_97179tnx2GleNy1l_2_NbLUQcYWSzJR8BMckvqCNcmoo5V-eIZF3WX6VItlwkUhWOTDsPGSyRsJlKbiuZLAHo-zxEwKX0slRcE7N0bXSdnTFsd7Ir7EqLDIAznzWoka6OI--O_LZgUDEsl8DduwTSwATsoMZ4MX-DfNha1fg24gC1Ll6u_Exmw1fUSlfWFY9MLyjbsLJATnTGh3eco7yKQCXedaSdYCpJ-PAVZKkmFml9cV9bVxRkZl5qDHdayAx-nu8kSy4TLdhM7vMQS6hHF9ptzBI66DoHfSIZRBkuabzqJs6PsiF_aZ1PE9I-UzM9i4FkOufwAztFa0a38Q7CmjkyLgnahIXUSJC0bQPqE3NgCFZvvz_ETUYDh9JDr6msWotltUKl1l_yTP9zj8yabKoyRCMr89ehK82RQWgWiV4Lx0ul2khBEjCwRKNfaYi923Bt_PLAZH_-JIawtzapPxNcyTXRuOeI7gDC18NEfGfprSNEecOaJoCch5TQ819dGh2EuzOE1h_OXgojmjvMNtHL_pJedo366u-Squ9ouTnF44GP7b7-luCNYe2gdpBgks2S3te8rUKQngA4AJ_IyDEDJ8YSAugyWW6ZbZLG_NzJdEY3J165v0zal98-ilfd1i8rR3xtc1CKqa3p6yB0C5uHN8IoQUYqyGSAHeBLxGu2AsBvyulaNXWx7pJS9GDSw-GW3XnB5xNR5tud1hrZBUCmZ3ol9W8PnZ4trR3RZxib7K0C9jjGpvWXRX85fk7uSuybBB9MpHPjou808EhurDl4QNDAAHywIKuZPiGysDA4aJiFQrNJ9x3js2RG_RlLiJuY=",
 					},
 				},
-				{Content: v1.NewTextContent("An LLM router balances load across multiple upstream providers by implementing a coordinated sequence of probing, ranking, reservation, and rate-limiting mechanisms that together maximize throughput, minimize latency, and ensure reliability and cost-effectiveness. First, continuous")},
+				{
+					Id:      "msg_tmp_plskzzg08f",
+					Content: v1.NewTextContent("An LLM router balances load across multiple upstream providers by implementing a coordinated sequence of probing, ranking, reservation, and rate-limiting mechanisms that together maximize throughput, minimize latency, and ensure reliability and cost-effectiveness. First, continuous"),
+				},
 			},
 		},
 		Statistics: &v1.Statistics{

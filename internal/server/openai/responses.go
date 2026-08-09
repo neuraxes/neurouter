@@ -21,26 +21,22 @@ import (
 	"io"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/openai/openai-go/v3"
 	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
+func (s *Server) handleResponses(httpCtx http.Context) (err error) {
 	requestBody, err := io.ReadAll(httpCtx.Request().Body)
-	if err != nil {
-		return
-	}
-
-	var openAIReq openai.ChatCompletionNewParams
-	err = json.Unmarshal(requestBody, &openAIReq)
 	if err != nil {
 		return err
 	}
 
-	req := convertChatReqFromOpenAIChat(&openAIReq)
+	req, err := convertChatReqFromOpenAIResponses(requestBody)
+	if err != nil {
+		return err
+	}
 
 	if gjson.GetBytes(requestBody, "stream").Bool() {
 		httpCtx.Response().Header().Set("Content-Type", "text/event-stream")
@@ -49,7 +45,7 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 
 		middleware := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 			util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
-			streamServer := &chatCompletionStreamServer{
+			streamServer := &responsesStreamServer{
 				ctx:     ctx,
 				httpCtx: httpCtx,
 			}
@@ -57,16 +53,13 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 				streamServer.buffer = &bytes.Buffer{}
 			}
 			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), streamServer)
-			if err == nil {
-				err = streamServer.sendDone()
-			}
 			if s.otelLogger != nil {
 				util.EmitEvent(ctx, s.otelLogger, util.EventServerRespSent, streamServer.buffer.Bytes())
 			}
 			return nil, err
 		})
 		_, err = middleware(httpCtx, req)
-		return
+		return err
 	}
 
 	var eventCtx context.Context = httpCtx
@@ -75,18 +68,15 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 		util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
 		return s.chatSvc.Chat(ctx, req.(*v1.ChatReq))
 	})
-
 	resp, err := middleware(httpCtx, req)
 	if err != nil {
 		return err
 	}
 
-	respBytes, err := json.Marshal(convertChatRespToOpenAIChat(resp.(*v1.ChatResp)))
+	responseBody, err := json.Marshal(convertChatRespToOpenAIResponses(resp.(*v1.ChatResp)))
 	if err != nil {
 		return err
 	}
-
-	util.EmitEvent(eventCtx, s.otelLogger, util.EventServerRespSent, respBytes)
-
-	return httpCtx.Blob(200, "application/json", respBytes)
+	util.EmitEvent(eventCtx, s.otelLogger, util.EventServerRespSent, responseBody)
+	return httpCtx.Blob(200, "application/json", responseBody)
 }

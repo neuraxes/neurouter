@@ -3,7 +3,8 @@
   "store": false,
   "max_output_tokens": 1024,
   "reasoning": {
-    "effort": "minimal"
+    "effort": "minimal",
+    "summary": "auto"
   },
   "input": [
     {

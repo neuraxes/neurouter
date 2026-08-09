@@ -29,11 +29,12 @@ func (e *FileLogExporter) Export(_ context.Context, records []sdklog.Record) err
 	}
 	for _, r := range records {
 		filename := fmt.Sprintf("%d-%s-%s", time.Now().UnixMilli(), r.TraceID().String(), r.EventName())
+		body := r.Body().AsByteSlice()
 
 		var raw any
-		if err := json.Unmarshal(r.Body().AsBytes(), &raw); err != nil {
+		if err := json.Unmarshal(body, &raw); err != nil {
 			// For non-JSON events
-			err = os.WriteFile(filepath.Join(e.BaseDir, filename+".txt"), r.Body().AsBytes(), 0o644)
+			err = os.WriteFile(filepath.Join(e.BaseDir, filename+".txt"), body, 0o644)
 			if err != nil {
 				return err
 			}

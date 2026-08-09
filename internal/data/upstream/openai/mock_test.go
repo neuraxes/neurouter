@@ -37,6 +37,12 @@ var mockTestConfig = &conf.OpenAIConfig{
 	ApiKey:  "test-key",
 }
 
+var mockResponsesTestConfig = &conf.OpenAIConfig{
+	BaseUrl:         "https://api.openai.com/v1/",
+	ApiKey:          "test-key",
+	UseResponsesApi: true,
+}
+
 // jsonMap unmarshals a JSON document into a map for order-independent comparison.
 func jsonMap(data []byte) map[string]any {
 	var m map[string]any
@@ -47,10 +53,10 @@ func jsonMap(data []byte) map[string]any {
 // mockResponder builds a DoFunc that asserts the outgoing request envelope
 // (method, endpoint, auth and content-type headers), records the request body
 // into captured, and replies with the given response content type and body.
-func mockResponder(responseContentType string, responseBody []byte, captured *[]byte) func(*http.Request) (*http.Response, error) {
+func mockResponder(endpoint, responseContentType string, responseBody []byte, captured *[]byte) func(*http.Request) (*http.Response, error) {
 	return func(httpReq *http.Request) (*http.Response, error) {
 		So(httpReq.Method, ShouldEqual, http.MethodPost)
-		So(httpReq.URL.String(), ShouldEqual, "https://api.openai.com/v1/chat/completions")
+		So(httpReq.URL.String(), ShouldEqual, "https://api.openai.com"+endpoint)
 		So(httpReq.Header.Get("Authorization"), ShouldEqual, "Bearer test-key")
 		So(httpReq.Header.Get("Content-Type"), ShouldEqual, "application/json")
 
@@ -67,7 +73,7 @@ func mockResponder(responseContentType string, responseBody []byte, captured *[]
 }
 
 func TestChat(t *testing.T) {
-	Convey("Given the openai chat completion conversion fixtures", t, func() {
+	Convey("Given the chat completions API conversion fixtures", t, func() {
 		for _, fixture := range mock.ChatCompletionFixtures {
 			if fixture.Stream {
 				continue
@@ -79,7 +85,7 @@ func TestChat(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				var capturedBody []byte
-				mockClient.DoFunc = mockResponder("application/json", fixture.Response, &capturedBody)
+				mockClient.DoFunc = mockResponder("/v1/chat/completions", "application/json", fixture.Response, &capturedBody)
 
 				resp, err := repo.Chat(context.Background(), fixture.ChatReq)
 				So(err, ShouldBeNil)
@@ -94,28 +100,57 @@ func TestChat(t *testing.T) {
 				})
 			})
 		}
+	})
 
-		Convey("When the API call fails", func() {
-			mockClient := &mockHTTPClient{
-				DoFunc: func(*http.Request) (*http.Response, error) {
-					return nil, errors.New("network error")
-				},
+	Convey("Given the responses API conversion fixtures", t, func() {
+		for _, fixture := range mock.ResponsesFixtures {
+			if fixture.Stream {
+				continue
 			}
-			repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
-			So(err, ShouldBeNil)
 
-			_, err = repo.Chat(context.Background(), mock.ToolCall.ChatReq)
+			Convey("When Chat runs the "+fixture.Name+" fixture", func() {
+				mockClient := &mockHTTPClient{}
+				repo, err := newOpenAIUpstreamWithClient(mockResponsesTestConfig, mockClient, log.DefaultLogger)
+				So(err, ShouldBeNil)
 
-			Convey("Then it should return an error", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "network error")
+				var capturedBody []byte
+				mockClient.DoFunc = mockResponder("/v1/responses", "application/json", fixture.Response, &capturedBody)
+
+				resp, err := repo.Chat(context.Background(), fixture.ChatReq)
+				So(err, ShouldBeNil)
+				So(resp, ShouldNotBeNil)
+
+				Convey("Then the request body matches the fixture request", func() {
+					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
+				})
+
+				Convey("Then the response converts to the expected ChatResp", func() {
+					So(proto.Equal(resp, fixture.ChatResp), ShouldBeTrue)
+				})
 			})
+		}
+	})
+
+	Convey("When the API call fails", t, func() {
+		mockClient := &mockHTTPClient{
+			DoFunc: func(*http.Request) (*http.Response, error) {
+				return nil, errors.New("network error")
+			},
+		}
+		repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+		So(err, ShouldBeNil)
+
+		_, err = repo.Chat(context.Background(), mock.ToolCall.ChatReq)
+
+		Convey("Then it should return an error", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "network error")
 		})
 	})
 }
 
 func TestChatStream(t *testing.T) {
-	Convey("Given the openai chat completion conversion fixtures", t, func() {
+	Convey("Given the chat completions API streaming conversion fixtures", t, func() {
 		for _, fixture := range mock.ChatCompletionFixtures {
 			if !fixture.Stream {
 				continue
@@ -127,7 +162,7 @@ func TestChatStream(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				var capturedBody []byte
-				mockClient.DoFunc = mockResponder("text/event-stream", fixture.Response, &capturedBody)
+				mockClient.DoFunc = mockResponder("/v1/chat/completions", "text/event-stream", fixture.Response, &capturedBody)
 
 				seq := repo.ChatStream(context.Background(), fixture.ChatReq)
 				So(seq, ShouldNotBeNil)
@@ -151,26 +186,64 @@ func TestChatStream(t *testing.T) {
 				})
 			})
 		}
+	})
 
-		Convey("When the API call fails", func() {
-			mockClient := &mockHTTPClient{
-				DoFunc: func(*http.Request) (*http.Response, error) {
-					return nil, errors.New("network error")
-				},
+	Convey("Given the responses API streaming conversion fixtures", t, func() {
+		for _, fixture := range mock.ResponsesFixtures {
+			if !fixture.Stream {
+				continue
 			}
-			repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
-			So(err, ShouldBeNil)
 
-			seq := repo.ChatStream(context.Background(), mock.StreamToolCall.ChatReq)
-			So(seq, ShouldNotBeNil)
+			Convey("When ChatStream runs the "+fixture.Name+" fixture", func() {
+				mockClient := &mockHTTPClient{}
+				repo, err := newOpenAIUpstreamWithClient(mockResponsesTestConfig, mockClient, log.DefaultLogger)
+				So(err, ShouldBeNil)
 
-			Convey("Then it should return an error in the iterator", func() {
-				for resp, err := range seq {
-					So(resp, ShouldBeNil)
-					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldContainSubstring, "network error")
+				var capturedBody []byte
+				mockClient.DoFunc = mockResponder("/v1/responses", "text/event-stream", fixture.Response, &capturedBody)
+
+				seq := repo.ChatStream(context.Background(), fixture.ChatReq)
+				So(seq, ShouldNotBeNil)
+
+				var events []*entity.ChatEvent
+				for event, err := range seq {
+					So(err, ShouldBeNil)
+					So(event, ShouldNotBeNil)
+					events = append(events, event)
 				}
+
+				Convey("Then the request body matches the fixture request", func() {
+					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
+				})
+
+				Convey("Then the stream converts to the expected ChatEvents", func() {
+					So(len(events), ShouldEqual, len(fixture.ChatEvents))
+					for i := range events {
+						So(proto.Equal(events[i], fixture.ChatEvents[i]), ShouldBeTrue)
+					}
+				})
 			})
+		}
+	})
+
+	Convey("When the API call fails", t, func() {
+		mockClient := &mockHTTPClient{
+			DoFunc: func(*http.Request) (*http.Response, error) {
+				return nil, errors.New("network error")
+			},
+		}
+		repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+		So(err, ShouldBeNil)
+
+		seq := repo.ChatStream(context.Background(), mock.StreamToolCall.ChatReq)
+		So(seq, ShouldNotBeNil)
+
+		Convey("Then it should return an error in the iterator", func() {
+			for resp, err := range seq {
+				So(resp, ShouldBeNil)
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "network error")
+			}
 		})
 	})
 }

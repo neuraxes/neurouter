@@ -82,7 +82,14 @@ func (r *upstream) chatWithCompletion(ctx context.Context, req *entity.ChatReq) 
 }
 
 func (r *upstream) chatWithResponses(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
-	panic("unimplemented")
+	openAIReq := r.convertRequestToOpenAIResponses(req)
+
+	openAIResp, err := r.client.Responses.New(ctx, openAIReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.convertResponseFromOpenAIResponses(req, openAIResp), nil
 }
 
 func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
@@ -150,6 +157,16 @@ func (r *upstream) chatStreamWithCompletion(ctx context.Context, req *entity.Cha
 type openAIResponseStreamClient struct {
 	req      *entity.ChatReq
 	upstream *ssestream.Stream[responses.ResponseStreamEventUnion]
+
+	messageStarted                bool
+	stopEmitted                   bool
+	hasFunctionCall               bool
+	nextIndex                     uint32
+	hasOpen                       bool
+	openOutputIndex               int64
+	openContentIndex              uint32
+	openContentIndexByOutputIndex map[int64]uint32
+	outputPhase                   map[int64]v1.ContentPhase
 }
 
 func (c *openAIResponseStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error] {
@@ -159,17 +176,42 @@ func (c *openAIResponseStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error]
 			if !c.upstream.Next() {
 				if err := c.upstream.Err(); err != nil {
 					yield(nil, err)
+					return
 				}
-				return
+				break
 			}
 
-			panic("unimplemented")
+			events, err := c.convertStreamEventFromOpenAIResponses(c.upstream.Current())
+			if err != nil {
+				yield(nil, err)
+				return
+			}
+			for _, event := range events {
+				if !yield(event, nil) {
+					return
+				}
+			}
+		}
+
+		for _, event := range c.finish() {
+			if !yield(event, nil) {
+				return
+			}
 		}
 	}
 }
 
 func (r *upstream) chatStreamWithResponses(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
-	panic("unimplemented")
+	openAIReq := r.convertRequestToOpenAIResponses(req)
+	stream := r.client.Responses.NewStreaming(ctx, openAIReq)
+
+	client := &openAIResponseStreamClient{
+		req:                           req,
+		upstream:                      stream,
+		openContentIndexByOutputIndex: make(map[int64]uint32),
+		outputPhase:                   make(map[int64]v1.ContentPhase),
+	}
+	return client.AsSeq()
 }
 
 func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {

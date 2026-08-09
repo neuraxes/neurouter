@@ -17,6 +17,7 @@ package util
 import (
 	"context"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/log"
 )
 
@@ -33,14 +34,14 @@ func EmitEvent(
 	logger log.Logger,
 	event string,
 	body []byte,
-	attrs ...log.KeyValue,
+	attrs ...attribute.KeyValue,
 ) {
 	if logger == nil {
 		return
 	}
 	var record log.Record
 	record.SetEventName(event)
-	record.SetBody(log.BytesValue(body))
+	record.SetBody(attribute.ByteSliceValue(body))
 	record.AddAttributes(attrs...)
 	logger.Emit(ctx, record)
 }

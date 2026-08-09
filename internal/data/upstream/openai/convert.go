@@ -35,8 +35,10 @@ func convertReasoningEffortToOpenAI(effort v1.ReasoningEffort) shared.ReasoningE
 		return shared.ReasoningEffortMedium
 	case v1.ReasoningEffort_REASONING_EFFORT_HIGH:
 		return shared.ReasoningEffortHigh
-	case v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH, v1.ReasoningEffort_REASONING_EFFORT_MAX:
+	case v1.ReasoningEffort_REASONING_EFFORT_EXTRA_HIGH:
 		return shared.ReasoningEffortXhigh
+	case v1.ReasoningEffort_REASONING_EFFORT_MAX:
+		return shared.ReasoningEffortMax
 	default:
 		return ""
 	}

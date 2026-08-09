@@ -3,7 +3,8 @@
   "store": false,
   "max_output_tokens": 512,
   "reasoning": {
-    "effort": "minimal"
+    "effort": "minimal",
+    "summary": "auto"
   },
   "metadata": {
     "fixture": "responses_text"
