@@ -68,19 +68,6 @@ const chatPrettyPrintTmpl = `
 {{- end}}
   </generation_config>
 {{- end}}
-  <messages len={{len .Request.Messages}}>
-{{- range $i, $msg := .Request.Messages}}
-    <message index={{$i}} id="{{$msg.Id}}" role="{{$msg.Role}}" name="{{$msg.Name}}">
-      <contents len={{len $msg.Contents}}>
-{{- range $j, $content := $msg.Contents}}
-        <content index={{$j}} phase="{{ $content.Phase }}">
-{{formatContent $content}}
-        </content>
-{{- end}}
-      </contents>
-    </message>
-{{- end}}
-  </messages>
 {{- if .Request.Tools}}
   <tool_declarations len={{len .Request.Tools}}>
 {{- range $i, $tool := .Request.Tools}}
@@ -94,6 +81,19 @@ const chatPrettyPrintTmpl = `
 {{- end}}
   </tool_declarations>
 {{- end}}
+  <messages len={{len .Request.Messages}}>
+{{- range $i, $msg := .Request.Messages}}
+    <message index={{$i}} id="{{$msg.Id}}" role="{{$msg.Role}}" name="{{$msg.Name}}">
+      <contents len={{len $msg.Contents}}>
+{{- range $j, $content := $msg.Contents}}
+        <content index={{$j}} phase="{{ $content.Phase }}">
+{{formatContent $content}}
+        </content>
+{{- end}}
+      </contents>
+    </message>
+{{- end}}
+  </messages>
 {{- end}}
 </chat_request>
 {{- if .Response}}

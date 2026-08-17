@@ -120,14 +120,24 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 		if len(messageContent) == 0 {
 			return
 		}
+		var content responses.EasyInputMessageContentUnionParam
+		if message.Role == v1.Role_MODEL {
+			var text string
+			for _, part := range messageContent {
+				if part.OfInputText != nil {
+					text += part.OfInputText.Text
+				}
+			}
+			content.OfString = openai.Opt(text)
+		} else {
+			content.OfInputItemContentList = messageContent
+		}
 		items = append(items, responses.ResponseInputItemUnionParam{
 			OfMessage: &responses.EasyInputMessageParam{
-				Type:  responses.EasyInputMessageTypeMessage,
-				Role:  role,
-				Phase: messagePhase,
-				Content: responses.EasyInputMessageContentUnionParam{
-					OfInputItemContentList: messageContent,
-				},
+				Type:    responses.EasyInputMessageTypeMessage,
+				Role:    role,
+				Phase:   messagePhase,
+				Content: content,
 			},
 		})
 		messagePhase = ""
@@ -184,6 +194,10 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 
 		case *v1.Content_Image:
 			openReasoningItemWithoutID = nil
+			if message.Role == v1.Role_MODEL {
+				r.log.Errorf("unsupported image content in responses model message")
+				continue
+			}
 			messageContent = append(messageContent, responses.ResponseInputContentUnionParam{
 				OfInputImage: &responses.ResponseInputImageParam{
 					ImageURL: openai.Opt(convertImageToOpenAIURL(c.Image)),

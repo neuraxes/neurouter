@@ -15,6 +15,7 @@
 package openai
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -210,6 +211,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 			So(items[0].OfReasoning.Content, ShouldHaveLength, 1)
 			So(items[0].OfReasoning.Content[0].Text, ShouldEqual, "raw")
 		})
+
 	})
 }
 
@@ -247,6 +249,47 @@ func TestConvertResponseFromOpenAIResponses(t *testing.T) {
 			So(result.Message.Contents[3].GetToolUse().Id, ShouldEqual, "call-1")
 			So(result.Message.Contents[3].GetToolUse().GetTextualInput(), ShouldEqual, "{}")
 		})
+	})
+
+	Convey("Given a native model text message", t, func() {
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}
+		result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+			Model: "gpt-5",
+			Messages: []*v1.Message{{
+				Role: v1.Role_MODEL,
+				Contents: []*v1.Content{{
+					Phase:   v1.ContentPhase_CONTENT_PHASE_OUTCOME,
+					Content: v1.NewTextContent("previous answer"),
+				}},
+			}},
+		})
+
+		items := result.Input.OfInputItemList
+		So(items, ShouldHaveLength, 1)
+		So(items[0].OfMessage, ShouldNotBeNil)
+		So(items[0].OfMessage.Content.OfString.Valid(), ShouldBeTrue)
+		So(items[0].OfMessage.Content.OfString.Value, ShouldEqual, "previous answer")
+		So(items[0].OfMessage.Content.OfInputItemContentList, ShouldBeEmpty)
+	})
+
+	Convey("Given a native model image message", t, func() {
+		var logs bytes.Buffer
+		repo := &upstream{
+			config: &conf.OpenAIConfig{},
+			log:    log.NewHelper(log.NewStdLogger(&logs)),
+		}
+
+		items := repo.convertMessageToOpenAIResponses(&v1.Message{
+			Role: v1.Role_MODEL,
+			Contents: []*v1.Content{{
+				Content: &v1.Content_Image{Image: &v1.Image{
+					Source: &v1.Image_Url{Url: "https://example.com/image.png"},
+				}},
+			}},
+		})
+
+		So(items, ShouldBeEmpty)
+		So(logs.String(), ShouldContainSubstring, "unsupported image content in responses model message")
 	})
 }
 
