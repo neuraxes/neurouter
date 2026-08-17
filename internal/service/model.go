@@ -17,7 +17,7 @@ package service
 import (
 	"context"
 
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	"github.com/go-kratos/kratos/contrib/middleware/jwt/v3"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
@@ -25,7 +25,7 @@ import (
 func (s *RouterService) ListModel(ctx context.Context, req *v1.ListModelReq) (resp *v1.ListModelResp, err error) {
 	if claims, ok := jwt.FromContext(ctx); ok {
 		sub, _ := claims.GetSubject()
-		s.log.Infof("jwt authenticated for: %s", sub)
+		s.log.InfoContext(ctx, "authenticated with JWT", "subject", sub)
 	}
 
 	models, err := s.model.ListAvailableModels(ctx)

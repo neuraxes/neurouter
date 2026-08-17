@@ -6,7 +6,7 @@ import (
 	"iter"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/config"
+	"github.com/go-kratos/kratos/v3/config"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -37,7 +37,7 @@ func (v *mockConfigValue) String() (string, error)               { return "", ni
 func (v *mockConfigValue) Duration() (time.Duration, error)      { return 0, nil }
 func (v *mockConfigValue) Slice() ([]config.Value, error)        { return nil, nil }
 func (v *mockConfigValue) Map() (map[string]config.Value, error) { return nil, nil }
-func (v *mockConfigValue) Load() any                             { return nil }
+func (v *mockConfigValue) Load() any                             { return v.upstream }
 func (v *mockConfigValue) Store(any)                             {}
 func (v *mockConfigValue) Scan(dst any) error {
 	if v.upstream == nil {

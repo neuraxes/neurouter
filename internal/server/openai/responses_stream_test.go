@@ -23,8 +23,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/middleware"
-	kratoshttp "github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3/middleware"
+	kratoshttp "github.com/go-kratos/kratos/v3/transport/http"
 	. "github.com/smartystreets/goconvey/convey"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"

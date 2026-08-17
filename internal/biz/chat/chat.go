@@ -17,8 +17,7 @@ package chat
 import (
 	"context"
 	"errors"
-
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
@@ -31,13 +30,13 @@ type UseCase interface {
 
 type chatUseCase struct {
 	elector Elector
-	log     *log.Helper
+	log     *slog.Logger
 }
 
-func NewChatUseCase(elector Elector, logger log.Logger) UseCase {
+func NewChatUseCase(elector Elector, logger *slog.Logger) UseCase {
 	return &chatUseCase{
 		elector: elector,
-		log:     log.NewHelper(logger),
+		log:     logger,
 	}
 }
 

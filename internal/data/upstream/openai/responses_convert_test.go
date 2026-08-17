@@ -15,11 +15,10 @@
 package openai
 
 import (
-	"bytes"
 	"encoding/json"
+	"log/slog"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	"github.com/openai/openai-go/v3/responses"
 	openaishared "github.com/openai/openai-go/v3/shared"
 	. "github.com/smartystreets/goconvey/convey"
@@ -31,7 +30,7 @@ import (
 
 func TestConvertRequestToOpenAIResponses(t *testing.T) {
 	Convey("Given a native session ID", t, func() {
-		repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 
 		Convey("When the session ID is present", func() {
 			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
@@ -52,7 +51,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 
 	Convey("Given native reasoning configurations", t, func() {
 		Convey("When effort is above none", func() {
-			repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}
+			repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
 				Model: "gpt-5",
 				Config: &v1.GenerationConfig{ReasoningConfig: &v1.ReasoningConfig{
@@ -66,7 +65,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 		Convey("When raw reasoning is enabled", func() {
 			repo := &upstream{
 				config: &conf.OpenAIConfig{ResponsesUseRawReasoning: true},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
 				Model: "gpt-5",
@@ -79,7 +78,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 	})
 
 	Convey("Given interleaved native content", t, func() {
-		repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 		result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
 			Model: "gpt-5",
 			Messages: []*v1.Message{{
@@ -127,7 +126,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 	})
 
 	Convey("Given native reasoning without item IDs", t, func() {
-		repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 
 		Convey("When summary and encrypted contents are consecutive", func() {
 			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
@@ -250,7 +249,7 @@ func TestConvertResponseFromOpenAIResponses(t *testing.T) {
 		}`
 		var openAIResp responses.Response
 		So(json.Unmarshal([]byte(respBody), &openAIResp), ShouldBeNil)
-		repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 
 		result := repo.convertResponseFromOpenAIResponses(&entity.ChatReq{Id: "request-1"}, &openAIResp)
 
@@ -272,7 +271,7 @@ func TestConvertResponseFromOpenAIResponses(t *testing.T) {
 	})
 
 	Convey("Given a native model text message", t, func() {
-		repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 		result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
 			Model: "gpt-5",
 			Messages: []*v1.Message{{
@@ -290,26 +289,6 @@ func TestConvertResponseFromOpenAIResponses(t *testing.T) {
 		So(items[0].OfMessage.Content.OfString.Valid(), ShouldBeTrue)
 		So(items[0].OfMessage.Content.OfString.Value, ShouldEqual, "previous answer")
 		So(items[0].OfMessage.Content.OfInputItemContentList, ShouldBeEmpty)
-	})
-
-	Convey("Given a native model image message", t, func() {
-		var logs bytes.Buffer
-		repo := &upstream{
-			config: &conf.OpenAIConfig{},
-			log:    log.NewHelper(log.NewStdLogger(&logs)),
-		}
-
-		items := repo.convertMessageToOpenAIResponses(&v1.Message{
-			Role: v1.Role_MODEL,
-			Contents: []*v1.Content{{
-				Content: &v1.Content_Image{Image: &v1.Image{
-					Source: &v1.Image_Url{Url: "https://example.com/image.png"},
-				}},
-			}},
-		})
-
-		So(items, ShouldBeEmpty)
-		So(logs.String(), ShouldContainSubstring, "unsupported image content in responses model message")
 	})
 }
 

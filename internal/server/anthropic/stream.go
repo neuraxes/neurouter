@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3/transport/http"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )

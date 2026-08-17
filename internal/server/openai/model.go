@@ -17,7 +17,7 @@ package openai
 import (
 	"context"
 
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3/transport/http"
 	"github.com/openai/openai-go/v3"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"

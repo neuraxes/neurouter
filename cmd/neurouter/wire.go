@@ -19,9 +19,10 @@
 package main
 
 import (
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/config"
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
+
+	"github.com/go-kratos/kratos/v3"
+	"github.com/go-kratos/kratos/v3/config"
 	"github.com/google/wire"
 
 	"github.com/neuraxes/neurouter/internal/biz"
@@ -32,6 +33,6 @@ import (
 )
 
 // wireApp init kratos application.
-func wireApp(*conf.Server, *conf.Data, config.Config, log.Logger) (*kratos.App, func(), error) {
+func wireApp(config.Config, *conf.Server, *conf.Data, *slog.Logger) (*kratos.App, func(), error) {
 	panic(wire.Build(server.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, newApp))
 }

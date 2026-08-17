@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 )
 
@@ -240,7 +240,7 @@ func (d *DailyTokenLimiter) Probe(tokens int64) time.Duration {
 func (d *DailyTokenLimiter) Reserve(tokens int64) (repository.TokenReservation, error) {
 	// Check if request exceeds limit
 	if tokens > d.state.limit {
-		return nil, v1.ErrorTokenQuotaExhausted("request exceeds daily token quota")
+		return nil, entity.ErrTokenQuotaExhausted
 	}
 
 	d.state.mu.Lock()

@@ -2,14 +2,16 @@ package model
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/chat"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
 	"github.com/neuraxes/neurouter/internal/data/limiter/local"
@@ -403,18 +405,18 @@ func TestElectForChat(t *testing.T) {
 		Convey("with no models should return error", func() {
 			uc := &UseCaseImpl{
 				models: nil,
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 			_, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "test"})
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("should match model by ID", func() {
 			m := makeModel("gpt", "gpt-4", []conf.Capability{conf.Capability_CAPABILITY_CHAT})
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			result, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "gpt"})
@@ -427,7 +429,7 @@ func TestElectForChat(t *testing.T) {
 			m := makeModel("gpt", "gpt-4", []conf.Capability{conf.Capability_CAPABILITY_CHAT})
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			req := &v1.ChatReq{Model: "nonexistent"}
@@ -441,12 +443,12 @@ func TestElectForChat(t *testing.T) {
 			m := makeModel("embed-model", "text-embedding-ada", []conf.Capability{conf.Capability_CAPABILITY_EMBEDDING})
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			_, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "embed-model"})
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("should skip models without chat repo", func() {
@@ -454,19 +456,19 @@ func TestElectForChat(t *testing.T) {
 			m.chatRepo = nil // No chat repo
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			_, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "no-repo"})
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("should update model ID to upstream ID", func() {
 			m := makeModel("my-gpt", "gpt-4-turbo", []conf.Capability{conf.Capability_CAPABILITY_CHAT})
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			req := &v1.ChatReq{Model: "my-gpt"}
@@ -480,7 +482,7 @@ func TestElectForChat(t *testing.T) {
 			m := makeModel("gpt-4", "", []conf.Capability{conf.Capability_CAPABILITY_CHAT})
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			req := &v1.ChatReq{Model: "gpt-4"}
@@ -498,7 +500,7 @@ func TestElectForChat(t *testing.T) {
 			}
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			// First election should succeed
@@ -532,7 +534,7 @@ func TestElectForChat(t *testing.T) {
 			}
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			// First election should succeed
@@ -544,7 +546,7 @@ func TestElectForChat(t *testing.T) {
 			defer cancel()
 			_, err = uc.ElectForChat(ctx, &v1.ChatReq{Model: "gpt-4"})
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 
 			// Release and try again
 			result1.Close()

@@ -15,7 +15,7 @@
 package repository
 
 import (
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
 
 	"github.com/neuraxes/neurouter/internal/conf"
 )
@@ -27,4 +27,4 @@ type UpstreamConfig interface {
 }
 
 // UpstreamFactory is a generic factory function type for creating Repo instances.
-type UpstreamFactory[T UpstreamConfig] func(config *T, logger log.Logger) (Repo, error)
+type UpstreamFactory[T UpstreamConfig] func(config *T, logger *slog.Logger) (Repo, error)

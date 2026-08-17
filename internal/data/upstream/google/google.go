@@ -18,9 +18,9 @@ import (
 	"context"
 	"errors"
 	"iter"
+	"log/slog"
 	"net/http"
 
-	"github.com/go-kratos/kratos/v2/log"
 	otellog "go.opentelemetry.io/otel/log"
 	"google.golang.org/genai"
 
@@ -34,17 +34,17 @@ import (
 type upstream struct {
 	config *conf.GoogleConfig
 	client *genai.Client
-	log    *log.Helper
+	log    *slog.Logger
 }
 
 func NewGoogleFactory(loggerProvider otellog.LoggerProvider) repository.UpstreamFactory[conf.GoogleConfig] {
-	return func(config *conf.GoogleConfig, logger log.Logger) (repository.Repo, error) {
+	return func(config *conf.GoogleConfig, logger *slog.Logger) (repository.Repo, error) {
 		client := shared.NewRecordingClientFromLoggerProvider(loggerProvider, "neurouter.upstream.google")
 		return newGoogleUpstreamWithClient(config, client, logger)
 	}
 }
 
-func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Client, logger log.Logger) (repo repository.ChatRepo, err error) {
+func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Client, logger *slog.Logger) (repo repository.ChatRepo, err error) {
 	cc := &genai.ClientConfig{
 		APIKey: config.ApiKey,
 	}
@@ -61,7 +61,7 @@ func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Cli
 	repo = &upstream{
 		config: config,
 		client: client,
-		log:    log.NewHelper(logger),
+		log:    logger,
 	}
 	return
 }

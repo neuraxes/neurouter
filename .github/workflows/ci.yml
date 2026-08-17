@@ -13,6 +13,10 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: "go.mod"
+      - name: Install pinned tools
+        run: make init
+      - name: Run lint
+        run: buf lint && go vet ./...
       - name: Run tests
         run: go test ./... -v
 

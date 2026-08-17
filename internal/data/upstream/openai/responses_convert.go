@@ -60,7 +60,7 @@ func (r *upstream) convertRequestToOpenAIResponses(req *entity.ChatReq) response
 			}
 			openAIReq.Tools = append(openAIReq.Tools, responses.ToolUnionParam{OfFunction: openAITool})
 		default:
-			r.log.Errorf("unsupported tool for responses: %v", t)
+			r.log.Error("unsupported tool", "tool", t)
 		}
 	}
 
@@ -106,7 +106,7 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 
 	role, ok := convertRoleToOpenAIResponses(message.Role)
 	if !ok {
-		r.log.Errorf("invalid role for responses: %v", message.Role)
+		r.log.Error("unsupported message role", "role", message.Role)
 		return nil
 	}
 
@@ -198,7 +198,7 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 		case *v1.Content_Image:
 			openReasoningItemWithoutID = nil
 			if message.Role == v1.Role_MODEL {
-				r.log.Errorf("unsupported image content in responses model message")
+				r.log.Error("unsupported image in model message")
 				continue
 			}
 			messageContent = append(messageContent, responses.ResponseInputContentUnionParam{
@@ -227,7 +227,7 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 		case *v1.Content_Opaque:
 			if content.Phase != v1.ContentPhase_CONTENT_PHASE_REASONING {
 				openReasoningItemWithoutID = nil
-				r.log.Errorf("unsupported non-reasoning opaque content for responses")
+				r.log.Error("unsupported non-reasoning opaque content")
 				continue
 			}
 			flushMessage()
@@ -235,7 +235,7 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 
 		default:
 			openReasoningItemWithoutID = nil
-			r.log.Errorf("unsupported content for responses: %v", c)
+			r.log.Error("unsupported content", "content", c)
 		}
 	}
 

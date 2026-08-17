@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
@@ -36,7 +36,7 @@ func TestNewGoogleUpstream(t *testing.T) {
 		}
 
 		Convey("When newGoogleUpstream is called", func() {
-			repo, err := newGoogleUpstreamWithClient(config, nil, log.DefaultLogger)
+			repo, err := newGoogleUpstreamWithClient(config, nil, slog.Default())
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)
@@ -46,7 +46,7 @@ func TestNewGoogleUpstream(t *testing.T) {
 
 		Convey("When newGoogleUpstreamWithClient is called with a custom HTTP client", func() {
 			mockClient := &http.Client{Transport: &mockRoundTripper{}}
-			repo, err := newGoogleUpstreamWithClient(config, mockClient, log.DefaultLogger)
+			repo, err := newGoogleUpstreamWithClient(config, mockClient, slog.Default())
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)
@@ -68,7 +68,7 @@ func TestChat(t *testing.T) {
 				ApiKey: "test-api-key",
 			},
 			&http.Client{Transport: mockRoundTripper},
-			log.DefaultLogger,
+			slog.Default(),
 		)
 		So(err, ShouldBeNil)
 
@@ -148,7 +148,7 @@ func TestChatStream(t *testing.T) {
 				ApiKey: "test-api-key",
 			},
 			&http.Client{Transport: mockRoundTripper},
-			log.DefaultLogger,
+			slog.Default(),
 		)
 		So(err, ShouldBeNil)
 
@@ -225,7 +225,7 @@ func TestEmbed(t *testing.T) {
 		repo, err := newGoogleUpstreamWithClient(
 			&conf.GoogleConfig{ApiKey: "test-api-key"},
 			&http.Client{Transport: mockRT},
-			log.DefaultLogger,
+			slog.Default(),
 		)
 		So(err, ShouldBeNil)
 

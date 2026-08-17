@@ -16,10 +16,10 @@ package model
 
 import (
 	"context"
+	"log/slog"
 	"sync/atomic"
 
-	"github.com/go-kratos/kratos/v2/config"
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v3/config"
 	"go.opentelemetry.io/otel/metric"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
@@ -55,7 +55,7 @@ type UseCaseImpl struct {
 	models  []*model
 	aliases map[string]*alias
 	metrics *metrics
-	log     *log.Helper
+	log     *slog.Logger
 }
 
 func NewModelUseCase(
@@ -65,19 +65,17 @@ func NewModelUseCase(
 	neurouterFactory repository.UpstreamFactory[conf.NeurouterConfig],
 	openAIFactory repository.UpstreamFactory[conf.OpenAIConfig],
 	meterProvider metric.MeterProvider,
-	logger log.Logger,
+	logger *slog.Logger,
 ) *UseCaseImpl {
-	logHelper := log.NewHelper(logger)
 	metrics, err := newMetrics(meterProvider)
 	if err != nil {
-		logHelper.Errorf("failed to create metrics: %v", err)
+		logger.Error("failed to create metrics", "error", err)
 	}
 
 	var models []*model
 	aliases := make(map[string]*alias)
 
-	var upstream conf.Upstream
-	err = c.Value("upstream").Scan(&upstream)
+	upstream, err := config.Get[conf.Upstream](c, "upstream")
 	if err == nil {
 		for _, upstreamConfig := range upstream.Configs {
 			var (
@@ -97,7 +95,7 @@ func NewModelUseCase(
 			}
 
 			if err != nil {
-				logHelper.Errorf("failed to create chat repo: %v", err)
+				logger.Error("failed to create upstream repository", "error", err, "upstream", upstreamConfig.Name)
 				continue
 			}
 
@@ -140,7 +138,7 @@ func NewModelUseCase(
 		for _, ac := range upstream.GetAliases() {
 			actual := ac.GetActual()
 			if actual == nil {
-				logHelper.Errorf("alias %q has no actual config, skipping", ac.GetId())
+				logger.Error("alias is missing actual config", "alias", ac.GetId())
 				continue
 			}
 			var resolved []*model
@@ -154,7 +152,12 @@ func NewModelUseCase(
 				resolved = append(resolved, m)
 			}
 			if len(resolved) == 0 {
-				logHelper.Errorf("alias %q: actual model %s:%s not found", ac.GetId(), actual.GetUpstream(), actual.GetModel())
+				logger.Error(
+					"alias target model not found",
+					"alias", ac.GetId(),
+					"upstream", actual.GetUpstream(),
+					"model", actual.GetModel(),
+				)
 				continue
 			}
 			aliases[ac.GetId()] = &alias{config: ac, models: resolved}
@@ -165,7 +168,7 @@ func NewModelUseCase(
 		models:  models,
 		aliases: aliases,
 		metrics: metrics,
-		log:     logHelper,
+		log:     logger,
 	}
 }
 

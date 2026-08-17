@@ -1,45 +1,35 @@
+GOHOSTOS:=$(shell go env GOHOSTOS)
 GOPATH:=$(shell go env GOPATH)
 VERSION=$(shell git describe --tags --always)
 
-rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
-
-INTERNAL_PROTO_FILES=$(call rwildcard,internal,*.proto)
-API_PROTO_FILES=$(call rwildcard,api,*.proto)
+ifeq ($(OS),Windows_NT)
+MKDIR_BIN=if not exist bin mkdir bin
+else
+MKDIR_BIN=mkdir -p bin
+endif
 
 .PHONY: init
 # init env
 init:
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-	go install github.com/go-kratos/kratos/cmd/kratos/v2@latest
-	go install github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v2@latest
-	go install github.com/google/gnostic/cmd/protoc-gen-openapi@latest
 	go install github.com/google/wire/cmd/wire@latest
+	go install github.com/bufbuild/buf/cmd/buf@latest
 
 .PHONY: config
 # generate internal proto
 config:
-	protoc --proto_path=./internal \
-	       --proto_path=./third_party \
-	       --go_out=paths=source_relative:./internal \
-	       $(INTERNAL_PROTO_FILES)
+	buf generate --template buf.gen.config.yaml
 
 .PHONY: api
 # generate api proto
 api:
-	protoc --proto_path=./api \
-	       --proto_path=./third_party \
-	       --go_out=paths=source_relative:./api \
-	       --go-http_out=paths=source_relative:./api \
-	       --go-grpc_out=paths=source_relative:./api \
-	       --go-errors_out=paths=source_relative:./api \
-	       --openapi_out=fq_schema_naming=true,default_response=false:. \
-	       $(API_PROTO_FILES)
+	buf generate --template buf.gen.yaml
 
 .PHONY: build
 # build
+build: export CGO_ENABLED=0
 build:
-	mkdir -p bin/ && CGO_ENABLED=0 go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
+	$(MKDIR_BIN)
+	go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
 
 .PHONY: generate
 # generate

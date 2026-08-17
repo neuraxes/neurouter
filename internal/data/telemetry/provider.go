@@ -2,8 +2,8 @@ package telemetry
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-kratos/kratos/v2/log"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	otellog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/metric"
@@ -39,11 +39,11 @@ func NewMeterProvider() (metric.MeterProvider, func(), error) {
 
 // NewLoggerProvider creates an OTel LoggerProvider.
 // Returns nil if event logging is disabled via config.
-func NewLoggerProvider(data *conf.Data, logger log.Logger) (otellog.LoggerProvider, func(), error) {
+func NewLoggerProvider(data *conf.Data, logger *slog.Logger) (otellog.LoggerProvider, func(), error) {
 	if !data.GetEnableEventLog() {
 		return nil, func() {}, nil
 	}
-	exporter := NewKratosLogExporter(logger)
+	exporter := NewSlogExporter(logger)
 	processor := sdklog.NewBatchProcessor(exporter)
 	lp := sdklog.NewLoggerProvider(sdklog.WithProcessor(processor))
 	cleanup := func() {

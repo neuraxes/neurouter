@@ -12,26 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package data
+package entity
 
 import (
-	"log/slog"
+	"github.com/go-kratos/kratos/v3/errors"
 
-	"github.com/neuraxes/neurouter/internal/conf"
-	"github.com/neuraxes/neurouter/internal/data/telemetry"
-	"github.com/neuraxes/neurouter/internal/data/upstream"
-
-	"github.com/google/wire"
+	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-var ProviderSet = wire.NewSet(NewData, upstream.ProviderSet, telemetry.ProviderSet)
-
-type Data struct {
-}
-
-func NewData(c *conf.Data, logger *slog.Logger) (*Data, func(), error) {
-	cleanup := func() {
-		logger.Info("closing data resources")
-	}
-	return &Data{}, cleanup, nil
-}
+var (
+	ErrNoUpstream = errors.InternalServer(
+		v1.ErrorReason_ERROR_REASON_NO_UPSTREAM.String(),
+		"no upstream found",
+	)
+	ErrTokenQuotaExhausted = errors.TooManyRequests(
+		v1.ErrorReason_ERROR_REASON_TOKEN_QUOTA_EXHAUSTED.String(),
+		"token quota exhausted",
+	)
+)

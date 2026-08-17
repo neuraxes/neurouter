@@ -16,10 +16,10 @@ package openai
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -45,7 +45,7 @@ func TestNewOpenAIUpstream(t *testing.T) {
 		}
 
 		Convey("When newOpenAIUpstream is called", func() {
-			repo, err := newOpenAIUpstreamWithClient(config, nil, log.DefaultLogger)
+			repo, err := newOpenAIUpstreamWithClient(config, nil, slog.Default())
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)
@@ -58,7 +58,7 @@ func TestNewOpenAIUpstream(t *testing.T) {
 
 		Convey("When newOpenAIUpstreamWithClient is called", func() {
 			mockClient := &mockHTTPClient{}
-			repo, err := newOpenAIUpstreamWithClient(config, mockClient, log.DefaultLogger)
+			repo, err := newOpenAIUpstreamWithClient(config, mockClient, slog.Default())
 
 			Convey("Then it should return a new upstream with the custom client", func() {
 				So(err, ShouldBeNil)

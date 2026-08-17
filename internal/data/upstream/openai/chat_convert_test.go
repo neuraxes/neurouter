@@ -15,9 +15,9 @@
 package openai
 
 import (
+	"log/slog"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	"github.com/openai/openai-go/v3"
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -30,7 +30,7 @@ import (
 func TestConvertMessageToOpenAIChat(t *testing.T) {
 	repo := &upstream{
 		config: &conf.OpenAIConfig{},
-		log:    log.NewHelper(log.DefaultLogger),
+		log:    slog.Default(),
 	}
 
 	singlePartTextualMessage := &v1.Message{
@@ -535,7 +535,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 func TestConvertRequestToOpenAIChat(t *testing.T) {
 	repo := &upstream{
 		config: &conf.OpenAIConfig{},
-		log:    log.NewHelper(log.DefaultLogger),
+		log:    slog.Default(),
 	}
 
 	Convey("Test convertRequestToOpenAIChat", t, func() {
@@ -707,7 +707,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 func TestConvertMessageFromOpenAIChat(t *testing.T) {
 	repo := &upstream{
 		config: &conf.OpenAIConfig{},
-		log:    log.NewHelper(log.DefaultLogger),
+		log:    slog.Default(),
 	}
 
 	Convey("Test convertMessageFromOpenAIChat", t, func() {

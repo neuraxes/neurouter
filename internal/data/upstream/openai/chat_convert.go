@@ -54,7 +54,7 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCo
 				}
 				tools = append(tools, openai.ChatCompletionFunctionTool(ot))
 			default:
-				r.log.Errorf("unsupported tool: %v", t)
+				r.log.Error("unsupported tool", "tool", t)
 			}
 		}
 		openAIReq.Tools = tools
@@ -149,7 +149,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 						openai.ChatCompletionContentPartTextParam{Text: c.Text.GetText()},
 					)
 				default:
-					r.log.Errorf("unsupported content for system: %v", c)
+					r.log.Error("unsupported system content", "content", c)
 				}
 			}
 		}
@@ -183,7 +183,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 								openai.ChatCompletionContentPartTextParam{Text: c.Text},
 							)
 						default:
-							r.log.Errorf("unsupported content for tool result: %v", c)
+							r.log.Error("unsupported tool result content", "content", c)
 						}
 					}
 				}
@@ -226,7 +226,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 							),
 						)
 					default:
-						r.log.Errorf("unsupported content for user: %v", c)
+						r.log.Error("unsupported user content", "content", c)
 					}
 				}
 			}
@@ -274,7 +274,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 				case *v1.Content_Opaque:
 					// Opaque content is not supported by OpenAI
 				default:
-					r.log.Errorf("unsupported content for assistant: %v", c)
+					r.log.Error("unsupported assistant content", "content", c)
 				}
 			}
 		}
@@ -296,7 +296,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 
 		return []openai.ChatCompletionMessageParamUnion{{OfAssistant: m}}
 	default:
-		r.log.Errorf("invalid role: %v", message.Role)
+		r.log.Error("unsupported message role", "role", message.Role)
 		return nil
 	}
 }

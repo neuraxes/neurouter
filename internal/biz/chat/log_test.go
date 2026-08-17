@@ -15,9 +15,9 @@
 package chat
 
 import (
+	"log/slog"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
@@ -26,7 +26,7 @@ import (
 
 func TestPrintChat(t *testing.T) {
 	Convey("Test PrintChat", t, func() {
-		uc := &chatUseCase{log: log.NewHelper(log.DefaultLogger)}
+		uc := &chatUseCase{log: slog.Default()}
 		req := &v1.ChatReq{
 			Id:    "req-id",
 			Model: "gemini-2.5-pro",

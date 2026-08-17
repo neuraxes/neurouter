@@ -1,9 +1,9 @@
 package chat
 
 import (
+	"log/slog"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
@@ -19,7 +19,7 @@ func reduceTestChatEvent(r *ChatEventReducer, event v1.ChatEventPayload) {
 }
 
 func newTestChatEventReducer() *ChatEventReducer {
-	return NewChatEventReducer(log.NewHelper(log.DefaultLogger))
+	return NewChatEventReducer(slog.Default())
 }
 
 func TestChatEventReducer(t *testing.T) {

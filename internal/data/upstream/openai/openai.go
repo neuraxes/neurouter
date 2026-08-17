@@ -17,8 +17,8 @@ package openai
 import (
 	"context"
 	"iter"
+	"log/slog"
 
-	"github.com/go-kratos/kratos/v2/log"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/ssestream"
@@ -35,18 +35,18 @@ import (
 type upstream struct {
 	config *conf.OpenAIConfig
 	client *openai.Client
-	log    *log.Helper
+	log    *slog.Logger
 }
 
 func NewOpenAIFactory(loggerProvider otellog.LoggerProvider) repository.UpstreamFactory[conf.OpenAIConfig] {
-	return func(config *conf.OpenAIConfig, logger log.Logger) (repository.Repo, error) {
+	return func(config *conf.OpenAIConfig, logger *slog.Logger) (repository.Repo, error) {
 		client := shared.NewRecordingClientFromLoggerProvider(loggerProvider, "neurouter.upstream.openai")
 		return newOpenAIUpstreamWithClient(config, client, logger)
 	}
 }
 
 // newOpenAIUpstreamWithClient creates a new OpenAI upstream with a custom HTTP client for testing.
-func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, client option.HTTPClient, logger log.Logger) (repo *upstream, err error) {
+func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, client option.HTTPClient, logger *slog.Logger) (repo *upstream, err error) {
 	options := []option.RequestOption{
 		option.WithAPIKey(config.ApiKey),
 	}
@@ -63,7 +63,7 @@ func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, client option.HTTPCl
 	repo = &upstream{
 		config: config,
 		client: new(openai.NewClient(options...)),
-		log:    log.NewHelper(logger),
+		log:    logger,
 	}
 	return repo, nil
 }

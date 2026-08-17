@@ -60,7 +60,7 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 				}
 				tools = append(tools, anthropic.ToolUnionParam{OfTool: at})
 			default:
-				r.log.Errorf("unsupported tool: %v", t)
+				r.log.Error("unsupported tool", "tool", t)
 			}
 		}
 		params.Tools = tools
@@ -132,7 +132,7 @@ func (r *upstream) convertSystemMessagesToAnthropic(messages []*v1.Message) []an
 			case *v1.Content_Text:
 				parts = append(parts, anthropic.TextBlockParam{Text: c.Text.GetText()})
 			default:
-				r.log.Errorf("unsupported content: %v", c)
+				r.log.Error("unsupported system content", "content", c)
 			}
 		}
 	}

@@ -1,7 +1,7 @@
 server:
   http:
-    addr: 0.0.0.0:8000
-    timeout: 600s
+    addr: "${HTTP_ADDR:0.0.0.0:8000}"
+    timeout: "${HTTP_TIMEOUT:600s}"
     cors:
       allowed_origins:
         - "*"
@@ -19,7 +19,8 @@ server:
         - "x-stainless-runtime"
         - "x-stainless-runtime-version"
   grpc:
-    addr: 0.0.0.0:9000
-    timeout: 600s
+    addr: "${GRPC_ADDR:0.0.0.0:9000}"
+    timeout: "${GRPC_TIMEOUT:600s}"
+  jwt_key: "${JWT_KEY:}"
 data:
   enable_event_log: false

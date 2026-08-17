@@ -15,7 +15,7 @@
 package openai
 
 import (
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3/transport/http"
 	otellog "go.opentelemetry.io/otel/log"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"

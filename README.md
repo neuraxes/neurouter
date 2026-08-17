@@ -65,7 +65,7 @@ graph LR
   - Prometheus `/metrics` endpoint
   - Per-model token usage metrics
 - **Security**:
-  - Optional JWT authentication (`JWT_KEY` env var)
+  - Optional JWT authentication (`NEUROUTER_JWT_KEY` env var)
   - Configurable CORS
 
 ## Installation
@@ -128,17 +128,32 @@ Neurouter loads all YAML files from the config directory (`-conf configs/`). Con
 ```yaml
 server:
   http:
-    addr: 0.0.0.0:8000
-    timeout: 600s
+    addr: "${HTTP_ADDR:0.0.0.0:8000}"
+    timeout: "${HTTP_TIMEOUT:600s}"
     cors:
       allowed_origins: ["*"]
       allowed_methods: ["GET", "POST"]
       allowed_headers: ["authorization", "content-type"]
     grpc_web: true # gRPC-Web bridge on HTTP port (default: true)
   grpc:
-    addr: 0.0.0.0:9000
-    timeout: 600s
+    addr: "${GRPC_ADDR:0.0.0.0:9000}"
+    timeout: "${GRPC_TIMEOUT:600s}"
+data:
+  enable_event_log: "${ENABLE_EVENT_LOG:false}"
+auth:
+  jwt_key: "${JWT_KEY:}"
 ```
+
+Environment overrides use the `NEUROUTER_` prefix and are converted to their configured types. Placeholder names in YAML are the post-prefix keys resolved by the environment source; for example, `${JWT_KEY:}` is supplied by `NEUROUTER_JWT_KEY`.
+
+| Environment variable | Configuration value |
+| --- | --- |
+| `NEUROUTER_HTTP_ADDR` | Native and compatibility HTTP listen address |
+| `NEUROUTER_HTTP_TIMEOUT` | HTTP request timeout, such as `30s` |
+| `NEUROUTER_GRPC_ADDR` | Native gRPC listen address |
+| `NEUROUTER_GRPC_TIMEOUT` | gRPC request timeout, such as `30s` |
+| `NEUROUTER_ENABLE_EVENT_LOG` | Enable OTel request and response event logs |
+| `NEUROUTER_JWT_KEY` | Enable JWT authentication with the supplied signing key |
 
 ### Upstream Configuration (`configs/upstream.yaml`)
 
@@ -189,7 +204,7 @@ Rate limits are applied at model level first, then upstream level. Set any limit
 ./bin/neurouter -conf configs
 
 # With JWT authentication enabled
-JWT_KEY="your-secret-key" ./bin/neurouter -conf configs
+NEUROUTER_JWT_KEY="your-secret-key" ./bin/neurouter -conf configs
 ```
 
 ### OpenAI-Compatible API
@@ -198,7 +213,7 @@ Available under `/v1`, `/openai`, and `/openai/v1` path prefixes:
 
 ```bash
 # List models
-curl http://localhost:8000/v1/models
+curl http://localhost:8000/openai/v1/models
 
 # Chat completion
 curl -X POST http://localhost:8000/v1/chat/completions \
@@ -260,6 +275,22 @@ curl -X POST http://localhost:8000/api/show \
   -H "Content-Type: application/json" \
   -d '{"model": "gpt-4"}'
 ```
+
+### Native HTTP API
+
+The Kratos-generated HTTP endpoints use ProtoJSON. Native callers must send `Content-Type: application/protojson` for request bodies and `Accept: application/protojson` for responses. This requirement does not apply to the OpenAI-, Anthropic-, or Ollama-compatible JSON APIs.
+
+```bash
+curl -X POST http://localhost:8000/v1/chat \
+  -H "Content-Type: application/protojson" \
+  -H "Accept: application/protojson" \
+  -d '{"model":"gpt-4","messages":[{"role":"USER","contents":[{"text":{"text":"Hello!"}}]}]}'
+
+curl http://localhost:8000/v1/models \
+  -H "Accept: application/protojson"
+```
+
+The generated Go clients set these headers automatically.
 
 ### Native gRPC API
 
@@ -386,10 +417,10 @@ curl http://localhost:8000/metrics
 
 ### JWT Authentication
 
-Set the `JWT_KEY` environment variable to enable JWT authentication on all API endpoints:
+Set the `NEUROUTER_JWT_KEY` environment variable to enable JWT authentication on all API endpoints:
 
 ```bash
-export JWT_KEY="your-secret-key"
+export NEUROUTER_JWT_KEY="your-secret-key"
 ./bin/neurouter -conf configs
 ```
 
@@ -440,23 +471,27 @@ server:
 ### Prerequisites
 
 - Go 1.26.0
-- `protoc` (Protocol Buffers compiler)
+
+`make init` installs the pinned Buf and Wire versions used by the repository.
 
 ### Make Targets
 
 ```bash
-make init       # Install protoc plugins, kratos CLI, and wire
+make init       # Install pinned Buf and Wire versions
 make api        # Generate API proto -> *.pb.go, *_grpc.pb.go, *_http.pb.go, errors, openapi.yaml
 make config     # Generate internal config proto -> *.pb.go
 make generate   # go generate ./... (Wire) + go mod tidy
 make all        # api + config + generate
+make lint       # Run Buf build/lint and go vet
+make test       # Run the full Go test suite
+make check-generated # Regenerate and fail if committed output is stale
 make build      # Build binary -> bin/neurouter
 ```
 
 ### Running Tests
 
 ```bash
-go test ./... -v
+make test
 ```
 
 ## License

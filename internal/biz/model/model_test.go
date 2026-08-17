@@ -2,9 +2,10 @@ package model
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.opentelemetry.io/otel/metric/noop"
 
@@ -16,21 +17,21 @@ import (
 func TestNewModelUseCase(t *testing.T) {
 	Convey("Test NewModelUseCase", t, func() {
 		// Factories that return mock repos
-		openAIFactory := func(config *conf.OpenAIConfig, logger log.Logger) (repository.Repo, error) {
+		openAIFactory := func(config *conf.OpenAIConfig, logger *slog.Logger) (repository.Repo, error) {
 			return &mockChatEmbeddingRepo{}, nil
 		}
-		anthropicFactory := func(config *conf.AnthropicConfig, logger log.Logger) (repository.Repo, error) {
+		anthropicFactory := func(config *conf.AnthropicConfig, logger *slog.Logger) (repository.Repo, error) {
 			return &mockChatRepo{}, nil
 		}
-		googleFactory := func(config *conf.GoogleConfig, logger log.Logger) (repository.Repo, error) {
+		googleFactory := func(config *conf.GoogleConfig, logger *slog.Logger) (repository.Repo, error) {
 			return &mockChatRepo{}, nil
 		}
-		neurouterFactory := func(config *conf.NeurouterConfig, logger log.Logger) (repository.Repo, error) {
+		neurouterFactory := func(config *conf.NeurouterConfig, logger *slog.Logger) (repository.Repo, error) {
 			return &mockChatRepo{}, nil
 		}
 
 		Convey("with nil config should return empty use case", func() {
-			uc := NewModelUseCase(&mockKratosConfig{}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), slog.Default())
 			So(uc, ShouldNotBeNil)
 			So(uc.models, ShouldBeEmpty)
 			So(uc.aliases, ShouldBeEmpty)
@@ -40,7 +41,7 @@ func TestNewModelUseCase(t *testing.T) {
 			c := &conf.Upstream{
 				Configs: []*conf.UpstreamConfig{},
 			}
-			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), slog.Default())
 			So(uc, ShouldNotBeNil)
 			So(uc.models, ShouldBeEmpty)
 			So(uc.aliases, ShouldBeEmpty)
@@ -68,7 +69,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), slog.Default())
 			So(len(uc.models), ShouldEqual, 2)
 			So(uc.models[0].config.Id, ShouldEqual, "gpt-4")
 			So(uc.models[1].config.Id, ShouldEqual, "text-embedding-ada")
@@ -98,7 +99,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), slog.Default())
 			So(len(uc.models), ShouldEqual, 1)
 			So(uc.models[0].config.Id, ShouldEqual, "claude-3")
 			So(uc.models[0].chatRepo, ShouldNotBeNil)
@@ -131,7 +132,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), slog.Default())
 			So(len(uc.models), ShouldEqual, 1)
 			// Upstream limiters should have concurrency + rpm
 			So(len(uc.models[0].upstreamLimiters.requestLimiters), ShouldEqual, 2)
@@ -158,15 +159,15 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, openAIFactory, noop.NewMeterProvider(), slog.Default())
 			So(len(uc.models), ShouldEqual, 2)
 			// Both models should share the same upstream limiter group pointer
 			So(uc.models[0].upstreamLimiters, ShouldPointTo, uc.models[1].upstreamLimiters)
 		})
 
 		Convey("with factory error should skip that upstream", func() {
-			failFactory := func(config *conf.OpenAIConfig, logger log.Logger) (repository.Repo, error) {
-				return nil, v1.ErrorNoUpstream("factory error")
+			failFactory := func(config *conf.OpenAIConfig, logger *slog.Logger) (repository.Repo, error) {
+				return nil, errors.New("factory error")
 			}
 
 			c := &conf.Upstream{
@@ -183,7 +184,7 @@ func TestNewModelUseCase(t *testing.T) {
 				},
 			}
 
-			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, failFactory, noop.NewMeterProvider(), log.DefaultLogger)
+			uc := NewModelUseCase(&mockKratosConfig{upstream: c}, anthropicFactory, googleFactory, neurouterFactory, failFactory, noop.NewMeterProvider(), slog.Default())
 			So(uc.models, ShouldBeEmpty)
 		})
 	})
@@ -194,7 +195,7 @@ func TestListAvailableModels(t *testing.T) {
 		Convey("with no models should return empty list", func() {
 			uc := &UseCaseImpl{
 				models: nil,
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 			models, err := uc.ListAvailableModels(context.Background())
 			So(err, ShouldBeNil)
@@ -234,7 +235,7 @@ func TestListAvailableModels(t *testing.T) {
 						},
 					},
 				},
-				log: log.NewHelper(log.DefaultLogger),
+				log: slog.Default(),
 			}
 
 			models, err := uc.ListAvailableModels(context.Background())

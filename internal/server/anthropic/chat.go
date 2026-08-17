@@ -21,7 +21,7 @@ import (
 	"io"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3/transport/http"
 	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"

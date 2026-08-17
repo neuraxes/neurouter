@@ -16,13 +16,10 @@ syntax = "proto3";
 
 package neurouter.v1;
 
-import "errors/errors.proto";
-
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
 enum ErrorReason {
-  option (errors.default_code) = 500;
-
-  NO_UPSTREAM = 0;
-  TOKEN_QUOTA_EXHAUSTED = 1 [(errors.code) = 429];
+  ERROR_REASON_UNSPECIFIED = 0;
+  ERROR_REASON_NO_UPSTREAM = 1;
+  ERROR_REASON_TOKEN_QUOTA_EXHAUSTED = 2;
 }

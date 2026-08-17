@@ -7,9 +7,8 @@
 package main
 
 import (
-	"github.com/go-kratos/kratos/v2"
-	"github.com/go-kratos/kratos/v2/config"
-	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v3"
+	"github.com/go-kratos/kratos/v3/config"
 	"github.com/neuraxes/neurouter/internal/biz/chat"
 	"github.com/neuraxes/neurouter/internal/biz/embedding"
 	"github.com/neuraxes/neurouter/internal/biz/model"
@@ -21,6 +20,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/data/upstream/openai"
 	"github.com/neuraxes/neurouter/internal/server"
 	"github.com/neuraxes/neurouter/internal/service"
+	"log/slog"
 )
 
 import (
@@ -30,7 +30,7 @@ import (
 // Injectors from wire.go:
 
 // wireApp init kratos application.
-func wireApp(confServer *conf.Server, data *conf.Data, configConfig config.Config, logger log.Logger) (*kratos.App, func(), error) {
+func wireApp(configConfig config.Config, confServer *conf.Server, data *conf.Data, logger *slog.Logger) (*kratos.App, func(), error) {
 	loggerProvider, cleanup, err := telemetry.NewLoggerProvider(data, logger)
 	if err != nil {
 		return nil, nil, err

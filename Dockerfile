@@ -1,7 +1,6 @@
 FROM alpine
 
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
-    && apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates
 
 ADD bin/neurouter /bin/neurouter
 ADD configs/config.yaml /configs/config.yaml

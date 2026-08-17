@@ -8,28 +8,29 @@ Neurouter (`github.com/neuraxes/neurouter`) is an LLM router / proxy written in 
 
 - **Client APIs**: native gRPC (port 9000), native HTTP/REST (port 8000), plus OpenAI-, Anthropic- (Claude Code), and Ollama-compatible REST layers on the same HTTP server.
 - **Upstream providers**: OpenAI (and OpenAI-compatible services), Anthropic, Google Gemini, and chained Neurouter instances.
-- **Core features**: rate limiting (at upstream and model level), Probe-Rank-Reserve model election with load balancing, optional JWT auth (`JWT_KEY` env var), OpenTelemetry tracing/metrics/logging, Prometheus `/metrics`.
+- **Core features**: rate limiting (at upstream and model level), Probe-Rank-Reserve model election with load balancing, optional JWT auth (`NEUROUTER_JWT_KEY` env var), OpenTelemetry tracing/metrics/logging, Prometheus `/metrics`.
 
 See `README.md` for user-facing docs.
 
 ## Tech Stack
 
 - **Go 1.26.0**, Protocol Buffers 3
-- **Kratos v2** (`github.com/go-kratos/kratos/v2`) app framework, HTTP + gRPC transports
+- **Kratos v3** (`github.com/go-kratos/kratos/v3`) app framework, HTTP + gRPC transports
 - **Google Wire** for compile-time dependency injection
+- **Buf v2** with BSR dependencies for reproducible Protocol Buffer generation
 - Upstream SDKs: `openai-go/v3`, `anthropic-sdk-go`, `google.golang.org/genai`
 - Observability: OpenTelemetry + `prometheus/client_golang`
 - Tests: **GoConvey** (`github.com/smartystreets/goconvey`)
 
-There is no buf, Taskfile, or Node.js tooling. Code generation uses raw `protoc` via the `Makefile`.
+There is no Taskfile or Node.js tooling. Code generation uses pinned Buf plugins via the `Makefile`.
 
 ## Commands
 
 Use the `Makefile` (run `make help` to list targets):
 
 ```bash
-make init       # install protoc plugins, kratos CLI, and wire (run once)
-make api        # generate api/*.proto -> *.pb.go, *_grpc.pb.go, *_http.pb.go, errors, openapi.yaml
+make init       # install Buf and Wire (run once)
+make api        # generate api/*.proto -> *.pb.go, *_grpc.pb.go, *_http.pb.go, openapi.yaml
 make config     # generate internal/*.proto -> *.pb.go
 make generate   # go generate ./... (regenerates Wire) + go mod tidy
 make all        # api + config + generate
@@ -58,7 +59,6 @@ internal/
   data/             Infrastructure: upstream/ providers, limiter/, telemetry/
   conf/             Internal config protos (conf.proto, upstream.proto)
   util/             Shared helpers
-third_party/        Vendored proto deps (google/api, errors, validate, openapi)
 ```
 
 Request flow:
@@ -99,17 +99,19 @@ Key concepts:
 - Each package exposes a `ProviderSet` for Wire.
 - Conversion between native API types and provider formats lives in `convert.go` / `*_convert.go`.
 - Streaming uses Go iterators: `iter.Seq2[T, error]` with `for resp, err := range ...`.
-- Startup failures in `main.go` use `panic(err)`. Business errors use Kratos errors generated from `error_reason.proto` (e.g. `v1.ErrorNoUpstream(...)`, `v1.ErrorTokenQuotaExhausted(...)`).
-- Upstream factory failures are logged and skipped (`log.Errorf(...); continue`), not fatal.
+- Startup failures in `main.go` use `panic(err)`. Business errors are typed vars in biz (e.g. `entity.ErrNoUpstream`, `entity.ErrTokenQuotaExhausted`), built with Kratos HTTP helpers plus the `ErrorReason` enum. Callers compare with `errors.Is`.
+- Runtime logging uses `*slog.Logger` and structured attributes. Pass request contexts to context-aware methods when available.
+- Upstream factory failures are logged and skipped (`logger.Error(...); continue`), not fatal.
 
 ## Proto / Codegen Rules
 
-- **Never hand-edit generated files** (`*.pb.go`, `*_grpc.pb.go`, `*_http.pb.go`, `*_errors.pb.go`, `openapi.yaml`, `wire_gen.go`). Edit the `.proto`/`wire.go` source and regenerate with `make`.
+- **Never hand-edit generated files** (`*.pb.go`, `*_grpc.pb.go`, `*_http.pb.go`, `openapi.yaml`, `wire_gen.go`). Edit the `.proto`/`wire.go` source and regenerate with `make`.
+- Public and internal schemas use `buf.gen.yaml` and `buf.gen.config.yaml`, respectively. External Google schemas resolve through `buf.lock`.
 - Hand-written extension methods on generated types go in plain `.go` files in the same package (see `api/neurouter/v1/meta.go`, `text.go`, `json.go`).
 - Proto package naming: public API is `neurouter.v1`; internal config is `neurouter.config.v1`.
 - Enums use `UPPER_SNAKE_CASE` with a type prefix (`CHAT_IN_PROGRESS`, `MODALITY_TEXT`, `CAPABILITY_CHAT`, `REASONING_EFFORT_HIGH`).
 - Field-number conventions: `metadata` maps at field 15; `oneof` branches use high numbers (templates 50, grammar 60+, provider config 100+).
-- Errors are defined in `error_reason.proto` using the Kratos `errors` extension; generated constructors are `v1.Error<ReasonCamelCase>()`.
+- Error reasons are a plain enum in `error_reason.proto`. Typed errors are declared in biz as `Err<Cause>` using Kratos helpers such as `errors.InternalServer` / `errors.TooManyRequests` and `ErrorReason.String()`.
 
 ## Testing
 

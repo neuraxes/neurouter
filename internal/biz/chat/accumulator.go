@@ -15,7 +15,7 @@
 package chat
 
 import (
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
@@ -24,14 +24,10 @@ import (
 type ChatEventReducer struct {
 	resp   *v1.ChatResp
 	blocks map[uint32]*v1.Content
-	log    *log.Helper
+	log    *slog.Logger
 }
 
-func NewChatEventReducer(logger *log.Helper) *ChatEventReducer {
-	if logger == nil {
-		logger = log.NewHelper(log.DefaultLogger)
-	}
-
+func NewChatEventReducer(logger *slog.Logger) *ChatEventReducer {
 	return &ChatEventReducer{
 		resp:   &v1.ChatResp{},
 		blocks: map[uint32]*v1.Content{},
@@ -113,7 +109,11 @@ func (r *ChatEventReducer) applyDelta(delta *v1.ContentDelta) {
 	index := delta.GetIndex()
 	content := r.blocks[index]
 	if content == nil {
-		r.log.Errorf("received content delta without content start: index=%d delta=%v", index, delta)
+		r.log.Error(
+			"received content delta without content start",
+			"index", index,
+			"delta", delta,
+		)
 		return
 	}
 

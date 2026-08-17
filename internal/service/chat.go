@@ -17,7 +17,7 @@ package service
 import (
 	"context"
 
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	"github.com/go-kratos/kratos/contrib/middleware/jwt/v3"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 
@@ -39,7 +39,7 @@ func acceptChatReq(req *v1.ChatReq) *v1.ChatReq {
 func (s *RouterService) Chat(ctx context.Context, req *v1.ChatReq) (resp *v1.ChatResp, err error) {
 	if claims, ok := jwt.FromContext(ctx); ok {
 		sub, _ := claims.GetSubject()
-		s.log.Infof("jwt authenticated for: %s", sub)
+		s.log.InfoContext(ctx, "authenticated with JWT", "subject", sub)
 	}
 
 	resp, err = s.chat.Chat(ctx, acceptChatReq(req))
@@ -57,7 +57,7 @@ func (w *wrappedChatStreamServer) Send(event *entity.ChatEvent) error {
 func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer) error {
 	if claims, ok := jwt.FromContext(srv.Context()); ok {
 		sub, _ := claims.GetSubject()
-		s.log.Infof("jwt authenticated for: %s", sub)
+		s.log.InfoContext(srv.Context(), "authenticated with JWT", "subject", sub)
 	}
 
 	err := s.chat.ChatStream(srv.Context(), acceptChatReq(req), &wrappedChatStreamServer{srv})

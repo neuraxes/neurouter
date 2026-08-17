@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 )
 
@@ -194,7 +194,7 @@ func (l *tpmLimiter) Probe(tokens int64) time.Duration {
 
 func (l *tpmLimiter) Reserve(tokens int64) (repository.TokenReservation, error) {
 	if tokens > int64(l.bucket.burst) {
-		return nil, v1.ErrorTokenQuotaExhausted("token quota exhausted")
+		return nil, entity.ErrTokenQuotaExhausted
 	}
 	return &tokenReservation{
 		limiter: l,

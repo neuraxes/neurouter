@@ -17,9 +17,9 @@ package google
 import (
 	"encoding/base64"
 	"encoding/json"
+	"log/slog"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/genai"
 
@@ -33,7 +33,7 @@ func TestConvertRequestToGoogle(t *testing.T) {
 	Convey("Given a request replaying a tool call and its result", t, func() {
 		r := &upstream{
 			config: &conf.GoogleConfig{},
-			log:    log.NewHelper(log.DefaultLogger),
+			log:    slog.Default(),
 		}
 		req := &entity.ChatReq{
 			Messages: []*v1.Message{
@@ -74,7 +74,7 @@ func TestConvertRequestToGoogle(t *testing.T) {
 	Convey("Given a request whose tool ids carry no call id", t, func() {
 		r := &upstream{
 			config: &conf.GoogleConfig{},
-			log:    log.NewHelper(log.DefaultLogger),
+			log:    slog.Default(),
 		}
 		req := &entity.ChatReq{
 			Messages: []*v1.Message{
@@ -152,7 +152,7 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 	Convey("Given an upstream with SystemAsUser=true", t, func() {
 		r := &upstream{
 			config: &conf.GoogleConfig{SystemAsUser: true},
-			log:    log.NewHelper(log.DefaultLogger),
+			log:    slog.Default(),
 		}
 		messages := []*v1.Message{
 			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys")}}},
@@ -164,7 +164,7 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 	Convey("Given an upstream with SystemAsUser=false and system messages", t, func() {
 		r := &upstream{
 			config: &conf.GoogleConfig{SystemAsUser: false},
-			log:    log.NewHelper(log.DefaultLogger),
+			log:    slog.Default(),
 		}
 		messages := []*v1.Message{
 			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys prompt")}}},
@@ -179,7 +179,7 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 	Convey("Given an upstream with SystemAsUser=false and no system messages", t, func() {
 		r := &upstream{
 			config: &conf.GoogleConfig{SystemAsUser: false},
-			log:    log.NewHelper(log.DefaultLogger),
+			log:    slog.Default(),
 		}
 		messages := []*v1.Message{
 			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},

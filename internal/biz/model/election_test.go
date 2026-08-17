@@ -2,12 +2,13 @@ package model
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/data/limiter/local"
 )
@@ -17,13 +18,13 @@ func TestElectFromCandidates(t *testing.T) {
 		Convey("with no candidates should return error", func() {
 			_, _, err := electFromCandidates(context.Background(), nil, 0)
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("with empty candidate slice should return error", func() {
 			_, _, err := electFromCandidates(context.Background(), []*model{}, 0)
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("with single available candidate should elect it", func() {
@@ -112,7 +113,7 @@ func TestElectFromCandidates(t *testing.T) {
 
 			_, _, err := electFromCandidates(ctx, []*model{m1, m2}, 0)
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("should wait and succeed when concurrency becomes available", func() {
@@ -272,7 +273,7 @@ func TestElectFromCandidates(t *testing.T) {
 			defer cancel()
 			_, _, err = electFromCandidates(ctx, []*model{m1, m2}, 0)
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 
 			rs1.cancel()
 			rs2.cancel()

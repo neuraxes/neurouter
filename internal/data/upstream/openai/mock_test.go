@@ -20,10 +20,10 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/protobuf/proto"
 
@@ -81,7 +81,7 @@ func TestChat(t *testing.T) {
 
 			Convey("When Chat runs the "+fixture.Name+" fixture", func() {
 				mockClient := &mockHTTPClient{}
-				repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+				repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, slog.Default())
 				So(err, ShouldBeNil)
 
 				var capturedBody []byte
@@ -110,7 +110,7 @@ func TestChat(t *testing.T) {
 
 			Convey("When Chat runs the "+fixture.Name+" fixture", func() {
 				mockClient := &mockHTTPClient{}
-				repo, err := newOpenAIUpstreamWithClient(mockResponsesTestConfig, mockClient, log.DefaultLogger)
+				repo, err := newOpenAIUpstreamWithClient(mockResponsesTestConfig, mockClient, slog.Default())
 				So(err, ShouldBeNil)
 
 				var capturedBody []byte
@@ -137,7 +137,7 @@ func TestChat(t *testing.T) {
 				return nil, errors.New("network error")
 			},
 		}
-		repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+		repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, slog.Default())
 		So(err, ShouldBeNil)
 
 		_, err = repo.Chat(context.Background(), mock.ToolCall.ChatReq)
@@ -158,7 +158,7 @@ func TestChatStream(t *testing.T) {
 
 			Convey("When ChatStream runs the "+fixture.Name+" fixture", func() {
 				mockClient := &mockHTTPClient{}
-				repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+				repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, slog.Default())
 				So(err, ShouldBeNil)
 
 				var capturedBody []byte
@@ -196,7 +196,7 @@ func TestChatStream(t *testing.T) {
 
 			Convey("When ChatStream runs the "+fixture.Name+" fixture", func() {
 				mockClient := &mockHTTPClient{}
-				repo, err := newOpenAIUpstreamWithClient(mockResponsesTestConfig, mockClient, log.DefaultLogger)
+				repo, err := newOpenAIUpstreamWithClient(mockResponsesTestConfig, mockClient, slog.Default())
 				So(err, ShouldBeNil)
 
 				var capturedBody []byte
@@ -232,7 +232,7 @@ func TestChatStream(t *testing.T) {
 				return nil, errors.New("network error")
 			},
 		}
-		repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, log.DefaultLogger)
+		repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, slog.Default())
 		So(err, ShouldBeNil)
 
 		seq := repo.ChatStream(context.Background(), mock.StreamToolCall.ChatReq)

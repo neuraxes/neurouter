@@ -2,14 +2,16 @@ package model
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/embedding"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
 	"github.com/neuraxes/neurouter/internal/data/limiter/local"
@@ -242,11 +244,11 @@ func TestElectForEmbedding(t *testing.T) {
 		Convey("with no models should return error", func() {
 			uc := &UseCaseImpl{
 				models: nil,
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "test"})
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("should match model by ID", func() {
@@ -262,7 +264,7 @@ func TestElectForEmbedding(t *testing.T) {
 			}
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			result, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "text-embedding-ada"})
@@ -284,7 +286,7 @@ func TestElectForEmbedding(t *testing.T) {
 			}
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			req := &v1.EmbedReq{Model: "nonexistent"}
@@ -307,12 +309,12 @@ func TestElectForEmbedding(t *testing.T) {
 			}
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "chat-model"})
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("should skip models without embedding repo", func() {
@@ -328,12 +330,12 @@ func TestElectForEmbedding(t *testing.T) {
 			}
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "no-repo"})
 			So(err, ShouldNotBeNil)
-			So(v1.IsNoUpstream(err), ShouldBeTrue)
+			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
 
 		Convey("should update model ID to upstream ID", func() {
@@ -350,7 +352,7 @@ func TestElectForEmbedding(t *testing.T) {
 			}
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			req := &v1.EmbedReq{Model: "my-embed"}
@@ -376,7 +378,7 @@ func TestElectForEmbedding(t *testing.T) {
 			}
 			uc := &UseCaseImpl{
 				models: []*model{m},
-				log:    log.NewHelper(log.DefaultLogger),
+				log:    slog.Default(),
 			}
 
 			result1, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "ada"})

@@ -17,11 +17,11 @@ package anthropic
 import (
 	"context"
 	"iter"
+	"log/slog"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/anthropics/anthropic-sdk-go/packages/ssestream"
-	"github.com/go-kratos/kratos/v2/log"
 	otellog "go.opentelemetry.io/otel/log"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -33,17 +33,17 @@ import (
 type upstream struct {
 	config *conf.AnthropicConfig
 	client *anthropic.Client
-	log    *log.Helper
+	log    *slog.Logger
 }
 
 func NewAnthropicChatRepoFactory(loggerProvider otellog.LoggerProvider) repository.UpstreamFactory[conf.AnthropicConfig] {
-	return func(config *conf.AnthropicConfig, logger log.Logger) (repository.Repo, error) {
+	return func(config *conf.AnthropicConfig, logger *slog.Logger) (repository.Repo, error) {
 		client := shared.NewRecordingClientFromLoggerProvider(loggerProvider, "neurouter.upstream.anthropic")
 		return newAnthropicUpstreamWithClient(config, client, logger)
 	}
 }
 
-func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient option.HTTPClient, logger log.Logger) (repo repository.ChatRepo, err error) {
+func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient option.HTTPClient, logger *slog.Logger) (repo repository.ChatRepo, err error) {
 	var options []option.RequestOption
 	if config.ApiKey != "" {
 		options = append(options, option.WithAPIKey(config.ApiKey))
@@ -64,7 +64,7 @@ func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient opt
 	repo = &upstream{
 		config: config,
 		client: new(anthropic.NewClient(options...)),
-		log:    log.NewHelper(logger),
+		log:    logger,
 	}
 	return
 }

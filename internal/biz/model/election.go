@@ -7,7 +7,7 @@ import (
 	"slices"
 	"time"
 
-	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 )
 
@@ -28,7 +28,7 @@ type scoredModel struct {
 // estimatedTokens is the estimated token cost for token limiters (0 to skip token probing).
 func electFromCandidates(ctx context.Context, candidates []*model, estimatedTokens int64) (*model, *reservationSet, error) {
 	if len(candidates) == 0 {
-		return nil, nil, v1.ErrorNoUpstream("no upstream found")
+		return nil, nil, entity.ErrNoUpstream
 	}
 
 	// Phase 1: Probe & classify
@@ -68,5 +68,5 @@ func electFromCandidates(ctx context.Context, candidates []*model, estimatedToke
 		return s.model, rs, nil
 	}
 
-	return nil, nil, v1.ErrorNoUpstream("no available upstream found")
+	return nil, nil, entity.ErrNoUpstream
 }

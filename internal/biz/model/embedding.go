@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/embedding"
+	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 	"github.com/neuraxes/neurouter/internal/conf"
 )
@@ -91,16 +92,27 @@ func (uc *UseCaseImpl) ElectForEmbedding(ctx context.Context, req *v1.EmbedReq) 
 		if err != nil {
 			return nil, err
 		}
-		uc.log.Infof("using model: %s-%s", selected.upstreamConfig.Name, selected.config.Id)
+		uc.log.InfoContext(
+			ctx,
+			"selected model",
+			"upstream", selected.upstreamConfig.Name,
+			"model", selected.config.Id,
+		)
 	} else if len(allCandidates) > 0 {
 		// No matching models, randomly select from all candidates
 		selected, rs, err = electFromCandidates(ctx, allCandidates, estimatedTokens)
 		if err != nil {
 			return nil, err
 		}
-		uc.log.Infof("fallback to model: %s-%s (requested: %s)", selected.upstreamConfig.Name, selected.config.Id, req.Model)
+		uc.log.InfoContext(
+			ctx,
+			"selected fallback model",
+			"upstream", selected.upstreamConfig.Name,
+			"model", selected.config.Id,
+			"requested_model", req.Model,
+		)
 	} else {
-		return nil, v1.ErrorNoUpstream("no upstream found")
+		return nil, entity.ErrNoUpstream
 	}
 
 	// Update request model to upstream ID

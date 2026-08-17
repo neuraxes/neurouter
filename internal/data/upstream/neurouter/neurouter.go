@@ -18,9 +18,9 @@ import (
 	"context"
 	"io"
 	"iter"
+	"log/slog"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
+	"github.com/go-kratos/kratos/v3/transport/grpc"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -32,15 +32,15 @@ type upstream struct {
 	config          *conf.NeurouterConfig
 	chatClient      v1.ChatClient
 	embeddingClient v1.EmbeddingClient
-	log             *log.Helper
+	log             *slog.Logger
 }
 
 func NewNeurouterFactory() repository.UpstreamFactory[conf.NeurouterConfig] {
 	return newNeurouterUpstream
 }
 
-func newNeurouterUpstream(config *conf.NeurouterConfig, logger log.Logger) (repository.Repo, error) {
-	conn, err := grpc.DialInsecure(
+func newNeurouterUpstream(config *conf.NeurouterConfig, logger *slog.Logger) (repository.Repo, error) {
+	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(config.Endpoint),
 	)
@@ -52,7 +52,7 @@ func newNeurouterUpstream(config *conf.NeurouterConfig, logger log.Logger) (repo
 		config:          config,
 		chatClient:      v1.NewChatClient(conn),
 		embeddingClient: v1.NewEmbeddingClient(conn),
-		log:             log.NewHelper(logger),
+		log:             logger,
 	}, nil
 }
 

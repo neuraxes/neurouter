@@ -15,12 +15,12 @@
 package service
 
 import (
+	"log/slog"
+
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/chat"
 	"github.com/neuraxes/neurouter/internal/biz/embedding"
 	"github.com/neuraxes/neurouter/internal/biz/model"
-
-	"github.com/go-kratos/kratos/v2/log"
 )
 
 type RouterService struct {
@@ -30,19 +30,19 @@ type RouterService struct {
 	chat      chat.UseCase
 	model     model.UseCase
 	embedding embedding.UseCase
-	log       *log.Helper
+	log       *slog.Logger
 }
 
 func NewRouterService(
 	chat chat.UseCase,
 	model model.UseCase,
 	embedding embedding.UseCase,
-	logger log.Logger,
+	logger *slog.Logger,
 ) *RouterService {
 	return &RouterService{
 		chat:      chat,
 		model:     model,
 		embedding: embedding,
-		log:       log.NewHelper(logger),
+		log:       logger,
 	}
 }

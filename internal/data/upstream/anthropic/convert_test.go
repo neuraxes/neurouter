@@ -16,10 +16,10 @@ package anthropic
 
 import (
 	"encoding/json"
+	"log/slog"
 	"testing"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/tidwall/gjson"
 
@@ -46,7 +46,7 @@ func TestConvertGenerationConfigToAnthropic(t *testing.T) {
 	Convey("Given a generation config converter", t, func() {
 		repo := &upstream{
 			config: &conf.AnthropicConfig{},
-			log:    log.NewHelper(log.DefaultLogger),
+			log:    slog.Default(),
 		}
 
 		Convey("When config is nil", func() {
@@ -282,7 +282,7 @@ func TestConvertSystemMessagesToAnthropic(t *testing.T) {
 	Convey("Given messages with system/user roles", t, func() {
 		repo := &upstream{
 			config: &conf.AnthropicConfig{SystemAsUser: false},
-			log:    log.NewHelper(log.DefaultLogger),
+			log:    slog.Default(),
 		}
 
 		msgs := []*v1.Message{
@@ -313,7 +313,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 	Convey("Given a message converter", t, func() {
 		repo := &upstream{
 			config: &conf.AnthropicConfig{},
-			log:    log.NewHelper(log.DefaultLogger),
+			log:    slog.Default(),
 		}
 
 		Convey("When converting a USER message with text content", func() {
@@ -665,7 +665,7 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 		req := &entity.ChatReq{Id: "req-1", Model: "claude-3", Messages: msgs, Tools: tools}
 
 		Convey("When SystemAsUser=false", func() {
-			repo := &upstream{config: &conf.AnthropicConfig{SystemAsUser: false}, log: log.NewHelper(log.DefaultLogger)}
+			repo := &upstream{config: &conf.AnthropicConfig{SystemAsUser: false}, log: slog.Default()}
 			out := repo.convertRequestToAnthropic(req)
 
 			Convey("Then system is populated and system message is excluded from messages", func() {
@@ -695,7 +695,7 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 		})
 
 		Convey("When SystemAsUser=true", func() {
-			repo := &upstream{config: &conf.AnthropicConfig{SystemAsUser: true}, log: log.NewHelper(log.DefaultLogger)}
+			repo := &upstream{config: &conf.AnthropicConfig{SystemAsUser: true}, log: slog.Default()}
 			out := repo.convertRequestToAnthropic(req)
 
 			Convey("Then system is empty and messages include system entry", func() {

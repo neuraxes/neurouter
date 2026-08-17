@@ -16,10 +16,10 @@ package anthropic
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/neuraxes/neurouter/internal/conf"
@@ -45,7 +45,7 @@ func TestNewAnthropicUpstream(t *testing.T) {
 		}
 
 		Convey("When newAnthropicUpstream is called", func() {
-			repo, err := newAnthropicUpstreamWithClient(config, nil, log.DefaultLogger)
+			repo, err := newAnthropicUpstreamWithClient(config, nil, slog.Default())
 
 			Convey("Then it should return a new upstream and no error", func() {
 				So(err, ShouldBeNil)
@@ -60,7 +60,7 @@ func TestNewAnthropicUpstream(t *testing.T) {
 
 		Convey("When newAnthropicUpstreamWithClient is called", func() {
 			mockClient := &mockHTTPClient{}
-			repo, err := newAnthropicUpstreamWithClient(config, mockClient, log.DefaultLogger)
+			repo, err := newAnthropicUpstreamWithClient(config, mockClient, slog.Default())
 
 			Convey("Then it should return a new upstream with the custom client", func() {
 				So(err, ShouldBeNil)

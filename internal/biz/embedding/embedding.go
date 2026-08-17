@@ -16,8 +16,7 @@ package embedding
 
 import (
 	"context"
-
-	"github.com/go-kratos/kratos/v2/log"
+	"log/slog"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
@@ -28,14 +27,14 @@ type UseCase interface {
 
 type useCase struct {
 	elector Elector
-	log     *log.Helper
+	log     *slog.Logger
 }
 
 // NewUseCase creates a new embedding use case instance.
-func NewUseCase(elector Elector, logger log.Logger) UseCase {
+func NewUseCase(elector Elector, logger *slog.Logger) UseCase {
 	return &useCase{
 		elector: elector,
-		log:     log.NewHelper(logger),
+		log:     logger,
 	}
 }
 
