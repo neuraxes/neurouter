@@ -31,6 +31,9 @@ func (r *upstream) convertRequestToOpenAIResponses(req *entity.ChatReq) response
 		Store:    openai.Opt(false),
 		Metadata: openaishared.Metadata(req.Metadata),
 	}
+	if req.Session != "" {
+		openAIReq.PromptCacheKey = openai.Opt(req.Session)
+	}
 
 	if req.Config != nil {
 		r.convertGenerationConfigToOpenAIResponses(req.Config, &openAIReq)

@@ -30,6 +30,26 @@ import (
 )
 
 func TestConvertRequestToOpenAIResponses(t *testing.T) {
+	Convey("Given a native session ID", t, func() {
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}
+
+		Convey("When the session ID is present", func() {
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+				Session: "session-1",
+				Model:   "gpt-5",
+			})
+
+			So(result.PromptCacheKey.Valid(), ShouldBeTrue)
+			So(result.PromptCacheKey.Value, ShouldEqual, "session-1")
+		})
+
+		Convey("When the session ID is absent", func() {
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{Model: "gpt-5"})
+
+			So(result.PromptCacheKey.Valid(), ShouldBeFalse)
+		})
+	})
+
 	Convey("Given native reasoning configurations", t, func() {
 		Convey("When effort is above none", func() {
 			repo := &upstream{config: &conf.OpenAIConfig{}, log: log.NewHelper(log.DefaultLogger)}

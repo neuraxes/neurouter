@@ -539,6 +539,22 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 	}
 
 	Convey("Test convertRequestToOpenAIChat", t, func() {
+		Convey("with session ID", func() {
+			param := repo.convertRequestToOpenAIChat(&entity.ChatReq{
+				Session: "session-1",
+				Model:   "gpt-4",
+			})
+
+			So(param.PromptCacheKey.Valid(), ShouldBeTrue)
+			So(param.PromptCacheKey.Value, ShouldEqual, "session-1")
+		})
+
+		Convey("without session ID", func() {
+			param := repo.convertRequestToOpenAIChat(&entity.ChatReq{Model: "gpt-4"})
+
+			So(param.PromptCacheKey.Valid(), ShouldBeFalse)
+		})
+
 		Convey("with basic request", func() {
 			req := &entity.ChatReq{
 				Model: "gpt-4",

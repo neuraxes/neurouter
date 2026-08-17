@@ -28,7 +28,9 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCo
 	openAIReq := openai.ChatCompletionNewParams{
 		Model: req.Model,
 	}
-
+	if req.Session != "" {
+		openAIReq.PromptCacheKey = openai.Opt(req.Session)
+	}
 	if req.Config != nil {
 		convertGenerationConfigToOpenAIChat(req.Config, &openAIReq)
 	}

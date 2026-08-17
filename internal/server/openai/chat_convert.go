@@ -93,6 +93,7 @@ func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatR
 	}
 
 	return &v1.ChatReq{
+		Session:  req.PromptCacheKey.Value,
 		Model:    string(req.Model),
 		Config:   config,
 		Messages: messages,

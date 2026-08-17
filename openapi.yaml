@@ -65,6 +65,12 @@ components:
                         The identifier of this chat request, assigned by whichever entry point
                          accepts it. Every ChatResp and ChatEvent produced for the request echoes
                          it unchanged, which is what correlates them across layers.
+                session:
+                    type: string
+                    description: |-
+                        A stable identifier shared by requests in the same conversation. Clients
+                         reuse it across turns so upstream caches and routing can preserve affinity.
+                         Neurouter does not synthesize one when it is absent.
                 model:
                     type: string
                     description: The requested model to use

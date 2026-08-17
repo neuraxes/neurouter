@@ -233,14 +233,18 @@ type ChatReq struct {
 	// accepts it. Every ChatResp and ChatEvent produced for the request echoes
 	// it unchanged, which is what correlates them across layers.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// A stable identifier shared by requests in the same conversation. Clients
+	// reuse it across turns so upstream caches and routing can preserve affinity.
+	// Neurouter does not synthesize one when it is absent.
+	Session string `protobuf:"bytes,2,opt,name=session,proto3" json:"session,omitempty"`
 	// The requested model to use
-	Model string `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
+	Model string `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
 	// The generation configuration
-	Config *GenerationConfig `protobuf:"bytes,3,opt,name=config,proto3" json:"config,omitempty"`
+	Config *GenerationConfig `protobuf:"bytes,4,opt,name=config,proto3" json:"config,omitempty"`
 	// The conversation history
-	Messages []*Message `protobuf:"bytes,4,rep,name=messages,proto3" json:"messages,omitempty"`
+	Messages []*Message `protobuf:"bytes,5,rep,name=messages,proto3" json:"messages,omitempty"`
 	// The tools available for the model to use
-	Tools []*Tool `protobuf:"bytes,5,rep,name=tools,proto3" json:"tools,omitempty"`
+	Tools []*Tool `protobuf:"bytes,6,rep,name=tools,proto3" json:"tools,omitempty"`
 	// Additional metadata for the request
 	Metadata      map[string]string `protobuf:"bytes,15,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
@@ -280,6 +284,13 @@ func (*ChatReq) Descriptor() ([]byte, []int) {
 func (x *ChatReq) GetId() string {
 	if x != nil {
 		return x.Id
+	}
+	return ""
+}
+
+func (x *ChatReq) GetSession() string {
+	if x != nil {
+		return x.Session
 	}
 	return ""
 }
@@ -1048,13 +1059,14 @@ const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12&\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x12.neurouter.v1.RoleR\x04role\x121\n" +
 	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\x12\x12\n" +
-	"\x04name\x18\x04 \x01(\tR\x04name\"\xc2\x02\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\"\xdc\x02\n" +
 	"\aChatReq\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05model\x18\x02 \x01(\tR\x05model\x126\n" +
-	"\x06config\x18\x03 \x01(\v2\x1e.neurouter.v1.GenerationConfigR\x06config\x121\n" +
-	"\bmessages\x18\x04 \x03(\v2\x15.neurouter.v1.MessageR\bmessages\x12(\n" +
-	"\x05tools\x18\x05 \x03(\v2\x12.neurouter.v1.ToolR\x05tools\x12?\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
+	"\asession\x18\x02 \x01(\tR\asession\x12\x14\n" +
+	"\x05model\x18\x03 \x01(\tR\x05model\x126\n" +
+	"\x06config\x18\x04 \x01(\v2\x1e.neurouter.v1.GenerationConfigR\x06config\x121\n" +
+	"\bmessages\x18\x05 \x03(\v2\x15.neurouter.v1.MessageR\bmessages\x12(\n" +
+	"\x05tools\x18\x06 \x03(\v2\x12.neurouter.v1.ToolR\x05tools\x12?\n" +
 	"\bmetadata\x18\x0f \x03(\v2#.neurouter.v1.ChatReq.MetadataEntryR\bmetadata\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

@@ -622,6 +622,18 @@ func TestConvertChatMessageParamFromOpenAIChat(t *testing.T) {
 
 func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 	Convey("Given an OpenAI ChatCompletionNewParams to convert", t, func() {
+		Convey("When PromptCacheKey is set", func() {
+			req := &openai.ChatCompletionNewParams{
+				Model:          "gpt-4o",
+				PromptCacheKey: openai.Opt("session-1"),
+			}
+
+			result := convertChatReqFromOpenAIChat(req)
+
+			Convey("Then it should become the session ID", func() {
+				So(result.Session, ShouldEqual, "session-1")
+			})
+		})
 
 		Convey("When MaxCompletionTokens is set", func() {
 			req := &openai.ChatCompletionNewParams{

@@ -73,14 +73,18 @@ message ChatReq {
   // accepts it. Every ChatResp and ChatEvent produced for the request echoes
   // it unchanged, which is what correlates them across layers.
   string id = 1;
+  // A stable identifier shared by requests in the same conversation. Clients
+  // reuse it across turns so upstream caches and routing can preserve affinity.
+  // Neurouter does not synthesize one when it is absent.
+  string session = 2;
   // The requested model to use
-  string model = 2;
+  string model = 3;
   // The generation configuration
-  GenerationConfig config = 3;
+  GenerationConfig config = 4;
   // The conversation history
-  repeated Message messages = 4;
+  repeated Message messages = 5;
   // The tools available for the model to use
-  repeated Tool tools = 5;
+  repeated Tool tools = 6;
   // Additional metadata for the request
   map<string, string> metadata = 15;
 }

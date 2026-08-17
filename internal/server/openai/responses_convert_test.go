@@ -25,6 +25,19 @@ import (
 )
 
 func TestConvertChatReqFromOpenAIResponses(t *testing.T) {
+	Convey("Given an OpenAI prompt cache key", t, func() {
+		actual, err := convertChatReqFromOpenAIResponses([]byte(`{
+			"model": "gpt-5",
+			"prompt_cache_key": "session-1",
+			"input": "hello"
+		}`))
+		So(err, ShouldBeNil)
+
+		Convey("Then it becomes the native session ID", func() {
+			So(actual.Session, ShouldEqual, "session-1")
+		})
+	})
+
 	Convey("Given the Responses API request fixtures", t, func() {
 		for _, fixture := range mock.ResponsesFixtures {
 			Convey("When converting the "+fixture.Name+" request", func() {

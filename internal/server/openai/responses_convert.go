@@ -42,6 +42,7 @@ func convertChatReqFromOpenAIResponses(body []byte) (*v1.ChatReq, error) {
 	}
 
 	chatReq := &v1.ChatReq{
+		Session:  req.PromptCacheKey.Value,
 		Model:    string(req.Model),
 		Config:   convertGenerationConfigFromOpenAIResponses(&req),
 		Tools:    convertToolsFromOpenAIResponses(req.Tools),
