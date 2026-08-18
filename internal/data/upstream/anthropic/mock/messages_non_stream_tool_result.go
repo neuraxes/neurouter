@@ -33,7 +33,7 @@ var NonStreamToolResult = &Fixture{
 	Name:     "non_stream_tool_result",
 	Request:  nonStreamToolResultRequest,
 	Response: nonStreamToolResultResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "non_stream_tool_result",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -42,19 +42,19 @@ var NonStreamToolResult = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Use prior tool results exactly and keep the final answer concise.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Use the get_weather tool for Shanghai on 2025-11-10. Do not answer from memory. Return no final prose until the tool has been called.")},
 				},
 			},
 			{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Sure! Let me fetch the weather data for Shanghai on 2025-11-10 right away.")},
 					{
@@ -71,7 +71,7 @@ var NonStreamToolResult = &Fixture{
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{
 						Content: &v1.Content_ToolResult{
@@ -90,13 +90,13 @@ var NonStreamToolResult = &Fixture{
 		Tools:    []*v1.Tool{getWeatherTool()},
 		Metadata: map[string]string{"user_id": "anthropic-conversion-fixture-user"},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "non_stream_tool_result",
 		Model:  "anthropic/claude-4.6-sonnet-20260217",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782639842-oi4uhCV6FgqoD7s1IGrX",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("On **2025-11-10**, **Shanghai** experienced **cloudy** conditions with a high of **18°C** and a low of **11°C**, and **2.3 mm** of precipitation.")},
 			},

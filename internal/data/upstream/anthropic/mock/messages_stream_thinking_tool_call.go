@@ -63,7 +63,7 @@ func streamThinkingToolCallChatEvents() []*v1.ChatEvent {
 			Content: &v1.Content_Opaque{Opaque: streamThinkingToolCallRedacted},
 		})),
 		id.withUsage(
-			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE),
+			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE),
 			&v1.Usage{InputTokens: 743, OutputTokens: 360},
 		),
 	}
@@ -76,7 +76,7 @@ var StreamThinkingToolCall = &Fixture{
 	Request:  streamThinkingToolCallRequest,
 	Response: streamThinkingToolCallResponse,
 	Stream:   true,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "stream_thinking_tool_call",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -85,13 +85,13 @@ var StreamThinkingToolCall = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Think briefly, then use the routing decision tool exactly once.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Choose a provider for chat request req_fixture_stream_001. OpenAI has wait_ms=1800 and error_rate=0.12. Anthropic has wait_ms=120 and error_rate=0.01. Gemini has wait_ms=400 and error_rate=0.04. Call get_route_decision with the best provider and a short reason.")},
 				},

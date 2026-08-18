@@ -33,7 +33,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 
 		Convey("When the session ID is present", func() {
-			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 				Session: "session-1",
 				Model:   "gpt-5",
 			})
@@ -43,7 +43,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 		})
 
 		Convey("When the session ID is absent", func() {
-			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{Model: "gpt-5"})
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{Model: "gpt-5"})
 
 			So(result.PromptCacheKey.Valid(), ShouldBeFalse)
 		})
@@ -52,7 +52,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 	Convey("Given native reasoning configurations", t, func() {
 		Convey("When effort is above none", func() {
 			repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
-			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 				Model: "gpt-5",
 				Config: &v1.GenerationConfig{ReasoningConfig: &v1.ReasoningConfig{
 					Effort: v1.ReasoningEffort_REASONING_EFFORT_LOW,
@@ -67,7 +67,7 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 				config: &conf.OpenAIConfig{ResponsesUseRawReasoning: true},
 				log:    slog.Default(),
 			}
-			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 				Model: "gpt-5",
 				Config: &v1.GenerationConfig{ReasoningConfig: &v1.ReasoningConfig{
 					Effort: v1.ReasoningEffort_REASONING_EFFORT_HIGH,
@@ -79,10 +79,10 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 
 	Convey("Given interleaved native content", t, func() {
 		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
-		result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+		result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 			Model: "gpt-5",
 			Messages: []*v1.Message{{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{
 						Id:      "rs-1",
@@ -129,10 +129,10 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 
 		Convey("When summary and encrypted contents are consecutive", func() {
-			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 				Model: "gpt-5",
 				Messages: []*v1.Message{{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{
 							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -155,10 +155,10 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 		})
 
 		Convey("When plaintext reasoning has no encrypted content", func() {
-			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 				Model: "gpt-5",
 				Messages: []*v1.Message{{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{{
 						Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
 						Content: v1.NewTextContent("summary"),
@@ -175,10 +175,10 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 		})
 
 		Convey("When a tool call separates two unidentified reasoning segments", func() {
-			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 				Model: "gpt-5",
 				Messages: []*v1.Message{{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{
 							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -212,10 +212,10 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 
 		Convey("When raw reasoning is enabled", func() {
 			repo.config.ResponsesUseRawReasoning = true
-			result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+			result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 				Model: "gpt-5",
 				Messages: []*v1.Message{{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{{
 						Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
 						Content: v1.NewTextContent("raw"),
@@ -251,12 +251,12 @@ func TestConvertResponseFromOpenAIResponses(t *testing.T) {
 		So(json.Unmarshal([]byte(respBody), &openAIResp), ShouldBeNil)
 		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
 
-		result := repo.convertResponseFromOpenAIResponses(&entity.ChatReq{Id: "request-1"}, &openAIResp)
+		result := repo.convertResponseFromOpenAIResponses(&entity.ChatRequest{Id: "request-1"}, &openAIResp)
 
 		Convey("Then output items expand to native contents", func() {
 			So(result.Id, ShouldEqual, "request-1")
 			So(result.Message.Id, ShouldEqual, "resp-1")
-			So(result.Status, ShouldEqual, v1.ChatStatus_CHAT_PENDING_TOOL_USE)
+			So(result.Status, ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
 			So(result.Message.Contents, ShouldHaveLength, 4)
 			So(result.Message.Contents[0].Id, ShouldEqual, "rs-1")
 			So(result.Message.Contents[0].GetText().GetText(), ShouldEqual, "summary")
@@ -272,10 +272,10 @@ func TestConvertResponseFromOpenAIResponses(t *testing.T) {
 
 	Convey("Given a native model text message", t, func() {
 		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
-		result := repo.convertRequestToOpenAIResponses(&entity.ChatReq{
+		result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
 			Model: "gpt-5",
 			Messages: []*v1.Message{{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{{
 					Phase:   v1.ContentPhase_CONTENT_PHASE_OUTCOME,
 					Content: v1.NewTextContent("previous answer"),
@@ -296,45 +296,45 @@ func TestConvertStatusFromOpenAIResponses(t *testing.T) {
 	Convey("Given Responses terminal states", t, func() {
 		So(convertStatusFromOpenAIResponses(
 			&responses.Response{Status: responses.ResponseStatusCompleted}),
-			ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_COMPLETED)
 		So(convertStatusFromOpenAIResponses(
 			&responses.Response{Status: responses.ResponseStatusFailed}),
-			ShouldEqual, v1.ChatStatus_CHAT_FAILED)
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_FAILED)
 		So(convertStatusFromOpenAIResponses(
 			&responses.Response{
 				Status: responses.ResponseStatusFailed,
 				Output: []responses.ResponseOutputItemUnion{{Type: "function_call"}},
 			}),
-			ShouldEqual, v1.ChatStatus_CHAT_FAILED)
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_FAILED)
 		So(convertStatusFromOpenAIResponses(
 			&responses.Response{
 				Status:            responses.ResponseStatusIncomplete,
 				IncompleteDetails: responses.ResponseIncompleteDetails{Reason: "content_filter"},
 			}),
-			ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_REFUSED)
 		So(convertStatusFromOpenAIResponses(
 			&responses.Response{Status: responses.ResponseStatusCancelled}),
-			ShouldEqual, v1.ChatStatus_CHAT_CANCELLED)
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_CANCELLED)
 
 		So(convertStatusFromOpenAIResponses(
 			&responses.Response{
 				Status: responses.ResponseStatusCompleted,
 				Output: []responses.ResponseOutputItemUnion{{Type: "function_call"}},
 			}),
-			ShouldEqual, v1.ChatStatus_CHAT_PENDING_TOOL_USE)
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
 		So(convertStatusFromOpenAIResponses(
 			&responses.Response{
 				Status:            responses.ResponseStatusIncomplete,
 				IncompleteDetails: responses.ResponseIncompleteDetails{Reason: "max_output_tokens"},
 			}),
-			ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT)
 		So(convertStatusFromOpenAIResponses(
 			&responses.Response{
 				Status:            responses.ResponseStatusIncomplete,
 				IncompleteDetails: responses.ResponseIncompleteDetails{Reason: "max_output_tokens"},
 				Output:            []responses.ResponseOutputItemUnion{{Type: "function_call"}},
 			}),
-			ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT)
 	})
 }
 
@@ -383,7 +383,7 @@ func TestConvertStreamEventFromOpenAIResponses(t *testing.T) {
 		for _, testCase := range testCases {
 			Convey(testCase.name, func() {
 				client := &openAIResponseStreamClient{
-					req:                           &entity.ChatReq{Id: "request-1"},
+					req:                           &entity.ChatRequest{Id: "request-1"},
 					openContentIndexByOutputIndex: make(map[int64]uint32),
 				}
 				var event responses.ResponseStreamEventUnion
@@ -400,7 +400,7 @@ func TestConvertStreamEventFromOpenAIResponses(t *testing.T) {
 
 	Convey("Given one reasoning item followed by text", t, func() {
 		client := &openAIResponseStreamClient{
-			req:                           &entity.ChatReq{Id: "request-1"},
+			req:                           &entity.ChatRequest{Id: "request-1"},
 			openContentIndexByOutputIndex: make(map[int64]uint32),
 			outputPhase:                   make(map[int64]v1.ContentPhase),
 		}
@@ -435,7 +435,7 @@ func TestConvertStreamEventFromOpenAIResponses(t *testing.T) {
 
 	Convey("Given multiple reasoning summary parts in one output item", t, func() {
 		client := &openAIResponseStreamClient{
-			req:                           &entity.ChatReq{Id: "request-1"},
+			req:                           &entity.ChatRequest{Id: "request-1"},
 			openContentIndexByOutputIndex: make(map[int64]uint32),
 			outputPhase:                   make(map[int64]v1.ContentPhase),
 		}
@@ -484,7 +484,7 @@ func TestConvertStreamEventFromOpenAIResponses(t *testing.T) {
 
 	Convey("Given multiple text parts in one output message", t, func() {
 		client := &openAIResponseStreamClient{
-			req:                           &entity.ChatReq{Id: "request-1"},
+			req:                           &entity.ChatRequest{Id: "request-1"},
 			openContentIndexByOutputIndex: make(map[int64]uint32),
 			outputPhase:                   make(map[int64]v1.ContentPhase),
 		}
@@ -534,7 +534,7 @@ func TestConvertStreamEventFromOpenAIResponses(t *testing.T) {
 
 	Convey("Given a Responses stream that ends before a terminal event", t, func() {
 		client := &openAIResponseStreamClient{
-			req:            &entity.ChatReq{Id: "request-1"},
+			req:            &entity.ChatRequest{Id: "request-1"},
 			messageStarted: true,
 		}
 
@@ -542,7 +542,7 @@ func TestConvertStreamEventFromOpenAIResponses(t *testing.T) {
 
 		Convey("Then the synthetic terminal event reports a failure", func() {
 			So(events, ShouldHaveLength, 1)
-			So(events[0].GetMessageStop().GetStatus(), ShouldEqual, v1.ChatStatus_CHAT_FAILED)
+			So(events[0].GetMessageStop().GetStatus(), ShouldEqual, v1.ChatStatus_CHAT_STATUS_FAILED)
 		})
 	})
 }

@@ -20,7 +20,8 @@ const _ = http.SupportPackageIsVersion3
 const OperationChatChat = "/neurouter.v1.Chat/Chat"
 
 type ChatHTTPServer interface {
-	Chat(context.Context, *ChatReq) (*ChatResp, error)
+	// Chat buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	Chat(context.Context, *ChatRequest) (*ChatResponse, error)
 }
 
 func RegisterChatHTTPServer(s *http.Server, srv ChatHTTPServer) {
@@ -30,25 +31,26 @@ func RegisterChatHTTPServer(s *http.Server, srv ChatHTTPServer) {
 
 func _Chat_Chat0_HTTP_Handler(srv ChatHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in ChatReq
+		var in ChatRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationChatChat)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.Chat(ctx, req.(*ChatReq))
+			return srv.Chat(ctx, req.(*ChatRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*ChatResp)
+		reply := out.(*ChatResponse)
 		return ctx.Result(200, reply)
 	}
 }
 
 type ChatHTTPClient interface {
-	Chat(ctx context.Context, req *ChatReq, opts ...http.CallOption) (rsp *ChatResp, err error)
+	// Chat buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	Chat(ctx context.Context, req *ChatRequest, opts ...http.CallOption) (rsp *ChatResponse, err error)
 }
 
 type ChatHTTPClientImpl struct {
@@ -59,8 +61,9 @@ func NewChatHTTPClient(client *http.Client) ChatHTTPClient {
 	return &ChatHTTPClientImpl{client}
 }
 
-func (c *ChatHTTPClientImpl) Chat(ctx context.Context, in *ChatReq, opts ...http.CallOption) (*ChatResp, error) {
-	var out ChatResp
+// Chat buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+func (c *ChatHTTPClientImpl) Chat(ctx context.Context, in *ChatRequest, opts ...http.CallOption) (*ChatResponse, error) {
+	var out ChatResponse
 	pattern := "/v1/chat"
 	path := http.BuildPath(pattern, in)
 	opts = append([]http.CallOption{

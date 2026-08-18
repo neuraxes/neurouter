@@ -192,10 +192,10 @@ func formatSchema(schema *structpb.Struct) string {
 	return string(j)
 }
 
-func (uc *chatUseCase) printChat(req *v1.ChatReq, resp *v1.ChatResp) error {
+func (uc *chatUseCase) printChat(req *v1.ChatRequest, resp *v1.ChatResponse) error {
 	data := struct {
-		Request  *v1.ChatReq
-		Response *v1.ChatResp
+		Request  *v1.ChatRequest
+		Response *v1.ChatResponse
 	}{
 		Request:  req,
 		Response: resp,

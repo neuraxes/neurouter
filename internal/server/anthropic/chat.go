@@ -40,7 +40,7 @@ func (s *Server) handleMessageCompletion(httpCtx http.Context) (err error) {
 		return
 	}
 
-	req := convertChatReqFromAnthropic(&anthropicReq)
+	req := convertChatRequestFromAnthropic(&anthropicReq)
 
 	if httpCtx.Request().Header.Get("Accept") == "text/event-stream" ||
 		gjson.GetBytes(requestBody, "stream").Bool() {
@@ -57,7 +57,7 @@ func (s *Server) handleMessageCompletion(httpCtx http.Context) (err error) {
 			if s.otelLogger != nil {
 				streamServer.buffer = &bytes.Buffer{}
 			}
-			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), streamServer)
+			err := s.chatSvc.ChatStream(req.(*v1.ChatRequest), streamServer)
 			if err == nil {
 				streamServer.sendMessageStopEvent()
 			}
@@ -73,7 +73,7 @@ func (s *Server) handleMessageCompletion(httpCtx http.Context) (err error) {
 		m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 			emitCtx = ctx
 			util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
-			return s.chatSvc.Chat(ctx, req.(*v1.ChatReq))
+			return s.chatSvc.Chat(ctx, req.(*v1.ChatRequest))
 		})
 
 		resp, err := m(httpCtx, req)
@@ -81,7 +81,7 @@ func (s *Server) handleMessageCompletion(httpCtx http.Context) (err error) {
 			return err
 		}
 
-		anthropicResp := convertChatRespToAnthropic(resp.(*v1.ChatResp))
+		anthropicResp := convertChatResponseToAnthropic(resp.(*v1.ChatResponse))
 		respBytes, err := json.Marshal(anthropicResp)
 		if err != nil {
 			return err

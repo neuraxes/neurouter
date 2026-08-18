@@ -31,14 +31,14 @@ import (
 
 func TestConvertStatusFromAnthropic(t *testing.T) {
 	Convey("Given various anthropic stop reasons", t, func() {
-		So(convertStatusFromAnthropic(anthropic.StopReasonToolUse), ShouldEqual, v1.ChatStatus_CHAT_PENDING_TOOL_USE)
-		So(convertStatusFromAnthropic(anthropic.StopReasonEndTurn), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
-		So(convertStatusFromAnthropic(anthropic.StopReasonStopSequence), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
-		So(convertStatusFromAnthropic(anthropic.StopReasonMaxTokens), ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
-		So(convertStatusFromAnthropic(anthropic.StopReasonRefusal), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
-		So(convertStatusFromAnthropic(anthropic.StopReasonPauseTurn), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
-		So(convertStatusFromAnthropic(anthropic.StopReason("")), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
-		So(convertStatusFromAnthropic(anthropic.StopReason("unknown_reason")), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+		So(convertStatusFromAnthropic(anthropic.StopReasonToolUse), ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
+		So(convertStatusFromAnthropic(anthropic.StopReasonEndTurn), ShouldEqual, v1.ChatStatus_CHAT_STATUS_COMPLETED)
+		So(convertStatusFromAnthropic(anthropic.StopReasonStopSequence), ShouldEqual, v1.ChatStatus_CHAT_STATUS_COMPLETED)
+		So(convertStatusFromAnthropic(anthropic.StopReasonMaxTokens), ShouldEqual, v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT)
+		So(convertStatusFromAnthropic(anthropic.StopReasonRefusal), ShouldEqual, v1.ChatStatus_CHAT_STATUS_REFUSED)
+		So(convertStatusFromAnthropic(anthropic.StopReasonPauseTurn), ShouldEqual, v1.ChatStatus_CHAT_STATUS_IN_PROGRESS)
+		So(convertStatusFromAnthropic(anthropic.StopReason("")), ShouldEqual, v1.ChatStatus_CHAT_STATUS_IN_PROGRESS)
+		So(convertStatusFromAnthropic(anthropic.StopReason("unknown_reason")), ShouldEqual, v1.ChatStatus_CHAT_STATUS_IN_PROGRESS)
 	})
 }
 
@@ -287,13 +287,13 @@ func TestConvertSystemMessagesToAnthropic(t *testing.T) {
 
 		msgs := []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("sys prompt")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("hi")},
 				},
@@ -318,7 +318,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a USER message with text content", func() {
 			msg := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Hello, world!")},
 				},
@@ -336,7 +336,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a SYSTEM message with text content", func() {
 			msg := &v1.Message{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a helpful assistant")},
 				},
@@ -354,7 +354,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a MODEL message with text content", func() {
 			msg := &v1.Message{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("I'm here to help!")},
 				},
@@ -372,7 +372,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with redacted thinking content", func() {
 			msg := &v1.Message{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{
 						Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -393,7 +393,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with image content", func() {
 			msg := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: &v1.Content_Image{
 						Image: &v1.Image{
@@ -416,7 +416,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with base64 image source", func() {
 			msg := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: &v1.Content_Image{
 						Image: &v1.Image{
@@ -441,7 +441,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with multiple content types", func() {
 			msg := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("What's in this image?")},
 					{Content: &v1.Content_Image{
@@ -472,7 +472,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with empty contents", func() {
 			msg := &v1.Message{
-				Role:     v1.Role_USER,
+				Role:     v1.Role_ROLE_USER,
 				Contents: []*v1.Content{},
 			}
 			result := repo.convertMessageToAnthropic(msg)
@@ -485,7 +485,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with tool_use that has invalid JSON input", func() {
 			msg := &v1.Message{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
@@ -513,7 +513,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with tool_result image URL", func() {
 			msg := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
 						Id: "tool-1",
@@ -545,7 +545,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with tool_result base64 image", func() {
 			msg := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
 						Id: "tool-1",
@@ -579,7 +579,7 @@ func TestConvertMessageToAnthropic(t *testing.T) {
 
 		Convey("When converting a message with tool_result base64 image source", func() {
 			msg := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
 						Id: "tool-1",
@@ -656,13 +656,13 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 		}
 
 		msgs := []*v1.Message{
-			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys")}}},
-			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
-			{Role: v1.Role_MODEL, Contents: []*v1.Content{{Content: v1.NewTextContent("resp")}}},
-			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: &v1.Content_Image{Image: &v1.Image{Source: &v1.Image_Url{Url: "https://a.b/c.png"}}}}}},
+			{Role: v1.Role_ROLE_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys")}}},
+			{Role: v1.Role_ROLE_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
+			{Role: v1.Role_ROLE_MODEL, Contents: []*v1.Content{{Content: v1.NewTextContent("resp")}}},
+			{Role: v1.Role_ROLE_USER, Contents: []*v1.Content{{Content: &v1.Content_Image{Image: &v1.Image{Source: &v1.Image_Url{Url: "https://a.b/c.png"}}}}}},
 		}
 
-		req := &entity.ChatReq{Id: "req-1", Model: "claude-3", Messages: msgs, Tools: tools}
+		req := &entity.ChatRequest{Id: "req-1", Model: "claude-3", Messages: msgs, Tools: tools}
 
 		Convey("When SystemAsUser=false", func() {
 			repo := &upstream{config: &conf.AnthropicConfig{SystemAsUser: false}, log: slog.Default()}
@@ -727,7 +727,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 		Convey("Then they are mapped to message with thinking and text", func() {
 			So(msg, ShouldNotBeNil)
 			So(msg.Id, ShouldEqual, "msg-123")
-			So(msg.Role, ShouldEqual, v1.Role_MODEL)
+			So(msg.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 			So(len(msg.Contents), ShouldEqual, 2)
 			So(msg.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 			So(msg.Contents[0].GetText().GetText(), ShouldEqual, "think")
@@ -778,7 +778,7 @@ func TestConvertMessageFromAnthropic(t *testing.T) {
 
 func TestConvertStreamEventFromAnthropic(t *testing.T) {
 	Convey("Given a stream client and various event chunks", t, func() {
-		client := &anthropicChatStreamClient{req: &entity.ChatReq{Id: "req-1"}}
+		client := &anthropicChatStreamClient{req: &entity.ChatRequest{Id: "req-1"}}
 
 		Convey("When receiving message_start", func() {
 			chunk := &anthropic.MessageStreamEventUnion{
@@ -883,7 +883,7 @@ func TestConvertStreamEventFromAnthropic(t *testing.T) {
 		})
 
 		Convey("When a redacted_thinking block is followed by content_block_stop", func() {
-			client := &anthropicChatStreamClient{req: &entity.ChatReq{Id: "req-1"}}
+			client := &anthropicChatStreamClient{req: &entity.ChatRequest{Id: "req-1"}}
 			start := &anthropic.MessageStreamEventUnion{
 				Type: "content_block_start",
 				ContentBlock: anthropic.ContentBlockStartEventContentBlockUnion{

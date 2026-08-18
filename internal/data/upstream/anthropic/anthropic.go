@@ -69,7 +69,7 @@ func newAnthropicUpstreamWithClient(config *conf.AnthropicConfig, httpClient opt
 	return
 }
 
-func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatRequest) (resp *entity.ChatResponse, err error) {
 	anthropicReq := r.convertRequestToAnthropic(req)
 
 	anthropicResp, err := r.client.Messages.New(ctx, anthropicReq)
@@ -77,7 +77,7 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 		return
 	}
 
-	resp = &entity.ChatResp{
+	resp = &entity.ChatResponse{
 		Id:         req.Id,
 		Model:      string(anthropicResp.Model),
 		Message:    convertMessageFromAnthropic(anthropicResp),
@@ -89,7 +89,7 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 }
 
 type anthropicChatStreamClient struct {
-	req                  *entity.ChatReq
+	req                  *entity.ChatRequest
 	upstream             *ssestream.Stream[anthropic.MessageStreamEventUnion]
 	messageID            string
 	model                string
@@ -116,7 +116,7 @@ func (c *anthropicChatStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error] 
 	}
 }
 
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatRequest) iter.Seq2[*entity.ChatEvent, error] {
 	anthropicReq := r.convertRequestToAnthropic(req)
 	stream := r.client.Messages.NewStreaming(ctx, anthropicReq)
 

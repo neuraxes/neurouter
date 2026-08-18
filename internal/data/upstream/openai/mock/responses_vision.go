@@ -31,7 +31,7 @@ var ResponsesVision = &Fixture{
 	Name:     "responses_vision",
 	Request:  responsesVisionRequest,
 	Response: responsesVisionResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "responses_vision",
 		Model: "openai/gpt-5-mini",
 		Config: &v1.GenerationConfig{
@@ -40,13 +40,13 @@ var ResponsesVision = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Inspect every image the user supplies and describe it briefly.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("The image below is provided as inline base64 data. State its source (base64) and give a one-sentence description of what you see, including any visible logo or shape.")},
 					{
@@ -61,13 +61,13 @@ var ResponsesVision = &Fixture{
 			},
 		},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "responses_vision",
 		Model:  "openai/gpt-5-mini",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1785502390-uWUQAQNqsj1Ocw0q6uQk",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Id:    "rs_01969eef50f6c980016a6c9ab75de8819fa975bc775b833f4f",

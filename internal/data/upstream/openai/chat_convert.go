@@ -24,7 +24,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatReq) openai.ChatCompletionNewParams {
+func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatRequest) openai.ChatCompletionNewParams {
 	openAIReq := openai.ChatCompletionNewParams{
 		Model: req.Model,
 	}
@@ -126,7 +126,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 	}
 
 	switch message.Role {
-	case v1.Role_SYSTEM:
+	case v1.Role_ROLE_SYSTEM:
 		m := &openai.ChatCompletionSystemMessageParam{}
 
 		if message.Name != "" {
@@ -155,7 +155,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 		}
 
 		return []openai.ChatCompletionMessageParamUnion{{OfSystem: m}}
-	case v1.Role_USER:
+	case v1.Role_ROLE_USER:
 		var result []openai.ChatCompletionMessageParamUnion
 		var userContents []*v1.Content
 
@@ -235,7 +235,7 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 		}
 
 		return result
-	case v1.Role_MODEL:
+	case v1.Role_ROLE_MODEL:
 		m := &openai.ChatCompletionAssistantMessageParam{}
 
 		if message.Name != "" {
@@ -301,8 +301,8 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 	}
 }
 
-func (r *upstream) convertResponseFromOpenAIChat(req *entity.ChatReq, openAIResp *openai.ChatCompletion) (resp *entity.ChatResp) {
-	resp = &entity.ChatResp{
+func (r *upstream) convertResponseFromOpenAIChat(req *entity.ChatRequest, openAIResp *openai.ChatCompletion) (resp *entity.ChatResponse) {
+	resp = &entity.ChatResponse{
 		Id:         req.Id,
 		Model:      openAIResp.Model,
 		Statistics: convertStatisticsFromOpenAIChat(&openAIResp.Usage),
@@ -319,7 +319,7 @@ func (r *upstream) convertResponseFromOpenAIChat(req *entity.ChatReq, openAIResp
 
 func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatCompletionMessage) *v1.Message {
 	message := &v1.Message{
-		Role: v1.Role_MODEL,
+		Role: v1.Role_ROLE_MODEL,
 	}
 
 	if openAIMessage.Content != "" {
@@ -483,15 +483,15 @@ func (c *openAIChatStreamClient) openToolBlock(events *[]*entity.ChatEvent, tool
 func convertStatusFromOpenAIChat(finishReason string) v1.ChatStatus {
 	switch finishReason {
 	case "stop":
-		return v1.ChatStatus_CHAT_COMPLETED
+		return v1.ChatStatus_CHAT_STATUS_COMPLETED
 	case "length":
-		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+		return v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT
 	case "tool_calls", "function_call":
-		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+		return v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE
 	case "content_filter":
-		return v1.ChatStatus_CHAT_REFUSED
+		return v1.ChatStatus_CHAT_STATUS_REFUSED
 	default:
-		return v1.ChatStatus_CHAT_IN_PROGRESS
+		return v1.ChatStatus_CHAT_STATUS_IN_PROGRESS
 	}
 }
 

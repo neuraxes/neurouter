@@ -28,7 +28,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.MessageNewParams {
+func (r *upstream) convertRequestToAnthropic(req *entity.ChatRequest) anthropic.MessageNewParams {
 	params := anthropic.MessageNewParams{
 		Model: anthropic.Model(req.Model),
 	}
@@ -40,7 +40,7 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatReq) anthropic.Mess
 	}
 
 	for _, message := range req.Messages {
-		if !r.config.SystemAsUser && message.Role == v1.Role_SYSTEM {
+		if !r.config.SystemAsUser && message.Role == v1.Role_ROLE_SYSTEM {
 			continue
 		}
 		params.Messages = append(params.Messages, r.convertMessageToAnthropic(message))
@@ -124,7 +124,7 @@ func (r *upstream) convertGenerationConfigToAnthropic(config *v1.GenerationConfi
 func (r *upstream) convertSystemMessagesToAnthropic(messages []*v1.Message) []anthropic.TextBlockParam {
 	var parts []anthropic.TextBlockParam
 	for _, message := range messages {
-		if message.Role != v1.Role_SYSTEM {
+		if message.Role != v1.Role_ROLE_SYSTEM {
 			continue
 		}
 		for _, content := range message.Contents {
@@ -242,7 +242,7 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 			})
 		}
 	}
-	if message.Role == v1.Role_USER || message.Role == v1.Role_SYSTEM {
+	if message.Role == v1.Role_ROLE_USER || message.Role == v1.Role_ROLE_SYSTEM {
 		return anthropic.NewUserMessage(parts...)
 	} else {
 		return anthropic.NewAssistantMessage(parts...)
@@ -282,7 +282,7 @@ func convertSchemaToAnthropicToolInputSchema(params *structpb.Struct) (schema an
 func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 	message := &v1.Message{
 		Id:   msg.ID,
-		Role: v1.Role_MODEL,
+		Role: v1.Role_ROLE_MODEL,
 	}
 
 	for _, content := range msg.Content {
@@ -428,15 +428,15 @@ func (c *anthropicChatStreamClient) newChatEvent(event v1.ChatEventPayload) *ent
 func convertStatusFromAnthropic(stopReason anthropic.StopReason) v1.ChatStatus {
 	switch stopReason {
 	case anthropic.StopReasonToolUse:
-		return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+		return v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE
 	case anthropic.StopReasonEndTurn, anthropic.StopReasonStopSequence:
-		return v1.ChatStatus_CHAT_COMPLETED
+		return v1.ChatStatus_CHAT_STATUS_COMPLETED
 	case anthropic.StopReasonMaxTokens:
-		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+		return v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT
 	case anthropic.StopReasonRefusal:
-		return v1.ChatStatus_CHAT_REFUSED
+		return v1.ChatStatus_CHAT_STATUS_REFUSED
 	default:
-		return v1.ChatStatus_CHAT_IN_PROGRESS
+		return v1.ChatStatus_CHAT_STATUS_IN_PROGRESS
 	}
 }
 

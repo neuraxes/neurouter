@@ -6,7 +6,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-var mockChatReq = &entity.ChatReq{
+var mockChatRequest = &entity.ChatRequest{
 	Id:    "mock_chat_id",
 	Model: "gemini-3-flash",
 	Config: &v1.GenerationConfig{
@@ -17,7 +17,7 @@ var mockChatReq = &entity.ChatReq{
 	},
 	Messages: []*v1.Message{
 		{
-			Role: v1.Role_SYSTEM,
+			Role: v1.Role_ROLE_SYSTEM,
 			Contents: []*v1.Content{
 				{
 					Content: v1.NewTextContent("You are helpful assistant."),
@@ -25,7 +25,7 @@ var mockChatReq = &entity.ChatReq{
 			},
 		},
 		{
-			Role: v1.Role_USER,
+			Role: v1.Role_ROLE_USER,
 			Contents: []*v1.Content{
 				{
 					Content: v1.NewTextContent("hi, how are you? and how is the weather yesterday in shanghai?"),
@@ -33,7 +33,7 @@ var mockChatReq = &entity.ChatReq{
 			},
 		},
 		{
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -61,7 +61,7 @@ var mockChatReq = &entity.ChatReq{
 			},
 		},
 		{
-			Role: v1.Role_USER,
+			Role: v1.Role_ROLE_USER,
 			Contents: []*v1.Content{
 				{
 					Content: &v1.Content_ToolResult{
@@ -254,13 +254,13 @@ const mockGenerateContentResponseBody = `{
     "responseId": "gC8Saaa0BOmL2roP5LPX4Q4"
 }`
 
-var mockChatResp = &entity.ChatResp{
+var mockChatResponse = &entity.ChatResponse{
 	Id:     "mock_chat_id",
 	Model:  "gemini-3-flash",
-	Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
+	Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
 	Message: &v1.Message{
 		Id:   "gC8Saaa0BOmL2roP5LPX4Q4",
-		Role: v1.Role_MODEL,
+		Role: v1.Role_ROLE_MODEL,
 		Contents: []*v1.Content{
 			{
 				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -328,7 +328,7 @@ var mockStreamChatEvents = []*entity.ChatEvent{
 	mockStreamEvent(v1.NewContentStartToolUseEvent(2, "get_weather", "get_weather")),
 	mockStreamEvent(v1.NewContentDeltaToolInputTextEvent(2, `{"city":"shanghai","date":"2025-11-10"}`)),
 	mockStreamEvent(v1.NewContentStopEvent(2)),
-	mockStreamStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE, &v1.Usage{
+	mockStreamStopEvent(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE, &v1.Usage{
 		InputTokens:     391,
 		OutputTokens:    145,
 		ReasoningTokens: 102,

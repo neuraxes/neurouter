@@ -33,7 +33,7 @@ var StructuredOutput = &Fixture{
 	Name:     "structured_output",
 	Request:  structuredOutputRequest,
 	Response: structuredOutputResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "structured_output",
 		Model: "openai/gpt-4o",
 		Config: &v1.GenerationConfig{
@@ -63,26 +63,26 @@ var StructuredOutput = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Return content that conforms to the requested output schema.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Classify this router incident: customer traffic is slow in us-east, the OpenAI upstream is rate limited, the Anthropic upstream is healthy, and retry pressure is rising.")},
 				},
 			},
 		},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "structured_output",
 		Model:  "openai/gpt-4o",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782736289-Jbmm6j69oJCX7yvuuT7d",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent(`{"severity":"medium","affected_region":"us-east","primary_cause":"Rate limiting of the OpenAI upstream","recommended_action":"Investigate and adjust rate limiting settings or policies for the OpenAI upstream to alleviate traffic congestion and reduce retry pressure.","signals":["Slow customer traffic in us-east","OpenAI upstream is rate limited","Anthropic upstream is healthy","Rising retry pressure"]}`)},
 			},

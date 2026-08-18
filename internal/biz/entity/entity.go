@@ -16,11 +16,11 @@ package entity
 
 import v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 
-// ChatReq represents a chat request, aliased from the API proto definition.
-type ChatReq = v1.ChatReq
+// ChatRequest represents a chat request, aliased from the API proto definition.
+type ChatRequest = v1.ChatRequest
 
-// ChatResp represents a chat response, aliased from the API proto definition.
-type ChatResp = v1.ChatResp
+// ChatResponse represents a chat response, aliased from the API proto definition.
+type ChatResponse = v1.ChatResponse
 
 // ChatEvent represents a streaming chat event, aliased from the API proto definition.
 type ChatEvent = v1.ChatEvent
@@ -28,8 +28,8 @@ type ChatEvent = v1.ChatEvent
 // ModelSpec represents a model specification, aliased from the API proto definition.
 type ModelSpec = v1.ModelSpec
 
-// EmbedReq represents an embedding request, aliased from the API proto definition.
-type EmbedReq = v1.EmbedReq
+// EmbedRequest represents an embedding request, aliased from the API proto definition.
+type EmbedRequest = v1.EmbedRequest
 
-// EmbedResp represents an embedding response, aliased from the API proto definition.
-type EmbedResp = v1.EmbedResp
+// EmbedResponse represents an embedding response, aliased from the API proto definition.
+type EmbedResponse = v1.EmbedResponse

@@ -40,7 +40,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ModelClient interface {
-	ListModel(ctx context.Context, in *ListModelReq, opts ...grpc.CallOption) (*ListModelResp, error)
+	ListModel(ctx context.Context, in *ListModelRequest, opts ...grpc.CallOption) (*ListModelResponse, error)
 }
 
 type modelClient struct {
@@ -51,9 +51,9 @@ func NewModelClient(cc grpc.ClientConnInterface) ModelClient {
 	return &modelClient{cc}
 }
 
-func (c *modelClient) ListModel(ctx context.Context, in *ListModelReq, opts ...grpc.CallOption) (*ListModelResp, error) {
+func (c *modelClient) ListModel(ctx context.Context, in *ListModelRequest, opts ...grpc.CallOption) (*ListModelResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListModelResp)
+	out := new(ListModelResponse)
 	err := c.cc.Invoke(ctx, Model_ListModel_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (c *modelClient) ListModel(ctx context.Context, in *ListModelReq, opts ...g
 // All implementations must embed UnimplementedModelServer
 // for forward compatibility.
 type ModelServer interface {
-	ListModel(context.Context, *ListModelReq) (*ListModelResp, error)
+	ListModel(context.Context, *ListModelRequest) (*ListModelResponse, error)
 	mustEmbedUnimplementedModelServer()
 }
 
@@ -76,7 +76,7 @@ type ModelServer interface {
 // pointer dereference when methods are called.
 type UnimplementedModelServer struct{}
 
-func (UnimplementedModelServer) ListModel(context.Context, *ListModelReq) (*ListModelResp, error) {
+func (UnimplementedModelServer) ListModel(context.Context, *ListModelRequest) (*ListModelResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListModel not implemented")
 }
 func (UnimplementedModelServer) mustEmbedUnimplementedModelServer() {}
@@ -101,7 +101,7 @@ func RegisterModelServer(s grpc.ServiceRegistrar, srv ModelServer) {
 }
 
 func _Model_ListModel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListModelReq)
+	in := new(ListModelRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func _Model_ListModel_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: Model_ListModel_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModelServer).ListModel(ctx, req.(*ListModelReq))
+		return srv.(ModelServer).ListModel(ctx, req.(*ListModelRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -24,8 +24,8 @@ import (
 )
 
 type UseCase interface {
-	Chat(ctx context.Context, req *entity.ChatReq) (*entity.ChatResp, error)
-	ChatStream(ctx context.Context, req *entity.ChatReq, stream repository.ChatStreamServer) error
+	Chat(ctx context.Context, req *entity.ChatRequest) (*entity.ChatResponse, error)
+	ChatStream(ctx context.Context, req *entity.ChatRequest, stream repository.ChatStreamServer) error
 }
 
 type chatUseCase struct {
@@ -40,7 +40,7 @@ func NewChatUseCase(elector Elector, logger *slog.Logger) UseCase {
 	}
 }
 
-func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatRequest) (resp *entity.ChatResponse, err error) {
 	model, err := uc.elector.ElectForChat(ctx, req)
 	if err != nil {
 		return
@@ -57,7 +57,7 @@ func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatReq) (resp *ent
 	return
 }
 
-func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatReq, server repository.ChatStreamServer) error {
+func (uc *chatUseCase) ChatStream(ctx context.Context, req *entity.ChatRequest, server repository.ChatStreamServer) error {
 	model, err := uc.elector.ElectForChat(ctx, req)
 	if err != nil {
 		return err

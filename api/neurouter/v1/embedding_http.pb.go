@@ -20,7 +20,7 @@ const _ = http.SupportPackageIsVersion3
 const OperationEmbeddingEmbed = "/neurouter.v1.Embedding/Embed"
 
 type EmbeddingHTTPServer interface {
-	Embed(context.Context, *EmbedReq) (*EmbedResp, error)
+	Embed(context.Context, *EmbedRequest) (*EmbedResponse, error)
 }
 
 func RegisterEmbeddingHTTPServer(s *http.Server, srv EmbeddingHTTPServer) {
@@ -30,25 +30,25 @@ func RegisterEmbeddingHTTPServer(s *http.Server, srv EmbeddingHTTPServer) {
 
 func _Embedding_Embed0_HTTP_Handler(srv EmbeddingHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in EmbedReq
+		var in EmbedRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationEmbeddingEmbed)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.Embed(ctx, req.(*EmbedReq))
+			return srv.Embed(ctx, req.(*EmbedRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*EmbedResp)
+		reply := out.(*EmbedResponse)
 		return ctx.Result(200, reply)
 	}
 }
 
 type EmbeddingHTTPClient interface {
-	Embed(ctx context.Context, req *EmbedReq, opts ...http.CallOption) (rsp *EmbedResp, err error)
+	Embed(ctx context.Context, req *EmbedRequest, opts ...http.CallOption) (rsp *EmbedResponse, err error)
 }
 
 type EmbeddingHTTPClientImpl struct {
@@ -59,8 +59,8 @@ func NewEmbeddingHTTPClient(client *http.Client) EmbeddingHTTPClient {
 	return &EmbeddingHTTPClientImpl{client}
 }
 
-func (c *EmbeddingHTTPClientImpl) Embed(ctx context.Context, in *EmbedReq, opts ...http.CallOption) (*EmbedResp, error) {
-	var out EmbedResp
+func (c *EmbeddingHTTPClientImpl) Embed(ctx context.Context, in *EmbedRequest, opts ...http.CallOption) (*EmbedResponse, error) {
+	var out EmbedResponse
 	pattern := "/v1/embed"
 	path := http.BuildPath(pattern, in)
 	opts = append([]http.CallOption{

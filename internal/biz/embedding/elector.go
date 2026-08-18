@@ -28,5 +28,5 @@ type Model interface {
 }
 
 type Elector interface {
-	ElectForEmbedding(ctx context.Context, req *v1.EmbedReq) (Model, error)
+	ElectForEmbedding(ctx context.Context, req *v1.EmbedRequest) (Model, error)
 }

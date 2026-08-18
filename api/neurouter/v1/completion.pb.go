@@ -35,7 +35,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type CompletionReq struct {
+type CompleteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The unique identifier of the request
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -49,20 +49,20 @@ type CompletionReq struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CompletionReq) Reset() {
-	*x = CompletionReq{}
+func (x *CompleteRequest) Reset() {
+	*x = CompleteRequest{}
 	mi := &file_neurouter_v1_completion_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CompletionReq) String() string {
+func (x *CompleteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CompletionReq) ProtoMessage() {}
+func (*CompleteRequest) ProtoMessage() {}
 
-func (x *CompletionReq) ProtoReflect() protoreflect.Message {
+func (x *CompleteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_completion_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -74,40 +74,40 @@ func (x *CompletionReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CompletionReq.ProtoReflect.Descriptor instead.
-func (*CompletionReq) Descriptor() ([]byte, []int) {
+// Deprecated: Use CompleteRequest.ProtoReflect.Descriptor instead.
+func (*CompleteRequest) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_completion_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CompletionReq) GetId() string {
+func (x *CompleteRequest) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *CompletionReq) GetModel() string {
+func (x *CompleteRequest) GetModel() string {
 	if x != nil {
 		return x.Model
 	}
 	return ""
 }
 
-func (x *CompletionReq) GetConfig() *GenerationConfig {
+func (x *CompleteRequest) GetConfig() *GenerationConfig {
 	if x != nil {
 		return x.Config
 	}
 	return nil
 }
 
-func (x *CompletionReq) GetContents() []*Content {
+func (x *CompleteRequest) GetContents() []*Content {
 	if x != nil {
 		return x.Contents
 	}
 	return nil
 }
 
-type CompletionResp struct {
+type CompleteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The unique identifier of the request
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -121,20 +121,20 @@ type CompletionResp struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CompletionResp) Reset() {
-	*x = CompletionResp{}
+func (x *CompleteResponse) Reset() {
+	*x = CompleteResponse{}
 	mi := &file_neurouter_v1_completion_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CompletionResp) String() string {
+func (x *CompleteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CompletionResp) ProtoMessage() {}
+func (*CompleteResponse) ProtoMessage() {}
 
-func (x *CompletionResp) ProtoReflect() protoreflect.Message {
+func (x *CompleteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_completion_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -146,33 +146,33 @@ func (x *CompletionResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CompletionResp.ProtoReflect.Descriptor instead.
-func (*CompletionResp) Descriptor() ([]byte, []int) {
+// Deprecated: Use CompleteResponse.ProtoReflect.Descriptor instead.
+func (*CompleteResponse) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_completion_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CompletionResp) GetId() string {
+func (x *CompleteResponse) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *CompletionResp) GetModel() string {
+func (x *CompleteResponse) GetModel() string {
 	if x != nil {
 		return x.Model
 	}
 	return ""
 }
 
-func (x *CompletionResp) GetContents() []*Content {
+func (x *CompleteResponse) GetContents() []*Content {
 	if x != nil {
 		return x.Contents
 	}
 	return nil
 }
 
-func (x *CompletionResp) GetStatistics() *Statistics {
+func (x *CompleteResponse) GetStatistics() *Statistics {
 	if x != nil {
 		return x.Statistics
 	}
@@ -183,23 +183,23 @@ var File_neurouter_v1_completion_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_completion_proto_rawDesc = "" +
 	"\n" +
-	"\x1dneurouter/v1/completion.proto\x12\fneurouter.v1\x1a\x19neurouter/v1/common.proto\x1a\x1aneurouter/v1/content.proto\"\xa0\x01\n" +
-	"\rCompletionReq\x12\x0e\n" +
+	"\x1dneurouter/v1/completion.proto\x12\fneurouter.v1\x1a\x19neurouter/v1/common.proto\x1a\x1aneurouter/v1/content.proto\"\xa2\x01\n" +
+	"\x0fCompleteRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x126\n" +
 	"\x06config\x18\x03 \x01(\v2\x1e.neurouter.v1.GenerationConfigR\x06config\x121\n" +
-	"\bcontents\x18\x04 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"\xa3\x01\n" +
-	"\x0eCompletionResp\x12\x0e\n" +
+	"\bcontents\x18\x04 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"\xa5\x01\n" +
+	"\x10CompleteResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x121\n" +
 	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\x128\n" +
 	"\n" +
 	"statistics\x18\x04 \x01(\v2\x18.neurouter.v1.StatisticsR\n" +
-	"statistics2\xa6\x01\n" +
+	"statistics2\xae\x01\n" +
 	"\n" +
-	"Completion\x12G\n" +
-	"\bComplete\x12\x1b.neurouter.v1.CompletionReq\x1a\x1c.neurouter.v1.CompletionResp\"\x00\x12O\n" +
-	"\x0eCompleteStream\x12\x1b.neurouter.v1.CompletionReq\x1a\x1c.neurouter.v1.CompletionResp\"\x000\x01B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
+	"Completion\x12K\n" +
+	"\bComplete\x12\x1d.neurouter.v1.CompleteRequest\x1a\x1e.neurouter.v1.CompleteResponse\"\x00\x12S\n" +
+	"\x0eCompleteStream\x12\x1d.neurouter.v1.CompleteRequest\x1a\x1e.neurouter.v1.CompleteResponse\"\x000\x01B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
 	file_neurouter_v1_completion_proto_rawDescOnce sync.Once
@@ -215,21 +215,21 @@ func file_neurouter_v1_completion_proto_rawDescGZIP() []byte {
 
 var file_neurouter_v1_completion_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_neurouter_v1_completion_proto_goTypes = []any{
-	(*CompletionReq)(nil),    // 0: neurouter.v1.CompletionReq
-	(*CompletionResp)(nil),   // 1: neurouter.v1.CompletionResp
+	(*CompleteRequest)(nil),  // 0: neurouter.v1.CompleteRequest
+	(*CompleteResponse)(nil), // 1: neurouter.v1.CompleteResponse
 	(*GenerationConfig)(nil), // 2: neurouter.v1.GenerationConfig
 	(*Content)(nil),          // 3: neurouter.v1.Content
 	(*Statistics)(nil),       // 4: neurouter.v1.Statistics
 }
 var file_neurouter_v1_completion_proto_depIdxs = []int32{
-	2, // 0: neurouter.v1.CompletionReq.config:type_name -> neurouter.v1.GenerationConfig
-	3, // 1: neurouter.v1.CompletionReq.contents:type_name -> neurouter.v1.Content
-	3, // 2: neurouter.v1.CompletionResp.contents:type_name -> neurouter.v1.Content
-	4, // 3: neurouter.v1.CompletionResp.statistics:type_name -> neurouter.v1.Statistics
-	0, // 4: neurouter.v1.Completion.Complete:input_type -> neurouter.v1.CompletionReq
-	0, // 5: neurouter.v1.Completion.CompleteStream:input_type -> neurouter.v1.CompletionReq
-	1, // 6: neurouter.v1.Completion.Complete:output_type -> neurouter.v1.CompletionResp
-	1, // 7: neurouter.v1.Completion.CompleteStream:output_type -> neurouter.v1.CompletionResp
+	2, // 0: neurouter.v1.CompleteRequest.config:type_name -> neurouter.v1.GenerationConfig
+	3, // 1: neurouter.v1.CompleteRequest.contents:type_name -> neurouter.v1.Content
+	3, // 2: neurouter.v1.CompleteResponse.contents:type_name -> neurouter.v1.Content
+	4, // 3: neurouter.v1.CompleteResponse.statistics:type_name -> neurouter.v1.Statistics
+	0, // 4: neurouter.v1.Completion.Complete:input_type -> neurouter.v1.CompleteRequest
+	0, // 5: neurouter.v1.Completion.CompleteStream:input_type -> neurouter.v1.CompleteRequest
+	1, // 6: neurouter.v1.Completion.Complete:output_type -> neurouter.v1.CompleteResponse
+	1, // 7: neurouter.v1.Completion.CompleteStream:output_type -> neurouter.v1.CompleteResponse
 	6, // [6:8] is the sub-list for method output_type
 	4, // [4:6] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name

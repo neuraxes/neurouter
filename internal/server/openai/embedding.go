@@ -40,13 +40,13 @@ func (s *Server) handleEmbedding(httpCtx http.Context) error {
 	req := convertEmbeddingReqFromOpenAI(&openAIReq)
 
 	m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-		return s.embedSvc.Embed(ctx, req.(*v1.EmbedReq))
+		return s.embedSvc.Embed(ctx, req.(*v1.EmbedRequest))
 	})
 	resp, err := m(httpCtx, req)
 	if err != nil {
 		return err
 	}
 
-	openAIResp := convertEmbeddingRespToOpenAI(resp.(*v1.EmbedResp))
+	openAIResp := convertEmbeddingRespToOpenAI(resp.(*v1.EmbedResponse))
 	return httpCtx.Result(200, openAIResp)
 }

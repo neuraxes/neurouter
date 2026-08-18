@@ -33,7 +33,7 @@ var ToolResult = &Fixture{
 	Name:     "tool_result",
 	Request:  toolResultRequest,
 	Response: toolResultResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "tool_result",
 		Model: "openai/gpt-4o",
 		Config: &v1.GenerationConfig{
@@ -42,19 +42,19 @@ var ToolResult = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Use prior tool results exactly and keep the final answer concise.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Use the get_weather tool for Shanghai on 2025-11-10. Do not answer from memory. Return no final prose until the tool has been called.")},
 				},
 			},
 			{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{
 						Content: &v1.Content_ToolUse{
@@ -70,7 +70,7 @@ var ToolResult = &Fixture{
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{
 						Content: &v1.Content_ToolResult{
@@ -88,13 +88,13 @@ var ToolResult = &Fixture{
 		},
 		Tools: []*v1.Tool{getWeatherTool()},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "tool_result",
 		Model:  "openai/gpt-4o",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782736825-52jMHSQnqyXGTxw7F3CD",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("On November 10, 2025, in Shanghai, the weather was cloudy with a high of 18°C, a low of 11°C, and 2.3 mm of precipitation.")},
 			},

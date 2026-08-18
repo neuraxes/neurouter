@@ -68,7 +68,7 @@ func newOpenAIUpstreamWithClient(config *conf.OpenAIConfig, client option.HTTPCl
 	return repo, nil
 }
 
-func (r *upstream) chatWithCompletion(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) chatWithCompletion(ctx context.Context, req *entity.ChatRequest) (resp *entity.ChatResponse, err error) {
 	openAIReq := r.convertRequestToOpenAIChat(req)
 
 	openAIResp, err := r.client.Chat.Completions.New(ctx, openAIReq)
@@ -81,7 +81,7 @@ func (r *upstream) chatWithCompletion(ctx context.Context, req *entity.ChatReq) 
 	return
 }
 
-func (r *upstream) chatWithResponses(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) chatWithResponses(ctx context.Context, req *entity.ChatRequest) (resp *entity.ChatResponse, err error) {
 	openAIReq := r.convertRequestToOpenAIResponses(req)
 
 	openAIResp, err := r.client.Responses.New(ctx, openAIReq)
@@ -92,7 +92,7 @@ func (r *upstream) chatWithResponses(ctx context.Context, req *entity.ChatReq) (
 	return r.convertResponseFromOpenAIResponses(req, openAIResp), nil
 }
 
-func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatRequest) (resp *entity.ChatResponse, err error) {
 	if r.config.UseResponsesApi {
 		return r.chatWithResponses(ctx, req)
 	}
@@ -100,7 +100,7 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 }
 
 type openAIChatStreamClient struct {
-	req      *entity.ChatReq
+	req      *entity.ChatRequest
 	upstream *ssestream.Stream[openai.ChatCompletionChunk]
 
 	status         v1.ChatStatus
@@ -141,7 +141,7 @@ func (c *openAIChatStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error] {
 	}
 }
 
-func (r *upstream) chatStreamWithCompletion(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
+func (r *upstream) chatStreamWithCompletion(ctx context.Context, req *entity.ChatRequest) iter.Seq2[*entity.ChatEvent, error] {
 	openAIReq := r.convertRequestToOpenAIChat(req)
 	openAIReq.StreamOptions.IncludeUsage = openai.Opt(true)
 	stream := r.client.Chat.Completions.NewStreaming(ctx, openAIReq)
@@ -155,7 +155,7 @@ func (r *upstream) chatStreamWithCompletion(ctx context.Context, req *entity.Cha
 }
 
 type openAIResponseStreamClient struct {
-	req      *entity.ChatReq
+	req      *entity.ChatRequest
 	upstream *ssestream.Stream[responses.ResponseStreamEventUnion]
 
 	messageStarted                bool
@@ -201,7 +201,7 @@ func (c *openAIResponseStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error]
 	}
 }
 
-func (r *upstream) chatStreamWithResponses(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
+func (r *upstream) chatStreamWithResponses(ctx context.Context, req *entity.ChatRequest) iter.Seq2[*entity.ChatEvent, error] {
 	openAIReq := r.convertRequestToOpenAIResponses(req)
 	stream := r.client.Responses.NewStreaming(ctx, openAIReq)
 
@@ -214,7 +214,7 @@ func (r *upstream) chatStreamWithResponses(ctx context.Context, req *entity.Chat
 	return client.AsSeq()
 }
 
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatRequest) iter.Seq2[*entity.ChatEvent, error] {
 	if r.config.UseResponsesApi {
 		return r.chatStreamWithResponses(ctx, req)
 	}

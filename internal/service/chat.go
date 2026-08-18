@@ -25,24 +25,24 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-// acceptChatReq copies the inbound request so the caller's message is never
+// acceptChatRequest copies the inbound request so the caller's message is never
 // mutated, and assigns the request id that every response and event of the turn
 // echoes back.
-func acceptChatReq(req *v1.ChatReq) *v1.ChatReq {
-	chatReq := proto.Clone(req).(*v1.ChatReq)
+func acceptChatRequest(req *v1.ChatRequest) *v1.ChatRequest {
+	chatReq := proto.Clone(req).(*v1.ChatRequest)
 	if chatReq.Id == "" {
 		chatReq.Id = uuid.NewString()
 	}
 	return chatReq
 }
 
-func (s *RouterService) Chat(ctx context.Context, req *v1.ChatReq) (resp *v1.ChatResp, err error) {
+func (s *RouterService) Chat(ctx context.Context, req *v1.ChatRequest) (resp *v1.ChatResponse, err error) {
 	if claims, ok := jwt.FromContext(ctx); ok {
 		sub, _ := claims.GetSubject()
 		s.log.InfoContext(ctx, "authenticated with JWT", "subject", sub)
 	}
 
-	resp, err = s.chat.Chat(ctx, acceptChatReq(req))
+	resp, err = s.chat.Chat(ctx, acceptChatRequest(req))
 	return
 }
 
@@ -54,12 +54,12 @@ func (w *wrappedChatStreamServer) Send(event *entity.ChatEvent) error {
 	return w.srv.Send(event)
 }
 
-func (s *RouterService) ChatStream(req *v1.ChatReq, srv v1.Chat_ChatStreamServer) error {
+func (s *RouterService) ChatStream(req *v1.ChatRequest, srv v1.Chat_ChatStreamServer) error {
 	if claims, ok := jwt.FromContext(srv.Context()); ok {
 		sub, _ := claims.GetSubject()
 		s.log.InfoContext(srv.Context(), "authenticated with JWT", "subject", sub)
 	}
 
-	err := s.chat.ChatStream(srv.Context(), acceptChatReq(req), &wrappedChatStreamServer{srv})
+	err := s.chat.ChatStream(srv.Context(), acceptChatRequest(req), &wrappedChatStreamServer{srv})
 	return err
 }

@@ -40,6 +40,7 @@ type ContentPhase int32
 
 const (
 	// Regular content (default).
+	// buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
 	ContentPhase_CONTENT_PHASE_NORMAL ContentPhase = 0
 	// The final answer, when the upstream distinguishes it.
 	ContentPhase_CONTENT_PHASE_OUTCOME ContentPhase = 1

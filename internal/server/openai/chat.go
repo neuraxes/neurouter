@@ -40,7 +40,7 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 		return err
 	}
 
-	req := convertChatReqFromOpenAIChat(&openAIReq)
+	req := convertChatRequestFromOpenAIChat(&openAIReq)
 
 	if gjson.GetBytes(requestBody, "stream").Bool() {
 		httpCtx.Response().Header().Set("Content-Type", "text/event-stream")
@@ -56,7 +56,7 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 			if s.otelLogger != nil {
 				streamServer.buffer = &bytes.Buffer{}
 			}
-			err := s.chatSvc.ChatStream(req.(*v1.ChatReq), streamServer)
+			err := s.chatSvc.ChatStream(req.(*v1.ChatRequest), streamServer)
 			if err == nil {
 				err = streamServer.sendDone()
 			}
@@ -73,7 +73,7 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 	middleware := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 		eventCtx = ctx
 		util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
-		return s.chatSvc.Chat(ctx, req.(*v1.ChatReq))
+		return s.chatSvc.Chat(ctx, req.(*v1.ChatRequest))
 	})
 
 	resp, err := middleware(httpCtx, req)
@@ -81,7 +81,7 @@ func (s *Server) handleChatCompletion(httpCtx http.Context) (err error) {
 		return err
 	}
 
-	respBytes, err := json.Marshal(convertChatRespToOpenAIChat(resp.(*v1.ChatResp)))
+	respBytes, err := json.Marshal(convertChatResponseToOpenAIChat(resp.(*v1.ChatResponse)))
 	if err != nil {
 		return err
 	}

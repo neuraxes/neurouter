@@ -68,7 +68,7 @@ func responsesStreamToolCallChatEvents() []*v1.ChatEvent {
 		id.of(v1.NewContentDeltaToolInputTextEvent(2, "\"}")),
 		id.of(v1.NewContentStopEvent(2)),
 		id.withUsage(
-			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE),
+			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE),
 			&v1.Usage{
 				InputTokens:     139,
 				OutputTokens:    126,
@@ -85,7 +85,7 @@ var ResponsesStreamToolCall = &Fixture{
 	Request:  responsesStreamToolCallRequest,
 	Response: responsesStreamToolCallResponse,
 	Stream:   true,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "responses_stream_tool_call",
 		Model: "openai/gpt-5-mini",
 		Config: &v1.GenerationConfig{
@@ -94,13 +94,13 @@ var ResponsesStreamToolCall = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. First emit exactly one short sentence, then call the weather tool exactly once.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("First say exactly: Preparing the weather lookup. Then call get_weather for Shanghai on 2025-11-10 using metric units. Do not provide the weather from memory.")},
 				},

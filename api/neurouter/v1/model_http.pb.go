@@ -20,7 +20,7 @@ const _ = http.SupportPackageIsVersion3
 const OperationModelListModel = "/neurouter.v1.Model/ListModel"
 
 type ModelHTTPServer interface {
-	ListModel(context.Context, *ListModelReq) (*ListModelResp, error)
+	ListModel(context.Context, *ListModelRequest) (*ListModelResponse, error)
 }
 
 func RegisterModelHTTPServer(s *http.Server, srv ModelHTTPServer) {
@@ -30,25 +30,25 @@ func RegisterModelHTTPServer(s *http.Server, srv ModelHTTPServer) {
 
 func _Model_ListModel0_HTTP_Handler(srv ModelHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in ListModelReq
+		var in ListModelRequest
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationModelListModel)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.ListModel(ctx, req.(*ListModelReq))
+			return srv.ListModel(ctx, req.(*ListModelRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*ListModelResp)
+		reply := out.(*ListModelResponse)
 		return ctx.Result(200, reply)
 	}
 }
 
 type ModelHTTPClient interface {
-	ListModel(ctx context.Context, req *ListModelReq, opts ...http.CallOption) (rsp *ListModelResp, err error)
+	ListModel(ctx context.Context, req *ListModelRequest, opts ...http.CallOption) (rsp *ListModelResponse, err error)
 }
 
 type ModelHTTPClientImpl struct {
@@ -59,8 +59,8 @@ func NewModelHTTPClient(client *http.Client) ModelHTTPClient {
 	return &ModelHTTPClientImpl{client}
 }
 
-func (c *ModelHTTPClientImpl) ListModel(ctx context.Context, in *ListModelReq, opts ...http.CallOption) (*ListModelResp, error) {
-	var out ListModelResp
+func (c *ModelHTTPClientImpl) ListModel(ctx context.Context, in *ListModelRequest, opts ...http.CallOption) (*ListModelResponse, error) {
+	var out ListModelResponse
 	pattern := "/v1/models"
 	path := http.BuildPath(pattern, in, http.WithQueryParams())
 	opts = append([]http.CallOption{

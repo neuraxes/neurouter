@@ -62,7 +62,7 @@ func (m *chatModel) Close() {
 // estimateTokens provides a rough token estimate for a chat request.
 // Uses ~4 characters per token heuristic for text.
 // Images are assigned a fixed token count of 768 tokens per image.
-func estimateTokens(req *v1.ChatReq) int64 {
+func estimateTokens(req *v1.ChatRequest) int64 {
 	totalChars := 0
 	imageCount := 0
 
@@ -100,7 +100,7 @@ func estimateTokens(req *v1.ChatReq) int64 {
 	return textTokens + imageTokens
 }
 
-func (uc *UseCaseImpl) ElectForChat(ctx context.Context, req *v1.ChatReq) (chat.Model, error) {
+func (uc *UseCaseImpl) ElectForChat(ctx context.Context, req *v1.ChatRequest) (chat.Model, error) {
 	estimatedTokens := estimateTokens(req) // Estimate input tokens roughly: ~4 chars per token
 	estimatedTokens += 512                 // Add some buffer for output tokens
 

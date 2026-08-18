@@ -32,7 +32,7 @@ var ResponsesReasoning = &Fixture{
 	Name:     "responses_reasoning",
 	Request:  responsesReasoningRequest,
 	Response: responsesReasoningResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "responses_reasoning",
 		Model: "openai/gpt-5-mini",
 		Config: &v1.GenerationConfig{
@@ -41,26 +41,26 @@ var ResponsesReasoning = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Solve the routing calculation carefully, then give a concise final answer.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("An LLM router estimates one-retry latency as L * (1 + e), where L is wait time in milliseconds and e is error rate. Compare OpenAI (L=1800, e=0.12), Anthropic (L=120, e=0.01), and Gemini (L=400, e=0.04). Calculate all three values and select the upstream with the lowest expected latency.")},
 				},
 			},
 		},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "responses_reasoning",
 		Model:  "openai/gpt-5-mini",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1785502365-TGaPDCczhSq5BUQNfGH5",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Id:    "rs_031a7050398ad760016a6c9a9e0234819d88eff125cf47f68f",

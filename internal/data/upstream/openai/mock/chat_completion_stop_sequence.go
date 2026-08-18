@@ -31,7 +31,7 @@ var StopSequence = &Fixture{
 	Name:     "stop_sequence",
 	Request:  stopSequenceRequest,
 	Response: stopSequenceResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "stop_sequence",
 		Model: "openai/gpt-4o",
 		Config: &v1.GenerationConfig{
@@ -41,26 +41,26 @@ var StopSequence = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Follow formatting instructions exactly and output nothing else.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Output the digits one through nine separated by single spaces, exactly like this: 1 2 3 4 5 6 7 8 9. Output only those digits and spaces, with no other words.")},
 				},
 			},
 		},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "stop_sequence",
 		Model:  "openai/gpt-4o",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782736296-MRi1skRx6CDE9SAebYi6",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("1 2 3 4 ")},
 			},

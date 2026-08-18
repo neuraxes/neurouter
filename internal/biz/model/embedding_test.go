@@ -20,19 +20,19 @@ import (
 func TestEstimateEmbeddingTokens(t *testing.T) {
 	Convey("Test estimateEmbeddingTokens", t, func() {
 		Convey("with nil contents should return 0", func() {
-			req := &v1.EmbedReq{}
+			req := &v1.EmbedRequest{}
 			So(estimateEmbeddingTokens(req), ShouldEqual, 0)
 		})
 
 		Convey("with empty contents should return 0", func() {
-			req := &v1.EmbedReq{
+			req := &v1.EmbedRequest{
 				Contents: []*v1.Content{},
 			}
 			So(estimateEmbeddingTokens(req), ShouldEqual, 0)
 		})
 
 		Convey("with text content should estimate tokens", func() {
-			req := &v1.EmbedReq{
+			req := &v1.EmbedRequest{
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Hello, world!")},
 				},
@@ -41,7 +41,7 @@ func TestEstimateEmbeddingTokens(t *testing.T) {
 		})
 
 		Convey("with multiple text contents should sum all text", func() {
-			req := &v1.EmbedReq{
+			req := &v1.EmbedRequest{
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Hello")},
 					{Content: v1.NewTextContent("World!!!")},
@@ -51,7 +51,7 @@ func TestEstimateEmbeddingTokens(t *testing.T) {
 		})
 
 		Convey("with non-text content should ignore it", func() {
-			req := &v1.EmbedReq{
+			req := &v1.EmbedRequest{
 				Contents: []*v1.Content{
 					{Content: &v1.Content_Image{Image: &v1.Image{}}},
 				},
@@ -246,7 +246,7 @@ func TestElectForEmbedding(t *testing.T) {
 				models: nil,
 				log:    slog.Default(),
 			}
-			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "test"})
+			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedRequest{Model: "test"})
 			So(err, ShouldNotBeNil)
 			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
@@ -267,7 +267,7 @@ func TestElectForEmbedding(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			result, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "text-embedding-ada"})
+			result, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedRequest{Model: "text-embedding-ada"})
 			So(err, ShouldBeNil)
 			So(result, ShouldNotBeNil)
 			defer result.Close()
@@ -289,7 +289,7 @@ func TestElectForEmbedding(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			req := &v1.EmbedReq{Model: "nonexistent"}
+			req := &v1.EmbedRequest{Model: "nonexistent"}
 			result, err := uc.ElectForEmbedding(context.Background(), req)
 			So(err, ShouldBeNil)
 			So(result, ShouldNotBeNil)
@@ -312,7 +312,7 @@ func TestElectForEmbedding(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "chat-model"})
+			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedRequest{Model: "chat-model"})
 			So(err, ShouldNotBeNil)
 			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
@@ -333,7 +333,7 @@ func TestElectForEmbedding(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "no-repo"})
+			_, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedRequest{Model: "no-repo"})
 			So(err, ShouldNotBeNil)
 			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
@@ -355,7 +355,7 @@ func TestElectForEmbedding(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			req := &v1.EmbedReq{Model: "my-embed"}
+			req := &v1.EmbedRequest{Model: "my-embed"}
 			result, err := uc.ElectForEmbedding(context.Background(), req)
 			So(err, ShouldBeNil)
 			defer result.Close()
@@ -381,14 +381,14 @@ func TestElectForEmbedding(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			result1, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "ada"})
+			result1, err := uc.ElectForEmbedding(context.Background(), &v1.EmbedRequest{Model: "ada"})
 			So(err, ShouldBeNil)
 
 			// Second election should wait (concurrency exhausted but waitable)
 			done := make(chan struct{})
 			var model embedding.Model
 			go func() {
-				model, err = uc.ElectForEmbedding(context.Background(), &v1.EmbedReq{Model: "ada"})
+				model, err = uc.ElectForEmbedding(context.Background(), &v1.EmbedRequest{Model: "ada"})
 				close(done)
 			}()
 

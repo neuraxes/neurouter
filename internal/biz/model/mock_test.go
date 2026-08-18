@@ -50,11 +50,11 @@ func (v *mockConfigValue) Scan(dst any) error {
 // mockChatRepo implements repository.ChatRepo for testing.
 type mockChatRepo struct{}
 
-func (m *mockChatRepo) Chat(context.Context, *entity.ChatReq) (*entity.ChatResp, error) {
+func (m *mockChatRepo) Chat(context.Context, *entity.ChatRequest) (*entity.ChatResponse, error) {
 	return nil, nil
 }
 
-func (m *mockChatRepo) ChatStream(context.Context, *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
+func (m *mockChatRepo) ChatStream(context.Context, *entity.ChatRequest) iter.Seq2[*entity.ChatEvent, error] {
 	return nil
 }
 
@@ -63,7 +63,7 @@ var _ repository.ChatRepo = (*mockChatRepo)(nil)
 // mockEmbeddingRepo implements repository.EmbeddingRepo for testing.
 type mockEmbeddingRepo struct{}
 
-func (m *mockEmbeddingRepo) Embed(context.Context, *entity.EmbedReq) (*entity.EmbedResp, error) {
+func (m *mockEmbeddingRepo) Embed(context.Context, *entity.EmbedRequest) (*entity.EmbedResponse, error) {
 	return nil, nil
 }
 

@@ -20,7 +20,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func convertEmbeddingReqFromOpenAI(req *openai.EmbeddingNewParams) *v1.EmbedReq {
+func convertEmbeddingReqFromOpenAI(req *openai.EmbeddingNewParams) *v1.EmbedRequest {
 	var contents []*v1.Content
 
 	if req.Input.OfString.Valid() {
@@ -33,13 +33,13 @@ func convertEmbeddingReqFromOpenAI(req *openai.EmbeddingNewParams) *v1.EmbedReq 
 		})
 	}
 
-	return &v1.EmbedReq{
+	return &v1.EmbedRequest{
 		Model:    string(req.Model),
 		Contents: contents,
 	}
 }
 
-func convertEmbeddingRespToOpenAI(resp *v1.EmbedResp) *embeddingResponse {
+func convertEmbeddingRespToOpenAI(resp *v1.EmbedResponse) *embeddingResponse {
 	embedding := make([]float64, len(resp.Embedding))
 	for i, v := range resp.Embedding {
 		embedding[i] = float64(v)

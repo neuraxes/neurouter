@@ -41,8 +41,12 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChatClient interface {
-	Chat(ctx context.Context, in *ChatReq, opts ...grpc.CallOption) (*ChatResp, error)
-	ChatStream(ctx context.Context, in *ChatReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatEvent], error)
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	Chat(ctx context.Context, in *ChatRequest, opts ...grpc.CallOption) (*ChatResponse, error)
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	// buf:lint:ignore RPC_REQUEST_STANDARD_NAME
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	ChatStream(ctx context.Context, in *ChatRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatEvent], error)
 }
 
 type chatClient struct {
@@ -53,9 +57,9 @@ func NewChatClient(cc grpc.ClientConnInterface) ChatClient {
 	return &chatClient{cc}
 }
 
-func (c *chatClient) Chat(ctx context.Context, in *ChatReq, opts ...grpc.CallOption) (*ChatResp, error) {
+func (c *chatClient) Chat(ctx context.Context, in *ChatRequest, opts ...grpc.CallOption) (*ChatResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ChatResp)
+	out := new(ChatResponse)
 	err := c.cc.Invoke(ctx, Chat_Chat_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -63,13 +67,13 @@ func (c *chatClient) Chat(ctx context.Context, in *ChatReq, opts ...grpc.CallOpt
 	return out, nil
 }
 
-func (c *chatClient) ChatStream(ctx context.Context, in *ChatReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatEvent], error) {
+func (c *chatClient) ChatStream(ctx context.Context, in *ChatRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatEvent], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &Chat_ServiceDesc.Streams[0], Chat_ChatStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[ChatReq, ChatEvent]{ClientStream: stream}
+	x := &grpc.GenericClientStream[ChatRequest, ChatEvent]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -86,8 +90,12 @@ type Chat_ChatStreamClient = grpc.ServerStreamingClient[ChatEvent]
 // All implementations must embed UnimplementedChatServer
 // for forward compatibility.
 type ChatServer interface {
-	Chat(context.Context, *ChatReq) (*ChatResp, error)
-	ChatStream(*ChatReq, grpc.ServerStreamingServer[ChatEvent]) error
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	Chat(context.Context, *ChatRequest) (*ChatResponse, error)
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	// buf:lint:ignore RPC_REQUEST_STANDARD_NAME
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	ChatStream(*ChatRequest, grpc.ServerStreamingServer[ChatEvent]) error
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -98,10 +106,10 @@ type ChatServer interface {
 // pointer dereference when methods are called.
 type UnimplementedChatServer struct{}
 
-func (UnimplementedChatServer) Chat(context.Context, *ChatReq) (*ChatResp, error) {
+func (UnimplementedChatServer) Chat(context.Context, *ChatRequest) (*ChatResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Chat not implemented")
 }
-func (UnimplementedChatServer) ChatStream(*ChatReq, grpc.ServerStreamingServer[ChatEvent]) error {
+func (UnimplementedChatServer) ChatStream(*ChatRequest, grpc.ServerStreamingServer[ChatEvent]) error {
 	return status.Error(codes.Unimplemented, "method ChatStream not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
@@ -126,7 +134,7 @@ func RegisterChatServer(s grpc.ServiceRegistrar, srv ChatServer) {
 }
 
 func _Chat_Chat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ChatReq)
+	in := new(ChatRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -138,17 +146,17 @@ func _Chat_Chat_Handler(srv interface{}, ctx context.Context, dec func(interface
 		FullMethod: Chat_Chat_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChatServer).Chat(ctx, req.(*ChatReq))
+		return srv.(ChatServer).Chat(ctx, req.(*ChatRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Chat_ChatStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ChatReq)
+	m := new(ChatRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ChatServer).ChatStream(m, &grpc.GenericServerStream[ChatReq, ChatEvent]{ServerStream: stream})
+	return srv.(ChatServer).ChatStream(m, &grpc.GenericServerStream[ChatRequest, ChatEvent]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.

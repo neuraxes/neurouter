@@ -56,7 +56,7 @@ func newNeurouterUpstream(config *conf.NeurouterConfig, logger *slog.Logger) (re
 	}, nil
 }
 
-func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (*entity.ChatResp, error) {
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatRequest) (*entity.ChatResponse, error) {
 	return r.chatClient.Chat(ctx, req)
 }
 
@@ -83,7 +83,7 @@ func (c *neurouterChatStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error] 
 	}
 }
 
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatRequest) iter.Seq2[*entity.ChatEvent, error] {
 	stream, err := r.chatClient.ChatStream(ctx, req)
 	if err != nil {
 		return func(yield func(*entity.ChatEvent, error) bool) {
@@ -98,6 +98,6 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq
 	return client.AsSeq()
 }
 
-func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (*entity.EmbedResp, error) {
+func (r *upstream) Embed(ctx context.Context, req *entity.EmbedRequest) (*entity.EmbedResponse, error) {
 	return r.embeddingClient.Embed(ctx, req)
 }

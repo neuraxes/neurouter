@@ -24,9 +24,9 @@ import (
 	"github.com/neuraxes/neurouter/internal/data/upstream/openai/mock"
 )
 
-func TestConvertChatReqFromOpenAIResponses(t *testing.T) {
+func TestConvertChatRequestFromOpenAIResponses(t *testing.T) {
 	Convey("Given an OpenAI prompt cache key", t, func() {
-		actual, err := convertChatReqFromOpenAIResponses([]byte(`{
+		actual, err := convertChatRequestFromOpenAIResponses([]byte(`{
 			"model": "gpt-5",
 			"prompt_cache_key": "session-1",
 			"input": "hello"
@@ -41,10 +41,10 @@ func TestConvertChatReqFromOpenAIResponses(t *testing.T) {
 	Convey("Given the Responses API request fixtures", t, func() {
 		for _, fixture := range mock.ResponsesFixtures {
 			Convey("When converting the "+fixture.Name+" request", func() {
-				actual, err := convertChatReqFromOpenAIResponses(fixture.Request)
+				actual, err := convertChatRequestFromOpenAIResponses(fixture.Request)
 				So(err, ShouldBeNil)
 
-				expected := proto.Clone(fixture.ChatReq).(*v1.ChatReq)
+				expected := proto.Clone(fixture.ChatRequest).(*v1.ChatRequest)
 				expected.Id = ""
 				So(proto.Equal(actual, expected), ShouldBeTrue)
 			})
@@ -52,9 +52,9 @@ func TestConvertChatReqFromOpenAIResponses(t *testing.T) {
 	})
 }
 
-func TestConvertChatReqFromOpenAIResponsesReplayedOutput(t *testing.T) {
+func TestConvertChatRequestFromOpenAIResponsesReplayedOutput(t *testing.T) {
 	Convey("Given a history that replays the output items of a previous response", t, func() {
-		req, err := convertChatReqFromOpenAIResponses([]byte(`{
+		req, err := convertChatRequestFromOpenAIResponses([]byte(`{
 			"model": "gpt-5",
 			"input": [
 				{"type":"message","role":"user","content":[{"type":"input_text","text":"first question"}]},
@@ -66,16 +66,16 @@ func TestConvertChatReqFromOpenAIResponsesReplayedOutput(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		Convey("Then every turn survives, including the assistant output_text", func() {
-			So(proto.Equal(req, &v1.ChatReq{
+			So(proto.Equal(req, &v1.ChatRequest{
 				Model:  "gpt-5",
 				Config: &v1.GenerationConfig{},
 				Messages: []*v1.Message{
 					{
-						Role:     v1.Role_USER,
+						Role:     v1.Role_ROLE_USER,
 						Contents: []*v1.Content{{Content: v1.NewTextContent("first question")}},
 					},
 					{
-						Role: v1.Role_MODEL,
+						Role: v1.Role_ROLE_MODEL,
 						Contents: []*v1.Content{
 							{
 								Id:      "rs-1",
@@ -94,7 +94,7 @@ func TestConvertChatReqFromOpenAIResponsesReplayedOutput(t *testing.T) {
 						},
 					},
 					{
-						Role:     v1.Role_USER,
+						Role:     v1.Role_ROLE_USER,
 						Contents: []*v1.Content{{Content: v1.NewTextContent("second question")}},
 					},
 				},
@@ -103,7 +103,7 @@ func TestConvertChatReqFromOpenAIResponsesReplayedOutput(t *testing.T) {
 	})
 
 	Convey("Given a tool result sent as a list of content parts", t, func() {
-		req, err := convertChatReqFromOpenAIResponses([]byte(`{
+		req, err := convertChatRequestFromOpenAIResponses([]byte(`{
 			"model": "gpt-5",
 			"input": [
 				{"type":"function_call_output","call_id":"call-1","output":[{"type":"output_text","text":"tool result"}]}
@@ -119,7 +119,7 @@ func TestConvertChatReqFromOpenAIResponsesReplayedOutput(t *testing.T) {
 	})
 
 	Convey("Given items and content parts that are not supported", t, func() {
-		req, err := convertChatReqFromOpenAIResponses([]byte(`{
+		req, err := convertChatRequestFromOpenAIResponses([]byte(`{
 			"model": "gpt-5",
 			"input": [
 				{"type":"web_search_call","id":"ws-1","status":"completed"},
@@ -130,32 +130,32 @@ func TestConvertChatReqFromOpenAIResponsesReplayedOutput(t *testing.T) {
 
 		Convey("Then they are skipped without discarding the rest of the history", func() {
 			So(req.Messages, ShouldHaveLength, 1)
-			So(req.Messages[0].Role, ShouldEqual, v1.Role_MODEL)
+			So(req.Messages[0].Role, ShouldEqual, v1.Role_ROLE_MODEL)
 			So(req.Messages[0].Contents[0].GetText().GetText(), ShouldEqual, "answer")
 		})
 	})
 
 	Convey("Given a string input", t, func() {
-		req, err := convertChatReqFromOpenAIResponses([]byte(`{"model":"gpt-5","input":"hello"}`))
+		req, err := convertChatRequestFromOpenAIResponses([]byte(`{"model":"gpt-5","input":"hello"}`))
 		So(err, ShouldBeNil)
 
 		Convey("Then it becomes a single user message", func() {
 			So(req.Messages, ShouldHaveLength, 1)
-			So(req.Messages[0].Role, ShouldEqual, v1.Role_USER)
+			So(req.Messages[0].Role, ShouldEqual, v1.Role_ROLE_USER)
 			So(req.Messages[0].Contents[0].GetText().GetText(), ShouldEqual, "hello")
 		})
 	})
 }
 
-func TestConvertChatRespToOpenAIResponses(t *testing.T) {
+func TestConvertChatResponseToOpenAIResponses(t *testing.T) {
 	Convey("Given a native response containing every supported output item", t, func() {
-		resp := &v1.ChatResp{
+		resp := &v1.ChatResponse{
 			Id:     "request-1",
 			Model:  "gpt-5",
-			Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
+			Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
 			Message: &v1.Message{
 				Id:   "resp-1",
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{
 						Id:      "rs-1",
@@ -192,7 +192,7 @@ func TestConvertChatRespToOpenAIResponses(t *testing.T) {
 			}},
 		}
 
-		result := convertChatRespToOpenAIResponses(resp)
+		result := convertChatResponseToOpenAIResponses(resp)
 
 		Convey("Then the response and output items retain their order and identities", func() {
 			So(result.ID, ShouldEqual, "resp-1")
@@ -339,37 +339,37 @@ func TestConvertContentsToOpenAIResponses(t *testing.T) {
 
 func TestConvertStatusToOpenAIResponses(t *testing.T) {
 	Convey("Given native terminal statuses", t, func() {
-		status, incomplete, responseError := convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_IN_PROGRESS)
+		status, incomplete, responseError := convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_STATUS_IN_PROGRESS)
 		So(status, ShouldEqual, "failed")
 		So(incomplete, ShouldBeNil)
 		So(responseError, ShouldNotBeNil)
 
-		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_COMPLETED)
+		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_STATUS_COMPLETED)
 		So(status, ShouldEqual, "completed")
 		So(incomplete, ShouldBeNil)
 		So(responseError, ShouldBeNil)
 
-		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_FAILED)
+		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_STATUS_FAILED)
 		So(status, ShouldEqual, "failed")
 		So(incomplete, ShouldBeNil)
 		So(responseError, ShouldNotBeNil)
 
-		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_REFUSED)
+		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_STATUS_REFUSED)
 		So(status, ShouldEqual, "incomplete")
 		So(incomplete.Reason, ShouldEqual, "content_filter")
 		So(responseError, ShouldBeNil)
 
-		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_CANCELLED)
+		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_STATUS_CANCELLED)
 		So(status, ShouldEqual, "cancelled")
 		So(incomplete, ShouldBeNil)
 		So(responseError, ShouldNotBeNil)
 
-		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_PENDING_TOOL_USE)
+		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
 		So(status, ShouldEqual, "completed")
 		So(incomplete, ShouldBeNil)
 		So(responseError, ShouldBeNil)
 
-		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
+		status, incomplete, responseError = convertStatusToOpenAIResponses(v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT)
 		So(status, ShouldEqual, "incomplete")
 		So(incomplete.Reason, ShouldEqual, "max_output_tokens")
 		So(responseError, ShouldBeNil)

@@ -22,7 +22,7 @@ import (
 )
 
 type UseCase interface {
-	Embed(ctx context.Context, req *entity.EmbedReq) (*entity.EmbedResp, error)
+	Embed(ctx context.Context, req *entity.EmbedRequest) (*entity.EmbedResponse, error)
 }
 
 type useCase struct {
@@ -39,7 +39,7 @@ func NewUseCase(elector Elector, logger *slog.Logger) UseCase {
 }
 
 // Embed creates embeddings for the given contents using the specified model.
-func (uc *useCase) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entity.EmbedResp, err error) {
+func (uc *useCase) Embed(ctx context.Context, req *entity.EmbedRequest) (resp *entity.EmbedResponse, err error) {
 	model, err := uc.elector.ElectForEmbedding(ctx, req)
 	if err != nil {
 		return

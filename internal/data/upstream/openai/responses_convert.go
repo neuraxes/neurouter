@@ -25,7 +25,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 )
 
-func (r *upstream) convertRequestToOpenAIResponses(req *entity.ChatReq) responses.ResponseNewParams {
+func (r *upstream) convertRequestToOpenAIResponses(req *entity.ChatRequest) responses.ResponseNewParams {
 	openAIReq := responses.ResponseNewParams{
 		Model:    openaishared.ResponsesModel(req.Model),
 		Store:    openai.Opt(false),
@@ -124,7 +124,7 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 			return
 		}
 		var content responses.EasyInputMessageContentUnionParam
-		if message.Role == v1.Role_MODEL {
+		if message.Role == v1.Role_ROLE_MODEL {
 			var text string
 			for _, part := range messageContent {
 				if part.OfInputText != nil {
@@ -197,7 +197,7 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 
 		case *v1.Content_Image:
 			openReasoningItemWithoutID = nil
-			if message.Role == v1.Role_MODEL {
+			if message.Role == v1.Role_ROLE_MODEL {
 				r.log.Error("unsupported image in model message")
 				continue
 			}
@@ -245,11 +245,11 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 
 func convertRoleToOpenAIResponses(role v1.Role) (responses.EasyInputMessageRole, bool) {
 	switch role {
-	case v1.Role_SYSTEM:
+	case v1.Role_ROLE_SYSTEM:
 		return responses.EasyInputMessageRoleSystem, true
-	case v1.Role_USER:
+	case v1.Role_ROLE_USER:
 		return responses.EasyInputMessageRoleUser, true
-	case v1.Role_MODEL:
+	case v1.Role_ROLE_MODEL:
 		return responses.EasyInputMessageRoleAssistant, true
 	default:
 		return "", false
@@ -257,21 +257,21 @@ func convertRoleToOpenAIResponses(role v1.Role) (responses.EasyInputMessageRole,
 }
 
 func convertContentPhaseToOpenAIResponses(role v1.Role, phase v1.ContentPhase) responses.EasyInputMessagePhase {
-	if role == v1.Role_MODEL && phase == v1.ContentPhase_CONTENT_PHASE_OUTCOME {
+	if role == v1.Role_ROLE_MODEL && phase == v1.ContentPhase_CONTENT_PHASE_OUTCOME {
 		return responses.EasyInputMessagePhaseFinalAnswer
 	}
 	return ""
 }
 
-func (r *upstream) convertResponseFromOpenAIResponses(req *entity.ChatReq, openAIResp *responses.Response) *entity.ChatResp {
-	resp := &entity.ChatResp{
+func (r *upstream) convertResponseFromOpenAIResponses(req *entity.ChatRequest, openAIResp *responses.Response) *entity.ChatResponse {
+	resp := &entity.ChatResponse{
 		Id:         req.GetId(),
 		Model:      string(openAIResp.Model),
 		Status:     convertStatusFromOpenAIResponses(openAIResp),
 		Statistics: convertStatisticsFromOpenAIResponses(&openAIResp.Usage),
 		Message: &v1.Message{
 			Id:   openAIResp.ID,
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 		},
 	}
 
@@ -349,32 +349,32 @@ func convertMessageItemFromOpenAIResponses(item responses.ResponseOutputMessage)
 
 func convertStatusFromOpenAIResponses(resp *responses.Response) v1.ChatStatus {
 	if resp == nil {
-		return v1.ChatStatus_CHAT_IN_PROGRESS
+		return v1.ChatStatus_CHAT_STATUS_IN_PROGRESS
 	}
 
 	switch resp.Status {
 	case responses.ResponseStatusCompleted:
 		for _, item := range resp.Output {
 			if item.Type == "function_call" {
-				return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+				return v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE
 			}
 		}
-		return v1.ChatStatus_CHAT_COMPLETED
+		return v1.ChatStatus_CHAT_STATUS_COMPLETED
 	case responses.ResponseStatusIncomplete:
 		switch resp.IncompleteDetails.Reason {
 		case "max_output_tokens":
-			return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+			return v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT
 		case "content_filter":
-			return v1.ChatStatus_CHAT_REFUSED
+			return v1.ChatStatus_CHAT_STATUS_REFUSED
 		default:
-			return v1.ChatStatus_CHAT_FAILED
+			return v1.ChatStatus_CHAT_STATUS_FAILED
 		}
 	case responses.ResponseStatusFailed:
-		return v1.ChatStatus_CHAT_FAILED
+		return v1.ChatStatus_CHAT_STATUS_FAILED
 	case responses.ResponseStatusCancelled:
-		return v1.ChatStatus_CHAT_CANCELLED
+		return v1.ChatStatus_CHAT_STATUS_CANCELLED
 	default:
-		return v1.ChatStatus_CHAT_IN_PROGRESS
+		return v1.ChatStatus_CHAT_STATUS_IN_PROGRESS
 	}
 }
 
@@ -509,8 +509,8 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponses(
 	case "response.completed", "response.incomplete", "response.failed":
 		c.closeOpenBlock(&events)
 		status := convertStatusFromOpenAIResponses(&event.Response)
-		if status == v1.ChatStatus_CHAT_COMPLETED && c.hasFunctionCall {
-			status = v1.ChatStatus_CHAT_PENDING_TOOL_USE
+		if status == v1.ChatStatus_CHAT_STATUS_COMPLETED && c.hasFunctionCall {
+			status = v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE
 		}
 		stop := c.newChatEvent(v1.NewMessageStopEvent(status))
 		if statistics := convertStatisticsFromOpenAIResponses(&event.Response.Usage); statistics != nil {
@@ -535,7 +535,7 @@ func (c *openAIResponseStreamClient) finish() []*entity.ChatEvent {
 	// A well-formed Responses stream always carries a terminal response event.
 	// Reaching EOF first means the response was truncated, regardless of the
 	// last in-progress status observed in the stream.
-	events = append(events, c.newChatEvent(v1.NewMessageStopEvent(v1.ChatStatus_CHAT_FAILED)))
+	events = append(events, c.newChatEvent(v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_FAILED)))
 	c.stopEmitted = true
 	return events
 }

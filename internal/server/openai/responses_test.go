@@ -30,26 +30,26 @@ import (
 
 type responsesTestChatServer struct {
 	v1.ChatServer
-	chatFunc       func(context.Context, *v1.ChatReq) (*v1.ChatResp, error)
-	chatStreamFunc func(*v1.ChatReq, v1.Chat_ChatStreamServer) error
+	chatFunc       func(context.Context, *v1.ChatRequest) (*v1.ChatResponse, error)
+	chatStreamFunc func(*v1.ChatRequest, v1.Chat_ChatStreamServer) error
 }
 
-func (s *responsesTestChatServer) Chat(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
+func (s *responsesTestChatServer) Chat(ctx context.Context, req *v1.ChatRequest) (*v1.ChatResponse, error) {
 	return s.chatFunc(ctx, req)
 }
 
-func (s *responsesTestChatServer) ChatStream(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+func (s *responsesTestChatServer) ChatStream(req *v1.ChatRequest, stream v1.Chat_ChatStreamServer) error {
 	return s.chatStreamFunc(req, stream)
 }
 
 func TestHandleResponses(t *testing.T) {
 	Convey("Given a non-stream Responses request", t, func() {
 		server := &Server{chatSvc: &responsesTestChatServer{
-			chatFunc: func(_ context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
-				expected := proto.Clone(mock.ResponsesText.ChatReq).(*v1.ChatReq)
+			chatFunc: func(_ context.Context, req *v1.ChatRequest) (*v1.ChatResponse, error) {
+				expected := proto.Clone(mock.ResponsesText.ChatRequest).(*v1.ChatRequest)
 				expected.Id = ""
 				So(proto.Equal(req, expected), ShouldBeTrue)
-				return mock.ResponsesText.ChatResp, nil
+				return mock.ResponsesText.ChatResponse, nil
 			},
 		}}
 		req, err := http.NewRequest(http.MethodPost, "/v1/responses", bytes.NewReader(mock.ResponsesText.Request))
@@ -63,7 +63,7 @@ func TestHandleResponses(t *testing.T) {
 			So(httpCtx.headers.Get("Content-Type"), ShouldEqual, "application/json")
 			var response responsesResponse
 			So(json.Unmarshal(httpCtx.body.Bytes(), &response), ShouldBeNil)
-			So(response.ID, ShouldEqual, mock.ResponsesText.ChatResp.Message.Id)
+			So(response.ID, ShouldEqual, mock.ResponsesText.ChatResponse.Message.Id)
 			So(response.Object, ShouldEqual, "response")
 			So(response.Status, ShouldEqual, "completed")
 			So(response.Output, ShouldHaveLength, 2)
@@ -73,7 +73,7 @@ func TestHandleResponses(t *testing.T) {
 	Convey("Given a streaming Responses request", t, func() {
 		requestBody := []byte(`{"model":"gpt-5","input":"hello","stream":true}`)
 		server := &Server{chatSvc: &responsesTestChatServer{
-			chatStreamFunc: func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+			chatStreamFunc: func(req *v1.ChatRequest, stream v1.Chat_ChatStreamServer) error {
 				So(req.Model, ShouldEqual, "gpt-5")
 				So(req.Messages, ShouldHaveLength, 1)
 				for _, event := range []*v1.ChatEvent{
@@ -81,7 +81,7 @@ func TestHandleResponses(t *testing.T) {
 					v1.NewChatEvent("request-1", v1.NewContentStartTextEvent(0, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
 					v1.NewChatEvent("request-1", v1.NewContentDeltaTextEvent(0, "hello")),
 					v1.NewChatEvent("request-1", v1.NewContentStopEvent(0)),
-					v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_COMPLETED)),
+					v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED)),
 				} {
 					if err := stream.Send(event); err != nil {
 						return err

@@ -234,7 +234,7 @@ func TestConvertSystemMessageFromAnthropic(t *testing.T) {
 
 			Convey("Then a system message should be created with all texts", func() {
 				So(result, ShouldNotBeNil)
-				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 2)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "You are a helpful assistant.")
 				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Be concise.")
@@ -256,7 +256,7 @@ func TestConvertMessageFromAnthropicParam(t *testing.T) {
 			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a USER message with text", func() {
-				So(result.Role, ShouldEqual, v1.Role_USER)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_USER)
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Hello!")
 			})
@@ -272,7 +272,7 @@ func TestConvertMessageFromAnthropicParam(t *testing.T) {
 			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a MODEL message", func() {
-				So(result.Role, ShouldEqual, v1.Role_MODEL)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "I'm here to help!")
 			})
@@ -329,7 +329,7 @@ func TestConvertMessageFromAnthropicParam(t *testing.T) {
 			result := convertMessageFromAnthropicParam(msg)
 
 			Convey("Then it should create a reasoning content with signature", func() {
-				So(result.Role, ShouldEqual, v1.Role_MODEL)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Let me think about this...")
@@ -523,7 +523,7 @@ func TestConvertMessageFromAnthropicParam(t *testing.T) {
 	})
 }
 
-func TestConvertChatReqFromAnthropic(t *testing.T) {
+func TestConvertChatRequestFromAnthropic(t *testing.T) {
 	Convey("Given an Anthropic MessageNewParams request", t, func() {
 
 		Convey("When converting a complete request with system, messages, tools", func() {
@@ -561,7 +561,7 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatReqFromAnthropic(req)
+			result := convertChatRequestFromAnthropic(req)
 
 			Convey("Then the model should be set", func() {
 				So(result.Model, ShouldEqual, "claude-3-sonnet")
@@ -577,14 +577,14 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 
 			Convey("Then system message should be included", func() {
 				So(result.Messages, ShouldHaveLength, 3) // system + 2 messages
-				So(result.Messages[0].Role, ShouldEqual, v1.Role_SYSTEM)
+				So(result.Messages[0].Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
 				So(result.Messages[0].Contents[0].GetText().GetText(), ShouldEqual, "You are helpful.")
 			})
 
 			Convey("Then user and assistant messages should be converted", func() {
-				So(result.Messages[1].Role, ShouldEqual, v1.Role_USER)
+				So(result.Messages[1].Role, ShouldEqual, v1.Role_ROLE_USER)
 				So(result.Messages[1].Contents[0].GetText().GetText(), ShouldEqual, "Hello")
-				So(result.Messages[2].Role, ShouldEqual, v1.Role_MODEL)
+				So(result.Messages[2].Role, ShouldEqual, v1.Role_ROLE_MODEL)
 				So(result.Messages[2].Contents[0].GetText().GetText(), ShouldEqual, "Hi there")
 			})
 
@@ -616,11 +616,11 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatReqFromAnthropic(req)
+			result := convertChatRequestFromAnthropic(req)
 
 			Convey("Then messages should not include a system message", func() {
 				So(result.Messages, ShouldHaveLength, 1)
-				So(result.Messages[0].Role, ShouldEqual, v1.Role_USER)
+				So(result.Messages[0].Role, ShouldEqual, v1.Role_ROLE_USER)
 				So(result.Messages[0].Contents[0].GetText().GetText(), ShouldEqual, "Hello")
 			})
 		})
@@ -634,7 +634,7 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatReqFromAnthropic(req)
+			result := convertChatRequestFromAnthropic(req)
 
 			Convey("Then tools should be nil", func() {
 				So(result.Tools, ShouldBeNil)
@@ -645,25 +645,25 @@ func TestConvertChatReqFromAnthropic(t *testing.T) {
 
 func TestConvertStatusToAnthropic(t *testing.T) {
 	Convey("Given various internal chat statuses", t, func() {
-		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_IN_PROGRESS), ShouldEqual, anthropic.StopReasonEndTurn)
-		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_COMPLETED), ShouldEqual, anthropic.StopReasonEndTurn)
-		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_REFUSED), ShouldEqual, anthropic.StopReasonRefusal)
-		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_CANCELLED), ShouldEqual, anthropic.StopReasonEndTurn)
-		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_PENDING_TOOL_USE), ShouldEqual, anthropic.StopReasonToolUse)
-		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT), ShouldEqual, anthropic.StopReasonMaxTokens)
+		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_STATUS_IN_PROGRESS), ShouldEqual, anthropic.StopReasonEndTurn)
+		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_STATUS_COMPLETED), ShouldEqual, anthropic.StopReasonEndTurn)
+		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_STATUS_REFUSED), ShouldEqual, anthropic.StopReasonRefusal)
+		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_STATUS_CANCELLED), ShouldEqual, anthropic.StopReasonEndTurn)
+		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE), ShouldEqual, anthropic.StopReasonToolUse)
+		So(convertStatusToAnthropic(v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT), ShouldEqual, anthropic.StopReasonMaxTokens)
 	})
 }
 
-func TestConvertChatRespToAnthropic(t *testing.T) {
-	Convey("Given an internal ChatResp to convert to Anthropic format", t, func() {
+func TestConvertChatResponseToAnthropic(t *testing.T) {
+	Convey("Given an internal ChatResponse to convert to Anthropic format", t, func() {
 
 		Convey("When converting a response with text content", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Model:  "claude-3-sonnet",
-				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 				Message: &v1.Message{
 					Id:   "msg-1",
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: v1.NewTextContent("Hello!")},
 					},
@@ -677,7 +677,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatRespToAnthropic(resp)
+			result := convertChatResponseToAnthropic(resp)
 
 			Convey("Then the response should have correct fields", func() {
 				So(string(result.Type), ShouldEqual, "message")
@@ -695,12 +695,12 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 		})
 
 		Convey("When converting a response with thinking content and signature", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Model:  "claude-3-sonnet",
-				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 				Message: &v1.Message{
 					Id:   "msg-2",
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{
 							Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -714,7 +714,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatRespToAnthropic(resp)
+			result := convertChatResponseToAnthropic(resp)
 
 			Convey("Then thinking content should have signature", func() {
 				So(string(result.Type), ShouldEqual, "message")
@@ -732,12 +732,12 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 		})
 
 		Convey("When converting a response with redacted thinking", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Model:  "claude-3-sonnet",
-				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 				Message: &v1.Message{
 					Id:   "msg-3",
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{
 							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -750,7 +750,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatRespToAnthropic(resp)
+			result := convertChatResponseToAnthropic(resp)
 
 			Convey("Then redacted thinking should be emitted correctly", func() {
 				So(string(result.Type), ShouldEqual, "message")
@@ -767,12 +767,12 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 		})
 
 		Convey("When converting a response with tool_use", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Model:  "claude-3-sonnet",
-				Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
+				Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
 				Message: &v1.Message{
 					Id:   "msg-4",
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{
 							Content: &v1.Content_ToolUse{
@@ -789,7 +789,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatRespToAnthropic(resp)
+			result := convertChatResponseToAnthropic(resp)
 
 			Convey("Then tool_use should be correctly converted", func() {
 				So(string(result.Type), ShouldEqual, "message")
@@ -806,12 +806,12 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 		})
 
 		Convey("When converting a response with mixed thinking, redacted_thinking, text, and tool_use", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Model:  "claude-3-sonnet",
-				Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
+				Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
 				Message: &v1.Message{
 					Id:   "msg-5",
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{
 							Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -846,7 +846,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatRespToAnthropic(resp)
+			result := convertChatResponseToAnthropic(resp)
 
 			Convey("Then all content types should be correctly converted", func() {
 				So(string(result.Type), ShouldEqual, "message")
@@ -878,12 +878,12 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 		})
 
 		Convey("When empty text content should be skipped for non-reasoning", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Model:  "claude-3",
-				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 				Message: &v1.Message{
 					Id:   "msg-6",
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: v1.NewTextContent("")},
 						{Content: v1.NewTextContent("actual content")},
@@ -891,7 +891,7 @@ func TestConvertChatRespToAnthropic(t *testing.T) {
 				},
 			}
 
-			result := convertChatRespToAnthropic(resp)
+			result := convertChatResponseToAnthropic(resp)
 
 			Convey("Then empty text blocks should be skipped", func() {
 				So(string(result.Type), ShouldEqual, "message")

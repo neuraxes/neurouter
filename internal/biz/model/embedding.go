@@ -43,7 +43,7 @@ func (m *embeddingModel) Close() {
 
 // estimateEmbeddingTokens provides a rough token estimate for an embedding request.
 // Uses ~4 characters per token heuristic.
-func estimateEmbeddingTokens(req *v1.EmbedReq) int64 {
+func estimateEmbeddingTokens(req *v1.EmbedRequest) int64 {
 	totalChars := 0
 	for _, c := range req.Contents {
 		totalChars += len(c.GetText().GetText())
@@ -54,7 +54,7 @@ func estimateEmbeddingTokens(req *v1.EmbedReq) int64 {
 	return int64(totalChars/4) + 1
 }
 
-func (uc *UseCaseImpl) ElectForEmbedding(ctx context.Context, req *v1.EmbedReq) (embedding.Model, error) {
+func (uc *UseCaseImpl) ElectForEmbedding(ctx context.Context, req *v1.EmbedRequest) (embedding.Model, error) {
 	estimatedTokens := estimateEmbeddingTokens(req) // Estimate input tokens roughly: ~4 chars per token
 
 	// Collect all available candidates

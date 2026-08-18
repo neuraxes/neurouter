@@ -33,7 +33,7 @@ var NonStreamStopSequence = &Fixture{
 	Name:     "non_stream_stop_sequence",
 	Request:  nonStreamStopSequenceRequest,
 	Response: nonStreamStopSequenceResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "non_stream_stop_sequence",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -44,13 +44,13 @@ var NonStreamStopSequence = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Follow formatting instructions exactly and output nothing else.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Output the digits one through nine separated by single spaces, exactly like this: 1 2 3 4 5 6 7 8 9. Output only those digits and spaces, with no other words.")},
 				},
@@ -58,13 +58,13 @@ var NonStreamStopSequence = &Fixture{
 		},
 		Metadata: map[string]string{"user_id": "anthropic-conversion-fixture-user"},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "non_stream_stop_sequence",
 		Model:  "anthropic/claude-4.6-sonnet-20260217",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782639367-LWXTlYSwUf9TmicH9TYr",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("1 2 3 4 ")},
 			},

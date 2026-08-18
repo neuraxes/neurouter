@@ -34,7 +34,7 @@ var NonStreamStructuredOutput = &Fixture{
 	Name:     "non_stream_structured_output",
 	Request:  nonStreamStructuredOutputRequest,
 	Response: nonStreamStructuredOutputResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "non_stream_structured_output",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -64,13 +64,13 @@ var NonStreamStructuredOutput = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Return content that conforms to the requested output schema.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Classify this router incident: customer traffic is slow in us-east, the OpenAI upstream is rate limited, the Anthropic upstream is healthy, and retry pressure is rising.")},
 				},
@@ -78,13 +78,13 @@ var NonStreamStructuredOutput = &Fixture{
 		},
 		Metadata: map[string]string{"user_id": "anthropic-conversion-fixture-user"},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "non_stream_structured_output",
 		Model:  "anthropic/claude-4.6-sonnet-20260217",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782639574-Xno06ITSrNECtJCEjTXG",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent(`{"severity":"high","affected_region":"us-east","primary_cause":"OpenAI upstream rate limiting causing increased retry pressure and degraded customer traffic throughput","recommended_action":"Immediately shift us-east customer traffic from OpenAI upstream to the healthy Anthropic upstream, implement backoff strategies to reduce retry pressure, and monitor OpenAI rate limit recovery before rebalancing","signals":["Customer traffic slow in us-east","OpenAI upstream is rate limited","Anthropic upstream is healthy","Retry pressure is rising"]}`)},
 			},

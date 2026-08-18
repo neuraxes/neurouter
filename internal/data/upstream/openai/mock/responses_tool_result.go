@@ -32,7 +32,7 @@ var ResponsesToolResult = &Fixture{
 	Name:     "responses_tool_result",
 	Request:  responsesToolResultRequest,
 	Response: responsesToolResultResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "responses_tool_result",
 		Model: "openai/gpt-5-mini",
 		Config: &v1.GenerationConfig{
@@ -41,19 +41,19 @@ var ResponsesToolResult = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Call the requested tool exactly once and return no final prose before receiving its result.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Call get_weather for Shanghai on 2025-11-10 using metric units. Do not answer the weather from memory.")},
 				},
 			},
 			{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{
 						Id:    "rs_08b5de5c9cfca3ba016a6c9ab440b08192a79b2b9279b4dcfb",
@@ -76,7 +76,7 @@ var ResponsesToolResult = &Fixture{
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{
 						Content: &v1.Content_ToolResult{
@@ -94,13 +94,13 @@ var ResponsesToolResult = &Fixture{
 		},
 		Tools: []*v1.Tool{getWeatherTool()},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "responses_tool_result",
 		Model:  "openai/gpt-5-mini",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1785502446-Gkxi8IHY2X1TDnhyveUP",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Id:    "rs_08b5de5c9cfca3ba016a6c9aef5cb48192b3489396e78e1c08",

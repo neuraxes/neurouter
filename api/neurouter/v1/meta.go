@@ -22,14 +22,14 @@ func (x *Content) SetMeta(key, value string) {
 	x.Metadata[key] = value
 }
 
-func (x *ChatReq) Meta(key string) string {
+func (x *ChatRequest) Meta(key string) string {
 	if x == nil {
 		return ""
 	}
 	return x.Metadata[key]
 }
 
-func (x *ChatReq) SetMeta(key, value string) {
+func (x *ChatRequest) SetMeta(key, value string) {
 	if x == nil {
 		return
 	}

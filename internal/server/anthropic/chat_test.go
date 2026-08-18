@@ -33,18 +33,18 @@ import (
 
 type mockChatServer struct {
 	v1.ChatServer
-	chatFunc       func(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error)
-	chatStreamFunc func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error
+	chatFunc       func(ctx context.Context, req *v1.ChatRequest) (*v1.ChatResponse, error)
+	chatStreamFunc func(req *v1.ChatRequest, stream v1.Chat_ChatStreamServer) error
 }
 
-func (m *mockChatServer) Chat(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
+func (m *mockChatServer) Chat(ctx context.Context, req *v1.ChatRequest) (*v1.ChatResponse, error) {
 	if m.chatFunc != nil {
 		return m.chatFunc(ctx, req)
 	}
 	return nil, nil
 }
 
-func (m *mockChatServer) ChatStream(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
+func (m *mockChatServer) ChatStream(req *v1.ChatRequest, stream v1.Chat_ChatStreamServer) error {
 	if m.chatStreamFunc != nil {
 		return m.chatStreamFunc(req, stream)
 	}
@@ -115,9 +115,9 @@ func TestChat(t *testing.T) {
 			Convey("When handling the "+fixture.Name+" non-stream request", func() {
 				srv := &Server{
 					chatSvc: &mockChatServer{
-						chatFunc: func(ctx context.Context, req *v1.ChatReq) (*v1.ChatResp, error) {
-							assertChatReqEquality(req, fixture.ChatReq)
-							return fixture.ChatResp, nil
+						chatFunc: func(ctx context.Context, req *v1.ChatRequest) (*v1.ChatResponse, error) {
+							assertChatRequestEquality(req, fixture.ChatRequest)
+							return fixture.ChatResponse, nil
 						},
 					},
 				}
@@ -177,8 +177,8 @@ func TestChatStream(t *testing.T) {
 			Convey("When handling the "+fixture.Name+" stream request", func() {
 				srv := &Server{
 					chatSvc: &mockChatServer{
-						chatStreamFunc: func(req *v1.ChatReq, stream v1.Chat_ChatStreamServer) error {
-							assertChatReqEquality(req, fixture.ChatReq)
+						chatStreamFunc: func(req *v1.ChatRequest, stream v1.Chat_ChatStreamServer) error {
+							assertChatRequestEquality(req, fixture.ChatRequest)
 							for _, event := range fixture.ChatEvents {
 								if err := stream.Send(event); err != nil {
 									return err
@@ -209,9 +209,9 @@ func TestChatStream(t *testing.T) {
 	})
 }
 
-func assertChatReqEquality(actual, expected *v1.ChatReq) {
-	actualClone := proto.Clone(actual).(*v1.ChatReq)
-	expectedClone := proto.Clone(expected).(*v1.ChatReq)
+func assertChatRequestEquality(actual, expected *v1.ChatRequest) {
+	actualClone := proto.Clone(actual).(*v1.ChatRequest)
+	expectedClone := proto.Clone(expected).(*v1.ChatRequest)
 	actualClone.Id = ""
 	expectedClone.Id = ""
 	normalizeToolInputSchemas(actualClone)
@@ -221,7 +221,7 @@ func assertChatReqEquality(actual, expected *v1.ChatReq) {
 
 // normalizeToolInputSchemas removes the "additionalProperties" field from the
 // input schema since it is not supported by the Anthropic SDK.
-func normalizeToolInputSchemas(req *v1.ChatReq) {
+func normalizeToolInputSchemas(req *v1.ChatRequest) {
 	for _, tool := range req.GetTools() {
 		function := tool.GetFunction()
 		if function == nil || function.GetInputSchema() == nil {

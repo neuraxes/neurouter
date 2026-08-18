@@ -152,7 +152,7 @@ func TestResponsesStreamServer(t *testing.T) {
 			{
 				Id:    "request-1",
 				Usage: &v1.Usage{InputTokens: 10, OutputTokens: 8, ReasoningTokens: 3},
-				Event: v1.NewMessageStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE),
+				Event: v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE),
 			},
 		} {
 			So(server.Send(event), ShouldBeNil)
@@ -192,6 +192,12 @@ func TestResponsesStreamServer(t *testing.T) {
 			So(httpCtx.body.String(), ShouldNotContainSubstring, "[DONE]")
 		})
 
+		Convey("Then the response carries a creation timestamp", func() {
+			created := parsed[0].data["response"].(map[string]any)["created_at"]
+			So(created, ShouldNotBeNil)
+			So(created.(float64), ShouldBeGreaterThan, 0)
+		})
+
 		Convey("Then reasoning text and encrypted state share one output item", func() {
 			doneItem := parsed[7].data["item"].(map[string]any)
 			So(doneItem["id"], ShouldEqual, "rs-1")
@@ -208,15 +214,17 @@ func TestResponsesStreamServer(t *testing.T) {
 				item := event.data["item"].(map[string]any)
 				if item["type"] == "reasoning" {
 					addedReasoningItems++
+					So(item["summary"], ShouldResemble, []any{})
+					So(item["content"], ShouldResemble, []any{})
 				}
 			}
 			So(addedReasoningItems, ShouldEqual, 1)
 		})
 
-		Convey("Then the response carries a creation timestamp", func() {
-			created := parsed[0].data["response"].(map[string]any)["created_at"]
-			So(created, ShouldNotBeNil)
-			So(created.(float64), ShouldBeGreaterThan, 0)
+		Convey("Then a newly added message item includes an empty content array", func() {
+			addedMessage := parsed[8].data["item"].(map[string]any)
+			So(addedMessage["type"], ShouldEqual, "message")
+			So(addedMessage["content"], ShouldResemble, []any{})
 		})
 
 		Convey("Then message and function-call item identities are preserved", func() {
@@ -264,7 +272,7 @@ func TestResponsesStreamServer(t *testing.T) {
 			)),
 			v1.NewChatEvent("request-1", v1.NewContentDeltaTextEvent(1, "second")),
 			v1.NewChatEvent("request-1", v1.NewContentStopEvent(1)),
-			v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_COMPLETED)),
+			v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED)),
 		} {
 			So(server.Send(event), ShouldBeNil)
 		}
@@ -324,7 +332,7 @@ func TestResponsesStreamServer(t *testing.T) {
 			v1.NewChatEvent("request-1", v1.NewIdentifiedContentStartTextEvent("rs-1", 1, v1.ContentPhase_CONTENT_PHASE_REASONING)),
 			v1.NewChatEvent("request-1", v1.NewContentDeltaTextEvent(1, "second")),
 			v1.NewChatEvent("request-1", v1.NewContentStopEvent(1)),
-			v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_COMPLETED)),
+			v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED)),
 		} {
 			So(server.Send(event), ShouldBeNil)
 		}
@@ -380,7 +388,7 @@ func TestResponsesStreamServer(t *testing.T) {
 				Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
 				Content: &v1.Content_Opaque{Opaque: "encrypted"},
 			})),
-			v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_COMPLETED)),
+			v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED)),
 		} {
 			So(server.Send(event), ShouldBeNil)
 		}

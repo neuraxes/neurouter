@@ -87,7 +87,7 @@ func TestChat(t *testing.T) {
 				var capturedBody []byte
 				mockClient.DoFunc = mockResponder("/v1/chat/completions", "application/json", fixture.Response, &capturedBody)
 
-				resp, err := repo.Chat(context.Background(), fixture.ChatReq)
+				resp, err := repo.Chat(context.Background(), fixture.ChatRequest)
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
 
@@ -95,8 +95,8 @@ func TestChat(t *testing.T) {
 					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
 				})
 
-				Convey("Then the response converts to the expected ChatResp", func() {
-					So(proto.Equal(resp, fixture.ChatResp), ShouldBeTrue)
+				Convey("Then the response converts to the expected ChatResponse", func() {
+					So(proto.Equal(resp, fixture.ChatResponse), ShouldBeTrue)
 				})
 			})
 		}
@@ -116,7 +116,7 @@ func TestChat(t *testing.T) {
 				var capturedBody []byte
 				mockClient.DoFunc = mockResponder("/v1/responses", "application/json", fixture.Response, &capturedBody)
 
-				resp, err := repo.Chat(context.Background(), fixture.ChatReq)
+				resp, err := repo.Chat(context.Background(), fixture.ChatRequest)
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
 
@@ -124,8 +124,8 @@ func TestChat(t *testing.T) {
 					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
 				})
 
-				Convey("Then the response converts to the expected ChatResp", func() {
-					So(proto.Equal(resp, fixture.ChatResp), ShouldBeTrue)
+				Convey("Then the response converts to the expected ChatResponse", func() {
+					So(proto.Equal(resp, fixture.ChatResponse), ShouldBeTrue)
 				})
 			})
 		}
@@ -140,7 +140,7 @@ func TestChat(t *testing.T) {
 		repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, slog.Default())
 		So(err, ShouldBeNil)
 
-		_, err = repo.Chat(context.Background(), mock.ToolCall.ChatReq)
+		_, err = repo.Chat(context.Background(), mock.ToolCall.ChatRequest)
 
 		Convey("Then it should return an error", func() {
 			So(err, ShouldNotBeNil)
@@ -164,7 +164,7 @@ func TestChatStream(t *testing.T) {
 				var capturedBody []byte
 				mockClient.DoFunc = mockResponder("/v1/chat/completions", "text/event-stream", fixture.Response, &capturedBody)
 
-				seq := repo.ChatStream(context.Background(), fixture.ChatReq)
+				seq := repo.ChatStream(context.Background(), fixture.ChatRequest)
 				So(seq, ShouldNotBeNil)
 
 				var events []*entity.ChatEvent
@@ -202,7 +202,7 @@ func TestChatStream(t *testing.T) {
 				var capturedBody []byte
 				mockClient.DoFunc = mockResponder("/v1/responses", "text/event-stream", fixture.Response, &capturedBody)
 
-				seq := repo.ChatStream(context.Background(), fixture.ChatReq)
+				seq := repo.ChatStream(context.Background(), fixture.ChatRequest)
 				So(seq, ShouldNotBeNil)
 
 				var events []*entity.ChatEvent
@@ -235,7 +235,7 @@ func TestChatStream(t *testing.T) {
 		repo, err := newOpenAIUpstreamWithClient(mockTestConfig, mockClient, slog.Default())
 		So(err, ShouldBeNil)
 
-		seq := repo.ChatStream(context.Background(), mock.StreamToolCall.ChatReq)
+		seq := repo.ChatStream(context.Background(), mock.StreamToolCall.ChatRequest)
 		So(seq, ShouldNotBeNil)
 
 		Convey("Then it should return an error in the iterator", func() {

@@ -81,15 +81,15 @@ func TestChat(t *testing.T) {
 				var capturedBody []byte
 				mockClient.DoFunc = mockResponder("application/json", fixture.Response, &capturedBody)
 
-				resp, err := repo.Chat(context.Background(), fixture.ChatReq)
+				resp, err := repo.Chat(context.Background(), fixture.ChatRequest)
 				So(err, ShouldBeNil)
 
 				Convey("Then the request body matches the fixture request", func() {
 					So(jsonMap(capturedBody), ShouldResemble, jsonMap(fixture.Request))
 				})
 
-				Convey("Then the response converts to the expected ChatResp", func() {
-					So(proto.Equal(resp, fixture.ChatResp), ShouldBeTrue)
+				Convey("Then the response converts to the expected ChatResponse", func() {
+					So(proto.Equal(resp, fixture.ChatResponse), ShouldBeTrue)
 				})
 			})
 		}
@@ -103,7 +103,7 @@ func TestChat(t *testing.T) {
 			repo, err := newAnthropicUpstreamWithClient(mockTestConfig, mockClient, slog.Default())
 			So(err, ShouldBeNil)
 
-			_, err = repo.Chat(context.Background(), mock.NonStreamMaxTokens.ChatReq)
+			_, err = repo.Chat(context.Background(), mock.NonStreamMaxTokens.ChatRequest)
 
 			Convey("Then it should return an error", func() {
 				So(err, ShouldNotBeNil)
@@ -128,7 +128,7 @@ func TestChatStream(t *testing.T) {
 				var capturedBody []byte
 				mockClient.DoFunc = mockResponder("text/event-stream", fixture.Response, &capturedBody)
 
-				seq := repo.ChatStream(context.Background(), fixture.ChatReq)
+				seq := repo.ChatStream(context.Background(), fixture.ChatRequest)
 				So(seq, ShouldNotBeNil)
 
 				var events []*entity.ChatEvent
@@ -160,7 +160,7 @@ func TestChatStream(t *testing.T) {
 			repo, err := newAnthropicUpstreamWithClient(mockTestConfig, mockClient, slog.Default())
 			So(err, ShouldBeNil)
 
-			seq := repo.ChatStream(context.Background(), mock.StreamThinkingText.ChatReq)
+			seq := repo.ChatStream(context.Background(), mock.StreamThinkingText.ChatRequest)
 			So(seq, ShouldNotBeNil)
 
 			Convey("Then it should return an error in the iterator", func() {

@@ -71,9 +71,9 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 	Convey("Test for SYSTEM role", t, func() {
 		repo.config = &conf.OpenAIConfig{}
-		singlePartTextualMessage.Role = v1.Role_SYSTEM
-		multiPartTextualMessage.Role = v1.Role_SYSTEM
-		multiPartRichMessage.Role = v1.Role_SYSTEM
+		singlePartTextualMessage.Role = v1.Role_ROLE_SYSTEM
+		multiPartTextualMessage.Role = v1.Role_ROLE_SYSTEM
+		multiPartRichMessage.Role = v1.Role_ROLE_SYSTEM
 
 		Convey("with single part textual content", func() {
 			params := repo.convertMessageToOpenAIChat(singlePartTextualMessage)
@@ -102,7 +102,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with name", func() {
 			message := &v1.Message{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Name: "System",
 				Contents: []*v1.Content{
 					{
@@ -142,9 +142,9 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 	Convey("Test for USER role", t, func() {
 		repo.config = &conf.OpenAIConfig{}
-		singlePartTextualMessage.Role = v1.Role_USER
-		multiPartTextualMessage.Role = v1.Role_USER
-		multiPartRichMessage.Role = v1.Role_USER
+		singlePartTextualMessage.Role = v1.Role_ROLE_USER
+		multiPartTextualMessage.Role = v1.Role_ROLE_USER
+		multiPartRichMessage.Role = v1.Role_ROLE_USER
 
 		Convey("with single part textual content", func() {
 			params := repo.convertMessageToOpenAIChat(singlePartTextualMessage)
@@ -174,7 +174,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with name", func() {
 			message := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Name: "User",
 				Contents: []*v1.Content{
 					{
@@ -213,7 +213,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with nil Content field", func() {
 			message := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{
 						Content: nil,
@@ -229,7 +229,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with empty contents array", func() {
 			message := &v1.Message{
-				Role:     v1.Role_USER,
+				Role:     v1.Role_ROLE_USER,
 				Contents: []*v1.Content{},
 			}
 			params := repo.convertMessageToOpenAIChat(message)
@@ -242,9 +242,9 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 	Convey("Test for MODEL role", t, func() {
 		repo.config = &conf.OpenAIConfig{}
-		singlePartTextualMessage.Role = v1.Role_MODEL
-		multiPartTextualMessage.Role = v1.Role_MODEL
-		multiPartRichMessage.Role = v1.Role_MODEL
+		singlePartTextualMessage.Role = v1.Role_ROLE_MODEL
+		multiPartTextualMessage.Role = v1.Role_ROLE_MODEL
+		multiPartRichMessage.Role = v1.Role_ROLE_MODEL
 
 		Convey("with single part textual content", func() {
 			params := repo.convertMessageToOpenAIChat(singlePartTextualMessage)
@@ -296,7 +296,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with name", func() {
 			message := &v1.Message{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Name: "Claude",
 				Contents: []*v1.Content{
 					{
@@ -312,7 +312,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with tool calls", func() {
 			message := &v1.Message{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{
 						Content: v1.NewTextContent("Let me help you"),
@@ -363,7 +363,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with unsupported tool call type", func() {
 			message := &v1.Message{
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{
 						Content: v1.NewTextContent("Hello"),
@@ -381,7 +381,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with only tool result", func() {
 			message := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{
 						Content: &v1.Content_ToolResult{
@@ -415,7 +415,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with multiple tool results", func() {
 			message := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{
 						Content: &v1.Content_ToolResult{
@@ -457,7 +457,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 
 		Convey("with tool result and user text", func() {
 			message := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{
 						Content: &v1.Content_ToolResult{
@@ -493,7 +493,7 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 			}
 
 			message := &v1.Message{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{
 						Content: &v1.Content_ToolResult{
@@ -540,7 +540,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 
 	Convey("Test convertRequestToOpenAIChat", t, func() {
 		Convey("with session ID", func() {
-			param := repo.convertRequestToOpenAIChat(&entity.ChatReq{
+			param := repo.convertRequestToOpenAIChat(&entity.ChatRequest{
 				Session: "session-1",
 				Model:   "gpt-4",
 			})
@@ -550,17 +550,17 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("without session ID", func() {
-			param := repo.convertRequestToOpenAIChat(&entity.ChatReq{Model: "gpt-4"})
+			param := repo.convertRequestToOpenAIChat(&entity.ChatRequest{Model: "gpt-4"})
 
 			So(param.PromptCacheKey.Valid(), ShouldBeFalse)
 		})
 
 		Convey("with basic request", func() {
-			req := &entity.ChatReq{
+			req := &entity.ChatRequest{
 				Model: "gpt-4",
 				Messages: []*v1.Message{
 					{
-						Role: v1.Role_USER,
+						Role: v1.Role_ROLE_USER,
 						Contents: []*v1.Content{
 							{
 								Content: v1.NewTextContent("Hello"),
@@ -577,7 +577,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("with configuration", func() {
-			req := &entity.ChatReq{
+			req := &entity.ChatRequest{
 				Model: "gpt-4",
 				Config: &v1.GenerationConfig{
 					MaxTokens:        new(int64(100)),
@@ -601,7 +601,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("with schema grammar", func() {
-			req := &entity.ChatReq{
+			req := &entity.ChatRequest{
 				Model: "gpt-4",
 				Config: &v1.GenerationConfig{
 					Grammar: &v1.GenerationConfig_Schema{
@@ -626,7 +626,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("with gbnf grammar (ignored by OpenAI)", func() {
-			req := &entity.ChatReq{
+			req := &entity.ChatRequest{
 				Model: "gpt-4",
 				Config: &v1.GenerationConfig{
 					Grammar: &v1.GenerationConfig_GbnfGrammar{
@@ -641,7 +641,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("with tools", func() {
-			req := &entity.ChatReq{
+			req := &entity.ChatRequest{
 				Model: "gpt-4",
 				Tools: []*v1.Tool{
 					{
@@ -676,7 +676,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("with nil config", func() {
-			req := &entity.ChatReq{
+			req := &entity.ChatRequest{
 				Model:    "gpt-4",
 				Messages: []*v1.Message{},
 				Config:   nil,
@@ -689,7 +689,7 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("with unsupported tool type", func() {
-			req := &entity.ChatReq{
+			req := &entity.ChatRequest{
 				Model: "gpt-4",
 				Tools: []*v1.Tool{
 					{
@@ -718,7 +718,7 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 
 			msg := repo.convertMessageFromOpenAIChat(openAIMsg)
 			So(msg.Id, ShouldBeEmpty)
-			So(msg.Role, ShouldEqual, v1.Role_MODEL)
+			So(msg.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 			So(msg.Contents[0].GetText().GetText(), ShouldEqual, " Hello world ")
 		})
 
@@ -738,7 +738,7 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 
 			msg := repo.convertMessageFromOpenAIChat(openAIMsg)
 			So(msg.Id, ShouldBeEmpty)
-			So(msg.Role, ShouldEqual, v1.Role_MODEL)
+			So(msg.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 			So(msg.Contents, ShouldHaveLength, 1)
 			So(msg.Contents[0].GetToolUse().GetId(), ShouldEqual, "call-1")
 			So(msg.Contents[0].GetToolUse().GetName(), ShouldEqual, "test_function")
@@ -753,7 +753,7 @@ func TestConvertMessageFromOpenAIChat(t *testing.T) {
 
 			msg := repo.convertMessageFromOpenAIChat(openAIMsg)
 			So(msg.Id, ShouldBeEmpty)
-			So(msg.Role, ShouldEqual, v1.Role_MODEL)
+			So(msg.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 			So(msg.Contents, ShouldBeNil)
 			// No tool calls, so no Content_ToolUse in Contents
 			hasFunctionCall := false

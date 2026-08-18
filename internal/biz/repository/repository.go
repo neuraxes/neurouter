@@ -33,14 +33,14 @@ type Repo any
 type ChatRepo interface {
 	Repo
 	// Chat performs a synchronous chat interaction.
-	Chat(context.Context, *entity.ChatReq) (*entity.ChatResp, error)
+	Chat(context.Context, *entity.ChatRequest) (*entity.ChatResponse, error)
 	// ChatStream initiates a streaming chat interaction.
-	ChatStream(context.Context, *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error]
+	ChatStream(context.Context, *entity.ChatRequest) iter.Seq2[*entity.ChatEvent, error]
 }
 
 // EmbeddingRepo defines the interface for embedding operations.
 type EmbeddingRepo interface {
 	Repo
 	// Embed performs a synchronous embedding operation.
-	Embed(context.Context, *entity.EmbedReq) (*entity.EmbedResp, error)
+	Embed(context.Context, *entity.EmbedRequest) (*entity.EmbedResponse, error)
 }

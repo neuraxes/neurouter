@@ -67,7 +67,7 @@ var NonStreamToolCall = &Fixture{
 	Name:     "non_stream_tool_call",
 	Request:  nonStreamToolCallRequest,
 	Response: nonStreamToolCallResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "non_stream_tool_call",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -78,13 +78,13 @@ var NonStreamToolCall = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. When the user asks for fresh or external facts and a matching tool is available, call exactly one tool before producing final prose.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Use the get_weather tool for Shanghai on 2025-11-10. Do not answer from memory. Return no final prose until the tool has been called.")},
 				},
@@ -93,13 +93,13 @@ var NonStreamToolCall = &Fixture{
 		Tools:    []*v1.Tool{getWeatherTool()},
 		Metadata: map[string]string{"user_id": "anthropic-conversion-fixture-user"},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "non_stream_tool_call",
 		Model:  "anthropic/claude-4.6-sonnet-20260217",
-		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
+		Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
 		Message: &v1.Message{
 			Id:   "gen-1782639386-Li6vCZE4duB99RWBlwEB",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("Sure! Let me fetch the weather data for Shanghai on 2025-11-10 right away.")},
 				{

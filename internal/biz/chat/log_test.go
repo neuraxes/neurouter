@@ -27,7 +27,7 @@ import (
 func TestPrintChat(t *testing.T) {
 	Convey("Test PrintChat", t, func() {
 		uc := &chatUseCase{log: slog.Default()}
-		req := &v1.ChatReq{
+		req := &v1.ChatRequest{
 			Id:    "req-id",
 			Model: "gemini-2.5-pro",
 			Config: &v1.GenerationConfig{
@@ -51,7 +51,7 @@ func TestPrintChat(t *testing.T) {
 			Messages: []*v1.Message{
 				{
 					Id:   "msg-1",
-					Role: v1.Role_USER,
+					Role: v1.Role_ROLE_USER,
 					Contents: []*v1.Content{
 						{
 							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -131,12 +131,12 @@ func TestPrintChat(t *testing.T) {
 				},
 			},
 		}
-		resp := &v1.ChatResp{
+		resp := &v1.ChatResponse{
 			Id:    "resp-id",
 			Model: "gemini-2.5-pro",
 			Message: &v1.Message{
 				Id:   "msg-2",
-				Role: v1.Role_MODEL,
+				Role: v1.Role_ROLE_MODEL,
 				Contents: []*v1.Content{
 					{
 						Content: v1.NewTextContent("Hello,\nWorld!"),

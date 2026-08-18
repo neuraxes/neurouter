@@ -22,7 +22,7 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-func (s *RouterService) ListModel(ctx context.Context, req *v1.ListModelReq) (resp *v1.ListModelResp, err error) {
+func (s *RouterService) ListModel(ctx context.Context, req *v1.ListModelRequest) (resp *v1.ListModelResponse, err error) {
 	if claims, ok := jwt.FromContext(ctx); ok {
 		sub, _ := claims.GetSubject()
 		s.log.InfoContext(ctx, "authenticated with JWT", "subject", sub)
@@ -38,7 +38,7 @@ func (s *RouterService) ListModel(ctx context.Context, req *v1.ListModelReq) (re
 		respModels[i] = m
 	}
 
-	resp = &v1.ListModelResp{
+	resp = &v1.ListModelResponse{
 		Models: respModels,
 	}
 	return

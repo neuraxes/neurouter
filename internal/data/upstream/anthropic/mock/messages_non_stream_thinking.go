@@ -41,7 +41,7 @@ var NonStreamThinking = &Fixture{
 	Name:     "non_stream_thinking",
 	Request:  nonStreamThinkingRequest,
 	Response: nonStreamThinkingResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "non_stream_thinking",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -50,13 +50,13 @@ var NonStreamThinking = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Reason through the trade-offs before giving a final recommendation.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("A router can send a request to one of three upstreams. OpenAI: wait 1800 ms, error rate 0.12. Anthropic: wait 120 ms, error rate 0.01. Gemini: wait 400 ms, error rate 0.04. A failed request is retried once on the same upstream. Reason step by step about which upstream minimizes expected total latency including the retry, then end with a single sentence starting with 'Recommendation:'.")},
 				},
@@ -64,13 +64,13 @@ var NonStreamThinking = &Fixture{
 		},
 		Metadata: map[string]string{"user_id": "anthropic-conversion-fixture-user"},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "non_stream_thinking",
 		Model:  "anthropic/claude-4.6-sonnet-20260217",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782639369-7ySC12UT9Uvu9FaKjjLU",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,

@@ -78,7 +78,7 @@ func streamToolCallChatEvents() []*v1.ChatEvent {
 		id.of(v1.NewContentDeltaToolInputTextEvent(1, `"}`)),
 		id.of(v1.NewContentStopEvent(1)),
 		id.withUsage(
-			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_PENDING_TOOL_USE),
+			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE),
 			&v1.Usage{InputTokens: 132, OutputTokens: 53},
 		),
 	}
@@ -90,7 +90,7 @@ var StreamToolCall = &Fixture{
 	Request:  streamToolCallRequest,
 	Response: streamToolCallResponse,
 	Stream:   true,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "stream_tool_call",
 		Model: "openai/gpt-4o",
 		Config: &v1.GenerationConfig{
@@ -99,13 +99,13 @@ var StreamToolCall = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Briefly note the date, then call the weather tool exactly once.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("First state today's date in one short sentence, then call get_weather for Shanghai on 2025-11-10. Do not answer the weather from memory.")},
 				},

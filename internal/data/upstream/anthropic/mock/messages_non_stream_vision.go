@@ -35,7 +35,7 @@ var NonStreamVision = &Fixture{
 	Name:     "non_stream_vision",
 	Request:  nonStreamVisionRequest,
 	Response: nonStreamVisionResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "non_stream_vision",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -44,13 +44,13 @@ var NonStreamVision = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Inspect every image the user supplies and describe it briefly.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("The image below is sent as inline base64 data. State its source (base64) and give a one-sentence description of what you see, including any visible logo or shape.")},
 					{
@@ -66,13 +66,13 @@ var NonStreamVision = &Fixture{
 		},
 		Metadata: map[string]string{"user_id": "anthropic-conversion-fixture-user"},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "non_stream_vision",
 		Model:  "anthropic/claude-4.6-sonnet-20260217",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782639582-oek2KOHtknQikB373dVF",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("**Source:** Base64-encoded inline image\n\n**Description:** The image shows the **OpenAI logo** — a small, dark icon featuring the distinctive interlocking/swirling circular knot symbol associated with OpenAI, rendered in dark gray or black on a light background.")},
 			},

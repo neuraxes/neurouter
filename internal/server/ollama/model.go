@@ -26,14 +26,14 @@ import (
 
 func (s *Server) handleListModels(ctx http.Context) error {
 	m := ctx.Middleware(func(ctx context.Context, req any) (any, error) {
-		return s.modelSvc.ListModel(ctx, &v1.ListModelReq{})
+		return s.modelSvc.ListModel(ctx, &v1.ListModelRequest{})
 	})
 	r, err := m(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	resp := r.(*v1.ListModelResp)
+	resp := r.(*v1.ListModelResponse)
 
 	ollamaResp := &ListModelsResp{}
 	for _, model := range resp.Models {
@@ -59,14 +59,14 @@ func (s *Server) handleShowModel(ctx http.Context) error {
 	}
 
 	m := ctx.Middleware(func(ctx context.Context, req any) (any, error) {
-		return s.modelSvc.ListModel(ctx, &v1.ListModelReq{})
+		return s.modelSvc.ListModel(ctx, &v1.ListModelRequest{})
 	})
 	r, err := m(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	resp := r.(*v1.ListModelResp)
+	resp := r.(*v1.ListModelResponse)
 
 	for _, model := range resp.Models {
 		if model.Id == showModelReq.Model {

@@ -22,8 +22,8 @@ import (
 )
 
 // Embed creates embeddings for the given contents using the specified model.
-func (s *RouterService) Embed(ctx context.Context, req *v1.EmbedReq) (resp *v1.EmbedResp, err error) {
-	embedReq := &entity.EmbedReq{
+func (s *RouterService) Embed(ctx context.Context, req *v1.EmbedRequest) (resp *v1.EmbedResponse, err error) {
+	embedReq := &entity.EmbedRequest{
 		Id:       req.Id,
 		Model:    req.Model,
 		Contents: req.Contents,
@@ -34,7 +34,7 @@ func (s *RouterService) Embed(ctx context.Context, req *v1.EmbedReq) (resp *v1.E
 		return
 	}
 
-	resp = &v1.EmbedResp{
+	resp = &v1.EmbedResponse{
 		Id:        r.Id,
 		Embedding: r.Embedding,
 	}

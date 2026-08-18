@@ -25,14 +25,14 @@ import (
 
 func (s *Server) handleListModels(httpCtx http.Context) error {
 	m := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
-		return s.modelSvc.ListModel(ctx, &v1.ListModelReq{})
+		return s.modelSvc.ListModel(ctx, &v1.ListModelRequest{})
 	})
 	r, err := m(httpCtx, nil)
 	if err != nil {
 		return err
 	}
 
-	resp := r.(*v1.ListModelResp)
+	resp := r.(*v1.ListModelResponse)
 
 	openaiResp := &modelsList{Object: "list"}
 	for _, model := range resp.Models {

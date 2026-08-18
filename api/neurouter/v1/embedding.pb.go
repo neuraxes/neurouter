@@ -36,7 +36,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type EmbedReq struct {
+type EmbedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
@@ -45,20 +45,20 @@ type EmbedReq struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EmbedReq) Reset() {
-	*x = EmbedReq{}
+func (x *EmbedRequest) Reset() {
+	*x = EmbedRequest{}
 	mi := &file_neurouter_v1_embedding_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EmbedReq) String() string {
+func (x *EmbedRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EmbedReq) ProtoMessage() {}
+func (*EmbedRequest) ProtoMessage() {}
 
-func (x *EmbedReq) ProtoReflect() protoreflect.Message {
+func (x *EmbedRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_embedding_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -70,33 +70,33 @@ func (x *EmbedReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EmbedReq.ProtoReflect.Descriptor instead.
-func (*EmbedReq) Descriptor() ([]byte, []int) {
+// Deprecated: Use EmbedRequest.ProtoReflect.Descriptor instead.
+func (*EmbedRequest) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_embedding_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EmbedReq) GetId() string {
+func (x *EmbedRequest) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *EmbedReq) GetModel() string {
+func (x *EmbedRequest) GetModel() string {
 	if x != nil {
 		return x.Model
 	}
 	return ""
 }
 
-func (x *EmbedReq) GetContents() []*Content {
+func (x *EmbedRequest) GetContents() []*Content {
 	if x != nil {
 		return x.Contents
 	}
 	return nil
 }
 
-type EmbedResp struct {
+type EmbedResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
@@ -105,20 +105,20 @@ type EmbedResp struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EmbedResp) Reset() {
-	*x = EmbedResp{}
+func (x *EmbedResponse) Reset() {
+	*x = EmbedResponse{}
 	mi := &file_neurouter_v1_embedding_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EmbedResp) String() string {
+func (x *EmbedResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EmbedResp) ProtoMessage() {}
+func (*EmbedResponse) ProtoMessage() {}
 
-func (x *EmbedResp) ProtoReflect() protoreflect.Message {
+func (x *EmbedResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_embedding_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -130,26 +130,26 @@ func (x *EmbedResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EmbedResp.ProtoReflect.Descriptor instead.
-func (*EmbedResp) Descriptor() ([]byte, []int) {
+// Deprecated: Use EmbedResponse.ProtoReflect.Descriptor instead.
+func (*EmbedResponse) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_embedding_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EmbedResp) GetId() string {
+func (x *EmbedResponse) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *EmbedResp) GetModel() string {
+func (x *EmbedResponse) GetModel() string {
 	if x != nil {
 		return x.Model
 	}
 	return ""
 }
 
-func (x *EmbedResp) GetEmbedding() []float32 {
+func (x *EmbedResponse) GetEmbedding() []float32 {
 	if x != nil {
 		return x.Embedding
 	}
@@ -160,17 +160,17 @@ var File_neurouter_v1_embedding_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_embedding_proto_rawDesc = "" +
 	"\n" +
-	"\x1cneurouter/v1/embedding.proto\x12\fneurouter.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1aneurouter/v1/content.proto\"c\n" +
-	"\bEmbedReq\x12\x0e\n" +
+	"\x1cneurouter/v1/embedding.proto\x12\fneurouter.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1aneurouter/v1/content.proto\"g\n" +
+	"\fEmbedRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x121\n" +
-	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"O\n" +
-	"\tEmbedResp\x12\x0e\n" +
+	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\"S\n" +
+	"\rEmbedResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x12\x1c\n" +
-	"\tembedding\x18\x03 \x03(\x02R\tembedding2[\n" +
-	"\tEmbedding\x12N\n" +
-	"\x05Embed\x12\x16.neurouter.v1.EmbedReq\x1a\x17.neurouter.v1.EmbedResp\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/embedB3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
+	"\tembedding\x18\x03 \x03(\x02R\tembedding2c\n" +
+	"\tEmbedding\x12V\n" +
+	"\x05Embed\x12\x1a.neurouter.v1.EmbedRequest\x1a\x1b.neurouter.v1.EmbedResponse\"\x14\x82\xd3\xe4\x93\x02\x0e:\x01*\"\t/v1/embedB3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
 	file_neurouter_v1_embedding_proto_rawDescOnce sync.Once
@@ -186,14 +186,14 @@ func file_neurouter_v1_embedding_proto_rawDescGZIP() []byte {
 
 var file_neurouter_v1_embedding_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_neurouter_v1_embedding_proto_goTypes = []any{
-	(*EmbedReq)(nil),  // 0: neurouter.v1.EmbedReq
-	(*EmbedResp)(nil), // 1: neurouter.v1.EmbedResp
-	(*Content)(nil),   // 2: neurouter.v1.Content
+	(*EmbedRequest)(nil),  // 0: neurouter.v1.EmbedRequest
+	(*EmbedResponse)(nil), // 1: neurouter.v1.EmbedResponse
+	(*Content)(nil),       // 2: neurouter.v1.Content
 }
 var file_neurouter_v1_embedding_proto_depIdxs = []int32{
-	2, // 0: neurouter.v1.EmbedReq.contents:type_name -> neurouter.v1.Content
-	0, // 1: neurouter.v1.Embedding.Embed:input_type -> neurouter.v1.EmbedReq
-	1, // 2: neurouter.v1.Embedding.Embed:output_type -> neurouter.v1.EmbedResp
+	2, // 0: neurouter.v1.EmbedRequest.contents:type_name -> neurouter.v1.Content
+	0, // 1: neurouter.v1.Embedding.Embed:input_type -> neurouter.v1.EmbedRequest
+	1, // 2: neurouter.v1.Embedding.Embed:output_type -> neurouter.v1.EmbedResponse
 	2, // [2:3] is the sub-list for method output_type
 	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

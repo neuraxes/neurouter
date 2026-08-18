@@ -32,7 +32,7 @@ var NonStreamMaxTokens = &Fixture{
 	Name:     "non_stream_max_tokens",
 	Request:  nonStreamMaxTokensRequest,
 	Response: nonStreamMaxTokensResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "non_stream_max_tokens",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -42,13 +42,13 @@ var NonStreamMaxTokens = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Answer in long, detailed prose.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Write a detailed 300-word explanation of how an LLM router balances load across multiple upstream providers, covering probing, ranking, reservation, and rate limiting.")},
 				},
@@ -56,13 +56,13 @@ var NonStreamMaxTokens = &Fixture{
 		},
 		Metadata: map[string]string{"user_id": "anthropic-conversion-fixture-user"},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "non_stream_max_tokens",
 		Model:  "anthropic/claude-4.6-sonnet-20260217",
-		Status: v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT,
+		Status: v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT,
 		Message: &v1.Message{
 			Id:   "gen-1782639366-sxvOUZF4maUOUI6sgtQy",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("# How an LLM Router Balances Load Across Multiple Upstream")},
 			},

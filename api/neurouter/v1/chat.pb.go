@@ -21,12 +21,13 @@
 package v1
 
 import (
-	_ "google.golang.org/genproto/googleapis/api/annotations"
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	_ "google.golang.org/genproto/googleapis/api/annotations"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -39,22 +40,25 @@ const (
 type Role int32
 
 const (
-	Role_SYSTEM Role = 0
-	Role_USER   Role = 1
-	Role_MODEL  Role = 2
+	Role_ROLE_UNSPECIFIED Role = 0
+	Role_ROLE_SYSTEM      Role = 1
+	Role_ROLE_USER        Role = 2
+	Role_ROLE_MODEL       Role = 3
 )
 
 // Enum value maps for Role.
 var (
 	Role_name = map[int32]string{
-		0: "SYSTEM",
-		1: "USER",
-		2: "MODEL",
+		0: "ROLE_UNSPECIFIED",
+		1: "ROLE_SYSTEM",
+		2: "ROLE_USER",
+		3: "ROLE_MODEL",
 	}
 	Role_value = map[string]int32{
-		"SYSTEM": 0,
-		"USER":   1,
-		"MODEL":  2,
+		"ROLE_UNSPECIFIED": 0,
+		"ROLE_SYSTEM":      1,
+		"ROLE_USER":        2,
+		"ROLE_MODEL":       3,
 	}
 )
 
@@ -88,41 +92,44 @@ func (Role) EnumDescriptor() ([]byte, []int) {
 type ChatStatus int32
 
 const (
+	ChatStatus_CHAT_STATUS_UNSPECIFIED ChatStatus = 0
 	// The model is generating the response
-	ChatStatus_CHAT_IN_PROGRESS ChatStatus = 0
+	ChatStatus_CHAT_STATUS_IN_PROGRESS ChatStatus = 1
 	// The model turn has been successfully completed
-	ChatStatus_CHAT_COMPLETED ChatStatus = 1
+	ChatStatus_CHAT_STATUS_COMPLETED ChatStatus = 2
 	// The generation failed due to an error
-	ChatStatus_CHAT_FAILED ChatStatus = 2
+	ChatStatus_CHAT_STATUS_FAILED ChatStatus = 3
 	// The generation has been refused
-	ChatStatus_CHAT_REFUSED ChatStatus = 3
+	ChatStatus_CHAT_STATUS_REFUSED ChatStatus = 4
 	// The generation has been cancelled
-	ChatStatus_CHAT_CANCELLED ChatStatus = 4
+	ChatStatus_CHAT_STATUS_CANCELLED ChatStatus = 5
 	// The generation stopped due to pending tool uses
-	ChatStatus_CHAT_PENDING_TOOL_USE ChatStatus = 5
+	ChatStatus_CHAT_STATUS_PENDING_TOOL_USE ChatStatus = 6
 	// The generation stopped due to exceeding token limit
-	ChatStatus_CHAT_REACHED_TOKEN_LIMIT ChatStatus = 6
+	ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT ChatStatus = 7
 )
 
 // Enum value maps for ChatStatus.
 var (
 	ChatStatus_name = map[int32]string{
-		0: "CHAT_IN_PROGRESS",
-		1: "CHAT_COMPLETED",
-		2: "CHAT_FAILED",
-		3: "CHAT_REFUSED",
-		4: "CHAT_CANCELLED",
-		5: "CHAT_PENDING_TOOL_USE",
-		6: "CHAT_REACHED_TOKEN_LIMIT",
+		0: "CHAT_STATUS_UNSPECIFIED",
+		1: "CHAT_STATUS_IN_PROGRESS",
+		2: "CHAT_STATUS_COMPLETED",
+		3: "CHAT_STATUS_FAILED",
+		4: "CHAT_STATUS_REFUSED",
+		5: "CHAT_STATUS_CANCELLED",
+		6: "CHAT_STATUS_PENDING_TOOL_USE",
+		7: "CHAT_STATUS_REACHED_TOKEN_LIMIT",
 	}
 	ChatStatus_value = map[string]int32{
-		"CHAT_IN_PROGRESS":         0,
-		"CHAT_COMPLETED":           1,
-		"CHAT_FAILED":              2,
-		"CHAT_REFUSED":             3,
-		"CHAT_CANCELLED":           4,
-		"CHAT_PENDING_TOOL_USE":    5,
-		"CHAT_REACHED_TOKEN_LIMIT": 6,
+		"CHAT_STATUS_UNSPECIFIED":         0,
+		"CHAT_STATUS_IN_PROGRESS":         1,
+		"CHAT_STATUS_COMPLETED":           2,
+		"CHAT_STATUS_FAILED":              3,
+		"CHAT_STATUS_REFUSED":             4,
+		"CHAT_STATUS_CANCELLED":           5,
+		"CHAT_STATUS_PENDING_TOOL_USE":    6,
+		"CHAT_STATUS_REACHED_TOKEN_LIMIT": 7,
 	}
 )
 
@@ -210,7 +217,7 @@ func (x *Message) GetRole() Role {
 	if x != nil {
 		return x.Role
 	}
-	return Role_SYSTEM
+	return Role_ROLE_UNSPECIFIED
 }
 
 func (x *Message) GetContents() []*Content {
@@ -227,10 +234,10 @@ func (x *Message) GetName() string {
 	return ""
 }
 
-type ChatReq struct {
+type ChatRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The identifier of this chat request, assigned by whichever entry point
-	// accepts it. Every ChatResp and ChatEvent produced for the request echoes
+	// accepts it. Every ChatResponse and ChatEvent produced for the request echoes
 	// it unchanged, which is what correlates them across layers.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// A stable identifier shared by requests in the same conversation. Clients
@@ -251,20 +258,20 @@ type ChatReq struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChatReq) Reset() {
-	*x = ChatReq{}
+func (x *ChatRequest) Reset() {
+	*x = ChatRequest{}
 	mi := &file_neurouter_v1_chat_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChatReq) String() string {
+func (x *ChatRequest) String() string {
 	return "<redacted>"
 }
 
-func (*ChatReq) ProtoMessage() {}
+func (*ChatRequest) ProtoMessage() {}
 
-func (x *ChatReq) ProtoReflect() protoreflect.Message {
+func (x *ChatRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_chat_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -276,61 +283,61 @@ func (x *ChatReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChatReq.ProtoReflect.Descriptor instead.
-func (*ChatReq) Descriptor() ([]byte, []int) {
+// Deprecated: Use ChatRequest.ProtoReflect.Descriptor instead.
+func (*ChatRequest) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ChatReq) GetId() string {
+func (x *ChatRequest) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *ChatReq) GetSession() string {
+func (x *ChatRequest) GetSession() string {
 	if x != nil {
 		return x.Session
 	}
 	return ""
 }
 
-func (x *ChatReq) GetModel() string {
+func (x *ChatRequest) GetModel() string {
 	if x != nil {
 		return x.Model
 	}
 	return ""
 }
 
-func (x *ChatReq) GetConfig() *GenerationConfig {
+func (x *ChatRequest) GetConfig() *GenerationConfig {
 	if x != nil {
 		return x.Config
 	}
 	return nil
 }
 
-func (x *ChatReq) GetMessages() []*Message {
+func (x *ChatRequest) GetMessages() []*Message {
 	if x != nil {
 		return x.Messages
 	}
 	return nil
 }
 
-func (x *ChatReq) GetTools() []*Tool {
+func (x *ChatRequest) GetTools() []*Tool {
 	if x != nil {
 		return x.Tools
 	}
 	return nil
 }
 
-func (x *ChatReq) GetMetadata() map[string]string {
+func (x *ChatRequest) GetMetadata() map[string]string {
 	if x != nil {
 		return x.Metadata
 	}
 	return nil
 }
 
-type ChatResp struct {
+type ChatResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The id of the request this response answers.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -346,20 +353,20 @@ type ChatResp struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChatResp) Reset() {
-	*x = ChatResp{}
+func (x *ChatResponse) Reset() {
+	*x = ChatResponse{}
 	mi := &file_neurouter_v1_chat_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChatResp) String() string {
+func (x *ChatResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChatResp) ProtoMessage() {}
+func (*ChatResponse) ProtoMessage() {}
 
-func (x *ChatResp) ProtoReflect() protoreflect.Message {
+func (x *ChatResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_chat_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -371,40 +378,40 @@ func (x *ChatResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChatResp.ProtoReflect.Descriptor instead.
-func (*ChatResp) Descriptor() ([]byte, []int) {
+// Deprecated: Use ChatResponse.ProtoReflect.Descriptor instead.
+func (*ChatResponse) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_chat_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ChatResp) GetId() string {
+func (x *ChatResponse) GetId() string {
 	if x != nil {
 		return x.Id
 	}
 	return ""
 }
 
-func (x *ChatResp) GetModel() string {
+func (x *ChatResponse) GetModel() string {
 	if x != nil {
 		return x.Model
 	}
 	return ""
 }
 
-func (x *ChatResp) GetStatus() ChatStatus {
+func (x *ChatResponse) GetStatus() ChatStatus {
 	if x != nil {
 		return x.Status
 	}
-	return ChatStatus_CHAT_IN_PROGRESS
+	return ChatStatus_CHAT_STATUS_UNSPECIFIED
 }
 
-func (x *ChatResp) GetMessage() *Message {
+func (x *ChatResponse) GetMessage() *Message {
 	if x != nil {
 		return x.Message
 	}
 	return nil
 }
 
-func (x *ChatResp) GetStatistics() *Statistics {
+func (x *ChatResponse) GetStatistics() *Statistics {
 	if x != nil {
 		return x.Statistics
 	}
@@ -684,7 +691,7 @@ func (x *MessageStop) GetStatus() ChatStatus {
 	if x != nil {
 		return x.Status
 	}
-	return ChatStatus_CHAT_IN_PROGRESS
+	return ChatStatus_CHAT_STATUS_UNSPECIFIED
 }
 
 type TextStart struct {
@@ -1059,19 +1066,19 @@ const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12&\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x12.neurouter.v1.RoleR\x04role\x121\n" +
 	"\bcontents\x18\x03 \x03(\v2\x15.neurouter.v1.ContentR\bcontents\x12\x12\n" +
-	"\x04name\x18\x04 \x01(\tR\x04name\"\xdc\x02\n" +
-	"\aChatReq\x12\x0e\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\"\xe4\x02\n" +
+	"\vChatRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\asession\x18\x02 \x01(\tR\asession\x12\x14\n" +
 	"\x05model\x18\x03 \x01(\tR\x05model\x126\n" +
 	"\x06config\x18\x04 \x01(\v2\x1e.neurouter.v1.GenerationConfigR\x06config\x121\n" +
 	"\bmessages\x18\x05 \x03(\v2\x15.neurouter.v1.MessageR\bmessages\x12(\n" +
-	"\x05tools\x18\x06 \x03(\v2\x12.neurouter.v1.ToolR\x05tools\x12?\n" +
-	"\bmetadata\x18\x0f \x03(\v2#.neurouter.v1.ChatReq.MetadataEntryR\bmetadata\x1a;\n" +
+	"\x05tools\x18\x06 \x03(\v2\x12.neurouter.v1.ToolR\x05tools\x12C\n" +
+	"\bmetadata\x18\x0f \x03(\v2'.neurouter.v1.ChatRequest.MetadataEntryR\bmetadata\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xcd\x01\n" +
-	"\bChatResp\x12\x0e\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd1\x01\n" +
+	"\fChatResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05model\x18\x02 \x01(\tR\x05model\x120\n" +
 	"\x06status\x18\x03 \x01(\x0e2\x18.neurouter.v1.ChatStatusR\x06status\x12/\n" +
@@ -1118,25 +1125,27 @@ const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\x0ftool_input_text\x18\f \x01(\tH\x00R\rtoolInputTextB\a\n" +
 	"\x05delta\"#\n" +
 	"\vContentStop\x12\x14\n" +
-	"\x05index\x18\x01 \x01(\rR\x05index*'\n" +
-	"\x04Role\x12\n" +
+	"\x05index\x18\x01 \x01(\rR\x05index*L\n" +
+	"\x04Role\x12\x14\n" +
+	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0f\n" +
+	"\vROLE_SYSTEM\x10\x01\x12\r\n" +
+	"\tROLE_USER\x10\x02\x12\x0e\n" +
 	"\n" +
-	"\x06SYSTEM\x10\x00\x12\b\n" +
-	"\x04USER\x10\x01\x12\t\n" +
-	"\x05MODEL\x10\x02*\xa6\x01\n" +
+	"ROLE_MODEL\x10\x03*\xf4\x01\n" +
 	"\n" +
-	"ChatStatus\x12\x14\n" +
-	"\x10CHAT_IN_PROGRESS\x10\x00\x12\x12\n" +
-	"\x0eCHAT_COMPLETED\x10\x01\x12\x0f\n" +
-	"\vCHAT_FAILED\x10\x02\x12\x10\n" +
-	"\fCHAT_REFUSED\x10\x03\x12\x12\n" +
-	"\x0eCHAT_CANCELLED\x10\x04\x12\x19\n" +
-	"\x15CHAT_PENDING_TOOL_USE\x10\x05\x12\x1c\n" +
-	"\x18CHAT_REACHED_TOKEN_LIMIT\x10\x062\x94\x01\n" +
-	"\x04Chat\x12J\n" +
-	"\x04Chat\x12\x15.neurouter.v1.ChatReq\x1a\x16.neurouter.v1.ChatResp\"\x13\x82\xd3\xe4\x93\x02\r:\x01*\"\b/v1/chat\x12@\n" +
+	"ChatStatus\x12\x1b\n" +
+	"\x17CHAT_STATUS_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17CHAT_STATUS_IN_PROGRESS\x10\x01\x12\x19\n" +
+	"\x15CHAT_STATUS_COMPLETED\x10\x02\x12\x16\n" +
+	"\x12CHAT_STATUS_FAILED\x10\x03\x12\x17\n" +
+	"\x13CHAT_STATUS_REFUSED\x10\x04\x12\x19\n" +
+	"\x15CHAT_STATUS_CANCELLED\x10\x05\x12 \n" +
+	"\x1cCHAT_STATUS_PENDING_TOOL_USE\x10\x06\x12#\n" +
+	"\x1fCHAT_STATUS_REACHED_TOKEN_LIMIT\x10\a2\xa0\x01\n" +
+	"\x04Chat\x12R\n" +
+	"\x04Chat\x12\x19.neurouter.v1.ChatRequest\x1a\x1a.neurouter.v1.ChatResponse\"\x13\x82\xd3\xe4\x93\x02\r:\x01*\"\b/v1/chat\x12D\n" +
 	"\n" +
-	"ChatStream\x12\x15.neurouter.v1.ChatReq\x1a\x17.neurouter.v1.ChatEvent\"\x000\x01B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
+	"ChatStream\x12\x19.neurouter.v1.ChatRequest\x1a\x17.neurouter.v1.ChatEvent\"\x000\x01B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
 	file_neurouter_v1_chat_proto_rawDescOnce sync.Once
@@ -1156,8 +1165,8 @@ var file_neurouter_v1_chat_proto_goTypes = []any{
 	(Role)(0),                // 0: neurouter.v1.Role
 	(ChatStatus)(0),          // 1: neurouter.v1.ChatStatus
 	(*Message)(nil),          // 2: neurouter.v1.Message
-	(*ChatReq)(nil),          // 3: neurouter.v1.ChatReq
-	(*ChatResp)(nil),         // 4: neurouter.v1.ChatResp
+	(*ChatRequest)(nil),      // 3: neurouter.v1.ChatRequest
+	(*ChatResponse)(nil),     // 4: neurouter.v1.ChatResponse
 	(*ChatEvent)(nil),        // 5: neurouter.v1.ChatEvent
 	(*MessageStart)(nil),     // 6: neurouter.v1.MessageStart
 	(*MessageStop)(nil),      // 7: neurouter.v1.MessageStop
@@ -1166,7 +1175,7 @@ var file_neurouter_v1_chat_proto_goTypes = []any{
 	(*ContentStart)(nil),     // 10: neurouter.v1.ContentStart
 	(*ContentDelta)(nil),     // 11: neurouter.v1.ContentDelta
 	(*ContentStop)(nil),      // 12: neurouter.v1.ContentStop
-	nil,                      // 13: neurouter.v1.ChatReq.MetadataEntry
+	nil,                      // 13: neurouter.v1.ChatRequest.MetadataEntry
 	nil,                      // 14: neurouter.v1.ContentStart.MetadataEntry
 	(*Content)(nil),          // 15: neurouter.v1.Content
 	(*GenerationConfig)(nil), // 16: neurouter.v1.GenerationConfig
@@ -1178,13 +1187,13 @@ var file_neurouter_v1_chat_proto_goTypes = []any{
 var file_neurouter_v1_chat_proto_depIdxs = []int32{
 	0,  // 0: neurouter.v1.Message.role:type_name -> neurouter.v1.Role
 	15, // 1: neurouter.v1.Message.contents:type_name -> neurouter.v1.Content
-	16, // 2: neurouter.v1.ChatReq.config:type_name -> neurouter.v1.GenerationConfig
-	2,  // 3: neurouter.v1.ChatReq.messages:type_name -> neurouter.v1.Message
-	17, // 4: neurouter.v1.ChatReq.tools:type_name -> neurouter.v1.Tool
-	13, // 5: neurouter.v1.ChatReq.metadata:type_name -> neurouter.v1.ChatReq.MetadataEntry
-	1,  // 6: neurouter.v1.ChatResp.status:type_name -> neurouter.v1.ChatStatus
-	2,  // 7: neurouter.v1.ChatResp.message:type_name -> neurouter.v1.Message
-	18, // 8: neurouter.v1.ChatResp.statistics:type_name -> neurouter.v1.Statistics
+	16, // 2: neurouter.v1.ChatRequest.config:type_name -> neurouter.v1.GenerationConfig
+	2,  // 3: neurouter.v1.ChatRequest.messages:type_name -> neurouter.v1.Message
+	17, // 4: neurouter.v1.ChatRequest.tools:type_name -> neurouter.v1.Tool
+	13, // 5: neurouter.v1.ChatRequest.metadata:type_name -> neurouter.v1.ChatRequest.MetadataEntry
+	1,  // 6: neurouter.v1.ChatResponse.status:type_name -> neurouter.v1.ChatStatus
+	2,  // 7: neurouter.v1.ChatResponse.message:type_name -> neurouter.v1.Message
+	18, // 8: neurouter.v1.ChatResponse.statistics:type_name -> neurouter.v1.Statistics
 	19, // 9: neurouter.v1.ChatEvent.usage:type_name -> neurouter.v1.Usage
 	6,  // 10: neurouter.v1.ChatEvent.message_start:type_name -> neurouter.v1.MessageStart
 	7,  // 11: neurouter.v1.ChatEvent.message_stop:type_name -> neurouter.v1.MessageStop
@@ -1197,9 +1206,9 @@ var file_neurouter_v1_chat_proto_depIdxs = []int32{
 	14, // 18: neurouter.v1.ContentStart.metadata:type_name -> neurouter.v1.ContentStart.MetadataEntry
 	8,  // 19: neurouter.v1.ContentStart.text:type_name -> neurouter.v1.TextStart
 	9,  // 20: neurouter.v1.ContentStart.tool_use:type_name -> neurouter.v1.ToolUseStart
-	3,  // 21: neurouter.v1.Chat.Chat:input_type -> neurouter.v1.ChatReq
-	3,  // 22: neurouter.v1.Chat.ChatStream:input_type -> neurouter.v1.ChatReq
-	4,  // 23: neurouter.v1.Chat.Chat:output_type -> neurouter.v1.ChatResp
+	3,  // 21: neurouter.v1.Chat.Chat:input_type -> neurouter.v1.ChatRequest
+	3,  // 22: neurouter.v1.Chat.ChatStream:input_type -> neurouter.v1.ChatRequest
+	4,  // 23: neurouter.v1.Chat.Chat:output_type -> neurouter.v1.ChatResponse
 	5,  // 24: neurouter.v1.Chat.ChatStream:output_type -> neurouter.v1.ChatEvent
 	23, // [23:25] is the sub-list for method output_type
 	21, // [21:23] is the sub-list for method input_type

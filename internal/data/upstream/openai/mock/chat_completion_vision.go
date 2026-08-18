@@ -36,7 +36,7 @@ var Vision = &Fixture{
 	Name:     "vision",
 	Request:  visionRequest,
 	Response: visionResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "vision",
 		Model: "openai/gpt-4o",
 		Config: &v1.GenerationConfig{
@@ -45,13 +45,13 @@ var Vision = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Inspect every image the user supplies and describe it briefly.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("The image below is provided as inline base64 data. State its source (base64) and give a one-sentence description of what you see, including any visible logo or shape.")},
 					{
@@ -66,13 +66,13 @@ var Vision = &Fixture{
 			},
 		},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "vision",
 		Model:  "openai/gpt-4o",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1782736297-9nj6EnXIeEITDo4DtY0I",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("Source: base64\n\nDescription: A small, black and white geometric logo resembling an intricate knot or flower shape.")},
 			},

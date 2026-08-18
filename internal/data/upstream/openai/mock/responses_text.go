@@ -32,7 +32,7 @@ var ResponsesText = &Fixture{
 	Name:     "responses_text",
 	Request:  responsesTextRequest,
 	Response: responsesTextResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "responses_text",
 		Model: "openai/gpt-5-mini",
 		Config: &v1.GenerationConfig{
@@ -41,13 +41,13 @@ var ResponsesText = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Follow formatting instructions exactly.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Reply with exactly one sentence: Neurouter successfully routed this Responses API request.")},
 				},
@@ -55,15 +55,15 @@ var ResponsesText = &Fixture{
 		},
 		Metadata: map[string]string{"fixture": "responses_text"},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "responses_text",
 		Model:  "openai/gpt-5-mini",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			// A Responses output is a heterogeneous item list, so the response ID
 			// identifies the combined internal model message.
 			Id:   "gen-1785502322-iD3pWMHAKB2iRN8OtooU",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Id:    "rs_03802c004f5713db016a6c9a72decc81a09a8090abfd176c62",

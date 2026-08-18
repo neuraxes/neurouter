@@ -20,28 +20,28 @@ import (
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 )
 
-// ChatEventReducer rebuilds a complete ChatResp from a stream of ChatEvents.
+// ChatEventReducer rebuilds a complete ChatResponse from a stream of ChatEvents.
 type ChatEventReducer struct {
-	resp   *v1.ChatResp
+	resp   *v1.ChatResponse
 	blocks map[uint32]*v1.Content
 	log    *slog.Logger
 }
 
 func NewChatEventReducer(logger *slog.Logger) *ChatEventReducer {
 	return &ChatEventReducer{
-		resp:   &v1.ChatResp{},
+		resp:   &v1.ChatResponse{},
 		blocks: map[uint32]*v1.Content{},
 		log:    logger,
 	}
 }
 
-func (r *ChatEventReducer) Resp() *v1.ChatResp {
+func (r *ChatEventReducer) Resp() *v1.ChatResponse {
 	return r.resp
 }
 
 func (r *ChatEventReducer) ensureMessage() {
 	if r.resp.Message == nil {
-		r.resp.Message = &v1.Message{Role: v1.Role_MODEL}
+		r.resp.Message = &v1.Message{Role: v1.Role_ROLE_MODEL}
 	}
 }
 

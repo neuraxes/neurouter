@@ -87,7 +87,7 @@ func TestConvertDeveloperMessageFromOpenAIChat(t *testing.T) {
 			result := convertDeveloperMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a SYSTEM message with text content", func() {
-				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "You are a helpful assistant.")
 			})
@@ -105,7 +105,7 @@ func TestConvertDeveloperMessageFromOpenAIChat(t *testing.T) {
 			result := convertDeveloperMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a SYSTEM message with multiple text contents", func() {
-				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 2)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Part 1")
 				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Part 2")
@@ -153,7 +153,7 @@ func TestConvertSystemMessageFromOpenAIChat(t *testing.T) {
 			result := convertSystemMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a SYSTEM message with text content", func() {
-				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "System prompt")
 			})
@@ -171,7 +171,7 @@ func TestConvertSystemMessageFromOpenAIChat(t *testing.T) {
 			result := convertSystemMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a SYSTEM message with multiple text contents", func() {
-				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
 				So(result.Contents, ShouldHaveLength, 2)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Be helpful.")
 				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Be concise.")
@@ -206,7 +206,7 @@ func TestConvertUserMessageFromOpenAIChat(t *testing.T) {
 			result := convertUserMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a USER message with text content", func() {
-				So(result.Role, ShouldEqual, v1.Role_USER)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_USER)
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Hello!")
 			})
@@ -224,7 +224,7 @@ func TestConvertUserMessageFromOpenAIChat(t *testing.T) {
 			result := convertUserMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a USER message with multiple text contents", func() {
-				So(result.Role, ShouldEqual, v1.Role_USER)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_USER)
 				So(result.Contents, ShouldHaveLength, 2)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Part A")
 				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Part B")
@@ -326,7 +326,7 @@ func TestConvertAssistantMessageFromOpenAIChat(t *testing.T) {
 			result := convertAssistantMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a MODEL message with text content", func() {
-				So(result.Role, ShouldEqual, v1.Role_MODEL)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "I can help!")
 			})
@@ -344,7 +344,7 @@ func TestConvertAssistantMessageFromOpenAIChat(t *testing.T) {
 			result := convertAssistantMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a MODEL message with multiple text contents", func() {
-				So(result.Role, ShouldEqual, v1.Role_MODEL)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 				So(result.Contents, ShouldHaveLength, 2)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Line 1")
 				So(result.Contents[1].GetText().GetText(), ShouldEqual, "Line 2")
@@ -469,7 +469,7 @@ func TestConvertToolMessageFromOpenAIChat(t *testing.T) {
 			result := convertToolMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a USER message with ToolResult content", func() {
-				So(result.Role, ShouldEqual, v1.Role_USER)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_USER)
 				So(result.Contents, ShouldHaveLength, 1)
 				tr := result.Contents[0].GetToolResult()
 				So(tr, ShouldNotBeNil)
@@ -492,7 +492,7 @@ func TestConvertToolMessageFromOpenAIChat(t *testing.T) {
 			result := convertToolMessageFromOpenAIChat(m)
 
 			Convey("Then it should create a ToolResult with multiple outputs", func() {
-				So(result.Role, ShouldEqual, v1.Role_USER)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_USER)
 				tr := result.Contents[0].GetToolResult()
 				So(tr, ShouldNotBeNil)
 				So(tr.Id, ShouldEqual, "call-2")
@@ -533,7 +533,7 @@ func TestConvertChatMessageParamFromOpenAIChat(t *testing.T) {
 
 			Convey("Then it should dispatch to developer converter", func() {
 				So(result, ShouldNotBeNil)
-				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "dev msg")
 			})
 		})
@@ -550,7 +550,7 @@ func TestConvertChatMessageParamFromOpenAIChat(t *testing.T) {
 
 			Convey("Then it should dispatch to system converter", func() {
 				So(result, ShouldNotBeNil)
-				So(result.Role, ShouldEqual, v1.Role_SYSTEM)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "sys msg")
 			})
 		})
@@ -567,7 +567,7 @@ func TestConvertChatMessageParamFromOpenAIChat(t *testing.T) {
 
 			Convey("Then it should dispatch to user converter", func() {
 				So(result, ShouldNotBeNil)
-				So(result.Role, ShouldEqual, v1.Role_USER)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_USER)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "user msg")
 			})
 		})
@@ -584,7 +584,7 @@ func TestConvertChatMessageParamFromOpenAIChat(t *testing.T) {
 
 			Convey("Then it should dispatch to assistant converter", func() {
 				So(result, ShouldNotBeNil)
-				So(result.Role, ShouldEqual, v1.Role_MODEL)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "assistant msg")
 			})
 		})
@@ -602,7 +602,7 @@ func TestConvertChatMessageParamFromOpenAIChat(t *testing.T) {
 
 			Convey("Then it should dispatch to tool converter", func() {
 				So(result, ShouldNotBeNil)
-				So(result.Role, ShouldEqual, v1.Role_USER)
+				So(result.Role, ShouldEqual, v1.Role_ROLE_USER)
 				tr := result.Contents[0].GetToolResult()
 				So(tr, ShouldNotBeNil)
 				So(tr.Id, ShouldEqual, "call-1")
@@ -620,7 +620,7 @@ func TestConvertChatMessageParamFromOpenAIChat(t *testing.T) {
 	})
 }
 
-func TestConvertChatReqFromOpenAIChat(t *testing.T) {
+func TestConvertChatRequestFromOpenAIChat(t *testing.T) {
 	Convey("Given an OpenAI ChatCompletionNewParams to convert", t, func() {
 		Convey("When PromptCacheKey is set", func() {
 			req := &openai.ChatCompletionNewParams{
@@ -628,7 +628,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				PromptCacheKey: openai.Opt("session-1"),
 			}
 
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then it should become the session ID", func() {
 				So(result.Session, ShouldEqual, "session-1")
@@ -640,7 +640,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				Model:               "gpt-4o",
 				MaxCompletionTokens: openai.Opt[int64](4096),
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then MaxTokens should be set in config", func() {
 				So(result.Config.MaxTokens, ShouldNotBeNil)
@@ -653,7 +653,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				Model:     "gpt-4",
 				MaxTokens: openai.Opt[int64](2048),
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then MaxTokens should be set from the deprecated field", func() {
 				So(result.Config.MaxTokens, ShouldNotBeNil)
@@ -667,7 +667,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				MaxCompletionTokens: openai.Opt[int64](8192),
 				MaxTokens:           openai.Opt[int64](1024),
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then MaxCompletionTokens should take precedence", func() {
 				So(*result.Config.MaxTokens, ShouldEqual, 8192)
@@ -679,7 +679,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				Model:       "gpt-4",
 				Temperature: openai.Opt(0.7),
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then Temperature should be applied", func() {
 				So(result.Config.Temperature, ShouldNotBeNil)
@@ -692,7 +692,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				Model: "gpt-4",
 				TopP:  openai.Opt(0.95),
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then TopP should be applied", func() {
 				So(result.Config.TopP, ShouldNotBeNil)
@@ -705,7 +705,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				Model:            "gpt-4",
 				FrequencyPenalty: openai.Opt(1.5),
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then FrequencyPenalty should be applied", func() {
 				So(result.Config.FrequencyPenalty, ShouldNotBeNil)
@@ -718,7 +718,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 				Model:           "gpt-4",
 				PresencePenalty: openai.Opt(0.5),
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then PresencePenalty should be applied", func() {
 				So(result.Config.PresencePenalty, ShouldNotBeNil)
@@ -733,7 +733,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 					OfJSONObject: &shared.ResponseFormatJSONObjectParam{},
 				},
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then Grammar should be set as json_object preset", func() {
 				So(result.Config.Grammar, ShouldNotBeNil)
@@ -761,7 +761,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then Grammar should be set as schema", func() {
 				schema, ok := result.Config.Grammar.(*v1.GenerationConfig_Schema)
@@ -775,7 +775,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 			req := &openai.ChatCompletionNewParams{
 				Model: "gpt-4",
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then config optional fields should be nil", func() {
 				So(result.Config.MaxTokens, ShouldBeNil)
@@ -808,14 +808,14 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 					}},
 				},
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then all messages should be converted", func() {
 				So(result.Model, ShouldEqual, "gpt-4")
 				So(result.Messages, ShouldHaveLength, 3)
-				So(result.Messages[0].Role, ShouldEqual, v1.Role_SYSTEM)
-				So(result.Messages[1].Role, ShouldEqual, v1.Role_USER)
-				So(result.Messages[2].Role, ShouldEqual, v1.Role_MODEL)
+				So(result.Messages[0].Role, ShouldEqual, v1.Role_ROLE_SYSTEM)
+				So(result.Messages[1].Role, ShouldEqual, v1.Role_ROLE_USER)
+				So(result.Messages[2].Role, ShouldEqual, v1.Role_ROLE_MODEL)
 			})
 		})
 
@@ -831,7 +831,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 					{},
 				},
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then nil messages should be filtered out", func() {
 				So(result.Messages, ShouldHaveLength, 1)
@@ -858,7 +858,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 					}},
 				},
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then tools should be converted", func() {
 				So(result.Tools, ShouldHaveLength, 1)
@@ -879,7 +879,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 					{},
 				},
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then nil tools should be skipped", func() {
 				So(result.Tools, ShouldBeEmpty)
@@ -905,7 +905,7 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 					}},
 				},
 			}
-			result := convertChatReqFromOpenAIChat(req)
+			result := convertChatRequestFromOpenAIChat(req)
 
 			Convey("Then all fields should be populated", func() {
 				So(result.Model, ShouldEqual, "gpt-4o")
@@ -926,12 +926,12 @@ func TestConvertChatReqFromOpenAIChat(t *testing.T) {
 
 func TestConvertStatusToOpenAIChat(t *testing.T) {
 	Convey("Given various internal chat statuses", t, func() {
-		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_COMPLETED), ShouldEqual, "stop")
-		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_REFUSED), ShouldEqual, "content_filter")
-		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT), ShouldEqual, "length")
-		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_PENDING_TOOL_USE), ShouldEqual, "tool_calls")
-		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_IN_PROGRESS), ShouldEqual, "")
-		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_CANCELLED), ShouldEqual, "")
+		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_STATUS_COMPLETED), ShouldEqual, "stop")
+		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_STATUS_REFUSED), ShouldEqual, "content_filter")
+		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT), ShouldEqual, "length")
+		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE), ShouldEqual, "tool_calls")
+		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_STATUS_IN_PROGRESS), ShouldEqual, "")
+		So(convertStatusToOpenAIChat(v1.ChatStatus_CHAT_STATUS_CANCELLED), ShouldEqual, "")
 	})
 }
 
@@ -979,17 +979,17 @@ func TestConvertUsageToOpenAIChat(t *testing.T) {
 	})
 }
 
-func TestConvertChatRespToOpenAIChat(t *testing.T) {
-	Convey("Given an internal ChatResp to convert to OpenAI format", t, func() {
+func TestConvertChatResponseToOpenAIChat(t *testing.T) {
+	Convey("Given an internal ChatResponse to convert to OpenAI format", t, func() {
 
 		Convey("When converting a response with text content", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Id:     "req-1",
 				Model:  "gpt-4o",
-				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 				Message: &v1.Message{
 					Id:   "chatcmpl-1",
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: v1.NewTextContent("Hello!")},
 					},
@@ -1001,7 +1001,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatRespToOpenAIChat(resp)
+			result := convertChatResponseToOpenAIChat(resp)
 
 			Convey("Then the response should have correct fields", func() {
 				So(result.ID, ShouldEqual, "chatcmpl-1")
@@ -1018,12 +1018,12 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("When converting a response with reasoning content", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Id:     "chatcmpl-2",
 				Model:  "o3",
-				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 				Message: &v1.Message{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{
 							Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -1035,7 +1035,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatRespToOpenAIChat(resp)
+			result := convertChatResponseToOpenAIChat(resp)
 
 			Convey("Then reasoning content should be in reasoning_content field", func() {
 				So(result.Choices, ShouldHaveLength, 1)
@@ -1045,12 +1045,12 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("When converting a response with tool calls", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Id:     "chatcmpl-3",
 				Model:  "gpt-4o",
-				Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
+				Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
 				Message: &v1.Message{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: &v1.Content_ToolUse{
 							ToolUse: &v1.ToolUse{
@@ -1064,7 +1064,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatRespToOpenAIChat(resp)
+			result := convertChatResponseToOpenAIChat(resp)
 
 			Convey("Then tool calls should be in the response", func() {
 				So(result.Choices, ShouldHaveLength, 1)
@@ -1078,12 +1078,12 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("When converting a response with mixed text and tool calls", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Id:     "chatcmpl-4",
 				Model:  "gpt-4o",
-				Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
+				Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
 				Message: &v1.Message{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: v1.NewTextContent("I'll check.")},
 						{Content: &v1.Content_ToolUse{
@@ -1098,7 +1098,7 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 					},
 				},
 			}
-			result := convertChatRespToOpenAIChat(resp)
+			result := convertChatResponseToOpenAIChat(resp)
 
 			Convey("Then both text and tool calls should be present", func() {
 				So(result.Choices[0].Message.Content, ShouldEqual, "I'll check.")
@@ -1107,11 +1107,11 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("When message is nil", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Id:    "chatcmpl-5",
 				Model: "gpt-4",
 			}
-			result := convertChatRespToOpenAIChat(resp)
+			result := convertChatResponseToOpenAIChat(resp)
 
 			Convey("Then choices should be empty", func() {
 				So(result.Choices, ShouldBeEmpty)
@@ -1119,18 +1119,18 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("When statistics are nil", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Id:     "chatcmpl-6",
 				Model:  "gpt-4",
-				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 				Message: &v1.Message{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: v1.NewTextContent("Ok")},
 					},
 				},
 			}
-			result := convertChatRespToOpenAIChat(resp)
+			result := convertChatResponseToOpenAIChat(resp)
 
 			Convey("Then usage should be nil", func() {
 				So(result.Usage, ShouldBeNil)
@@ -1138,19 +1138,19 @@ func TestConvertChatRespToOpenAIChat(t *testing.T) {
 		})
 
 		Convey("When text content is concatenated from multiple parts", func() {
-			resp := &v1.ChatResp{
+			resp := &v1.ChatResponse{
 				Id:     "chatcmpl-7",
 				Model:  "gpt-4",
-				Status: v1.ChatStatus_CHAT_COMPLETED,
+				Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 				Message: &v1.Message{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: v1.NewTextContent("Part 1 ")},
 						{Content: v1.NewTextContent("Part 2")},
 					},
 				},
 			}
-			result := convertChatRespToOpenAIChat(resp)
+			result := convertChatResponseToOpenAIChat(resp)
 
 			Convey("Then text parts should be concatenated", func() {
 				So(result.Choices[0].Message.Content, ShouldEqual, "Part 1 Part 2")
@@ -1171,7 +1171,7 @@ func TestConvertEmbeddingReqFromOpenAI(t *testing.T) {
 			}
 			result := convertEmbeddingReqFromOpenAI(req)
 
-			Convey("Then it should create an EmbedReq with text content", func() {
+			Convey("Then it should create an EmbedRequest with text content", func() {
 				So(result.Model, ShouldEqual, "text-embedding-3-small")
 				So(result.Contents, ShouldHaveLength, 1)
 				So(result.Contents[0].GetText().GetText(), ShouldEqual, "Hello world")
@@ -1222,10 +1222,10 @@ func TestConvertEmbeddingReqFromOpenAI(t *testing.T) {
 }
 
 func TestConvertEmbeddingRespToOpenAI(t *testing.T) {
-	Convey("Given an internal EmbedResp to convert", t, func() {
+	Convey("Given an internal EmbedResponse to convert", t, func() {
 
 		Convey("When embedding has values", func() {
-			resp := &v1.EmbedResp{
+			resp := &v1.EmbedResponse{
 				Model:     "text-embedding-3-small",
 				Embedding: []float32{0.1, 0.2, 0.3, -0.5},
 			}
@@ -1245,7 +1245,7 @@ func TestConvertEmbeddingRespToOpenAI(t *testing.T) {
 		})
 
 		Convey("When embedding is empty", func() {
-			resp := &v1.EmbedResp{
+			resp := &v1.EmbedResponse{
 				Model:     "text-embedding-3-small",
 				Embedding: []float32{},
 			}

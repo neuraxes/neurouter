@@ -26,7 +26,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-// convertChatReqFromOpenAIResponses converts a raw Responses API request body.
+// convertChatRequestFromOpenAIResponses converts a raw Responses API request body.
 //
 // Everything but the input items is decoded with the OpenAI SDK. The input
 // items are read straight from the JSON because the SDK registers
@@ -35,13 +35,13 @@ import (
 // which accepts neither output_text parts nor items that omit "type". Both
 // occur whenever a client replays our own output items, and the SDK drops them
 // without reporting an error.
-func convertChatReqFromOpenAIResponses(body []byte) (*v1.ChatReq, error) {
+func convertChatRequestFromOpenAIResponses(body []byte) (*v1.ChatRequest, error) {
 	var req responses.ResponseNewParams
 	if err := json.Unmarshal(body, &req); err != nil {
 		return nil, err
 	}
 
-	chatReq := &v1.ChatReq{
+	chatReq := &v1.ChatRequest{
 		Session:  req.PromptCacheKey.Value,
 		Model:    string(req.Model),
 		Config:   convertGenerationConfigFromOpenAIResponses(&req),
@@ -51,7 +51,7 @@ func convertChatReqFromOpenAIResponses(body []byte) (*v1.ChatReq, error) {
 
 	if req.Instructions.Valid() {
 		appendAdjacentResponsesMessage(&chatReq.Messages, &v1.Message{
-			Role: v1.Role_SYSTEM,
+			Role: v1.Role_ROLE_SYSTEM,
 			Contents: []*v1.Content{{
 				Content: v1.NewTextContent(req.Instructions.Value),
 			}},
@@ -61,7 +61,7 @@ func convertChatReqFromOpenAIResponses(body []byte) (*v1.ChatReq, error) {
 	input := gjson.GetBytes(body, "input")
 	if input.Type == gjson.String {
 		appendAdjacentResponsesMessage(&chatReq.Messages, &v1.Message{
-			Role: v1.Role_USER,
+			Role: v1.Role_ROLE_USER,
 			Contents: []*v1.Content{{
 				Content: v1.NewTextContent(input.String()),
 			}},
@@ -135,7 +135,7 @@ func convertInputItemFromOpenAIResponses(item gjson.Result) *v1.Message {
 		return convertReasoningItemFromOpenAIResponses(item)
 	case "function_call":
 		return &v1.Message{
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
 				Id:   item.Get("call_id").String(),
 				Name: item.Get("name").String(),
@@ -155,7 +155,7 @@ func convertInputItemFromOpenAIResponses(item gjson.Result) *v1.Message {
 			}
 		}
 		return &v1.Message{
-			Role: v1.Role_USER,
+			Role: v1.Role_ROLE_USER,
 			Contents: []*v1.Content{{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
 				Id: item.Get("call_id").String(),
 				Outputs: []*v1.ToolResult_Output{{
@@ -175,12 +175,12 @@ func convertMessageItemFromOpenAIResponses(item gjson.Result) *v1.Message {
 		phase = v1.ContentPhase_CONTENT_PHASE_OUTCOME
 	}
 
-	role := v1.Role_USER
+	role := v1.Role_ROLE_USER
 	switch item.Get("role").String() {
 	case "system", "developer":
-		role = v1.Role_SYSTEM
+		role = v1.Role_ROLE_SYSTEM
 	case "assistant":
-		role = v1.Role_MODEL
+		role = v1.Role_ROLE_MODEL
 	}
 
 	message := &v1.Message{Role: role}
@@ -218,7 +218,7 @@ func convertMessageItemFromOpenAIResponses(item gjson.Result) *v1.Message {
 
 func convertReasoningItemFromOpenAIResponses(item gjson.Result) *v1.Message {
 	id := item.Get("id").String()
-	message := &v1.Message{Role: v1.Role_MODEL}
+	message := &v1.Message{Role: v1.Role_ROLE_MODEL}
 
 	appendText := func(text gjson.Result) {
 		message.Contents = append(message.Contents, &v1.Content{
@@ -256,7 +256,7 @@ func appendAdjacentResponsesMessage(messages *[]*v1.Message, message *v1.Message
 	*messages = append(*messages, message)
 }
 
-func convertChatRespToOpenAIResponses(resp *v1.ChatResp) *responsesResponse {
+func convertChatResponseToOpenAIResponses(resp *v1.ChatResponse) *responsesResponse {
 	responseID := resp.GetMessage().GetId()
 	if responseID == "" {
 		responseID = resp.GetId()
@@ -409,18 +409,18 @@ func convertStatusToOpenAIResponses(
 	status v1.ChatStatus,
 ) (string, *responses.ResponseIncompleteDetails, *responses.ResponseError) {
 	switch status {
-	case v1.ChatStatus_CHAT_COMPLETED, v1.ChatStatus_CHAT_PENDING_TOOL_USE:
+	case v1.ChatStatus_CHAT_STATUS_COMPLETED, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE:
 		return "completed", nil, nil
-	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
+	case v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT:
 		return "incomplete", &responses.ResponseIncompleteDetails{Reason: "max_output_tokens"}, nil
-	case v1.ChatStatus_CHAT_REFUSED:
+	case v1.ChatStatus_CHAT_STATUS_REFUSED:
 		return "incomplete", &responses.ResponseIncompleteDetails{Reason: "content_filter"}, nil
-	case v1.ChatStatus_CHAT_FAILED:
+	case v1.ChatStatus_CHAT_STATUS_FAILED:
 		return "failed", nil, &responses.ResponseError{
 			Code:    "server_error",
 			Message: "The response failed to generate.",
 		}
-	case v1.ChatStatus_CHAT_CANCELLED:
+	case v1.ChatStatus_CHAT_STATUS_CANCELLED:
 		// A cancelled response terminates through response.failed, whose error
 		// field the protocol requires to be populated.
 		return "cancelled", nil, &responses.ResponseError{

@@ -22,7 +22,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatReq {
+func convertChatRequestFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatRequest {
 	config := &v1.GenerationConfig{}
 
 	if req.MaxCompletionTokens.Valid() {
@@ -92,7 +92,7 @@ func convertChatReqFromOpenAIChat(req *openai.ChatCompletionNewParams) *v1.ChatR
 		}
 	}
 
-	return &v1.ChatReq{
+	return &v1.ChatRequest{
 		Session:  req.PromptCacheKey.Value,
 		Model:    string(req.Model),
 		Config:   config,
@@ -136,7 +136,7 @@ func convertDeveloperMessageFromOpenAIChat(m *openai.ChatCompletionDeveloperMess
 	}
 
 	msg := &v1.Message{
-		Role:     v1.Role_SYSTEM,
+		Role:     v1.Role_ROLE_SYSTEM,
 		Contents: contents,
 	}
 	if m.Name.Valid() {
@@ -161,7 +161,7 @@ func convertSystemMessageFromOpenAIChat(m *openai.ChatCompletionSystemMessagePar
 	}
 
 	msg := &v1.Message{
-		Role:     v1.Role_SYSTEM,
+		Role:     v1.Role_ROLE_SYSTEM,
 		Contents: contents,
 	}
 	if m.Name.Valid() {
@@ -194,7 +194,7 @@ func convertUserMessageFromOpenAIChat(m *openai.ChatCompletionUserMessageParam) 
 	}
 
 	msg := &v1.Message{
-		Role:     v1.Role_USER,
+		Role:     v1.Role_ROLE_USER,
 		Contents: contents,
 	}
 	if m.Name.Valid() {
@@ -237,7 +237,7 @@ func convertAssistantMessageFromOpenAIChat(m *openai.ChatCompletionAssistantMess
 	}
 
 	msg := &v1.Message{
-		Role:     v1.Role_MODEL,
+		Role:     v1.Role_ROLE_MODEL,
 		Contents: contents,
 	}
 	if m.Name.Valid() {
@@ -267,7 +267,7 @@ func convertToolMessageFromOpenAIChat(m *openai.ChatCompletionToolMessageParam) 
 	}
 
 	return &v1.Message{
-		Role:     v1.Role_USER,
+		Role:     v1.Role_ROLE_USER,
 		Contents: []*v1.Content{{Content: tr}},
 	}
 }
@@ -305,7 +305,7 @@ func convertReasoningEffortFromOpenAI(effort shared.ReasoningEffort) v1.Reasonin
 	}
 }
 
-func convertChatRespToOpenAIChat(resp *v1.ChatResp) *chatCompletionResponse {
+func convertChatResponseToOpenAIChat(resp *v1.ChatResponse) *chatCompletionResponse {
 	r := &chatCompletionResponse{
 		ID:     resp.Message.GetId(),
 		Object: "chat.completion",
@@ -352,13 +352,13 @@ func convertChatRespToOpenAIChat(resp *v1.ChatResp) *chatCompletionResponse {
 
 func convertStatusToOpenAIChat(status v1.ChatStatus) string {
 	switch status {
-	case v1.ChatStatus_CHAT_COMPLETED:
+	case v1.ChatStatus_CHAT_STATUS_COMPLETED:
 		return "stop"
-	case v1.ChatStatus_CHAT_REFUSED:
+	case v1.ChatStatus_CHAT_STATUS_REFUSED:
 		return "content_filter"
-	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
+	case v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT:
 		return "length"
-	case v1.ChatStatus_CHAT_PENDING_TOOL_USE:
+	case v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE:
 		return "tool_calls"
 	default:
 		return ""

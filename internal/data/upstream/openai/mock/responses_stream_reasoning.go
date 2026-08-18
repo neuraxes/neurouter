@@ -276,7 +276,7 @@ func responsesStreamReasoningChatEvents() []*v1.ChatEvent {
 		id.of(v1.NewContentDeltaTextEvent(2, ".")),
 		id.of(v1.NewContentStopEvent(2)),
 		id.withUsage(
-			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_COMPLETED),
+			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED),
 			&v1.Usage{
 				InputTokens:     81,
 				OutputTokens:    481,
@@ -293,7 +293,7 @@ var ResponsesStreamReasoning = &Fixture{
 	Request:  responsesStreamReasoningRequest,
 	Response: responsesStreamReasoningResponse,
 	Stream:   true,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "responses_stream_reasoning",
 		Model: "openai/gpt-5-mini",
 		Config: &v1.GenerationConfig{
@@ -302,13 +302,13 @@ var ResponsesStreamReasoning = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Work through the arithmetic carefully and end with one concise sentence.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("A router receives 240 requests. It sends 45% to upstream A, 35% to upstream B, and the rest to upstream C. Upstream C retries 25% of its requests exactly once. How many total attempts does upstream C make?")},
 				},

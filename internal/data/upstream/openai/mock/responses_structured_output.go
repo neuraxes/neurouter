@@ -32,7 +32,7 @@ var ResponsesStructuredOutput = &Fixture{
 	Name:     "responses_structured_output",
 	Request:  responsesStructuredOutputRequest,
 	Response: responsesStructuredOutputResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "responses_structured_output",
 		Model: "openai/gpt-5-mini",
 		Config: &v1.GenerationConfig{
@@ -62,26 +62,26 @@ var ResponsesStructuredOutput = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Return content that conforms to the requested output schema.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Classify this router incident: customer traffic is slow in us-east, the OpenAI upstream is rate limited, the Anthropic upstream is healthy, and retry pressure is rising.")},
 				},
 			},
 		},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "responses_structured_output",
 		Model:  "openai/gpt-5-mini",
-		Status: v1.ChatStatus_CHAT_COMPLETED,
+		Status: v1.ChatStatus_CHAT_STATUS_COMPLETED,
 		Message: &v1.Message{
 			Id:   "gen-1785502384-ednipl8xASaFIwjUjxAV",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Id:    "rs_062432a4b1a36741016a6c9ab122d081a197d277b7596be463",

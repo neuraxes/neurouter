@@ -31,7 +31,7 @@ var ToolCall = &Fixture{
 	Name:     "tool_call",
 	Request:  toolCallRequest,
 	Response: toolCallResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "tool_call",
 		Model: "openai/gpt-4o",
 		Config: &v1.GenerationConfig{
@@ -40,13 +40,13 @@ var ToolCall = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. When the user asks for fresh or external facts and a matching tool is available, call exactly one tool before producing final prose.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Use the get_weather tool for Shanghai on 2025-11-10. Do not answer from memory. Return no final prose until the tool has been called.")},
 				},
@@ -54,13 +54,13 @@ var ToolCall = &Fixture{
 		},
 		Tools: []*v1.Tool{getWeatherTool()},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "tool_call",
 		Model:  "openai/gpt-4o",
-		Status: v1.ChatStatus_CHAT_PENDING_TOOL_USE,
+		Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
 		Message: &v1.Message{
 			Id:   "gen-1782736288-lXdveO1kqMfsE8T6qkFS",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Content: &v1.Content_ToolUse{

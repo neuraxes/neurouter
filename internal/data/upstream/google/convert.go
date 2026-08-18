@@ -32,7 +32,7 @@ import (
 // function name cannot contain a colon, so the first one separates the two.
 const googleToolUseIDSeparator = ":"
 
-func (r *upstream) convertRequestToGoogle(req *entity.ChatReq) (messages []*genai.Content, config *genai.GenerateContentConfig) {
+func (r *upstream) convertRequestToGoogle(req *entity.ChatRequest) (messages []*genai.Content, config *genai.GenerateContentConfig) {
 	config = &genai.GenerateContentConfig{
 		SystemInstruction: r.convertSystemInstructionToGoogle(req.Messages),
 		Tools:             convertToolsToGoogle(req.Tools),
@@ -40,7 +40,7 @@ func (r *upstream) convertRequestToGoogle(req *entity.ChatReq) (messages []*gena
 	convertGenerationConfigToGoogle(req.Config, config)
 
 	for _, msg := range req.Messages {
-		if msg.Role == v1.Role_SYSTEM && !r.config.SystemAsUser {
+		if msg.Role == v1.Role_ROLE_SYSTEM && !r.config.SystemAsUser {
 			continue
 		}
 		messages = append(messages, convertMessageToGoogleContent(msg))
@@ -112,7 +112,7 @@ func (r *upstream) convertSystemInstructionToGoogle(messages []*v1.Message) (con
 	}
 	content = &genai.Content{}
 	for _, msg := range messages {
-		if msg.Role == v1.Role_SYSTEM {
+		if msg.Role == v1.Role_ROLE_SYSTEM {
 			for _, c := range msg.Contents {
 				part := convertContentToGooglePart(c)
 				if part != nil {
@@ -143,11 +143,11 @@ func convertMessageToGoogleContent(msg *v1.Message) *genai.Content {
 
 	role := ""
 	switch msg.Role {
-	case v1.Role_SYSTEM:
+	case v1.Role_ROLE_SYSTEM:
 		role = "user" // Google AI doesn't support system role, use user role instead
-	case v1.Role_USER:
+	case v1.Role_ROLE_USER:
 		role = "user"
-	case v1.Role_MODEL:
+	case v1.Role_ROLE_MODEL:
 		role = "model"
 	}
 
@@ -279,7 +279,7 @@ func convertToolResultToGooglePart(result *v1.ToolResult) *genai.Part {
 
 func convertMessageFromGoogleContent(content *genai.Content) *v1.Message {
 	message := &v1.Message{
-		Role: v1.Role_MODEL,
+		Role: v1.Role_ROLE_MODEL,
 	}
 
 	for _, part := range content.Parts {
@@ -417,25 +417,25 @@ func convertStatusFromGoogle(reason genai.FinishReason, content *genai.Content) 
 	if reason == genai.FinishReasonStop && content != nil {
 		for _, part := range content.Parts {
 			if part.FunctionCall != nil {
-				return v1.ChatStatus_CHAT_PENDING_TOOL_USE
+				return v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE
 			}
 		}
 	}
 
 	switch reason {
 	case genai.FinishReasonStop:
-		return v1.ChatStatus_CHAT_COMPLETED
+		return v1.ChatStatus_CHAT_STATUS_COMPLETED
 	case genai.FinishReasonMaxTokens:
-		return v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT
+		return v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT
 	case genai.FinishReasonSafety,
 		genai.FinishReasonBlocklist,
 		genai.FinishReasonProhibitedContent,
 		genai.FinishReasonSPII,
 		genai.FinishReasonImageSafety,
 		genai.FinishReasonImageProhibitedContent:
-		return v1.ChatStatus_CHAT_REFUSED
+		return v1.ChatStatus_CHAT_STATUS_REFUSED
 	default:
-		return v1.ChatStatus_CHAT_IN_PROGRESS
+		return v1.ChatStatus_CHAT_STATUS_IN_PROGRESS
 	}
 }
 

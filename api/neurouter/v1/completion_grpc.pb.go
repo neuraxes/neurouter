@@ -41,8 +41,12 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CompletionClient interface {
-	Complete(ctx context.Context, in *CompletionReq, opts ...grpc.CallOption) (*CompletionResp, error)
-	CompleteStream(ctx context.Context, in *CompletionReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CompletionResp], error)
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	Complete(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (*CompleteResponse, error)
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	// buf:lint:ignore RPC_REQUEST_STANDARD_NAME
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	CompleteStream(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CompleteResponse], error)
 }
 
 type completionClient struct {
@@ -53,9 +57,9 @@ func NewCompletionClient(cc grpc.ClientConnInterface) CompletionClient {
 	return &completionClient{cc}
 }
 
-func (c *completionClient) Complete(ctx context.Context, in *CompletionReq, opts ...grpc.CallOption) (*CompletionResp, error) {
+func (c *completionClient) Complete(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (*CompleteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CompletionResp)
+	out := new(CompleteResponse)
 	err := c.cc.Invoke(ctx, Completion_Complete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -63,13 +67,13 @@ func (c *completionClient) Complete(ctx context.Context, in *CompletionReq, opts
 	return out, nil
 }
 
-func (c *completionClient) CompleteStream(ctx context.Context, in *CompletionReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CompletionResp], error) {
+func (c *completionClient) CompleteStream(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CompleteResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &Completion_ServiceDesc.Streams[0], Completion_CompleteStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[CompletionReq, CompletionResp]{ClientStream: stream}
+	x := &grpc.GenericClientStream[CompleteRequest, CompleteResponse]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -80,14 +84,18 @@ func (c *completionClient) CompleteStream(ctx context.Context, in *CompletionReq
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Completion_CompleteStreamClient = grpc.ServerStreamingClient[CompletionResp]
+type Completion_CompleteStreamClient = grpc.ServerStreamingClient[CompleteResponse]
 
 // CompletionServer is the server API for Completion service.
 // All implementations must embed UnimplementedCompletionServer
 // for forward compatibility.
 type CompletionServer interface {
-	Complete(context.Context, *CompletionReq) (*CompletionResp, error)
-	CompleteStream(*CompletionReq, grpc.ServerStreamingServer[CompletionResp]) error
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	Complete(context.Context, *CompleteRequest) (*CompleteResponse, error)
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	// buf:lint:ignore RPC_REQUEST_STANDARD_NAME
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	CompleteStream(*CompleteRequest, grpc.ServerStreamingServer[CompleteResponse]) error
 	mustEmbedUnimplementedCompletionServer()
 }
 
@@ -98,10 +106,10 @@ type CompletionServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCompletionServer struct{}
 
-func (UnimplementedCompletionServer) Complete(context.Context, *CompletionReq) (*CompletionResp, error) {
+func (UnimplementedCompletionServer) Complete(context.Context, *CompleteRequest) (*CompleteResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Complete not implemented")
 }
-func (UnimplementedCompletionServer) CompleteStream(*CompletionReq, grpc.ServerStreamingServer[CompletionResp]) error {
+func (UnimplementedCompletionServer) CompleteStream(*CompleteRequest, grpc.ServerStreamingServer[CompleteResponse]) error {
 	return status.Error(codes.Unimplemented, "method CompleteStream not implemented")
 }
 func (UnimplementedCompletionServer) mustEmbedUnimplementedCompletionServer() {}
@@ -126,7 +134,7 @@ func RegisterCompletionServer(s grpc.ServiceRegistrar, srv CompletionServer) {
 }
 
 func _Completion_Complete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CompletionReq)
+	in := new(CompleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -138,21 +146,21 @@ func _Completion_Complete_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: Completion_Complete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CompletionServer).Complete(ctx, req.(*CompletionReq))
+		return srv.(CompletionServer).Complete(ctx, req.(*CompleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Completion_CompleteStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(CompletionReq)
+	m := new(CompleteRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(CompletionServer).CompleteStream(m, &grpc.GenericServerStream[CompletionReq, CompletionResp]{ServerStream: stream})
+	return srv.(CompletionServer).CompleteStream(m, &grpc.GenericServerStream[CompleteRequest, CompleteResponse]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Completion_CompleteStreamServer = grpc.ServerStreamingServer[CompletionResp]
+type Completion_CompleteStreamServer = grpc.ServerStreamingServer[CompleteResponse]
 
 // Completion_ServiceDesc is the grpc.ServiceDesc for Completion service.
 // It's only intended for direct use with grpc.RegisterService,

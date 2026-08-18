@@ -23,36 +23,42 @@ import "neurouter/v1/content.proto";
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
 service Chat {
-  rpc Chat(ChatReq) returns (ChatResp) {
+  // buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+  rpc Chat(ChatRequest) returns (ChatResponse) {
     option (google.api.http) = {
       post: "/v1/chat"
       body: "*"
     };
   }
-  rpc ChatStream(ChatReq) returns (stream ChatEvent) {}
+  // buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+  // buf:lint:ignore RPC_REQUEST_STANDARD_NAME
+  // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+  rpc ChatStream(ChatRequest) returns (stream ChatEvent) {}
 }
 
 enum Role {
-  SYSTEM = 0;
-  USER = 1;
-  MODEL = 2;
+  ROLE_UNSPECIFIED = 0;
+  ROLE_SYSTEM = 1;
+  ROLE_USER = 2;
+  ROLE_MODEL = 3;
 }
 
 enum ChatStatus {
+  CHAT_STATUS_UNSPECIFIED = 0;
   // The model is generating the response
-  CHAT_IN_PROGRESS = 0;
+  CHAT_STATUS_IN_PROGRESS = 1;
   // The model turn has been successfully completed
-  CHAT_COMPLETED = 1;
+  CHAT_STATUS_COMPLETED = 2;
   // The generation failed due to an error
-  CHAT_FAILED = 2;
+  CHAT_STATUS_FAILED = 3;
   // The generation has been refused
-  CHAT_REFUSED = 3;
+  CHAT_STATUS_REFUSED = 4;
   // The generation has been cancelled
-  CHAT_CANCELLED = 4;
+  CHAT_STATUS_CANCELLED = 5;
   // The generation stopped due to pending tool uses
-  CHAT_PENDING_TOOL_USE = 5;
+  CHAT_STATUS_PENDING_TOOL_USE = 6;
   // The generation stopped due to exceeding token limit
-  CHAT_REACHED_TOKEN_LIMIT = 6;
+  CHAT_STATUS_REACHED_TOKEN_LIMIT = 7;
 }
 
 message Message {
@@ -68,9 +74,9 @@ message Message {
   string name = 4;
 }
 
-message ChatReq {
+message ChatRequest {
   // The identifier of this chat request, assigned by whichever entry point
-  // accepts it. Every ChatResp and ChatEvent produced for the request echoes
+  // accepts it. Every ChatResponse and ChatEvent produced for the request echoes
   // it unchanged, which is what correlates them across layers.
   string id = 1;
   // A stable identifier shared by requests in the same conversation. Clients
@@ -89,7 +95,7 @@ message ChatReq {
   map<string, string> metadata = 15;
 }
 
-message ChatResp {
+message ChatResponse {
   // The id of the request this response answers.
   string id = 1;
   // The model used to generate the response

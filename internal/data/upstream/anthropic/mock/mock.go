@@ -27,18 +27,18 @@ type Fixture struct {
 	// Name identifies the fixture in test output.
 	Name string
 	// Request is the captured Anthropic Messages API request body. It is the
-	// expected output of convertRequestToAnthropic for ChatReq.
+	// expected output of convertRequestToAnthropic for ChatRequest.
 	Request []byte
 	// Response is the captured upstream reply: a JSON message for non-stream
 	// fixtures, or a raw SSE event stream for stream fixtures.
 	Response []byte
 	// Stream reports whether Response is an SSE stream that converts into
-	// ChatEvents rather than a single ChatResp.
+	// ChatEvents rather than a single ChatResponse.
 	Stream bool
-	// ChatReq is the neurouter request that must marshal into Request.
-	ChatReq *v1.ChatReq
-	// ChatResp is the expected conversion of Response for non-stream fixtures.
-	ChatResp *v1.ChatResp
+	// ChatRequest is the neurouter request that must marshal into Request.
+	ChatRequest *v1.ChatRequest
+	// ChatResponse is the expected conversion of Response for non-stream fixtures.
+	ChatResponse *v1.ChatResponse
 	// ChatEvents is the expected conversion of Response for stream fixtures.
 	ChatEvents []*v1.ChatEvent
 }

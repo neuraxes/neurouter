@@ -32,7 +32,7 @@ var ResponsesMaxOutputTokens = &Fixture{
 	Name:     "responses_max_output_tokens",
 	Request:  responsesMaxOutputTokensRequest,
 	Response: responsesMaxOutputTokensResponse,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "responses_max_output_tokens",
 		Model: "openai/gpt-5-mini",
 		Config: &v1.GenerationConfig{
@@ -41,26 +41,26 @@ var ResponsesMaxOutputTokens = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Answer in long, detailed prose.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Write a detailed 300-word explanation of how an LLM router balances load across multiple upstream providers, covering probing, ranking, reservation, and rate limiting.")},
 				},
 			},
 		},
 	},
-	ChatResp: &v1.ChatResp{
+	ChatResponse: &v1.ChatResponse{
 		Id:     "responses_max_output_tokens",
 		Model:  "openai/gpt-5-mini",
-		Status: v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT,
+		Status: v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT,
 		Message: &v1.Message{
 			Id:   "gen-1785502363-1OIGKSAZ6DupYJGniSP8",
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Id:    "rs_0ceb79d4157e81e4016a6c9a9c0b9c81a1aaba69cfa1664a3d",

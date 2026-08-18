@@ -99,12 +99,12 @@ func TestChat(t *testing.T) {
 				}, nil
 			}
 
-			resp, err := repo.Chat(context.Background(), mockChatReq)
+			resp, err := repo.Chat(context.Background(), mockChatRequest)
 
 			Convey("Then it should return a valid response and no error", func() {
 				So(err, ShouldBeNil)
 				So(resp, ShouldNotBeNil)
-				So(proto.Equal(resp, mockChatResp), ShouldBeTrue)
+				So(proto.Equal(resp, mockChatResponse), ShouldBeTrue)
 			})
 		})
 
@@ -113,7 +113,7 @@ func TestChat(t *testing.T) {
 				return nil, errors.New("network error")
 			}
 
-			_, err := repo.Chat(context.Background(), mockChatReq)
+			_, err := repo.Chat(context.Background(), mockChatRequest)
 
 			Convey("Then it should return an error", func() {
 				So(err, ShouldNotBeNil)
@@ -130,7 +130,7 @@ func TestChat(t *testing.T) {
 				}, nil
 			}
 
-			_, err := repo.Chat(context.Background(), mockChatReq)
+			_, err := repo.Chat(context.Background(), mockChatRequest)
 
 			Convey("Then it should return an error about no candidates", func() {
 				So(err, ShouldNotBeNil)
@@ -178,7 +178,7 @@ func TestChatStream(t *testing.T) {
 				}, nil
 			}
 
-			seq := repo.ChatStream(context.Background(), mockChatReq)
+			seq := repo.ChatStream(context.Background(), mockChatRequest)
 
 			Convey("Then it should return a sequence and no error", func() {
 				So(seq, ShouldNotBeNil)
@@ -204,7 +204,7 @@ func TestChatStream(t *testing.T) {
 				return nil, errors.New("network error")
 			}
 
-			seq := repo.ChatStream(context.Background(), mockChatReq)
+			seq := repo.ChatStream(context.Background(), mockChatRequest)
 
 			Convey("Then the iterator should yield an error", func() {
 				So(seq, ShouldNotBeNil)
@@ -245,7 +245,7 @@ func TestEmbed(t *testing.T) {
 				}, nil
 			}
 
-			embedReq := &entity.EmbedReq{
+			embedReq := &entity.EmbedRequest{
 				Id:    "embed-1",
 				Model: "text-embedding-004",
 				Contents: []*v1.Content{
@@ -271,7 +271,7 @@ func TestEmbed(t *testing.T) {
 				return nil, errors.New("network error")
 			}
 
-			embedReq := &entity.EmbedReq{
+			embedReq := &entity.EmbedRequest{
 				Id:    "embed-1",
 				Model: "text-embedding-004",
 				Contents: []*v1.Content{

@@ -68,7 +68,7 @@ func streamThinkingTextChatEvents() []*v1.ChatEvent {
 			Content: &v1.Content_Opaque{Opaque: streamThinkingTextRedacted},
 		})),
 		id.withUsage(
-			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_COMPLETED),
+			v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED),
 			&v1.Usage{InputTokens: 123, OutputTokens: 459},
 		),
 	}
@@ -81,7 +81,7 @@ var StreamThinkingText = &Fixture{
 	Request:  streamThinkingTextRequest,
 	Response: streamThinkingTextResponse,
 	Stream:   true,
-	ChatReq: &v1.ChatReq{
+	ChatRequest: &v1.ChatRequest{
 		Id:    "stream_thinking_text",
 		Model: "anthropic/claude-sonnet-4.6",
 		Config: &v1.GenerationConfig{
@@ -90,13 +90,13 @@ var StreamThinkingText = &Fixture{
 		},
 		Messages: []*v1.Message{
 			{
-				Role: v1.Role_SYSTEM,
+				Role: v1.Role_ROLE_SYSTEM,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("You are a conversion-test assistant. Think briefly, then give a short final answer.")},
 				},
 			},
 			{
-				Role: v1.Role_USER,
+				Role: v1.Role_ROLE_USER,
 				Contents: []*v1.Content{
 					{Content: v1.NewTextContent("Two upstreams are available. A: 200 ms latency, 5% error rate. B: 150 ms latency, 9% error rate. Assuming one retry on failure, briefly reason which has the lower expected latency, then give your answer in a single sentence starting with 'Pick'.")},
 				},

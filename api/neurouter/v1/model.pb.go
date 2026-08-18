@@ -135,26 +135,26 @@ func (x *ModelSpec) GetContextLength() uint32 {
 	return 0
 }
 
-type ListModelReq struct {
+type ListModelRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListModelReq) Reset() {
-	*x = ListModelReq{}
+func (x *ListModelRequest) Reset() {
+	*x = ListModelRequest{}
 	mi := &file_neurouter_v1_model_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListModelReq) String() string {
+func (x *ListModelRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListModelReq) ProtoMessage() {}
+func (*ListModelRequest) ProtoMessage() {}
 
-func (x *ListModelReq) ProtoReflect() protoreflect.Message {
+func (x *ListModelRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_model_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -166,32 +166,32 @@ func (x *ListModelReq) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListModelReq.ProtoReflect.Descriptor instead.
-func (*ListModelReq) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListModelRequest.ProtoReflect.Descriptor instead.
+func (*ListModelRequest) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_model_proto_rawDescGZIP(), []int{1}
 }
 
-type ListModelResp struct {
+type ListModelResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Models        []*ModelSpec           `protobuf:"bytes,1,rep,name=models,proto3" json:"models,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListModelResp) Reset() {
-	*x = ListModelResp{}
+func (x *ListModelResponse) Reset() {
+	*x = ListModelResponse{}
 	mi := &file_neurouter_v1_model_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListModelResp) String() string {
+func (x *ListModelResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListModelResp) ProtoMessage() {}
+func (*ListModelResponse) ProtoMessage() {}
 
-func (x *ListModelResp) ProtoReflect() protoreflect.Message {
+func (x *ListModelResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_neurouter_v1_model_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -203,12 +203,12 @@ func (x *ListModelResp) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListModelResp.ProtoReflect.Descriptor instead.
-func (*ListModelResp) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListModelResponse.ProtoReflect.Descriptor instead.
+func (*ListModelResponse) Descriptor() ([]byte, []int) {
 	return file_neurouter_v1_model_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ListModelResp) GetModels() []*ModelSpec {
+func (x *ListModelResponse) GetModels() []*ModelSpec {
 	if x != nil {
 		return x.Models
 	}
@@ -229,12 +229,12 @@ const file_neurouter_v1_model_proto_rawDesc = "" +
 	"modalities\x18\x05 \x03(\x0e2\x16.neurouter.v1.ModalityR\n" +
 	"modalities\x12<\n" +
 	"\fcapabilities\x18\x06 \x03(\x0e2\x18.neurouter.v1.CapabilityR\fcapabilities\x12%\n" +
-	"\x0econtext_length\x18\a \x01(\rR\rcontextLength\"\x0e\n" +
-	"\fListModelReq\"@\n" +
-	"\rListModelResp\x12/\n" +
-	"\x06models\x18\x01 \x03(\v2\x17.neurouter.v1.ModelSpecR\x06models2a\n" +
-	"\x05Model\x12X\n" +
-	"\tListModel\x12\x1a.neurouter.v1.ListModelReq\x1a\x1b.neurouter.v1.ListModelResp\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
+	"\x0econtext_length\x18\a \x01(\rR\rcontextLength\"\x12\n" +
+	"\x10ListModelRequest\"D\n" +
+	"\x11ListModelResponse\x12/\n" +
+	"\x06models\x18\x01 \x03(\v2\x17.neurouter.v1.ModelSpecR\x06models2i\n" +
+	"\x05Model\x12`\n" +
+	"\tListModel\x12\x1e.neurouter.v1.ListModelRequest\x1a\x1f.neurouter.v1.ListModelResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
 	"/v1/modelsB3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
@@ -251,18 +251,18 @@ func file_neurouter_v1_model_proto_rawDescGZIP() []byte {
 
 var file_neurouter_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_neurouter_v1_model_proto_goTypes = []any{
-	(*ModelSpec)(nil),     // 0: neurouter.v1.ModelSpec
-	(*ListModelReq)(nil),  // 1: neurouter.v1.ListModelReq
-	(*ListModelResp)(nil), // 2: neurouter.v1.ListModelResp
-	(Modality)(0),         // 3: neurouter.v1.Modality
-	(Capability)(0),       // 4: neurouter.v1.Capability
+	(*ModelSpec)(nil),         // 0: neurouter.v1.ModelSpec
+	(*ListModelRequest)(nil),  // 1: neurouter.v1.ListModelRequest
+	(*ListModelResponse)(nil), // 2: neurouter.v1.ListModelResponse
+	(Modality)(0),             // 3: neurouter.v1.Modality
+	(Capability)(0),           // 4: neurouter.v1.Capability
 }
 var file_neurouter_v1_model_proto_depIdxs = []int32{
 	3, // 0: neurouter.v1.ModelSpec.modalities:type_name -> neurouter.v1.Modality
 	4, // 1: neurouter.v1.ModelSpec.capabilities:type_name -> neurouter.v1.Capability
-	0, // 2: neurouter.v1.ListModelResp.models:type_name -> neurouter.v1.ModelSpec
-	1, // 3: neurouter.v1.Model.ListModel:input_type -> neurouter.v1.ListModelReq
-	2, // 4: neurouter.v1.Model.ListModel:output_type -> neurouter.v1.ListModelResp
+	0, // 2: neurouter.v1.ListModelResponse.models:type_name -> neurouter.v1.ModelSpec
+	1, // 3: neurouter.v1.Model.ListModel:input_type -> neurouter.v1.ListModelRequest
+	2, // 4: neurouter.v1.Model.ListModel:output_type -> neurouter.v1.ListModelResponse
 	4, // [4:5] is the sub-list for method output_type
 	3, // [3:4] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

@@ -109,7 +109,7 @@ Key concepts:
 - Public and internal schemas use `buf.gen.yaml` and `buf.gen.config.yaml`, respectively. External Google schemas resolve through `buf.lock`.
 - Hand-written extension methods on generated types go in plain `.go` files in the same package (see `api/neurouter/v1/meta.go`, `text.go`, `json.go`).
 - Proto package naming: public API is `neurouter.v1`; internal config is `neurouter.config.v1`.
-- Enums use `UPPER_SNAKE_CASE` with a type prefix (`CHAT_IN_PROGRESS`, `MODALITY_TEXT`, `CAPABILITY_CHAT`, `REASONING_EFFORT_HIGH`).
+- Enums use `UPPER_SNAKE_CASE` with a type prefix (`CHAT_STATUS_IN_PROGRESS`, `MODALITY_TEXT`, `CAPABILITY_CHAT`, `REASONING_EFFORT_HIGH`). Zero values are `*_UNSPECIFIED`.
 - Field-number conventions: `metadata` maps at field 15; `oneof` branches use high numbers (templates 50, grammar 60+, provider config 100+).
 - Error reasons are a plain enum in `error_reason.proto`. Typed errors are declared in biz as `Err<Cause>` using Kratos helpers such as `errors.InternalServer` / `errors.TooManyRequests` and `ErrorReason.String()`.
 
@@ -130,6 +130,6 @@ func TestSomething(t *testing.T) {
 ```
 
 - Compare protobufs with `google.golang.org/protobuf/proto.Equal`, not `ShouldEqual`.
-- Shared fixtures live in `mock_test.go` (e.g. `mockChatReq`, `mockChatStreamResp`); reuse them.
+- Shared fixtures live in `mock_test.go` (e.g. `mockChatRequest`, `mockChatStreamResp`); reuse them.
 - Upstream integration tests mock the HTTP client (e.g. `mockHTTPClient` with a `DoFunc`).
 - Conversion tests (`*_convert_test.go`) should cover each role/modality branch.

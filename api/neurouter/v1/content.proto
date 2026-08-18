@@ -67,6 +67,7 @@ message ToolResult {
 // The semantic phase of a content within a model turn.
 enum ContentPhase {
   // Regular content (default).
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
   CONTENT_PHASE_NORMAL = 0;
   // The final answer, when the upstream distinguishes it.
   CONTENT_PHASE_OUTCOME = 1;

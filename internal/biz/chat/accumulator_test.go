@@ -28,13 +28,13 @@ func TestChatEventReducer(t *testing.T) {
 			r := newTestChatEventReducer()
 			resp := r.Resp()
 			So(resp, ShouldNotBeNil)
-			So(proto.Equal(resp, &v1.ChatResp{}), ShouldBeTrue)
+			So(proto.Equal(resp, &v1.ChatResponse{}), ShouldBeTrue)
 		})
 
 		Convey("Reduce nil event is no-op", func() {
 			r := newTestChatEventReducer()
 			r.Reduce(nil)
-			So(proto.Equal(r.Resp(), &v1.ChatResp{}), ShouldBeTrue)
+			So(proto.Equal(r.Resp(), &v1.ChatResponse{}), ShouldBeTrue)
 		})
 
 		Convey("MessageStart sets id, model and message identity", func() {
@@ -47,13 +47,13 @@ func TestChatEventReducer(t *testing.T) {
 			So(resp.Id, ShouldEqual, "session-1")
 			So(resp.Model, ShouldEqual, "model-a")
 			So(resp.Message.Id, ShouldEqual, "msg-1")
-			So(resp.Message.Role, ShouldEqual, v1.Role_MODEL)
+			So(resp.Message.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 		})
 
 		Convey("MessageStop sets status", func() {
 			r := newTestChatEventReducer()
-			reduceTestChatEvent(r, v1.NewMessageStopEvent(v1.ChatStatus_CHAT_COMPLETED))
-			So(r.Resp().Status, ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
+			reduceTestChatEvent(r, v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED))
+			So(r.Resp().Status, ShouldEqual, v1.ChatStatus_CHAT_STATUS_COMPLETED)
 		})
 
 		Convey("Text content block start and deltas merge", func() {
@@ -189,14 +189,14 @@ func TestChatEventReducer(t *testing.T) {
 			reduceTestChatEvent(r, v1.NewContentStartTextEvent(0, v1.ContentPhase_CONTENT_PHASE_NORMAL))
 			reduceTestChatEvent(r, v1.NewContentDeltaTextEvent(0, "Hi"))
 			reduceTestChatEvent(r, v1.NewContentStopEvent(0))
-			stop := newTestChatEvent(v1.NewMessageStopEvent(v1.ChatStatus_CHAT_COMPLETED))
+			stop := newTestChatEvent(v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED))
 			stop.Usage = &v1.Usage{InputTokens: 10, OutputTokens: 5}
 			r.Reduce(stop)
 
 			resp := r.Resp()
 			So(resp.Id, ShouldEqual, "session-1")
 			So(resp.Model, ShouldEqual, "model-a")
-			So(resp.Status, ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
+			So(resp.Status, ShouldEqual, v1.ChatStatus_CHAT_STATUS_COMPLETED)
 			So(resp.Message.Id, ShouldEqual, "msg-1")
 			So(resp.Message.Contents[0].GetText().GetText(), ShouldEqual, "Hi")
 			So(resp.Statistics.Usage.InputTokens, ShouldEqual, 10)

@@ -10,12 +10,13 @@ paths:
         post:
             tags:
                 - Chat
+            description: buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
             operationId: Chat_Chat
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/neurouter.v1.ChatReq'
+                            $ref: '#/components/schemas/neurouter.v1.ChatRequest'
                 required: true
             responses:
                 "200":
@@ -23,7 +24,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/neurouter.v1.ChatResp'
+                                $ref: '#/components/schemas/neurouter.v1.ChatResponse'
     /v1/embed:
         post:
             tags:
@@ -33,7 +34,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/neurouter.v1.EmbedReq'
+                            $ref: '#/components/schemas/neurouter.v1.EmbedRequest'
                 required: true
             responses:
                 "200":
@@ -41,7 +42,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/neurouter.v1.EmbedResp'
+                                $ref: '#/components/schemas/neurouter.v1.EmbedResponse'
     /v1/models:
         get:
             tags:
@@ -53,17 +54,17 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/neurouter.v1.ListModelResp'
+                                $ref: '#/components/schemas/neurouter.v1.ListModelResponse'
 components:
     schemas:
-        neurouter.v1.ChatReq:
+        neurouter.v1.ChatRequest:
             type: object
             properties:
                 id:
                     type: string
                     description: |-
                         The identifier of this chat request, assigned by whichever entry point
-                         accepts it. Every ChatResp and ChatEvent produced for the request echoes
+                         accepts it. Every ChatResponse and ChatEvent produced for the request echoes
                          it unchanged, which is what correlates them across layers.
                 session:
                     type: string
@@ -93,7 +94,7 @@ components:
                     additionalProperties:
                         type: string
                     description: Additional metadata for the request
-        neurouter.v1.ChatResp:
+        neurouter.v1.ChatResponse:
             type: object
             properties:
                 id:
@@ -152,7 +153,7 @@ components:
                     type: string
                     description: Opaque content like encrypted CoT
             description: Multi-modality content
-        neurouter.v1.EmbedReq:
+        neurouter.v1.EmbedRequest:
             type: object
             properties:
                 id:
@@ -163,7 +164,7 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/neurouter.v1.Content'
-        neurouter.v1.EmbedResp:
+        neurouter.v1.EmbedResponse:
             type: object
             properties:
                 id:
@@ -236,7 +237,7 @@ components:
                     type: string
                     description: Base64-encoded image bytes.
             description: Represent a image content
-        neurouter.v1.ListModelResp:
+        neurouter.v1.ListModelResponse:
             type: object
             properties:
                 models:

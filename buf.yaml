@@ -4,3 +4,7 @@ modules:
   - path: internal
 deps:
   - buf.build/googleapis/googleapis
+lint:
+  except:
+    - PACKAGE_DIRECTORY_MATCH
+    - SERVICE_SUFFIX

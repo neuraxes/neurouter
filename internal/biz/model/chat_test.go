@@ -20,19 +20,19 @@ import (
 func TestEstimateTokens(t *testing.T) {
 	Convey("Test estimateTokens", t, func() {
 		Convey("with nil request should return 0", func() {
-			req := &v1.ChatReq{}
+			req := &v1.ChatRequest{}
 			So(estimateTokens(req), ShouldEqual, 0)
 		})
 
 		Convey("with empty messages should return 0", func() {
-			req := &v1.ChatReq{
+			req := &v1.ChatRequest{
 				Messages: []*v1.Message{},
 			}
 			So(estimateTokens(req), ShouldEqual, 0)
 		})
 
 		Convey("with text content should estimate tokens", func() {
-			req := &v1.ChatReq{
+			req := &v1.ChatRequest{
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
@@ -45,7 +45,7 @@ func TestEstimateTokens(t *testing.T) {
 		})
 
 		Convey("with multiple messages should sum all text", func() {
-			req := &v1.ChatReq{
+			req := &v1.ChatRequest{
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
@@ -64,7 +64,7 @@ func TestEstimateTokens(t *testing.T) {
 		})
 
 		Convey("with image content should assign fixed tokens", func() {
-			req := &v1.ChatReq{
+			req := &v1.ChatRequest{
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
@@ -77,7 +77,7 @@ func TestEstimateTokens(t *testing.T) {
 		})
 
 		Convey("with mixed text and image content", func() {
-			req := &v1.ChatReq{
+			req := &v1.ChatRequest{
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
@@ -91,7 +91,7 @@ func TestEstimateTokens(t *testing.T) {
 		})
 
 		Convey("with tool use content should count name and inputs", func() {
-			req := &v1.ChatReq{
+			req := &v1.ChatRequest{
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
@@ -111,7 +111,7 @@ func TestEstimateTokens(t *testing.T) {
 		})
 
 		Convey("with tool result content should count output text", func() {
-			req := &v1.ChatReq{
+			req := &v1.ChatRequest{
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
@@ -126,11 +126,11 @@ func TestEstimateTokens(t *testing.T) {
 					},
 				},
 			}
-			So(estimateTokens(req), ShouldEqual, (11/4 + 1))
+			So(estimateTokens(req), ShouldEqual, 11/4+1)
 		})
 
 		Convey("with tool result image should count image tokens", func() {
-			req := &v1.ChatReq{
+			req := &v1.ChatRequest{
 				Messages: []*v1.Message{
 					{
 						Contents: []*v1.Content{
@@ -407,7 +407,7 @@ func TestElectForChat(t *testing.T) {
 				models: nil,
 				log:    slog.Default(),
 			}
-			_, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "test"})
+			_, err := uc.ElectForChat(context.Background(), &v1.ChatRequest{Model: "test"})
 			So(err, ShouldNotBeNil)
 			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
@@ -419,7 +419,7 @@ func TestElectForChat(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			result, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "gpt"})
+			result, err := uc.ElectForChat(context.Background(), &v1.ChatRequest{Model: "gpt"})
 			So(err, ShouldBeNil)
 			So(result, ShouldNotBeNil)
 			defer result.Close()
@@ -432,7 +432,7 @@ func TestElectForChat(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			req := &v1.ChatReq{Model: "nonexistent"}
+			req := &v1.ChatRequest{Model: "nonexistent"}
 			result, err := uc.ElectForChat(context.Background(), req)
 			So(err, ShouldBeNil)
 			So(result, ShouldNotBeNil)
@@ -446,7 +446,7 @@ func TestElectForChat(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			_, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "embed-model"})
+			_, err := uc.ElectForChat(context.Background(), &v1.ChatRequest{Model: "embed-model"})
 			So(err, ShouldNotBeNil)
 			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
@@ -459,7 +459,7 @@ func TestElectForChat(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			_, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "no-repo"})
+			_, err := uc.ElectForChat(context.Background(), &v1.ChatRequest{Model: "no-repo"})
 			So(err, ShouldNotBeNil)
 			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 		})
@@ -471,7 +471,7 @@ func TestElectForChat(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			req := &v1.ChatReq{Model: "my-gpt"}
+			req := &v1.ChatRequest{Model: "my-gpt"}
 			result, err := uc.ElectForChat(context.Background(), req)
 			So(err, ShouldBeNil)
 			defer result.Close()
@@ -485,7 +485,7 @@ func TestElectForChat(t *testing.T) {
 				log:    slog.Default(),
 			}
 
-			req := &v1.ChatReq{Model: "gpt-4"}
+			req := &v1.ChatRequest{Model: "gpt-4"}
 			result, err := uc.ElectForChat(context.Background(), req)
 			So(err, ShouldBeNil)
 			defer result.Close()
@@ -504,14 +504,14 @@ func TestElectForChat(t *testing.T) {
 			}
 
 			// First election should succeed
-			result1, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "gpt-4"})
+			result1, err := uc.ElectForChat(context.Background(), &v1.ChatRequest{Model: "gpt-4"})
 			So(err, ShouldBeNil)
 
 			// Second election should wait (concurrency exhausted but waitable)
 			done := make(chan struct{})
 			var model chat.Model
 			go func() {
-				model, err = uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "gpt-4"})
+				model, err = uc.ElectForChat(context.Background(), &v1.ChatRequest{Model: "gpt-4"})
 				close(done)
 			}()
 
@@ -538,19 +538,19 @@ func TestElectForChat(t *testing.T) {
 			}
 
 			// First election should succeed
-			result1, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "gpt-4"})
+			result1, err := uc.ElectForChat(context.Background(), &v1.ChatRequest{Model: "gpt-4"})
 			So(err, ShouldBeNil)
 
 			// Second election should timeout
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 			defer cancel()
-			_, err = uc.ElectForChat(ctx, &v1.ChatReq{Model: "gpt-4"})
+			_, err = uc.ElectForChat(ctx, &v1.ChatRequest{Model: "gpt-4"})
 			So(err, ShouldNotBeNil)
 			So(errors.Is(err, entity.ErrNoUpstream), ShouldBeTrue)
 
 			// Release and try again
 			result1.Close()
-			result2, err := uc.ElectForChat(context.Background(), &v1.ChatReq{Model: "gpt-4"})
+			result2, err := uc.ElectForChat(context.Background(), &v1.ChatRequest{Model: "gpt-4"})
 			So(err, ShouldBeNil)
 			result2.Close()
 		})

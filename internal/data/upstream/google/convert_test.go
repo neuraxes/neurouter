@@ -35,10 +35,10 @@ func TestConvertRequestToGoogle(t *testing.T) {
 			config: &conf.GoogleConfig{},
 			log:    slog.Default(),
 		}
-		req := &entity.ChatReq{
+		req := &entity.ChatRequest{
 			Messages: []*v1.Message{
 				{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
 							Id:     "get_weather:call-1",
@@ -48,7 +48,7 @@ func TestConvertRequestToGoogle(t *testing.T) {
 					},
 				},
 				{
-					Role: v1.Role_USER,
+					Role: v1.Role_ROLE_USER,
 					Contents: []*v1.Content{
 						{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
 							Id:      "get_weather:call-1",
@@ -76,10 +76,10 @@ func TestConvertRequestToGoogle(t *testing.T) {
 			config: &conf.GoogleConfig{},
 			log:    slog.Default(),
 		}
-		req := &entity.ChatReq{
+		req := &entity.ChatRequest{
 			Messages: []*v1.Message{
 				{
-					Role: v1.Role_MODEL,
+					Role: v1.Role_ROLE_MODEL,
 					Contents: []*v1.Content{
 						{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
 							Id:     "get_weather",
@@ -89,7 +89,7 @@ func TestConvertRequestToGoogle(t *testing.T) {
 					},
 				},
 				{
-					Role: v1.Role_USER,
+					Role: v1.Role_ROLE_USER,
 					Contents: []*v1.Content{
 						{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
 							Id:      "get_weather",
@@ -155,7 +155,7 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 			log:    slog.Default(),
 		}
 		messages := []*v1.Message{
-			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys")}}},
+			{Role: v1.Role_ROLE_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys")}}},
 		}
 		result := r.convertSystemInstructionToGoogle(messages)
 		So(result, ShouldBeNil)
@@ -167,8 +167,8 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 			log:    slog.Default(),
 		}
 		messages := []*v1.Message{
-			{Role: v1.Role_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys prompt")}}},
-			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
+			{Role: v1.Role_ROLE_SYSTEM, Contents: []*v1.Content{{Content: v1.NewTextContent("sys prompt")}}},
+			{Role: v1.Role_ROLE_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
 		}
 		result := r.convertSystemInstructionToGoogle(messages)
 		So(result, ShouldNotBeNil)
@@ -182,7 +182,7 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 			log:    slog.Default(),
 		}
 		messages := []*v1.Message{
-			{Role: v1.Role_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
+			{Role: v1.Role_ROLE_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("hi")}}},
 		}
 		result := r.convertSystemInstructionToGoogle(messages)
 		So(result, ShouldBeNil)
@@ -192,7 +192,7 @@ func TestConvertSystemInstructionToGoogle(t *testing.T) {
 func TestConvertMessageToGoogleContent(t *testing.T) {
 	Convey("convertMessageToGoogleContent should convert user message", t, func() {
 		msg := &v1.Message{
-			Role: v1.Role_USER,
+			Role: v1.Role_ROLE_USER,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("hi")},
 			},
@@ -206,7 +206,7 @@ func TestConvertMessageToGoogleContent(t *testing.T) {
 
 	Convey("convertMessageToGoogleContent should convert user message with tool result", t, func() {
 		msg := &v1.Message{
-			Role: v1.Role_USER,
+			Role: v1.Role_ROLE_USER,
 			Contents: []*v1.Content{
 				{
 					Content: &v1.Content_ToolResult{
@@ -235,7 +235,7 @@ func TestConvertMessageToGoogleContent(t *testing.T) {
 
 	Convey("convertMessageToGoogleContent should handle system role", t, func() {
 		msg := &v1.Message{
-			Role: v1.Role_SYSTEM,
+			Role: v1.Role_ROLE_SYSTEM,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("sys")},
 			},
@@ -249,7 +249,7 @@ func TestConvertMessageToGoogleContent(t *testing.T) {
 
 	Convey("convertMessageToGoogleContent should handle model role", t, func() {
 		msg := &v1.Message{
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{Content: v1.NewTextContent("model")},
 			},
@@ -263,7 +263,7 @@ func TestConvertMessageToGoogleContent(t *testing.T) {
 
 	Convey("convertMessageToGoogleContent should attach the reasoning thought signature", t, func() {
 		msg := &v1.Message{
-			Role: v1.Role_MODEL,
+			Role: v1.Role_ROLE_MODEL,
 			Contents: []*v1.Content{
 				{
 					Phase:     v1.ContentPhase_CONTENT_PHASE_REASONING,
@@ -534,7 +534,7 @@ func TestConvertMessageFromGoogleContent(t *testing.T) {
 		}
 		msg := convertMessageFromGoogleContent(content)
 		So(msg, ShouldNotBeNil)
-		So(msg.Role, ShouldEqual, v1.Role_MODEL)
+		So(msg.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 		So(msg.Contents, ShouldHaveLength, 1)
 		So(msg.Contents[0].GetText().GetText(), ShouldEqual, "hello")
 	})
@@ -546,7 +546,7 @@ func TestConvertMessageFromGoogleContent(t *testing.T) {
 		}
 		msg := convertMessageFromGoogleContent(content)
 		So(msg, ShouldNotBeNil)
-		So(msg.Role, ShouldEqual, v1.Role_MODEL)
+		So(msg.Role, ShouldEqual, v1.Role_ROLE_MODEL)
 		So(msg.Contents, ShouldHaveLength, 1)
 		So(msg.Contents[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_REASONING)
 		So(msg.Contents[0].GetText().GetText(), ShouldEqual, "thinking...")
@@ -613,16 +613,16 @@ func TestConvertMessageFromGoogleContent(t *testing.T) {
 
 func TestConvertStatusFromGoogle(t *testing.T) {
 	Convey("Given various Google finish reasons without function calls", t, func() {
-		So(convertStatusFromGoogle(genai.FinishReasonStop, nil), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
-		So(convertStatusFromGoogle(genai.FinishReasonMaxTokens, nil), ShouldEqual, v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT)
-		So(convertStatusFromGoogle(genai.FinishReasonSafety, nil), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
-		So(convertStatusFromGoogle(genai.FinishReasonBlocklist, nil), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
-		So(convertStatusFromGoogle(genai.FinishReasonProhibitedContent, nil), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
-		So(convertStatusFromGoogle(genai.FinishReasonSPII, nil), ShouldEqual, v1.ChatStatus_CHAT_REFUSED)
-		So(convertStatusFromGoogle(genai.FinishReasonRecitation, nil), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
-		So(convertStatusFromGoogle(genai.FinishReasonUnspecified, nil), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
-		So(convertStatusFromGoogle(genai.FinishReason(""), nil), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
-		So(convertStatusFromGoogle(genai.FinishReason("unknown"), nil), ShouldEqual, v1.ChatStatus_CHAT_IN_PROGRESS)
+		So(convertStatusFromGoogle(genai.FinishReasonStop, nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_COMPLETED)
+		So(convertStatusFromGoogle(genai.FinishReasonMaxTokens, nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT)
+		So(convertStatusFromGoogle(genai.FinishReasonSafety, nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_REFUSED)
+		So(convertStatusFromGoogle(genai.FinishReasonBlocklist, nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_REFUSED)
+		So(convertStatusFromGoogle(genai.FinishReasonProhibitedContent, nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_REFUSED)
+		So(convertStatusFromGoogle(genai.FinishReasonSPII, nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_REFUSED)
+		So(convertStatusFromGoogle(genai.FinishReasonRecitation, nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_IN_PROGRESS)
+		So(convertStatusFromGoogle(genai.FinishReasonUnspecified, nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_IN_PROGRESS)
+		So(convertStatusFromGoogle(genai.FinishReason(""), nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_IN_PROGRESS)
+		So(convertStatusFromGoogle(genai.FinishReason("unknown"), nil), ShouldEqual, v1.ChatStatus_CHAT_STATUS_IN_PROGRESS)
 	})
 
 	Convey("Given STOP finish reason with function call in content", t, func() {
@@ -636,7 +636,7 @@ func TestConvertStatusFromGoogle(t *testing.T) {
 				},
 			},
 		}
-		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_PENDING_TOOL_USE)
+		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
 	})
 
 	Convey("Given STOP finish reason with text content only", t, func() {
@@ -645,7 +645,7 @@ func TestConvertStatusFromGoogle(t *testing.T) {
 				{Text: "Hello world"},
 			},
 		}
-		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_COMPLETED)
+		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_STATUS_COMPLETED)
 	})
 
 	Convey("Given STOP finish reason with mixed content including function call", t, func() {
@@ -660,7 +660,7 @@ func TestConvertStatusFromGoogle(t *testing.T) {
 				},
 			},
 		}
-		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_PENDING_TOOL_USE)
+		So(convertStatusFromGoogle(genai.FinishReasonStop, content), ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
 	})
 }
 

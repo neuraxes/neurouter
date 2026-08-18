@@ -24,7 +24,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
-func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
+func convertChatRequestFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatRequest {
 	var messages []*v1.Message
 
 	system := convertSystemMessageFromAnthropic(req.System)
@@ -68,7 +68,7 @@ func convertChatReqFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatReq {
 		}
 	}
 
-	return &v1.ChatReq{
+	return &v1.ChatRequest{
 		Model:    string(req.Model),
 		Config:   convertGenerationConfigFromAnthropic(req),
 		Messages: messages,
@@ -146,7 +146,7 @@ func convertSystemMessageFromAnthropic(system []anthropic.TextBlockParam) *v1.Me
 		})
 	}
 	return &v1.Message{
-		Role:     v1.Role_SYSTEM,
+		Role:     v1.Role_ROLE_SYSTEM,
 		Contents: contents,
 	}
 }
@@ -155,11 +155,11 @@ func convertMessageFromAnthropicParam(message *anthropic.MessageParam) *v1.Messa
 	var role v1.Role
 	switch message.Role {
 	case anthropic.MessageParamRoleUser:
-		role = v1.Role_USER
+		role = v1.Role_ROLE_USER
 	case anthropic.MessageParamRoleAssistant:
-		role = v1.Role_MODEL
+		role = v1.Role_ROLE_MODEL
 	default:
-		role = v1.Role_USER
+		role = v1.Role_ROLE_USER
 	}
 
 	var contents []*v1.Content
@@ -276,7 +276,7 @@ func convertMessageFromAnthropicParam(message *anthropic.MessageParam) *v1.Messa
 	}
 }
 
-func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
+func convertChatResponseToAnthropic(resp *v1.ChatResponse) *anthropic.Message {
 	anthropicResp := &anthropic.Message{
 		Type:       "message",
 		Model:      anthropic.Model(resp.Model),
@@ -330,13 +330,13 @@ func convertChatRespToAnthropic(resp *v1.ChatResp) *anthropic.Message {
 
 func convertStatusToAnthropic(status v1.ChatStatus) anthropic.StopReason {
 	switch status {
-	case v1.ChatStatus_CHAT_COMPLETED:
+	case v1.ChatStatus_CHAT_STATUS_COMPLETED:
 		return anthropic.StopReasonEndTurn
-	case v1.ChatStatus_CHAT_REFUSED:
+	case v1.ChatStatus_CHAT_STATUS_REFUSED:
 		return anthropic.StopReasonRefusal
-	case v1.ChatStatus_CHAT_PENDING_TOOL_USE:
+	case v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE:
 		return anthropic.StopReasonToolUse
-	case v1.ChatStatus_CHAT_REACHED_TOKEN_LIMIT:
+	case v1.ChatStatus_CHAT_STATUS_REACHED_TOKEN_LIMIT:
 		return anthropic.StopReasonMaxTokens
 	default:
 		return anthropic.StopReasonEndTurn

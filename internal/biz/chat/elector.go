@@ -28,5 +28,5 @@ type Model interface {
 }
 
 type Elector interface {
-	ElectForChat(ctx context.Context, req *v1.ChatReq) (Model, error)
+	ElectForChat(ctx context.Context, req *v1.ChatRequest) (Model, error)
 }

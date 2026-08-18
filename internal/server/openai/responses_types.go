@@ -14,7 +14,11 @@
 
 package openai
 
-import "github.com/openai/openai-go/v3/responses"
+import (
+	"encoding/json"
+
+	"github.com/openai/openai-go/v3/responses"
+)
 
 type responsesResponse struct {
 	ID                string                               `json:"id"`
@@ -40,4 +44,79 @@ type responsesOutputItem struct {
 	CallID           string                                   `json:"call_id,omitempty"`
 	Name             string                                   `json:"name,omitempty"`
 	Arguments        *string                                  `json:"arguments,omitempty"`
+}
+
+// MarshalJSON keeps the (empty) arrays that Responses clients iterate over.
+func (item *responsesOutputItem) MarshalJSON() ([]byte, error) {
+	if item == nil {
+		return []byte("null"), nil
+	}
+
+	switch item.Type {
+	case "message":
+		return json.Marshal(struct {
+			ID      string                         `json:"id"`
+			Type    string                         `json:"type"`
+			Status  string                         `json:"status"`
+			Role    string                         `json:"role,omitempty"`
+			Phase   string                         `json:"phase,omitempty"`
+			Content []responses.ResponseOutputText `json:"content"`
+		}{
+			ID:      item.ID,
+			Type:    item.Type,
+			Status:  item.Status,
+			Role:    item.Role,
+			Phase:   item.Phase,
+			Content: responsesArray(item.Content),
+		})
+	case "reasoning":
+		return json.Marshal(struct {
+			ID               string                                   `json:"id"`
+			Type             string                                   `json:"type"`
+			Status           string                                   `json:"status"`
+			Summary          []responses.ResponseReasoningItemSummary `json:"summary"`
+			Content          []responses.ResponseOutputText           `json:"content"`
+			EncryptedContent string                                   `json:"encrypted_content,omitempty"`
+		}{
+			ID:               item.ID,
+			Type:             item.Type,
+			Status:           item.Status,
+			Summary:          responsesArray(item.Summary),
+			Content:          responsesArray(item.Content),
+			EncryptedContent: item.EncryptedContent,
+		})
+	case "function_call":
+		return json.Marshal(struct {
+			ID        string  `json:"id"`
+			Type      string  `json:"type"`
+			Status    string  `json:"status"`
+			CallID    string  `json:"call_id,omitempty"`
+			Name      string  `json:"name,omitempty"`
+			Arguments *string `json:"arguments,omitempty"`
+		}{
+			ID:        item.ID,
+			Type:      item.Type,
+			Status:    item.Status,
+			CallID:    item.CallID,
+			Name:      item.Name,
+			Arguments: item.Arguments,
+		})
+	default:
+		return json.Marshal(struct {
+			ID     string `json:"id"`
+			Type   string `json:"type"`
+			Status string `json:"status"`
+		}{
+			ID:     item.ID,
+			Type:   item.Type,
+			Status: item.Status,
+		})
+	}
+}
+
+func responsesArray[T any](items []T) []T {
+	if items == nil {
+		return []T{}
+	}
+	return items
 }

@@ -66,7 +66,7 @@ func newGoogleUpstreamWithClient(config *conf.GoogleConfig, httpClient *http.Cli
 	return
 }
 
-func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.ChatResp, err error) {
+func (r *upstream) Chat(ctx context.Context, req *entity.ChatRequest) (resp *entity.ChatResponse, err error) {
 	messages, config := r.convertRequestToGoogle(req)
 
 	googleResp, err := r.client.Models.GenerateContent(ctx, req.Model, messages, config)
@@ -79,7 +79,7 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 		return
 	}
 
-	resp = &entity.ChatResp{
+	resp = &entity.ChatResponse{
 		Id:         req.Id,
 		Model:      googleResp.ModelVersion,
 		Status:     convertStatusFromGoogle(googleResp.Candidates[0].FinishReason, googleResp.Candidates[0].Content),
@@ -92,7 +92,7 @@ func (r *upstream) Chat(ctx context.Context, req *entity.ChatReq) (resp *entity.
 }
 
 type googleChatStreamClient struct {
-	req *entity.ChatReq
+	req *entity.ChatRequest
 	it  iter.Seq2[*genai.GenerateContentResponse, error]
 
 	messageStarted bool
@@ -124,7 +124,7 @@ func (c *googleChatStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error] {
 	}
 }
 
-func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq2[*entity.ChatEvent, error] {
+func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatRequest) iter.Seq2[*entity.ChatEvent, error] {
 	messages, config := r.convertRequestToGoogle(req)
 
 	it := r.client.Models.GenerateContentStream(ctx, req.Model, messages, config)
@@ -137,7 +137,7 @@ func (r *upstream) ChatStream(ctx context.Context, req *entity.ChatReq) iter.Seq
 	return client.AsSeq()
 }
 
-func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entity.EmbedResp, err error) {
+func (r *upstream) Embed(ctx context.Context, req *entity.EmbedRequest) (resp *entity.EmbedResponse, err error) {
 	var parts []*genai.Part
 	for _, content := range req.Contents {
 		if part := convertContentToGooglePart(content); part != nil {
@@ -150,7 +150,7 @@ func (r *upstream) Embed(ctx context.Context, req *entity.EmbedReq) (resp *entit
 		return
 	}
 
-	resp = &entity.EmbedResp{
+	resp = &entity.EmbedResponse{
 		Id:        req.Id,
 		Embedding: googleResp.Embeddings[0].Values,
 	}

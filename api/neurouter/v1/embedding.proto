@@ -22,7 +22,7 @@ import "neurouter/v1/content.proto";
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
 service Embedding {
-  rpc Embed(EmbedReq) returns (EmbedResp) {
+  rpc Embed(EmbedRequest) returns (EmbedResponse) {
     option (google.api.http) = {
       post: "/v1/embed"
       body: "*"
@@ -30,13 +30,13 @@ service Embedding {
   }
 }
 
-message EmbedReq {
+message EmbedRequest {
   string id = 1;
   string model = 2;
   repeated Content contents = 3;
 }
 
-message EmbedResp {
+message EmbedResponse {
   string id = 1;
   string model = 2;
   repeated float embedding = 3;

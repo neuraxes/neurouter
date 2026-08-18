@@ -40,7 +40,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EmbeddingClient interface {
-	Embed(ctx context.Context, in *EmbedReq, opts ...grpc.CallOption) (*EmbedResp, error)
+	Embed(ctx context.Context, in *EmbedRequest, opts ...grpc.CallOption) (*EmbedResponse, error)
 }
 
 type embeddingClient struct {
@@ -51,9 +51,9 @@ func NewEmbeddingClient(cc grpc.ClientConnInterface) EmbeddingClient {
 	return &embeddingClient{cc}
 }
 
-func (c *embeddingClient) Embed(ctx context.Context, in *EmbedReq, opts ...grpc.CallOption) (*EmbedResp, error) {
+func (c *embeddingClient) Embed(ctx context.Context, in *EmbedRequest, opts ...grpc.CallOption) (*EmbedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(EmbedResp)
+	out := new(EmbedResponse)
 	err := c.cc.Invoke(ctx, Embedding_Embed_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (c *embeddingClient) Embed(ctx context.Context, in *EmbedReq, opts ...grpc.
 // All implementations must embed UnimplementedEmbeddingServer
 // for forward compatibility.
 type EmbeddingServer interface {
-	Embed(context.Context, *EmbedReq) (*EmbedResp, error)
+	Embed(context.Context, *EmbedRequest) (*EmbedResponse, error)
 	mustEmbedUnimplementedEmbeddingServer()
 }
 
@@ -76,7 +76,7 @@ type EmbeddingServer interface {
 // pointer dereference when methods are called.
 type UnimplementedEmbeddingServer struct{}
 
-func (UnimplementedEmbeddingServer) Embed(context.Context, *EmbedReq) (*EmbedResp, error) {
+func (UnimplementedEmbeddingServer) Embed(context.Context, *EmbedRequest) (*EmbedResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Embed not implemented")
 }
 func (UnimplementedEmbeddingServer) mustEmbedUnimplementedEmbeddingServer() {}
@@ -101,7 +101,7 @@ func RegisterEmbeddingServer(s grpc.ServiceRegistrar, srv EmbeddingServer) {
 }
 
 func _Embedding_Embed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EmbedReq)
+	in := new(EmbedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func _Embedding_Embed_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: Embedding_Embed_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EmbeddingServer).Embed(ctx, req.(*EmbedReq))
+		return srv.(EmbeddingServer).Embed(ctx, req.(*EmbedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
