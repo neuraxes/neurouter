@@ -8,7 +8,14 @@
       "mode": "debug",
       "program": "cmd/neurouter",
       "cwd": "${workspaceFolder}",
-      "args": ["-conf", "configs"]
+      "args": [
+        "-conf",
+        "configs"
+      ],
+      "env": {
+        "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
+      }
     }
   ]
 }

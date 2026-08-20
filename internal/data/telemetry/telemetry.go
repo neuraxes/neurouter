@@ -4,4 +4,9 @@ import (
 	"github.com/google/wire"
 )
 
-var ProviderSet = wire.NewSet(NewTracerProvider, NewMeterProvider, NewLoggerProvider)
+var ProviderSet = wire.NewSet(
+	NewResource,
+	NewTracerProvider,
+	NewMeterProvider,
+	NewLoggerProvider,
+)
