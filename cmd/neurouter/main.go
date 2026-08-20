@@ -80,6 +80,7 @@ func main() {
 			file.NewSource(flagconf),
 			env.NewSource("NEUROUTER"),
 		),
+		config.WithResolveActualTypes(true),
 	)
 	defer c.Close()
 

@@ -1,3 +1,17 @@
+// Copyright 2024 Neurouter Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package shared
 
 import (
@@ -6,37 +20,38 @@ import (
 	"io"
 	"net/http"
 
-	otellog "go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/neuraxes/neurouter/internal/util"
 )
 
 type recordingTransport struct {
 	base   http.RoundTripper
-	logger otellog.Logger
+	logger log.Logger
 }
 
-// NewRecordingClientFromLoggerProvider creates a recording client using a logger provider and scope name.
-// Returns http.DefaultClient if the provider is nil.
-func NewRecordingClientFromLoggerProvider(provider otellog.LoggerProvider, scope string) *http.Client {
-	if provider == nil {
-		return http.DefaultClient
-	}
+// NewInstrumentedClient creates an instrumented HTTP client.
+func NewInstrumentedClient(
+	scope string,
+	tracerProvider trace.TracerProvider,
+	loggerProvider log.LoggerProvider,
+) *http.Client {
+	var base http.RoundTripper = http.DefaultTransport
 
-	return NewRecordingClient(provider.Logger(scope), nil)
-}
-
-// NewRecordingClient creates an http.Client that captures request and response bodies.
-func NewRecordingClient(logger otellog.Logger, base http.RoundTripper) *http.Client {
-	if base == nil {
-		base = http.DefaultTransport
+	if loggerProvider != nil {
+		base = &recordingTransport{
+			base:   base,
+			logger: loggerProvider.Logger(scope),
+		}
 	}
 
 	return &http.Client{
-		Transport: &recordingTransport{
-			base:   base,
-			logger: logger,
-		},
+		Transport: otelhttp.NewTransport(
+			base,
+			otelhttp.WithTracerProvider(tracerProvider),
+		),
 	}
 }
 
@@ -45,7 +60,7 @@ type recordingBody struct {
 
 	buf    bytes.Buffer
 	ctx    context.Context
-	logger otellog.Logger
+	logger log.Logger
 }
 
 func (b *recordingBody) Read(p []byte) (int, error) {

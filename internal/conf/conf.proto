@@ -53,5 +53,10 @@ message Server {
 }
 
 message Data {
-  bool enable_event_log = 1;
+  // Enables logging otel events.
+  bool enable_otel_events = 1;
+  // Exports traces, metrics, and logs over OTLP.
+  bool enable_otlp_exporter = 2;
+  // Exposes metrics through the Prometheus endpoint.
+  bool enable_prometheus_exporter = 3;
 }

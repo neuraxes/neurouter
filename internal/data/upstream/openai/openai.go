@@ -23,7 +23,8 @@ import (
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/ssestream"
 	"github.com/openai/openai-go/v3/responses"
-	otellog "go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/trace"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -38,9 +39,17 @@ type upstream struct {
 	log    *slog.Logger
 }
 
-func NewOpenAIFactory(loggerProvider otellog.LoggerProvider) repository.UpstreamFactory[conf.OpenAIConfig] {
-	return func(config *conf.OpenAIConfig, logger *slog.Logger) (repository.Repo, error) {
-		client := shared.NewRecordingClientFromLoggerProvider(loggerProvider, "neurouter.upstream.openai")
+func NewOpenAIFactory(
+	loggerProvider log.LoggerProvider,
+	tracerProvider trace.TracerProvider,
+	logger *slog.Logger,
+) repository.UpstreamFactory[conf.OpenAIConfig] {
+	return func(config *conf.OpenAIConfig) (repository.Repo, error) {
+		client := shared.NewInstrumentedClient(
+			"neurouter.upstream.openai",
+			tracerProvider,
+			loggerProvider,
+		)
 		return newOpenAIUpstreamWithClient(config, client, logger)
 	}
 }

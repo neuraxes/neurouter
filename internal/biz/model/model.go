@@ -17,10 +17,8 @@ package model
 import (
 	"context"
 	"log/slog"
-	"sync/atomic"
 
 	"github.com/go-kratos/kratos/v3/config"
-	"go.opentelemetry.io/otel/metric"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -33,17 +31,12 @@ type UseCase interface {
 }
 
 type model struct {
-	config            *conf.Model
-	upstreamConfig    *conf.UpstreamConfig
-	chatRepo          repository.ChatRepo
-	embeddingRepo     repository.EmbeddingRepo
-	inputTokens       atomic.Int64
-	outputTokens      atomic.Int64
-	cachedInputTokens atomic.Int64
-	reasoningTokens   atomic.Int64
-	upstreamLimiters  *limiterGroup // shared across models in same upstream
-	modelLimiters     *limiterGroup // specific to this model
-	metrics           *metrics
+	config           *conf.Model
+	upstreamConfig   *conf.UpstreamConfig
+	chatRepo         repository.ChatRepo
+	embeddingRepo    repository.EmbeddingRepo
+	upstreamLimiters *limiterGroup // shared across models in same upstream
+	modelLimiters    *limiterGroup // specific to this model
 }
 
 type alias struct {
@@ -54,7 +47,6 @@ type alias struct {
 type UseCaseImpl struct {
 	models  []*model
 	aliases map[string]*alias
-	metrics *metrics
 	log     *slog.Logger
 }
 
@@ -64,14 +56,8 @@ func NewModelUseCase(
 	googleFactory repository.UpstreamFactory[conf.GoogleConfig],
 	neurouterFactory repository.UpstreamFactory[conf.NeurouterConfig],
 	openAIFactory repository.UpstreamFactory[conf.OpenAIConfig],
-	meterProvider metric.MeterProvider,
 	logger *slog.Logger,
 ) *UseCaseImpl {
-	metrics, err := newMetrics(meterProvider)
-	if err != nil {
-		logger.Error("failed to create metrics", "error", err)
-	}
-
 	var models []*model
 	aliases := make(map[string]*alias)
 
@@ -85,13 +71,13 @@ func NewModelUseCase(
 
 			switch upstreamConfig.GetConfig().(type) {
 			case *conf.UpstreamConfig_Neurouter:
-				repo, err = neurouterFactory(upstreamConfig.GetNeurouter(), logger)
+				repo, err = neurouterFactory(upstreamConfig.GetNeurouter())
 			case *conf.UpstreamConfig_OpenAi:
-				repo, err = openAIFactory(upstreamConfig.GetOpenAi(), logger)
+				repo, err = openAIFactory(upstreamConfig.GetOpenAi())
 			case *conf.UpstreamConfig_Google:
-				repo, err = googleFactory(upstreamConfig.GetGoogle(), logger)
+				repo, err = googleFactory(upstreamConfig.GetGoogle())
 			case *conf.UpstreamConfig_Anthropic:
-				repo, err = anthropicFactory(upstreamConfig.GetAnthropic(), logger)
+				repo, err = anthropicFactory(upstreamConfig.GetAnthropic())
 			}
 
 			if err != nil {
@@ -130,7 +116,6 @@ func NewModelUseCase(
 					embeddingRepo:    embeddingRepo,
 					upstreamLimiters: upstreamLimiters,
 					modelLimiters:    modelLimiters,
-					metrics:          metrics,
 				})
 			}
 		}
@@ -167,7 +152,6 @@ func NewModelUseCase(
 	return &UseCaseImpl{
 		models:  models,
 		aliases: aliases,
-		metrics: metrics,
 		log:     logger,
 	}
 }

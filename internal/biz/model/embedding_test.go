@@ -143,49 +143,6 @@ func TestEmbeddingModel_RecordUsage(t *testing.T) {
 			So(concurrency.Probe(), ShouldEqual, 0)
 		})
 
-		Convey("should record OTel metrics with actual input tokens", func() {
-			metrics, reader := newTestMetrics()
-
-			m := &embeddingModel{
-				model: &model{
-					config:         &conf.Model{Id: "text-embedding-ada"},
-					upstreamConfig: &conf.UpstreamConfig{Name: "openai"},
-					metrics:        metrics,
-				},
-				reservations: &reservationSet{},
-			}
-
-			m.RecordUsage(context.Background(), 300)
-
-			data := collectMetrics(reader)
-			So(data["neurouter_input_tokens_total"], ShouldHaveLength, 1)
-			So(data["neurouter_input_tokens_total"][0].Value, ShouldEqual, 300)
-			So(data["neurouter_requests_total"], ShouldHaveLength, 1)
-
-			m.Close()
-		})
-
-		Convey("should use estimated tokens for OTel metrics when actual is zero", func() {
-			metrics, reader := newTestMetrics()
-
-			m := &embeddingModel{
-				model: &model{
-					config:         &conf.Model{Id: "text-embedding-ada"},
-					upstreamConfig: &conf.UpstreamConfig{Name: "openai"},
-					metrics:        metrics,
-				},
-				reservations:    &reservationSet{},
-				estimatedTokens: 150,
-			}
-
-			m.RecordUsage(context.Background(), 0)
-
-			data := collectMetrics(reader)
-			So(data["neurouter_input_tokens_total"], ShouldHaveLength, 1)
-			So(data["neurouter_input_tokens_total"][0].Value, ShouldEqual, 150)
-
-			m.Close()
-		})
 	})
 }
 

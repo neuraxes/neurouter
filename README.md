@@ -139,21 +139,25 @@ server:
     addr: "${GRPC_ADDR:0.0.0.0:9000}"
     timeout: "${GRPC_TIMEOUT:600s}"
 data:
-  enable_event_log: "${ENABLE_EVENT_LOG:false}"
+  enable_otel_events: ${ENABLE_OTEL_EVENTS:false}
+  enable_otlp_exporter: ${ENABLE_OTLP_EXPORTER:false}
+  enable_prometheus_exporter: ${ENABLE_PROMETHEUS_EXPORTER:false}
 auth:
   jwt_key: "${JWT_KEY:}"
 ```
 
 Environment overrides use the `NEUROUTER_` prefix and are converted to their configured types. Placeholder names in YAML are the post-prefix keys resolved by the environment source; for example, `${JWT_KEY:}` is supplied by `NEUROUTER_JWT_KEY`.
 
-| Environment variable | Configuration value |
-| --- | --- |
-| `NEUROUTER_HTTP_ADDR` | Native and compatibility HTTP listen address |
-| `NEUROUTER_HTTP_TIMEOUT` | HTTP request timeout, such as `30s` |
-| `NEUROUTER_GRPC_ADDR` | Native gRPC listen address |
-| `NEUROUTER_GRPC_TIMEOUT` | gRPC request timeout, such as `30s` |
-| `NEUROUTER_ENABLE_EVENT_LOG` | Enable OTel request and response event logs |
-| `NEUROUTER_JWT_KEY` | Enable JWT authentication with the supplied signing key |
+| Environment variable                   | Configuration value                                      |
+| -------------------------------------- | -------------------------------------------------------- |
+| `NEUROUTER_HTTP_ADDR`                  | Native and compatibility HTTP listen address             |
+| `NEUROUTER_HTTP_TIMEOUT`               | HTTP request timeout, such as `30s`                      |
+| `NEUROUTER_GRPC_ADDR`                  | Native gRPC listen address                               |
+| `NEUROUTER_GRPC_TIMEOUT`               | gRPC request timeout, such as `30s`                      |
+| `NEUROUTER_ENABLE_OTEL_EVENTS`         | Enable OTel request and response event logs              |
+| `NEUROUTER_ENABLE_OTLP_EXPORTER`       | Export traces, metrics, and enabled event logs over OTLP |
+| `NEUROUTER_ENABLE_PROMETHEUS_EXPORTER` | Expose OTel metrics through the Prometheus endpoint      |
+| `NEUROUTER_JWT_KEY`                    | Enable JWT authentication with the supplied signing key  |
 
 ### Upstream Configuration (`configs/upstream.yaml`)
 
@@ -399,17 +403,33 @@ neurouter:
 
 ## Observability
 
-### Prometheus Metrics
+### OpenTelemetry OTLP Export
 
-The `/metrics` endpoint is available on the HTTP port and exposes:
-
-- `neurouter_input_tokens_total` — Total input tokens processed (labels: `upstream`, `model`)
-- `neurouter_output_tokens_total` — Total output tokens generated
-- `neurouter_cached_input_tokens_total` — Total cached input tokens
-- `neurouter_reasoning_tokens_total` — Total reasoning tokens
-- `neurouter_requests_total` — Total requests processed
+Set `data.enable_otlp_exporter` to export traces and metrics over OTLP/gRPC. Configure the collector with standard OpenTelemetry environment variables:
 
 ```bash
+export OTEL_SERVICE_NAME=neurouter
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+export NEUROUTER_ENABLE_OTLP_EXPORTER=true
+export NEUROUTER_ENABLE_OTEL_EVENTS=true
+```
+
+Signal-specific settings such as `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`, `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, and `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` override the shared endpoint. Event logs are disabled by default and may contain client-facing or upstream request and response bodies on instrumented HTTP paths.
+
+Each upstream model call produces a GenAI client span named `{gen_ai.operation.name} {configured Neurouter model ID}`. HTTP and chained Neurouter gRPC calls are propagated as child client spans.
+
+### Prometheus Metrics
+
+Set `data.enable_prometheus_exporter` to expose OTel metrics from the `/metrics` endpoint on the HTTP port. The endpoint remains available when the exporter is disabled and continues to expose metrics registered directly with the default Prometheus registry, including Go runtime and process metrics. When enabled, the OTel exporter adds:
+
+- `gen_ai.client.operation.duration` — Upstream GenAI operation duration in seconds
+- `gen_ai.client.operation.time_to_first_chunk` — Streaming time to first chunk in seconds
+- `gen_ai.client.token.usage` — Input and output token usage distributions
+
+The Prometheus exporter normalizes OTel instrument names and emits histogram series such as `_bucket`, `_sum`, and `_count`.
+
+```bash
+export NEUROUTER_ENABLE_PROMETHEUS_EXPORTER=true
 curl http://localhost:8000/metrics
 ```
 

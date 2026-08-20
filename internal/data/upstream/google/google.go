@@ -21,7 +21,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	otellog "go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/genai"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
@@ -37,9 +38,17 @@ type upstream struct {
 	log    *slog.Logger
 }
 
-func NewGoogleFactory(loggerProvider otellog.LoggerProvider) repository.UpstreamFactory[conf.GoogleConfig] {
-	return func(config *conf.GoogleConfig, logger *slog.Logger) (repository.Repo, error) {
-		client := shared.NewRecordingClientFromLoggerProvider(loggerProvider, "neurouter.upstream.google")
+func NewGoogleFactory(
+	loggerProvider log.LoggerProvider,
+	tracerProvider trace.TracerProvider,
+	logger *slog.Logger,
+) repository.UpstreamFactory[conf.GoogleConfig] {
+	return func(config *conf.GoogleConfig) (repository.Repo, error) {
+		client := shared.NewInstrumentedClient(
+			"neurouter.upstream.google",
+			tracerProvider,
+			loggerProvider,
+		)
 		return newGoogleUpstreamWithClient(config, client, logger)
 	}
 }

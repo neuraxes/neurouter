@@ -16,9 +16,9 @@ package anthropic
 
 import (
 	"encoding/json"
+	"log/slog"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/go-kratos/kratos/v3/log"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/util"
@@ -43,7 +43,7 @@ func convertChatRequestFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatRe
 		case tool.OfTool != nil:
 			inputSchema, err := util.StructFromAny(tool.OfTool.InputSchema)
 			if err != nil {
-				log.Error("failed to convert anthropic tool schema", "error", err)
+				slog.Error("failed to convert anthropic tool schema", "error", err)
 				continue
 			}
 
@@ -55,7 +55,7 @@ func convertChatRequestFromAnthropic(req *anthropic.MessageNewParams) *v1.ChatRe
 				},
 			}
 		default:
-			log.Error("unsupported anthropic tool", "tool", tool)
+			slog.Error("unsupported anthropic tool", "tool", tool)
 			continue
 		}
 		tools = append(tools, t)

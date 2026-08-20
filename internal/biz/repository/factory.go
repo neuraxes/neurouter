@@ -14,11 +14,7 @@
 
 package repository
 
-import (
-	"log/slog"
-
-	"github.com/neuraxes/neurouter/internal/conf"
-)
+import "github.com/neuraxes/neurouter/internal/conf"
 
 // UpstreamConfig is a type constraint for LLM provider configurations.
 // It allows for configuration of different upstream LLM providers like OpenAI, Google, Anthropic, etc.
@@ -27,4 +23,4 @@ type UpstreamConfig interface {
 }
 
 // UpstreamFactory is a generic factory function type for creating Repo instances.
-type UpstreamFactory[T UpstreamConfig] func(config *T, logger *slog.Logger) (Repo, error)
+type UpstreamFactory[T UpstreamConfig] func(config *T) (Repo, error)
