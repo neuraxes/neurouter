@@ -23,6 +23,7 @@ import (
 	"github.com/anthropics/anthropic-sdk-go/option"
 	"github.com/anthropics/anthropic-sdk-go/packages/ssestream"
 	otellog "go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
@@ -36,9 +37,16 @@ type upstream struct {
 	log    *slog.Logger
 }
 
-func NewAnthropicChatRepoFactory(loggerProvider otellog.LoggerProvider) repository.UpstreamFactory[conf.AnthropicConfig] {
+func NewAnthropicChatRepoFactory(
+	loggerProvider otellog.LoggerProvider,
+	tracerProvider trace.TracerProvider,
+) repository.UpstreamFactory[conf.AnthropicConfig] {
 	return func(config *conf.AnthropicConfig, logger *slog.Logger) (repository.Repo, error) {
-		client := shared.NewRecordingClientFromLoggerProvider(loggerProvider, "neurouter.upstream.anthropic")
+		client := shared.NewRecordingClientFromLoggerProvider(
+			loggerProvider,
+			tracerProvider,
+			"neurouter.upstream.anthropic",
+		)
 		return newAnthropicUpstreamWithClient(config, client, logger)
 	}
 }

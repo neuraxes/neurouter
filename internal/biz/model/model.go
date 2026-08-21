@@ -20,7 +20,6 @@ import (
 	"sync/atomic"
 
 	"github.com/go-kratos/kratos/v3/config"
-	"go.opentelemetry.io/otel/metric"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -43,7 +42,6 @@ type model struct {
 	reasoningTokens   atomic.Int64
 	upstreamLimiters  *limiterGroup // shared across models in same upstream
 	modelLimiters     *limiterGroup // specific to this model
-	metrics           *metrics
 }
 
 type alias struct {
@@ -54,7 +52,6 @@ type alias struct {
 type UseCaseImpl struct {
 	models  []*model
 	aliases map[string]*alias
-	metrics *metrics
 	log     *slog.Logger
 }
 
@@ -64,14 +61,8 @@ func NewModelUseCase(
 	googleFactory repository.UpstreamFactory[conf.GoogleConfig],
 	neurouterFactory repository.UpstreamFactory[conf.NeurouterConfig],
 	openAIFactory repository.UpstreamFactory[conf.OpenAIConfig],
-	meterProvider metric.MeterProvider,
 	logger *slog.Logger,
 ) *UseCaseImpl {
-	metrics, err := newMetrics(meterProvider)
-	if err != nil {
-		logger.Error("failed to create metrics", "error", err)
-	}
-
 	var models []*model
 	aliases := make(map[string]*alias)
 
@@ -130,7 +121,6 @@ func NewModelUseCase(
 					embeddingRepo:    embeddingRepo,
 					upstreamLimiters: upstreamLimiters,
 					modelLimiters:    modelLimiters,
-					metrics:          metrics,
 				})
 			}
 		}
@@ -167,7 +157,6 @@ func NewModelUseCase(
 	return &UseCaseImpl{
 		models:  models,
 		aliases: aliases,
-		metrics: metrics,
 		log:     logger,
 	}
 }

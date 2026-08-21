@@ -23,4 +23,6 @@ server:
     timeout: "${GRPC_TIMEOUT:600s}"
   jwt_key: "${JWT_KEY:}"
 data:
-  enable_event_log: false
+  enable_event_log: ${ENABLE_EVENT_LOG:false}
+  enable_otlp_exporter: ${ENABLE_OTLP_EXPORTER:false}
+  enable_prometheus_exporter: ${ENABLE_PROMETHEUS_EXPORTER:false}

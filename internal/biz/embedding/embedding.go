@@ -18,7 +18,11 @@ import (
 	"context"
 	"log/slog"
 
+	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+	"go.opentelemetry.io/otel/semconv/v1.41.0/genaiconv"
+
 	"github.com/neuraxes/neurouter/internal/biz/entity"
+	"github.com/neuraxes/neurouter/internal/biz/observability"
 )
 
 type UseCase interface {
@@ -26,25 +30,47 @@ type UseCase interface {
 }
 
 type useCase struct {
-	elector Elector
-	log     *slog.Logger
+	elector      Elector
+	instrumenter *observability.GenAIInstrumenter
+	log          *slog.Logger
 }
 
 // NewUseCase creates a new embedding use case instance.
-func NewUseCase(elector Elector, logger *slog.Logger) UseCase {
+func NewUseCase(
+	elector Elector,
+	instrumenter *observability.GenAIInstrumenter,
+	logger *slog.Logger,
+) UseCase {
 	return &useCase{
-		elector: elector,
-		log:     logger,
+		elector:      elector,
+		instrumenter: instrumenter,
+		log:          logger,
 	}
 }
 
 // Embed creates embeddings for the given contents using the specified model.
 func (uc *useCase) Embed(ctx context.Context, req *entity.EmbedRequest) (resp *entity.EmbedResponse, err error) {
+	requestedModel := req.GetModel()
 	model, err := uc.elector.ElectForEmbedding(ctx, req)
 	if err != nil {
 		return
 	}
 	defer model.Close()
+
+	target := model.GenAITarget()
+	target.RequestedModel = requestedModel
+	ctx, invocation := uc.instrumenter.Start(ctx, genaiconv.OperationNameEmbeddings, target)
+	defer func() {
+		result := observability.GenAIResult{}
+		if resp != nil {
+			result.ResponseModel = resp.GetModel()
+			result.Attributes = append(
+				result.Attributes,
+				semconv.GenAIEmbeddingsDimensionCount(len(resp.GetEmbedding())),
+			)
+		}
+		invocation.End(result, err)
+	}()
 
 	resp, err = model.EmbeddingRepo().Embed(ctx, req)
 	if err != nil {

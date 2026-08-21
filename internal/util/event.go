@@ -41,7 +41,7 @@ func EmitEvent(
 	}
 	var record log.Record
 	record.SetEventName(event)
-	record.SetBody(attribute.ByteSliceValue(body))
+	record.SetBody(attribute.StringValue(string(body)))
 	record.AddAttributes(attrs...)
 	logger.Emit(ctx, record)
 }

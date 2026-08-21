@@ -54,4 +54,6 @@ message Server {
 
 message Data {
   bool enable_event_log = 1;
+  bool enable_otlp_exporter = 2;
+  bool enable_prometheus_exporter = 3;
 }

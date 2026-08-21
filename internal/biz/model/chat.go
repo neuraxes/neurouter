@@ -18,7 +18,7 @@ type chatModel struct {
 }
 
 func (m *chatModel) ChatRepo() repository.ChatRepo { return m.chatRepo }
-func (m *chatModel) RecordUsage(ctx context.Context, stats *v1.Statistics) {
+func (m *chatModel) RecordUsage(_ context.Context, stats *v1.Statistics) {
 	actualTokens := m.estimatedTokens // Default to estimated tokens
 
 	if stats != nil && stats.Usage != nil {
@@ -32,24 +32,12 @@ func (m *chatModel) RecordUsage(ctx context.Context, stats *v1.Statistics) {
 		m.cachedInputTokens.Add(cachedInputTokens)
 		m.reasoningTokens.Add(reasoningTokens)
 
-		m.metrics.recordTokenUsage(
-			ctx,
-			m.upstreamConfig.Name,
-			m.config.Id,
-			inputTokens,
-			outputTokens,
-			cachedInputTokens,
-			reasoningTokens,
-		)
-
 		tokenUsage := int64(stats.Usage.InputTokens + stats.Usage.OutputTokens)
 		// If upstream provides usage info, use actual tokens
 		if tokenUsage > 0 {
 			actualTokens = tokenUsage
 		}
 	}
-
-	m.metrics.recordRequest(ctx, m.upstreamConfig.Name, m.config.Id)
 
 	// Complete reservations with actual or estimated token usage
 	m.reservations.complete(actualTokens)

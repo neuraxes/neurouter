@@ -139,7 +139,9 @@ server:
     addr: "${GRPC_ADDR:0.0.0.0:9000}"
     timeout: "${GRPC_TIMEOUT:600s}"
 data:
-  enable_event_log: "${ENABLE_EVENT_LOG:false}"
+  enable_event_log: ${ENABLE_EVENT_LOG:false}
+  enable_otlp_exporter: ${ENABLE_OTLP_EXPORTER:false}
+  enable_prometheus_exporter: ${ENABLE_PROMETHEUS_EXPORTER:false}
 auth:
   jwt_key: "${JWT_KEY:}"
 ```
@@ -153,6 +155,8 @@ Environment overrides use the `NEUROUTER_` prefix and are converted to their con
 | `NEUROUTER_GRPC_ADDR` | Native gRPC listen address |
 | `NEUROUTER_GRPC_TIMEOUT` | gRPC request timeout, such as `30s` |
 | `NEUROUTER_ENABLE_EVENT_LOG` | Enable OTel request and response event logs |
+| `NEUROUTER_ENABLE_OTLP_EXPORTER` | Export traces, metrics, and enabled event logs over OTLP |
+| `NEUROUTER_ENABLE_PROMETHEUS_EXPORTER` | Expose OTel metrics through the Prometheus endpoint |
 | `NEUROUTER_JWT_KEY` | Enable JWT authentication with the supplied signing key |
 
 ### Upstream Configuration (`configs/upstream.yaml`)
@@ -399,17 +403,51 @@ neurouter:
 
 ## Observability
 
-### Prometheus Metrics
+### OpenTelemetry OTLP Export
 
-The `/metrics` endpoint is available on the HTTP port and exposes:
-
-- `neurouter_input_tokens_total` — Total input tokens processed (labels: `upstream`, `model`)
-- `neurouter_output_tokens_total` — Total output tokens generated
-- `neurouter_cached_input_tokens_total` — Total cached input tokens
-- `neurouter_reasoning_tokens_total` — Total reasoning tokens
-- `neurouter_requests_total` — Total requests processed
+Set `data.enable_otlp_exporter` to export traces and metrics over OTLP/gRPC.
+Request and response event logs use the same OTLP pipeline when both
+`data.enable_event_log` and `data.enable_otlp_exporter` are enabled. All
+exporters are disabled by default. Configure the collector with standard
+OpenTelemetry environment variables:
 
 ```bash
+export OTEL_SERVICE_NAME=neurouter
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+export NEUROUTER_ENABLE_OTLP_EXPORTER=true
+export NEUROUTER_ENABLE_EVENT_LOG=true
+```
+
+Signal-specific settings such as `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`,
+`OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, and
+`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` override the shared endpoint. Event logs
+contain request and response bodies and are disabled by default.
+
+Each upstream model call produces a GenAI client span named
+`{gen_ai.operation.name} {gen_ai.request.model}`. HTTP and chained Neurouter
+gRPC calls are propagated as child client spans. GenAI spans include routing,
+model, response, finish reason, token usage, and error metadata. Prompts, model
+outputs, tool definitions, and tool arguments are never recorded in spans.
+
+### Prometheus Metrics
+
+Set `data.enable_prometheus_exporter` to expose OTel metrics from the `/metrics`
+endpoint on the HTTP port. The endpoint remains available when the exporter is
+disabled and continues to expose metrics registered directly with the default
+Prometheus registry, including Go runtime and process metrics. When enabled, the
+OTel exporter adds:
+
+- `gen_ai.client.operation.duration` — Upstream GenAI operation duration in seconds
+- `gen_ai.client.token.usage` — Input and output token usage distributions
+- `gen_ai.client.operation.time_to_first_chunk` — Streaming time to first chunk in seconds
+
+The Prometheus exporter normalizes OTel instrument names and emits histogram
+series such as `_bucket`, `_sum`, and `_count`. GenAI metrics are partitioned by
+operation, provider, requested upstream model, configured Neurouter model, and
+upstream name.
+
+```bash
+export NEUROUTER_ENABLE_PROMETHEUS_EXPORTER=true
 curl http://localhost:8000/metrics
 ```
 

@@ -18,11 +18,13 @@ import (
 	"context"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/observability"
 	"github.com/neuraxes/neurouter/internal/biz/repository"
 )
 
 type Model interface {
 	EmbeddingRepo() repository.EmbeddingRepo
+	GenAITarget() observability.GenAITarget
 	RecordUsage(ctx context.Context, actualTokens int64)
 	Close()
 }

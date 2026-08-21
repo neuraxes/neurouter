@@ -272,60 +272,6 @@ func TestChatModel_RecordUsage(t *testing.T) {
 			So(tpmLimiter.Probe(9700), ShouldEqual, time.Duration(0))
 		})
 
-		Convey("should record OTel token and request metrics when usage exists", func() {
-			metrics, reader := newTestMetrics()
-
-			m := &chatModel{
-				model: &model{
-					config:         &conf.Model{Id: "gpt-4"},
-					upstreamConfig: &conf.UpstreamConfig{Name: "openai"},
-					metrics:        metrics,
-				},
-				reservations: &reservationSet{},
-			}
-
-			m.RecordUsage(context.Background(), &v1.Statistics{
-				Usage: &v1.Usage{
-					InputTokens:       100,
-					OutputTokens:      50,
-					CachedInputTokens: 10,
-					ReasoningTokens:   20,
-				},
-			})
-
-			data := collectMetrics(reader)
-			So(data["neurouter_input_tokens_total"], ShouldHaveLength, 1)
-			So(data["neurouter_input_tokens_total"][0].Value, ShouldEqual, 100)
-			So(data["neurouter_output_tokens_total"][0].Value, ShouldEqual, 50)
-			So(data["neurouter_cached_input_tokens_total"][0].Value, ShouldEqual, 10)
-			So(data["neurouter_reasoning_tokens_total"][0].Value, ShouldEqual, 20)
-			So(data["neurouter_requests_total"], ShouldHaveLength, 1)
-			So(data["neurouter_requests_total"][0].Value, ShouldEqual, 1)
-
-			m.Close()
-		})
-
-		Convey("should record only request metric when stats are nil", func() {
-			metrics, reader := newTestMetrics()
-
-			m := &chatModel{
-				model: &model{
-					config:         &conf.Model{Id: "gpt-4"},
-					upstreamConfig: &conf.UpstreamConfig{Name: "openai"},
-					metrics:        metrics,
-				},
-				reservations: &reservationSet{},
-			}
-
-			m.RecordUsage(context.Background(), nil)
-
-			data := collectMetrics(reader)
-			So(data["neurouter_input_tokens_total"], ShouldBeEmpty)
-			So(data["neurouter_requests_total"], ShouldHaveLength, 1)
-			So(data["neurouter_requests_total"][0].Value, ShouldEqual, 1)
-
-			m.Close()
-		})
 	})
 }
 

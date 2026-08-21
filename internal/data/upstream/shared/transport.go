@@ -1,3 +1,17 @@
+// Copyright 2024 Neurouter Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package shared
 
 import (
@@ -6,7 +20,10 @@ import (
 	"io"
 	"net/http"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	otellog "go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/neuraxes/neurouter/internal/util"
 )
@@ -16,28 +33,27 @@ type recordingTransport struct {
 	logger otellog.Logger
 }
 
-// NewRecordingClientFromLoggerProvider creates a recording client using a logger provider and scope name.
-// Returns http.DefaultClient if the provider is nil.
-func NewRecordingClientFromLoggerProvider(provider otellog.LoggerProvider, scope string) *http.Client {
-	if provider == nil {
-		return http.DefaultClient
-	}
-
-	return NewRecordingClient(provider.Logger(scope), nil)
-}
-
-// NewRecordingClient creates an http.Client that captures request and response bodies.
-func NewRecordingClient(logger otellog.Logger, base http.RoundTripper) *http.Client {
-	if base == nil {
-		base = http.DefaultTransport
-	}
-
-	return &http.Client{
-		Transport: &recordingTransport{
+// NewRecordingClientFromLoggerProvider creates an instrumented client and enables body event logging when configured.
+func NewRecordingClientFromLoggerProvider(
+	provider otellog.LoggerProvider,
+	tracerProvider trace.TracerProvider,
+	scope string,
+) *http.Client {
+	var base http.RoundTripper = http.DefaultTransport
+	if provider != nil {
+		base = &recordingTransport{
 			base:   base,
-			logger: logger,
-		},
+			logger: provider.Logger(scope),
+		}
 	}
+
+	return &http.Client{Transport: otelhttp.NewTransport(
+		base,
+		otelhttp.WithTracerProvider(tracerProvider),
+		otelhttp.WithPropagators(propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+		)),
+	)}
 }
 
 type recordingBody struct {

@@ -20,7 +20,9 @@ import (
 	"iter"
 	"log/slog"
 
+	"github.com/go-kratos/kratos/contrib/otel/v3/tracing"
 	"github.com/go-kratos/kratos/v3/transport/grpc"
+	"go.opentelemetry.io/otel/trace"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
@@ -35,14 +37,23 @@ type upstream struct {
 	log             *slog.Logger
 }
 
-func NewNeurouterFactory() repository.UpstreamFactory[conf.NeurouterConfig] {
-	return newNeurouterUpstream
+func NewNeurouterFactory(tracerProvider trace.TracerProvider) repository.UpstreamFactory[conf.NeurouterConfig] {
+	return func(config *conf.NeurouterConfig, logger *slog.Logger) (repository.Repo, error) {
+		return newNeurouterUpstream(config, tracerProvider, logger)
+	}
 }
 
-func newNeurouterUpstream(config *conf.NeurouterConfig, logger *slog.Logger) (repository.Repo, error) {
+func newNeurouterUpstream(
+	config *conf.NeurouterConfig,
+	tracerProvider trace.TracerProvider,
+	logger *slog.Logger,
+) (repository.Repo, error) {
+	clientTracing := tracing.Client(tracing.WithTracerProvider(tracerProvider))
 	conn, err := grpc.NewClient(
 		context.Background(),
 		grpc.WithEndpoint(config.Endpoint),
+		grpc.WithMiddleware(clientTracing),
+		grpc.WithStreamMiddleware(clientTracing),
 	)
 	if err != nil {
 		return nil, err

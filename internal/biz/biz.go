@@ -20,9 +20,11 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/chat"
 	"github.com/neuraxes/neurouter/internal/biz/embedding"
 	"github.com/neuraxes/neurouter/internal/biz/model"
+	"github.com/neuraxes/neurouter/internal/biz/observability"
 )
 
 var ProviderSet = wire.NewSet(
+	observability.NewGenAIInstrumenter,
 	chat.NewChatUseCase,
 	model.NewModelUseCase,
 	embedding.NewUseCase,

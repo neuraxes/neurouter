@@ -157,10 +157,12 @@ func (x *Server) GetJwtKey() string {
 }
 
 type Data struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	EnableEventLog bool                   `protobuf:"varint,1,opt,name=enable_event_log,json=enableEventLog,proto3" json:"enable_event_log,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	EnableEventLog           bool                   `protobuf:"varint,1,opt,name=enable_event_log,json=enableEventLog,proto3" json:"enable_event_log,omitempty"`
+	EnableOtlpExporter       bool                   `protobuf:"varint,2,opt,name=enable_otlp_exporter,json=enableOtlpExporter,proto3" json:"enable_otlp_exporter,omitempty"`
+	EnablePrometheusExporter bool                   `protobuf:"varint,3,opt,name=enable_prometheus_exporter,json=enablePrometheusExporter,proto3" json:"enable_prometheus_exporter,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Data) Reset() {
@@ -196,6 +198,20 @@ func (*Data) Descriptor() ([]byte, []int) {
 func (x *Data) GetEnableEventLog() bool {
 	if x != nil {
 		return x.EnableEventLog
+	}
+	return false
+}
+
+func (x *Data) GetEnableOtlpExporter() bool {
+	if x != nil {
+		return x.EnableOtlpExporter
+	}
+	return false
+}
+
+func (x *Data) GetEnablePrometheusExporter() bool {
+	if x != nil {
+		return x.EnablePrometheusExporter
 	}
 	return false
 }
@@ -425,9 +441,11 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"0\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xa0\x01\n" +
 	"\x04Data\x12(\n" +
-	"\x10enable_event_log\x18\x01 \x01(\bR\x0eenableEventLogB2Z0github.com/neuraxes/neurouter/internal/conf;confb\x06proto3"
+	"\x10enable_event_log\x18\x01 \x01(\bR\x0eenableEventLog\x120\n" +
+	"\x14enable_otlp_exporter\x18\x02 \x01(\bR\x12enableOtlpExporter\x12<\n" +
+	"\x1aenable_prometheus_exporter\x18\x03 \x01(\bR\x18enablePrometheusExporterB2Z0github.com/neuraxes/neurouter/internal/conf;confb\x06proto3"
 
 var (
 	file_conf_conf_proto_rawDescOnce sync.Once

@@ -12,6 +12,7 @@ import (
 	"github.com/neuraxes/neurouter/internal/biz/chat"
 	"github.com/neuraxes/neurouter/internal/biz/embedding"
 	"github.com/neuraxes/neurouter/internal/biz/model"
+	"github.com/neuraxes/neurouter/internal/biz/observability"
 	"github.com/neuraxes/neurouter/internal/conf"
 	"github.com/neuraxes/neurouter/internal/data/telemetry"
 	"github.com/neuraxes/neurouter/internal/data/upstream/anthropic"
@@ -31,29 +32,40 @@ import (
 
 // wireApp init kratos application.
 func wireApp(configConfig config.Config, confServer *conf.Server, data *conf.Data, logger *slog.Logger) (*kratos.App, func(), error) {
-	loggerProvider, cleanup, err := telemetry.NewLoggerProvider(data, logger)
+	resource, err := telemetry.NewResource()
 	if err != nil {
 		return nil, nil, err
 	}
-	upstreamFactory := anthropic.NewAnthropicChatRepoFactory(loggerProvider)
-	repositoryUpstreamFactory := google.NewGoogleFactory(loggerProvider)
-	upstreamFactory2 := neurouter.NewNeurouterFactory()
-	upstreamFactory3 := openai.NewOpenAIFactory(loggerProvider)
-	meterProvider, cleanup2, err := telemetry.NewMeterProvider()
+	loggerProvider, cleanup, err := telemetry.NewLoggerProvider(data, resource)
+	if err != nil {
+		return nil, nil, err
+	}
+	tracerProvider, cleanup2, err := telemetry.NewTracerProvider(data, resource)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	useCaseImpl := model.NewModelUseCase(configConfig, upstreamFactory, repositoryUpstreamFactory, upstreamFactory2, upstreamFactory3, meterProvider, logger)
-	useCase := chat.NewChatUseCase(useCaseImpl, logger)
-	embeddingUseCase := embedding.NewUseCase(useCaseImpl, logger)
-	routerService := service.NewRouterService(useCase, useCaseImpl, embeddingUseCase, logger)
-	tracerProvider, cleanup3, err := telemetry.NewTracerProvider()
+	upstreamFactory := anthropic.NewAnthropicChatRepoFactory(loggerProvider, tracerProvider)
+	repositoryUpstreamFactory := google.NewGoogleFactory(loggerProvider, tracerProvider)
+	upstreamFactory2 := neurouter.NewNeurouterFactory(tracerProvider)
+	upstreamFactory3 := openai.NewOpenAIFactory(loggerProvider, tracerProvider)
+	useCaseImpl := model.NewModelUseCase(configConfig, upstreamFactory, repositoryUpstreamFactory, upstreamFactory2, upstreamFactory3, logger)
+	meterProvider, cleanup3, err := telemetry.NewMeterProvider(data, resource)
 	if err != nil {
 		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
+	genAIInstrumenter, err := observability.NewGenAIInstrumenter(tracerProvider, meterProvider)
+	if err != nil {
+		cleanup3()
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	useCase := chat.NewChatUseCase(useCaseImpl, genAIInstrumenter, logger)
+	embeddingUseCase := embedding.NewUseCase(useCaseImpl, genAIInstrumenter, logger)
+	routerService := service.NewRouterService(useCase, useCaseImpl, embeddingUseCase, logger)
 	grpcServer := server.NewGRPCServer(confServer, routerService, tracerProvider, logger)
 	grpcWebFilter := server.NewGRPCWebFilter(confServer, grpcServer)
 	httpServer := server.NewHTTPServer(confServer, routerService, grpcWebFilter, loggerProvider, tracerProvider, logger)
