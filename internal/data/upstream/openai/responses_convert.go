@@ -219,10 +219,14 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 		case *v1.Content_ToolResult:
 			openReasoningItemWithoutID = nil
 			flushMessage()
-			items = append(items, responses.ResponseInputItemParamOfFunctionCallOutput(
-				c.ToolResult.GetId(),
-				c.ToolResult.GetTextualOutput(),
-			))
+			items = append(items, responses.ResponseInputItemUnionParam{
+				OfFunctionCallOutput: &responses.ResponseInputItemFunctionCallOutputParam{
+					CallID: openai.Opt(c.ToolResult.GetId()),
+					Output: responses.ResponseInputItemFunctionCallOutputOutputUnionParam{
+						OfString: openai.Opt(c.ToolResult.GetTextualOutput()),
+					},
+				},
+			})
 
 		case *v1.Content_Opaque:
 			if content.Phase != v1.ContentPhase_CONTENT_PHASE_REASONING {

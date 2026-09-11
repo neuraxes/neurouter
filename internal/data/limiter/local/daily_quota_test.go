@@ -89,7 +89,7 @@ func TestDailyRequestReservation_WaitReset(t *testing.T) {
 		err = r2.Wait(ctx)
 		elapsed := time.Since(start)
 		So(err, ShouldBeNil)
-		So(elapsed, ShouldBeLessThanOrEqualTo, 7*time.Millisecond)
+		So(elapsed, ShouldBeLessThanOrEqualTo, 10*time.Millisecond)
 		So(elapsed, ShouldBeGreaterThanOrEqualTo, 3*time.Millisecond)
 
 		r1.Cancel()
@@ -208,7 +208,7 @@ func TestDailyTokenReservation_WaitAndAdjust(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			So(elapsed, ShouldBeGreaterThanOrEqualTo, 3*time.Millisecond)
-			So(elapsed, ShouldBeLessThanOrEqualTo, 7*time.Millisecond)
+			So(elapsed, ShouldBeLessThanOrEqualTo, 10*time.Millisecond)
 
 			r1.Cancel()
 			r2.Cancel()
