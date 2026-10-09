@@ -152,7 +152,7 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 				return openReasoningItemWithoutID
 			}
 
-			item := &responses.ResponseReasoningItemParam{}
+			item := &responses.ResponseReasoningItemParam{Summary: []responses.ResponseReasoningItemSummaryParam{}}
 			items = append(items, responses.ResponseInputItemUnionParam{OfReasoning: item})
 			openReasoningItemWithoutID = item
 			return item
@@ -163,7 +163,9 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 			return item
 		}
 
-		item := &responses.ResponseReasoningItemParam{ID: id}
+		// The API requires "summary" to be present even when empty, but the SDK
+		// omits nil slices, so it must be a non-nil empty slice.
+		item := &responses.ResponseReasoningItemParam{ID: id, Summary: []responses.ResponseReasoningItemSummaryParam{}}
 		reasoningItems[id] = item
 		items = append(items, responses.ResponseInputItemUnionParam{OfReasoning: item})
 		return item
