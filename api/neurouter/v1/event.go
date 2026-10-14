@@ -63,11 +63,23 @@ func NewContentStartToolUseEvent(index uint32, callID, name string) *ChatEvent_C
 // NewIdentifiedContentStartToolUseEvent opens a streamable tool-use content
 // block that carries both the provider item identity and the tool call identity.
 func NewIdentifiedContentStartToolUseEvent(itemID string, index uint32, callID, name string) *ChatEvent_ContentStart {
+	return newContentStartToolUseEvent(itemID, index, callID, name, ToolType_TOOL_TYPE_FUNCTION)
+}
+
+func NewContentStartCustomToolUseEvent(index uint32, callID, name string) *ChatEvent_ContentStart {
+	return NewIdentifiedContentStartCustomToolUseEvent("", index, callID, name)
+}
+
+func NewIdentifiedContentStartCustomToolUseEvent(itemID string, index uint32, callID, name string) *ChatEvent_ContentStart {
+	return newContentStartToolUseEvent(itemID, index, callID, name, ToolType_TOOL_TYPE_CUSTOM)
+}
+
+func newContentStartToolUseEvent(itemID string, index uint32, callID, name string, toolType ToolType) *ChatEvent_ContentStart {
 	return &ChatEvent_ContentStart{
 		ContentStart: &ContentStart{
 			Id:      itemID,
 			Index:   index,
-			Content: &ContentStart_ToolUse{ToolUse: &ToolUseStart{Id: callID, Name: name}},
+			Content: &ContentStart_ToolUse{ToolUse: &ToolUseStart{Id: callID, Name: name, Type: toolType}},
 		},
 	}
 }

@@ -27,6 +27,7 @@ import (
 // contentBlockState tracks how deltas for an open content block map to the
 // OpenAI chat completion wire format.
 type contentBlockState struct {
+	ignored     bool
 	isReasoning bool
 	toolOrdinal int
 }
@@ -147,6 +148,10 @@ func (c *chatCompletionStreamServer) Send(event *v1.ChatEvent) error {
 		start := e.ContentStart
 		switch ct := start.Content.(type) {
 		case *v1.ContentStart_ToolUse:
+			if ct.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM || ct.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+				c.setBlockState(start.GetIndex(), contentBlockState{ignored: true})
+				return nil
+			}
 			ordinal := c.toolCount
 			c.toolCount++
 			c.setBlockState(start.GetIndex(), contentBlockState{
@@ -178,6 +183,9 @@ func (c *chatCompletionStreamServer) Send(event *v1.ChatEvent) error {
 	case *v1.ChatEvent_ContentDelta:
 		delta := e.ContentDelta
 		block := c.getBlockState(delta.GetIndex())
+		if block.ignored {
+			return nil
+		}
 		switch d := delta.Delta.(type) {
 		case *v1.ContentDelta_Text:
 			chunkDelta := chatCompletionChunkDelta{}
@@ -223,7 +231,7 @@ func (c *chatCompletionStreamServer) Send(event *v1.ChatEvent) error {
 		c.status = e.MessageStop.GetStatus()
 		chunk := &chatCompletionChunk{
 			Choices: []chatCompletionChunkChoice{{
-				FinishReason: convertStatusToOpenAIChat(c.status),
+				FinishReason: convertStatusToOpenAIChat(withoutUnansweredToolUse(c.status, c.toolCount)),
 			}},
 		}
 		if err := c.writeChunk(chunk); err != nil {

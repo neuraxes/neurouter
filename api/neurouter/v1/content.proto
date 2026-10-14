@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package neurouter.v1;
 
+import "neurouter/v1/common.proto";
+
 option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
 // Represent a text content
@@ -47,7 +49,8 @@ message ToolUse {
 
   string id = 1;
   string name = 2;
-  repeated Input inputs = 3;
+  ToolType type = 3;
+  repeated Input inputs = 4;
 }
 
 // Represent a result from tool
@@ -61,7 +64,8 @@ message ToolResult {
   }
 
   string id = 1;
-  repeated Output outputs = 2;
+  ToolType type = 2;
+  repeated Output outputs = 3;
 }
 
 // The semantic phase of a content within a model turn.

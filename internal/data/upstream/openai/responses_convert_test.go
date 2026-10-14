@@ -22,8 +22,10 @@ import (
 	"github.com/openai/openai-go/v3/responses"
 	openaishared "github.com/openai/openai-go/v3/shared"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tidwall/gjson"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
+	"github.com/neuraxes/neurouter/internal/biz/chat"
 	"github.com/neuraxes/neurouter/internal/biz/entity"
 	"github.com/neuraxes/neurouter/internal/conf"
 )
@@ -232,6 +234,187 @@ func TestConvertRequestToOpenAIResponses(t *testing.T) {
 		})
 
 	})
+
+	Convey("Given native custom tool declarations", t, func() {
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
+		testCases := []struct {
+			name           string
+			custom         *v1.Tool_Custom
+			wantSyntax     string
+			wantDefinition string
+		}{
+			{
+				name:   "without a grammar",
+				custom: &v1.Tool_Custom{Name: "calculate", Description: "Calculate an expression"},
+			},
+			{
+				name: "with a lark grammar",
+				custom: &v1.Tool_Custom{
+					Name:        "calculate",
+					Description: "Calculate an expression",
+					Grammar:     &v1.Tool_Custom_LarkGrammar{LarkGrammar: "start: /[0-9+]+/"},
+				},
+				wantSyntax:     "lark",
+				wantDefinition: "start: /[0-9+]+/",
+			},
+			{
+				name: "with a regex grammar",
+				custom: &v1.Tool_Custom{
+					Name:        "calculate",
+					Description: "Calculate an expression",
+					Grammar:     &v1.Tool_Custom_RegexGrammar{RegexGrammar: `[0-9]+(\+[0-9]+)*`},
+				},
+				wantSyntax:     "regex",
+				wantDefinition: `[0-9]+(\+[0-9]+)*`,
+			},
+		}
+
+		for _, testCase := range testCases {
+			Convey("When the tool is declared "+testCase.name, func() {
+				result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
+					Model: "gpt-5",
+					Tools: []*v1.Tool{{Tool: &v1.Tool_Custom_{Custom: testCase.custom}}},
+				})
+
+				body, err := json.Marshal(result)
+				So(err, ShouldBeNil)
+				tool := gjson.GetBytes(body, "tools.0")
+				So(tool.Get("type").String(), ShouldEqual, "custom")
+				So(tool.Get("name").String(), ShouldEqual, "calculate")
+				So(tool.Get("description").String(), ShouldEqual, "Calculate an expression")
+				if testCase.wantSyntax == "" {
+					So(tool.Get("format").Exists(), ShouldBeFalse)
+				} else {
+					So(tool.Get("format.type").String(), ShouldEqual, "grammar")
+					So(tool.Get("format.syntax").String(), ShouldEqual, testCase.wantSyntax)
+					So(tool.Get("format.definition").String(), ShouldEqual, testCase.wantDefinition)
+				}
+			})
+		}
+	})
+
+	Convey("Given a replayed native custom tool call and its result", t, func() {
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
+		result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
+			Model: "gpt-5",
+			Messages: []*v1.Message{
+				{
+					Role: v1.Role_ROLE_MODEL,
+					Contents: []*v1.Content{{
+						Id: "ctc-1",
+						Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+							Id:     "call-1",
+							Name:   "calculate",
+							Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+							Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "  1+2\n"}}},
+						}},
+					}},
+				},
+				{
+					Role: v1.Role_ROLE_USER,
+					Contents: []*v1.Content{{
+						Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+							Id:      "call-1",
+							Type:    v1.ToolType_TOOL_TYPE_CUSTOM,
+							Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "3\n"}}},
+						}},
+					}},
+				},
+			},
+		})
+
+		Convey("Then they become custom tool items with the raw input and output preserved", func() {
+			items := result.Input.OfInputItemList
+			So(items, ShouldHaveLength, 2)
+			call := items[0].OfCustomToolCall
+			So(call, ShouldNotBeNil)
+			So(call.ID.Value, ShouldEqual, "ctc-1")
+			So(call.CallID, ShouldEqual, "call-1")
+			So(call.Name, ShouldEqual, "calculate")
+			So(call.Input, ShouldEqual, "  1+2\n")
+			output := items[1].OfCustomToolCallOutput
+			So(output, ShouldNotBeNil)
+			So(output.CallID, ShouldEqual, "call-1")
+			So(output.Output.OfString.Value, ShouldEqual, "3\n")
+		})
+	})
+
+	Convey("Given a native custom tool result with text and an image", t, func() {
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
+		result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
+			Model: "gpt-5",
+			Messages: []*v1.Message{{
+				Role: v1.Role_ROLE_USER,
+				Contents: []*v1.Content{{
+					Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+						Id:   "call-1",
+						Type: v1.ToolType_TOOL_TYPE_CUSTOM,
+						Outputs: []*v1.ToolResult_Output{
+							{Output: &v1.ToolResult_Output_Text{Text: "output\n"}},
+							{Output: &v1.ToolResult_Output_Image{Image: &v1.Image{
+								MimeType: "image/png",
+								Source:   &v1.Image_Base64{Base64: "aGVsbG8="},
+							}}},
+						},
+					}},
+				}},
+			}},
+		})
+
+		Convey("Then the output becomes a content list instead of a string", func() {
+			output := result.Input.OfInputItemList[0].OfCustomToolCallOutput.Output
+			So(output.OfString.Valid(), ShouldBeFalse)
+			So(output.OfOutputContentList, ShouldHaveLength, 2)
+			So(output.OfOutputContentList[0].OfInputText.Text, ShouldEqual, "output\n")
+			So(output.OfOutputContentList[1].OfInputImage.ImageURL.Value, ShouldEqual, "data:image/png;base64,aGVsbG8=")
+		})
+	})
+
+	Convey("Given builtin tools and a replayed builtin tool call", t, func() {
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
+		result := repo.convertRequestToOpenAIResponses(&entity.ChatRequest{
+			Model: "gpt-5",
+			Tools: []*v1.Tool{
+				{Tool: &v1.Tool_Builtin_{Builtin: &v1.Tool_Builtin{}}},
+				{Tool: &v1.Tool_Function_{Function: &v1.Tool_Function{Name: "lookup"}}},
+			},
+			Messages: []*v1.Message{
+				{
+					Role: v1.Role_ROLE_MODEL,
+					Contents: []*v1.Content{{
+						Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+							Id:   "builtin-1",
+							Name: "search",
+							Type: v1.ToolType_TOOL_TYPE_BUILTIN,
+						}},
+					}},
+				},
+				{
+					Role: v1.Role_ROLE_USER,
+					Contents: []*v1.Content{{
+						Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+							Id:      "builtin-1",
+							Type:    v1.ToolType_TOOL_TYPE_BUILTIN,
+							Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "result"}}},
+						}},
+					}},
+				},
+				{
+					Role:     v1.Role_ROLE_USER,
+					Contents: []*v1.Content{{Content: v1.NewTextContent("Continue")}},
+				},
+			},
+		})
+
+		Convey("Then the builtin declaration and history are dropped", func() {
+			So(result.Tools, ShouldHaveLength, 1)
+			So(result.Tools[0].OfFunction.Name, ShouldEqual, "lookup")
+			items := result.Input.OfInputItemList
+			So(items, ShouldHaveLength, 1)
+			So(items[0].OfMessage, ShouldNotBeNil)
+			So(items[0].OfMessage.Content.OfInputItemContentList[0].OfInputText.Text, ShouldEqual, "Continue")
+		})
+	})
 }
 
 func TestConvertResponseFromOpenAIResponses(t *testing.T) {
@@ -267,6 +450,33 @@ func TestConvertResponseFromOpenAIResponses(t *testing.T) {
 			So(result.Message.Contents[3].Id, ShouldEqual, "fc-1")
 			So(result.Message.Contents[3].GetToolUse().Id, ShouldEqual, "call-1")
 			So(result.Message.Contents[3].GetToolUse().GetTextualInput(), ShouldEqual, "{}")
+		})
+	})
+
+	Convey("Given a Responses response with a custom tool call", t, func() {
+		respBody := `{
+			"id":"resp-1",
+			"model":"gpt-5",
+			"status":"completed",
+			"output":[
+				{"id":"ctc-1","type":"custom_tool_call","status":"completed","call_id":"call-1","name":"calculate","input":"  1+2\n"}
+			]
+		}`
+		var openAIResp responses.Response
+		So(json.Unmarshal([]byte(respBody), &openAIResp), ShouldBeNil)
+		repo := &upstream{config: &conf.OpenAIConfig{}, log: slog.Default()}
+
+		result := repo.convertResponseFromOpenAIResponses(&entity.ChatRequest{Id: "request-1"}, &openAIResp)
+
+		Convey("Then the call becomes a custom tool use awaiting its result", func() {
+			So(result.Status, ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
+			So(result.Message.Contents, ShouldHaveLength, 1)
+			So(result.Message.Contents[0].Id, ShouldEqual, "ctc-1")
+			call := result.Message.Contents[0].GetToolUse()
+			So(call.Id, ShouldEqual, "call-1")
+			So(call.Name, ShouldEqual, "calculate")
+			So(call.Type, ShouldEqual, v1.ToolType_TOOL_TYPE_CUSTOM)
+			So(call.GetTextualInput(), ShouldEqual, "  1+2\n")
 		})
 	})
 
@@ -320,6 +530,12 @@ func TestConvertStatusFromOpenAIResponses(t *testing.T) {
 			&responses.Response{
 				Status: responses.ResponseStatusCompleted,
 				Output: []responses.ResponseOutputItemUnion{{Type: "function_call"}},
+			}),
+			ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
+		So(convertStatusFromOpenAIResponses(
+			&responses.Response{
+				Status: responses.ResponseStatusCompleted,
+				Output: []responses.ResponseOutputItemUnion{{Type: "custom_tool_call"}},
 			}),
 			ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
 		So(convertStatusFromOpenAIResponses(
@@ -529,6 +745,54 @@ func TestConvertStreamEventFromOpenAIResponses(t *testing.T) {
 			So(starts[1].GetId(), ShouldEqual, "msg-1")
 			So(starts[0].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_OUTCOME)
 			So(starts[1].GetPhase(), ShouldEqual, v1.ContentPhase_CONTENT_PHASE_OUTCOME)
+		})
+	})
+
+	Convey("Given interleaved input deltas for two custom tool calls", t, func() {
+		client := &openAIResponseStreamClient{
+			req:                           &entity.ChatRequest{Id: "request-1"},
+			openContentIndexByOutputIndex: make(map[int64]uint32),
+			outputPhase:                   make(map[int64]v1.ContentPhase),
+		}
+		rawEvents := []string{
+			`{"type":"response.created","response":{"id":"resp-1","model":"gpt-5","status":"in_progress"}}`,
+			`{"type":"response.output_item.added","output_index":0,"item":{"id":"ctc-0","type":"custom_tool_call","call_id":"call-0","name":"calculate","input":""}}`,
+			`{"type":"response.output_item.added","output_index":1,"item":{"id":"ctc-1","type":"custom_tool_call","call_id":"call-1","name":"calculate","input":""}}`,
+			`{"type":"response.custom_tool_call_input.delta","output_index":0,"item_id":"ctc-0","delta":"  1"}`,
+			`{"type":"response.custom_tool_call_input.delta","output_index":1,"item_id":"ctc-1","delta":"3+4"}`,
+			`{"type":"response.custom_tool_call_input.delta","output_index":0,"item_id":"ctc-0","delta":"+2\n"}`,
+			`{"type":"response.output_item.done","output_index":0,"item":{"id":"ctc-0","type":"custom_tool_call","call_id":"call-0","name":"calculate","input":"  1+2\n"}}`,
+			`{"type":"response.output_item.done","output_index":1,"item":{"id":"ctc-1","type":"custom_tool_call","call_id":"call-1","name":"calculate","input":"3+4"}}`,
+			`{"type":"response.completed","response":{"id":"resp-1","model":"gpt-5","status":"completed","output":[]}}`,
+		}
+
+		reducer := chat.NewChatEventReducer(slog.Default())
+		for _, rawEvent := range rawEvents {
+			var event responses.ResponseStreamEventUnion
+			So(json.Unmarshal([]byte(rawEvent), &event), ShouldBeNil)
+			converted, err := client.convertStreamEventFromOpenAIResponses(event)
+			So(err, ShouldBeNil)
+			for _, nativeEvent := range converted {
+				reducer.Reduce(nativeEvent)
+			}
+		}
+
+		Convey("Then each call accumulates its own raw input", func() {
+			resp := reducer.Resp()
+			So(resp.Status, ShouldEqual, v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)
+			contents := resp.Message.Contents
+			So(contents, ShouldHaveLength, 2)
+			for i, want := range []struct{ itemID, callID, input string }{
+				{"ctc-0", "call-0", "  1+2\n"},
+				{"ctc-1", "call-1", "3+4"},
+			} {
+				So(contents[i].Id, ShouldEqual, want.itemID)
+				call := contents[i].GetToolUse()
+				So(call.Id, ShouldEqual, want.callID)
+				So(call.Name, ShouldEqual, "calculate")
+				So(call.Type, ShouldEqual, v1.ToolType_TOOL_TYPE_CUSTOM)
+				So(call.GetTextualInput(), ShouldEqual, want.input)
+			}
 		})
 	})
 

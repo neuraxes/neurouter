@@ -60,6 +60,7 @@ var NonStreamToolResult = &Fixture{
 					{
 						Content: &v1.Content_ToolUse{
 							ToolUse: &v1.ToolUse{
+								Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 								Id:   "toolu_01EQKr5bPHvy92UvtzNbXFDu",
 								Name: "get_weather",
 								Inputs: []*v1.ToolUse_Input{
@@ -76,7 +77,8 @@ var NonStreamToolResult = &Fixture{
 					{
 						Content: &v1.Content_ToolResult{
 							ToolResult: &v1.ToolResult{
-								Id: "toolu_01EQKr5bPHvy92UvtzNbXFDu",
+								Type: v1.ToolType_TOOL_TYPE_FUNCTION,
+								Id:   "toolu_01EQKr5bPHvy92UvtzNbXFDu",
 								Outputs: []*v1.ToolResult_Output{
 									{Output: &v1.ToolResult_Output_Text{Text: `{"city":"Shanghai","date":"2025-11-10","condition":"Cloudy","high_c":18,"low_c":11,"precip_mm":2.3,"humidity":0.74}`}},
 								},

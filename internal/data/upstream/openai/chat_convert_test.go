@@ -374,6 +374,139 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 			result := params[0].OfAssistant
 			So(result.ToolCalls, ShouldBeEmpty)
 		})
+
+		Convey("with custom and builtin tool calls next to a function call", func() {
+			message := &v1.Message{
+				Role: v1.Role_ROLE_MODEL,
+				Contents: []*v1.Content{
+					{
+						Content: v1.NewTextContent("Let me help you"),
+					},
+					{
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:     "call-1",
+								Name:   "calculate",
+								Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+								Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "1+2"}}},
+							},
+						},
+					},
+					{
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:   "call-2",
+								Name: "web_search",
+								Type: v1.ToolType_TOOL_TYPE_BUILTIN,
+							},
+						},
+					},
+					{
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:     "call-3",
+								Name:   "search",
+								Type:   v1.ToolType_TOOL_TYPE_FUNCTION,
+								Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: `{"query":"weather"}`}}},
+							},
+						},
+					},
+				},
+			}
+			params := repo.convertMessageToOpenAIChat(message)
+			So(params, ShouldHaveLength, 1)
+			result := params[0].OfAssistant
+			So(result.Content.OfArrayOfContentParts, ShouldHaveLength, 1)
+			So(result.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "Let me help you")
+			So(result.ToolCalls, ShouldHaveLength, 1)
+			So(result.ToolCalls[0].OfFunction.ID, ShouldEqual, "call-3")
+		})
+
+		Convey("with only custom and builtin tool calls", func() {
+			message := &v1.Message{
+				Role: v1.Role_ROLE_MODEL,
+				Contents: []*v1.Content{
+					{
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:     "call-1",
+								Name:   "calculate",
+								Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+								Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "1+2"}}},
+							},
+						},
+					},
+					{
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:   "call-2",
+								Name: "web_search",
+								Type: v1.ToolType_TOOL_TYPE_BUILTIN,
+							},
+						},
+					},
+				},
+			}
+			So(repo.convertMessageToOpenAIChat(message), ShouldBeNil)
+		})
+
+		Convey("with only custom tool calls and PreferStringContentForAssistant enabled", func() {
+			repo.config = &conf.OpenAIConfig{
+				PreferStringContentForAssistant: true,
+			}
+
+			message := &v1.Message{
+				Role: v1.Role_ROLE_MODEL,
+				Contents: []*v1.Content{
+					{
+						Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:     "call-1",
+								Name:   "calculate",
+								Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+								Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "1+2"}}},
+							},
+						},
+					},
+				},
+			}
+			So(repo.convertMessageToOpenAIChat(message), ShouldBeNil)
+		})
+
+		Convey("with only reasoning content", func() {
+			message := &v1.Message{
+				Role: v1.Role_ROLE_MODEL,
+				Contents: []*v1.Content{
+					{
+						Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+						Content: v1.NewTextContent("Thinking..."),
+					},
+				},
+			}
+			So(repo.convertMessageToOpenAIChat(message), ShouldBeNil)
+		})
+
+		Convey("with reasoning content and PreferStringContentForAssistant enabled", func() {
+			repo.config = &conf.OpenAIConfig{
+				PreferStringContentForAssistant: true,
+			}
+
+			message := &v1.Message{
+				Role: v1.Role_ROLE_MODEL,
+				Contents: []*v1.Content{
+					{
+						Phase:   v1.ContentPhase_CONTENT_PHASE_REASONING,
+						Content: v1.NewTextContent("Thinking..."),
+					},
+					{
+						Content: v1.NewTextContent("Answer"),
+					},
+				},
+			}
+			params := repo.convertMessageToOpenAIChat(message)
+			So(params, ShouldHaveLength, 1)
+			So(params[0].OfAssistant.Content.OfString.Value, ShouldEqual, "Answer")
+		})
 	})
 
 	Convey("Test for USER role with ToolResult", t, func() {
@@ -515,6 +648,56 @@ func TestConvertMessageToOpenAIChat(t *testing.T) {
 			result := params[0].OfTool
 			So(result.ToolCallID, ShouldEqual, "tool-call-id-1")
 			So(result.Content.OfString.Value, ShouldEqual, "Result text")
+		})
+
+		Convey("with a custom tool result and user text", func() {
+			message := &v1.Message{
+				Role: v1.Role_ROLE_USER,
+				Contents: []*v1.Content{
+					{
+						Content: &v1.Content_ToolResult{
+							ToolResult: &v1.ToolResult{
+								Id:      "tool-call-id-1",
+								Type:    v1.ToolType_TOOL_TYPE_CUSTOM,
+								Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "3"}}},
+							},
+						},
+					},
+					{
+						Content: v1.NewTextContent("Additional user comment"),
+					},
+				},
+			}
+			params := repo.convertMessageToOpenAIChat(message)
+			So(params, ShouldHaveLength, 1)
+			So(params[0].OfUser.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "Additional user comment")
+		})
+
+		Convey("with only custom and builtin tool results", func() {
+			message := &v1.Message{
+				Role: v1.Role_ROLE_USER,
+				Contents: []*v1.Content{
+					{
+						Content: &v1.Content_ToolResult{
+							ToolResult: &v1.ToolResult{
+								Id:      "tool-call-id-1",
+								Type:    v1.ToolType_TOOL_TYPE_CUSTOM,
+								Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "3"}}},
+							},
+						},
+					},
+					{
+						Content: &v1.Content_ToolResult{
+							ToolResult: &v1.ToolResult{
+								Id:      "tool-call-id-2",
+								Type:    v1.ToolType_TOOL_TYPE_BUILTIN,
+								Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "result"}}},
+							},
+						},
+					},
+				},
+			}
+			So(repo.convertMessageToOpenAIChat(message), ShouldBeNil)
 		})
 	})
 
@@ -700,6 +883,50 @@ func TestConvertRequestToOpenAIChat(t *testing.T) {
 
 			param := repo.convertRequestToOpenAIChat(req)
 			So(param.Tools, ShouldHaveLength, 0)
+		})
+
+		Convey("with custom and builtin tools and their replayed calls", func() {
+			req := &entity.ChatRequest{
+				Model: "gpt-4",
+				Tools: []*v1.Tool{
+					{Tool: &v1.Tool_Builtin_{Builtin: &v1.Tool_Builtin{}}},
+					{Tool: &v1.Tool_Custom_{Custom: &v1.Tool_Custom{Name: "calculate"}}},
+					{Tool: &v1.Tool_Function_{Function: &v1.Tool_Function{Name: "lookup"}}},
+				},
+				Messages: []*v1.Message{
+					{
+						Role: v1.Role_ROLE_MODEL,
+						Contents: []*v1.Content{{
+							Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+								Id:     "custom-1",
+								Name:   "calculate",
+								Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+								Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "1+2"}}},
+							}},
+						}},
+					},
+					{
+						Role: v1.Role_ROLE_USER,
+						Contents: []*v1.Content{{
+							Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+								Id:      "custom-1",
+								Type:    v1.ToolType_TOOL_TYPE_CUSTOM,
+								Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "3"}}},
+							}},
+						}},
+					},
+					{
+						Role:     v1.Role_ROLE_USER,
+						Contents: []*v1.Content{{Content: v1.NewTextContent("Continue")}},
+					},
+				},
+			}
+
+			param := repo.convertRequestToOpenAIChat(req)
+			So(param.Tools, ShouldHaveLength, 1)
+			So(param.Tools[0].OfFunction.Function.Name, ShouldEqual, "lookup")
+			So(param.Messages, ShouldHaveLength, 1)
+			So(param.Messages[0].OfUser.Content.OfArrayOfContentParts[0].OfText.Text, ShouldEqual, "Continue")
 		})
 	})
 }

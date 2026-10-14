@@ -704,6 +704,42 @@ func TestConvertRequestToAnthropic(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("Given a chat request with custom tools and a replayed custom tool call", t, func() {
+		req := &entity.ChatRequest{
+			Tools: []*v1.Tool{
+				{Tool: &v1.Tool_Custom_{Custom: &v1.Tool_Custom{Name: "calculate"}}},
+				{Tool: &v1.Tool_Function_{Function: &v1.Tool_Function{Name: "lookup"}}},
+			},
+			Messages: []*v1.Message{
+				{Role: v1.Role_ROLE_MODEL, Contents: []*v1.Content{{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+					Id:     "call-1",
+					Name:   "calculate",
+					Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+					Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "1+2"}}},
+				}}}}},
+				{Role: v1.Role_ROLE_USER, Contents: []*v1.Content{{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+					Id:      "call-1",
+					Type:    v1.ToolType_TOOL_TYPE_CUSTOM,
+					Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "3"}}},
+				}}}}},
+				{Role: v1.Role_ROLE_USER, Contents: []*v1.Content{{Content: v1.NewTextContent("Continue")}}},
+			},
+		}
+
+		repo := &upstream{config: &conf.AnthropicConfig{}, log: slog.Default()}
+		out := repo.convertRequestToAnthropic(req)
+
+		Convey("Then only function tools are declared", func() {
+			So(out.Tools, ShouldHaveLength, 1)
+			So(out.Tools[0].OfTool.Name, ShouldEqual, "lookup")
+		})
+
+		Convey("And the messages left without any block are dropped", func() {
+			So(out.Messages, ShouldHaveLength, 1)
+			So(out.Messages[0].Content[0].OfText.Text, ShouldEqual, "Continue")
+		})
+	})
 }
 
 func TestConvertMessageFromAnthropic(t *testing.T) {

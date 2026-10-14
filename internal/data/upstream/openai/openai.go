@@ -169,11 +169,8 @@ type openAIResponseStreamClient struct {
 
 	messageStarted                bool
 	stopEmitted                   bool
-	hasFunctionCall               bool
+	hasToolCall                   bool
 	nextIndex                     uint32
-	hasOpen                       bool
-	openOutputIndex               int64
-	openContentIndex              uint32
 	openContentIndexByOutputIndex map[int64]uint32
 	outputPhase                   map[int64]v1.ContentPhase
 }

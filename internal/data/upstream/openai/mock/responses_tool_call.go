@@ -74,6 +74,7 @@ var ResponsesToolCall = &Fixture{
 					Id: "fc_tmp_e0qtpyr71w",
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
+							Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 							Id:   "call_HuTyMtN6jtA1RB2cVXNI1obq",
 							Name: "get_weather",
 							Inputs: []*v1.ToolUse_Input{

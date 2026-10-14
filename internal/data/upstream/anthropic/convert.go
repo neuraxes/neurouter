@@ -43,7 +43,10 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatRequest) anthropic.
 		if !r.config.SystemAsUser && message.Role == v1.Role_ROLE_SYSTEM {
 			continue
 		}
-		params.Messages = append(params.Messages, r.convertMessageToAnthropic(message))
+		converted := r.convertMessageToAnthropic(message)
+		if len(converted.Content) > 0 || len(message.Contents) == 0 {
+			params.Messages = append(params.Messages, converted)
+		}
 	}
 
 	if req.Tools != nil {
@@ -59,6 +62,8 @@ func (r *upstream) convertRequestToAnthropic(req *entity.ChatRequest) anthropic.
 					at.Description = anthropic.Opt(t.Function.Description)
 				}
 				tools = append(tools, anthropic.ToolUnionParam{OfTool: at})
+			case *v1.Tool_Custom_, *v1.Tool_Builtin_:
+				continue
 			default:
 				r.log.Error("unsupported tool", "tool", t)
 			}
@@ -171,6 +176,9 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 				))
 			}
 		case *v1.Content_ToolUse:
+			if c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM || c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+				continue
+			}
 			textualInput := c.ToolUse.GetTextualInput()
 
 			var input any
@@ -186,6 +194,9 @@ func (r *upstream) convertMessageToAnthropic(message *v1.Message) anthropic.Mess
 				c.ToolUse.Name,
 			))
 		case *v1.Content_ToolResult:
+			if c.ToolResult.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM || c.ToolResult.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+				continue
+			}
 			var outputs []anthropic.ToolResultBlockParamContentUnion
 
 			for _, output := range c.ToolResult.Outputs {
@@ -308,6 +319,7 @@ func convertMessageFromAnthropic(msg *anthropic.Message) *v1.Message {
 					ToolUse: &v1.ToolUse{
 						Id:   content.ID,
 						Name: content.Name,
+						Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 						Inputs: []*v1.ToolUse_Input{
 							{
 								Input: &v1.ToolUse_Input_Text{

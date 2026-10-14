@@ -15,9 +15,11 @@
 package openai
 
 import (
+	"encoding/json"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tidwall/gjson"
 	"google.golang.org/protobuf/proto"
 
 	v1 "github.com/neuraxes/neurouter/api/neurouter/v1"
@@ -47,6 +49,50 @@ func TestConvertChatRequestFromOpenAIResponses(t *testing.T) {
 				expected := proto.Clone(fixture.ChatRequest).(*v1.ChatRequest)
 				expected.Id = ""
 				So(proto.Equal(actual, expected), ShouldBeTrue)
+			})
+		}
+	})
+
+	Convey("Given custom tool declarations", t, func() {
+		testCases := []struct {
+			name   string
+			format string
+			want   *v1.Tool_Custom
+		}{
+			{
+				name: "without a format",
+				want: &v1.Tool_Custom{Name: "calculate", Description: "Calculate"},
+			},
+			{
+				name:   "with a lark grammar",
+				format: `,"format":{"type":"grammar","syntax":"lark","definition":"start: /[0-9+]+/"}`,
+				want: &v1.Tool_Custom{
+					Name:        "calculate",
+					Description: "Calculate",
+					Grammar:     &v1.Tool_Custom_LarkGrammar{LarkGrammar: "start: /[0-9+]+/"},
+				},
+			},
+			{
+				name:   "with a regex grammar",
+				format: `,"format":{"type":"grammar","syntax":"regex","definition":"[0-9+]+"}`,
+				want: &v1.Tool_Custom{
+					Name:        "calculate",
+					Description: "Calculate",
+					Grammar:     &v1.Tool_Custom_RegexGrammar{RegexGrammar: "[0-9+]+"},
+				},
+			},
+		}
+
+		for _, testCase := range testCases {
+			Convey("When the tool is declared "+testCase.name, func() {
+				req, err := convertChatRequestFromOpenAIResponses([]byte(`{
+					"model": "gpt-5",
+					"tools": [{"type":"custom","name":"calculate","description":"Calculate"` + testCase.format + `}],
+					"input": "hello"
+				}`))
+				So(err, ShouldBeNil)
+				So(req.Tools, ShouldHaveLength, 1)
+				So(proto.Equal(req.Tools[0].GetCustom(), testCase.want), ShouldBeTrue)
 			})
 		}
 	})
@@ -115,6 +161,65 @@ func TestConvertChatRequestFromOpenAIResponsesReplayedOutput(t *testing.T) {
 			So(req.Messages, ShouldHaveLength, 1)
 			So(req.Messages[0].Contents[0].GetToolResult().Id, ShouldEqual, "call-1")
 			So(req.Messages[0].Contents[0].GetToolResult().GetTextualOutput(), ShouldEqual, "tool result")
+		})
+	})
+
+	Convey("Given a replayed custom tool call and its string output", t, func() {
+		req, err := convertChatRequestFromOpenAIResponses([]byte(`{
+			"model": "gpt-5",
+			"input": [
+				{"id":"ctc-1","type":"custom_tool_call","call_id":"call-1","name":"calculate","input":"  1+2\n"},
+				{"type":"custom_tool_call_output","call_id":"call-1","output":"3"}
+			]
+		}`))
+		So(err, ShouldBeNil)
+
+		Convey("Then both become custom tool contents with the raw text preserved", func() {
+			So(req.Messages, ShouldHaveLength, 2)
+			So(proto.Equal(req.Messages[0], &v1.Message{
+				Role: v1.Role_ROLE_MODEL,
+				Contents: []*v1.Content{{
+					Id: "ctc-1",
+					Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+						Id:     "call-1",
+						Name:   "calculate",
+						Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+						Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "  1+2\n"}}},
+					}},
+				}},
+			}), ShouldBeTrue)
+			So(proto.Equal(req.Messages[1], &v1.Message{
+				Role: v1.Role_ROLE_USER,
+				Contents: []*v1.Content{{
+					Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+						Id:      "call-1",
+						Type:    v1.ToolType_TOOL_TYPE_CUSTOM,
+						Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "3"}}},
+					}},
+				}},
+			}), ShouldBeTrue)
+		})
+	})
+
+	Convey("Given a custom tool output sent as text and image parts", t, func() {
+		req, err := convertChatRequestFromOpenAIResponses([]byte(`{
+			"model": "gpt-5",
+			"input": [
+				{"type":"custom_tool_call_output","call_id":"call-1","output":[
+					{"type":"input_text","text":"output\n"},
+					{"type":"input_image","image_url":"data:image/png;base64,aGVsbG8="}
+				]}
+			]
+		}`))
+		So(err, ShouldBeNil)
+
+		Convey("Then each part stays a separate tool result output", func() {
+			result := req.Messages[0].Contents[0].GetToolResult()
+			So(result.Type, ShouldEqual, v1.ToolType_TOOL_TYPE_CUSTOM)
+			So(result.Outputs, ShouldHaveLength, 2)
+			So(result.Outputs[0].GetText(), ShouldEqual, "output\n")
+			So(result.Outputs[1].GetImage().GetMimeType(), ShouldEqual, "image/png")
+			So(result.Outputs[1].GetImage().GetBase64(), ShouldEqual, "aGVsbG8=")
 		})
 	})
 
@@ -231,6 +336,55 @@ func TestConvertChatResponseToOpenAIResponses(t *testing.T) {
 			So(result.Usage.OutputTokensDetails.ReasoningTokens, ShouldEqual, 4)
 		})
 	})
+
+	Convey("Given a native custom tool call", t, func() {
+		for _, testCase := range []struct{ name, input string }{
+			{name: "with an empty input", input: ""},
+			{name: "with a raw text input", input: "  1+2\n"},
+		} {
+			Convey("When the call is "+testCase.name, func() {
+				content := &v1.Content{
+					Id: "ctc-1",
+					Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+						Id:     "call-1",
+						Name:   "calculate",
+						Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+						Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: testCase.input}}},
+					}},
+				}
+				result := convertChatResponseToOpenAIResponses(&v1.ChatResponse{
+					Id:     "request-1",
+					Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
+					Message: &v1.Message{
+						Id:       "resp-1",
+						Role:     v1.Role_ROLE_MODEL,
+						Contents: []*v1.Content{content},
+					},
+				})
+				body, err := json.Marshal(result)
+				So(err, ShouldBeNil)
+
+				Convey("Then it is a custom_tool_call item that always carries its input", func() {
+					item := gjson.GetBytes(body, "output.0")
+					So(item.Get("type").String(), ShouldEqual, "custom_tool_call")
+					So(item.Get("id").String(), ShouldEqual, "ctc-1")
+					So(item.Get("call_id").String(), ShouldEqual, "call-1")
+					So(item.Get("name").String(), ShouldEqual, "calculate")
+					So(item.Get("input").Exists(), ShouldBeTrue)
+					So(item.Get("input").String(), ShouldEqual, testCase.input)
+					So(item.Get("arguments").Exists(), ShouldBeFalse)
+				})
+
+				Convey("Then replaying the output item restores the native content", func() {
+					replay, err := convertChatRequestFromOpenAIResponses([]byte(
+						`{"model":"gpt-5","input":` + gjson.GetBytes(body, "output").Raw + `}`,
+					))
+					So(err, ShouldBeNil)
+					So(proto.Equal(replay.Messages[0].Contents[0], content), ShouldBeTrue)
+				})
+			})
+		}
+	})
 }
 
 func TestConvertUsageToOpenAIResponses(t *testing.T) {
@@ -289,6 +443,28 @@ func TestConvertContentsToOpenAIResponses(t *testing.T) {
 			So(output, ShouldHaveLength, 2)
 			So(output[0].ID, ShouldEqual, "msg_resp-1_0")
 			So(output[1].ID, ShouldEqual, "fc_resp-1_1")
+		})
+	})
+
+	Convey("Given native custom and builtin tool contents without item ids", t, func() {
+		output := convertContentsToOpenAIResponses("resp-1", []*v1.Content{
+			{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+				Id:   "call-1",
+				Name: "web_search",
+				Type: v1.ToolType_TOOL_TYPE_BUILTIN,
+			}}},
+			{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+				Id:   "call-2",
+				Name: "calculate",
+				Type: v1.ToolType_TOOL_TYPE_CUSTOM,
+			}}},
+		})
+
+		Convey("Then the builtin call is dropped and the custom call gets a custom item id", func() {
+			So(output, ShouldHaveLength, 1)
+			So(output[0].Type, ShouldEqual, "custom_tool_call")
+			So(output[0].ID, ShouldEqual, "ctc_resp-1_0")
+			So(output[0].CallID, ShouldEqual, "call-2")
 		})
 	})
 

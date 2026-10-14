@@ -107,16 +107,27 @@ func convertGenerationConfigFromOpenAIResponses(req *responses.ResponseNewParams
 func convertToolsFromOpenAIResponses(openAITools []responses.ToolUnionParam) []*v1.Tool {
 	var tools []*v1.Tool
 	for _, tool := range openAITools {
-		if tool.OfFunction == nil {
-			continue
+		if tool.OfFunction != nil {
+			function := tool.OfFunction
+			inputSchema, _ := util.StructFromMap(function.Parameters)
+			tools = append(tools, &v1.Tool{Tool: &v1.Tool_Function_{Function: &v1.Tool_Function{
+				Name:        function.Name,
+				Description: function.Description.Value,
+				InputSchema: inputSchema,
+			}}})
+		} else if tool.OfCustom != nil {
+			definition := tool.OfCustom
+			custom := &v1.Tool_Custom{Name: definition.Name, Description: definition.Description.Value}
+			if format := definition.Format.OfGrammar; format != nil {
+				switch format.Syntax {
+				case "lark":
+					custom.Grammar = &v1.Tool_Custom_LarkGrammar{LarkGrammar: format.Definition}
+				case "regex":
+					custom.Grammar = &v1.Tool_Custom_RegexGrammar{RegexGrammar: format.Definition}
+				}
+			}
+			tools = append(tools, &v1.Tool{Tool: &v1.Tool_Custom_{Custom: custom}})
 		}
-		function := tool.OfFunction
-		inputSchema, _ := util.StructFromMap(function.Parameters)
-		tools = append(tools, &v1.Tool{Tool: &v1.Tool_Function_{Function: &v1.Tool_Function{
-			Name:        function.Name,
-			Description: function.Description.Value,
-			InputSchema: inputSchema,
-		}}})
 	}
 	return tools
 }
@@ -133,17 +144,43 @@ func convertInputItemFromOpenAIResponses(item gjson.Result) *v1.Message {
 		return convertMessageItemFromOpenAIResponses(item)
 	case "reasoning":
 		return convertReasoningItemFromOpenAIResponses(item)
-	case "function_call":
+	case "function_call", "custom_tool_call":
+		kind := v1.ToolType_TOOL_TYPE_FUNCTION
+		input := item.Get("arguments").String()
+		if itemType == "custom_tool_call" {
+			kind = v1.ToolType_TOOL_TYPE_CUSTOM
+			input = item.Get("input").String()
+		}
 		return &v1.Message{
 			Role: v1.Role_ROLE_MODEL,
-			Contents: []*v1.Content{{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
-				Id:   item.Get("call_id").String(),
-				Name: item.Get("name").String(),
-				Inputs: []*v1.ToolUse_Input{{
-					Input: &v1.ToolUse_Input_Text{Text: item.Get("arguments").String()},
+			Contents: []*v1.Content{{
+				Id: item.Get("id").String(),
+				Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+					Id:   item.Get("call_id").String(),
+					Name: item.Get("name").String(),
+					Type: kind,
+					Inputs: []*v1.ToolUse_Input{{
+						Input: &v1.ToolUse_Input_Text{Text: input},
+					}},
 				}},
-			}}}},
+			}},
 		}
+	case "custom_tool_call_output":
+		result := &v1.ToolResult{Id: item.Get("call_id").String(), Type: v1.ToolType_TOOL_TYPE_CUSTOM}
+		output := item.Get("output")
+		if output.Type == gjson.String {
+			result.Outputs = []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: output.String()}}}
+		} else {
+			for _, part := range output.Array() {
+				switch part.Get("type").String() {
+				case "input_text":
+					result.Outputs = append(result.Outputs, &v1.ToolResult_Output{Output: &v1.ToolResult_Output_Text{Text: part.Get("text").String()}})
+				case "input_image":
+					result.Outputs = append(result.Outputs, &v1.ToolResult_Output{Output: &v1.ToolResult_Output_Image{Image: convertImageFromOpenAIURL(part.Get("image_url").String())}})
+				}
+			}
+		}
+		return &v1.Message{Role: v1.Role_ROLE_USER, Contents: []*v1.Content{{Content: &v1.Content_ToolResult{ToolResult: result}}}}
 	case "function_call_output":
 		output := item.Get("output")
 		var text string
@@ -157,7 +194,8 @@ func convertInputItemFromOpenAIResponses(item gjson.Result) *v1.Message {
 		return &v1.Message{
 			Role: v1.Role_ROLE_USER,
 			Contents: []*v1.Content{{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
-				Id: item.Get("call_id").String(),
+				Id:   item.Get("call_id").String(),
+				Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 				Outputs: []*v1.ToolResult_Output{{
 					Output: &v1.ToolResult_Output_Text{
 						Text: text,
@@ -383,21 +421,40 @@ func convertContentsToOpenAIResponses(responseID string, contents []*v1.Content)
 			reasoningItem(content.GetId()).EncryptedContent = c.Opaque
 
 		case *v1.Content_ToolUse:
+			if c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+				continue
+			}
 			flushMessage()
 			openReasoningItem = nil
 			arguments := c.ToolUse.GetTextualInput()
-			itemID := content.GetId()
-			if itemID == "" {
-				itemID = syntheticResponsesItemID("fc", responseID, len(output))
+			switch c.ToolUse.GetType() {
+			case v1.ToolType_TOOL_TYPE_CUSTOM:
+				itemID := content.GetId()
+				if itemID == "" {
+					itemID = syntheticResponsesItemID("ctc", responseID, len(output))
+				}
+				output = append(output, &responsesOutputItem{
+					ID:     itemID,
+					Type:   "custom_tool_call",
+					Status: "completed",
+					CallID: c.ToolUse.GetId(),
+					Name:   c.ToolUse.GetName(),
+					Input:  &arguments,
+				})
+			default:
+				itemID := content.GetId()
+				if itemID == "" {
+					itemID = syntheticResponsesItemID("fc", responseID, len(output))
+				}
+				output = append(output, &responsesOutputItem{
+					ID:        itemID,
+					Type:      "function_call",
+					Status:    "completed",
+					CallID:    c.ToolUse.GetId(),
+					Name:      c.ToolUse.GetName(),
+					Arguments: &arguments,
+				})
 			}
-			output = append(output, &responsesOutputItem{
-				ID:        itemID,
-				Type:      "function_call",
-				Status:    "completed",
-				CallID:    c.ToolUse.GetId(),
-				Name:      c.ToolUse.GetName(),
-				Arguments: &arguments,
-			})
 		}
 	}
 

@@ -21,13 +21,12 @@
 package v1
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -734,6 +733,7 @@ type ToolUseStart struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type          ToolType               `protobuf:"varint,3,opt,name=type,proto3,enum=neurouter.v1.ToolType" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -780,6 +780,13 @@ func (x *ToolUseStart) GetName() string {
 		return x.Name
 	}
 	return ""
+}
+
+func (x *ToolUseStart) GetType() ToolType {
+	if x != nil {
+		return x.Type
+	}
+	return ToolType_TOOL_TYPE_UNSPECIFIED
 }
 
 type ContentStart struct {
@@ -1101,10 +1108,11 @@ const file_neurouter_v1_chat_proto_rawDesc = "" +
 	"\x05model\x18\x02 \x01(\tR\x05model\"?\n" +
 	"\vMessageStop\x120\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x18.neurouter.v1.ChatStatusR\x06status\"\v\n" +
-	"\tTextStart\"2\n" +
+	"\tTextStart\"^\n" +
 	"\fToolUseStart\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xdc\x02\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12*\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x16.neurouter.v1.ToolTypeR\x04type\"\xdc\x02\n" +
 	"\fContentStart\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05index\x18\x02 \x01(\rR\x05index\x120\n" +
@@ -1182,7 +1190,8 @@ var file_neurouter_v1_chat_proto_goTypes = []any{
 	(*Tool)(nil),             // 17: neurouter.v1.Tool
 	(*Statistics)(nil),       // 18: neurouter.v1.Statistics
 	(*Usage)(nil),            // 19: neurouter.v1.Usage
-	(ContentPhase)(0),        // 20: neurouter.v1.ContentPhase
+	(ToolType)(0),            // 20: neurouter.v1.ToolType
+	(ContentPhase)(0),        // 21: neurouter.v1.ContentPhase
 }
 var file_neurouter_v1_chat_proto_depIdxs = []int32{
 	0,  // 0: neurouter.v1.Message.role:type_name -> neurouter.v1.Role
@@ -1202,19 +1211,20 @@ var file_neurouter_v1_chat_proto_depIdxs = []int32{
 	12, // 14: neurouter.v1.ChatEvent.content_stop:type_name -> neurouter.v1.ContentStop
 	15, // 15: neurouter.v1.ChatEvent.content_snapshot:type_name -> neurouter.v1.Content
 	1,  // 16: neurouter.v1.MessageStop.status:type_name -> neurouter.v1.ChatStatus
-	20, // 17: neurouter.v1.ContentStart.phase:type_name -> neurouter.v1.ContentPhase
-	14, // 18: neurouter.v1.ContentStart.metadata:type_name -> neurouter.v1.ContentStart.MetadataEntry
-	8,  // 19: neurouter.v1.ContentStart.text:type_name -> neurouter.v1.TextStart
-	9,  // 20: neurouter.v1.ContentStart.tool_use:type_name -> neurouter.v1.ToolUseStart
-	3,  // 21: neurouter.v1.Chat.Chat:input_type -> neurouter.v1.ChatRequest
-	3,  // 22: neurouter.v1.Chat.ChatStream:input_type -> neurouter.v1.ChatRequest
-	4,  // 23: neurouter.v1.Chat.Chat:output_type -> neurouter.v1.ChatResponse
-	5,  // 24: neurouter.v1.Chat.ChatStream:output_type -> neurouter.v1.ChatEvent
-	23, // [23:25] is the sub-list for method output_type
-	21, // [21:23] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	20, // 17: neurouter.v1.ToolUseStart.type:type_name -> neurouter.v1.ToolType
+	21, // 18: neurouter.v1.ContentStart.phase:type_name -> neurouter.v1.ContentPhase
+	14, // 19: neurouter.v1.ContentStart.metadata:type_name -> neurouter.v1.ContentStart.MetadataEntry
+	8,  // 20: neurouter.v1.ContentStart.text:type_name -> neurouter.v1.TextStart
+	9,  // 21: neurouter.v1.ContentStart.tool_use:type_name -> neurouter.v1.ToolUseStart
+	3,  // 22: neurouter.v1.Chat.Chat:input_type -> neurouter.v1.ChatRequest
+	3,  // 23: neurouter.v1.Chat.ChatStream:input_type -> neurouter.v1.ChatRequest
+	4,  // 24: neurouter.v1.Chat.Chat:output_type -> neurouter.v1.ChatResponse
+	5,  // 25: neurouter.v1.Chat.ChatStream:output_type -> neurouter.v1.ChatEvent
+	24, // [24:26] is the sub-list for method output_type
+	22, // [22:24] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_chat_proto_init() }

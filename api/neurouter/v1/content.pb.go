@@ -249,7 +249,8 @@ type ToolUse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Inputs        []*ToolUse_Input       `protobuf:"bytes,3,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	Type          ToolType               `protobuf:"varint,3,opt,name=type,proto3,enum=neurouter.v1.ToolType" json:"type,omitempty"`
+	Inputs        []*ToolUse_Input       `protobuf:"bytes,4,rep,name=inputs,proto3" json:"inputs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -298,6 +299,13 @@ func (x *ToolUse) GetName() string {
 	return ""
 }
 
+func (x *ToolUse) GetType() ToolType {
+	if x != nil {
+		return x.Type
+	}
+	return ToolType_TOOL_TYPE_UNSPECIFIED
+}
+
 func (x *ToolUse) GetInputs() []*ToolUse_Input {
 	if x != nil {
 		return x.Inputs
@@ -309,7 +317,8 @@ func (x *ToolUse) GetInputs() []*ToolUse_Input {
 type ToolResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Outputs       []*ToolResult_Output   `protobuf:"bytes,2,rep,name=outputs,proto3" json:"outputs,omitempty"`
+	Type          ToolType               `protobuf:"varint,2,opt,name=type,proto3,enum=neurouter.v1.ToolType" json:"type,omitempty"`
+	Outputs       []*ToolResult_Output   `protobuf:"bytes,3,rep,name=outputs,proto3" json:"outputs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -349,6 +358,13 @@ func (x *ToolResult) GetId() string {
 		return x.Id
 	}
 	return ""
+}
+
+func (x *ToolResult) GetType() ToolType {
+	if x != nil {
+		return x.Type
+	}
+	return ToolType_TOOL_TYPE_UNSPECIFIED
 }
 
 func (x *ToolResult) GetOutputs() []*ToolResult_Output {
@@ -706,7 +722,7 @@ var File_neurouter_v1_content_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_content_proto_rawDesc = "" +
 	"\n" +
-	"\x1aneurouter/v1/content.proto\x12\fneurouter.v1\"\x1a\n" +
+	"\x1aneurouter/v1/content.proto\x12\fneurouter.v1\x1a\x19neurouter/v1/common.proto\"\x1a\n" +
 	"\x04Text\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\"r\n" +
 	"\x05Image\x12\x1b\n" +
@@ -715,21 +731,23 @@ const file_neurouter_v1_content_proto_rawDesc = "" +
 	" \x01(\tH\x00R\x03url\x12\x14\n" +
 	"\x04data\x18\v \x01(\fH\x00R\x04data\x12\x18\n" +
 	"\x06base64\x18\f \x01(\tH\x00R\x06base64B\b\n" +
-	"\x06source\"\xaf\x01\n" +
+	"\x06source\"\xdb\x01\n" +
 	"\aToolUse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x123\n" +
-	"\x06inputs\x18\x03 \x03(\v2\x1b.neurouter.v1.ToolUse.InputR\x06inputs\x1aK\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12*\n" +
+	"\x04type\x18\x03 \x01(\x0e2\x16.neurouter.v1.ToolTypeR\x04type\x123\n" +
+	"\x06inputs\x18\x04 \x03(\v2\x1b.neurouter.v1.ToolUse.InputR\x06inputs\x1aK\n" +
 	"\x05Input\x12\x19\n" +
 	"\x05index\x18\x01 \x01(\rH\x01R\x05index\x88\x01\x01\x12\x14\n" +
 	"\x04text\x18\n" +
 	" \x01(\tH\x00R\x04textB\a\n" +
 	"\x05inputB\b\n" +
-	"\x06_index\"\xd3\x01\n" +
+	"\x06_index\"\xff\x01\n" +
 	"\n" +
 	"ToolResult\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
-	"\aoutputs\x18\x02 \x03(\v2\x1f.neurouter.v1.ToolResult.OutputR\aoutputs\x1az\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12*\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x16.neurouter.v1.ToolTypeR\x04type\x129\n" +
+	"\aoutputs\x18\x03 \x03(\v2\x1f.neurouter.v1.ToolResult.OutputR\aoutputs\x1az\n" +
 	"\x06Output\x12\x19\n" +
 	"\x05index\x18\x01 \x01(\rH\x01R\x05index\x88\x01\x01\x12\x14\n" +
 	"\x04text\x18\n" +
@@ -784,22 +802,25 @@ var file_neurouter_v1_content_proto_goTypes = []any{
 	(*ToolUse_Input)(nil),     // 6: neurouter.v1.ToolUse.Input
 	(*ToolResult_Output)(nil), // 7: neurouter.v1.ToolResult.Output
 	nil,                       // 8: neurouter.v1.Content.MetadataEntry
+	(ToolType)(0),             // 9: neurouter.v1.ToolType
 }
 var file_neurouter_v1_content_proto_depIdxs = []int32{
-	6, // 0: neurouter.v1.ToolUse.inputs:type_name -> neurouter.v1.ToolUse.Input
-	7, // 1: neurouter.v1.ToolResult.outputs:type_name -> neurouter.v1.ToolResult.Output
-	0, // 2: neurouter.v1.Content.phase:type_name -> neurouter.v1.ContentPhase
-	8, // 3: neurouter.v1.Content.metadata:type_name -> neurouter.v1.Content.MetadataEntry
-	1, // 4: neurouter.v1.Content.text:type_name -> neurouter.v1.Text
-	2, // 5: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
-	3, // 6: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
-	4, // 7: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
-	2, // 8: neurouter.v1.ToolResult.Output.image:type_name -> neurouter.v1.Image
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	9,  // 0: neurouter.v1.ToolUse.type:type_name -> neurouter.v1.ToolType
+	6,  // 1: neurouter.v1.ToolUse.inputs:type_name -> neurouter.v1.ToolUse.Input
+	9,  // 2: neurouter.v1.ToolResult.type:type_name -> neurouter.v1.ToolType
+	7,  // 3: neurouter.v1.ToolResult.outputs:type_name -> neurouter.v1.ToolResult.Output
+	0,  // 4: neurouter.v1.Content.phase:type_name -> neurouter.v1.ContentPhase
+	8,  // 5: neurouter.v1.Content.metadata:type_name -> neurouter.v1.Content.MetadataEntry
+	1,  // 6: neurouter.v1.Content.text:type_name -> neurouter.v1.Text
+	2,  // 7: neurouter.v1.Content.image:type_name -> neurouter.v1.Image
+	3,  // 8: neurouter.v1.Content.tool_use:type_name -> neurouter.v1.ToolUse
+	4,  // 9: neurouter.v1.Content.tool_result:type_name -> neurouter.v1.ToolResult
+	2,  // 10: neurouter.v1.ToolResult.Output.image:type_name -> neurouter.v1.Image
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_content_proto_init() }
@@ -807,6 +828,7 @@ func file_neurouter_v1_content_proto_init() {
 	if File_neurouter_v1_content_proto != nil {
 		return
 	}
+	file_neurouter_v1_common_proto_init()
 	file_neurouter_v1_content_proto_msgTypes[1].OneofWrappers = []any{
 		(*Image_Url)(nil),
 		(*Image_Data)(nil),

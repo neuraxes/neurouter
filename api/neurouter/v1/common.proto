@@ -105,6 +105,14 @@ enum Capability {
   CAPABILITY_TOOL_USE = 4;
 }
 
+enum ToolType {
+  // Unspecified calls and results retain function-tool semantics.
+  TOOL_TYPE_UNSPECIFIED = 0;
+  TOOL_TYPE_FUNCTION = 1;
+  TOOL_TYPE_BUILTIN = 2;
+  TOOL_TYPE_CUSTOM = 3;
+}
+
 message Tool {
   message Function {
     string name = 1;
@@ -112,7 +120,24 @@ message Tool {
     google.protobuf.Struct input_schema = 3;
   }
 
+  message Builtin {
+    // TODO: Support builtin tools
+  }
+
+  message Custom {
+    string name = 1;
+    string description = 2;
+
+    // Without a grammar, the tool accepts unconstrained text.
+    oneof grammar {
+      string lark_grammar = 60;
+      string regex_grammar = 61;
+    }
+  }
+
   oneof tool {
     Function function = 1;
+    Builtin builtin = 2;
+    Custom custom = 3;
   }
 }

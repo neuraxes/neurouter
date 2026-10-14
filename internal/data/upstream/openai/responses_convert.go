@@ -16,6 +16,7 @@ package openai
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
@@ -59,6 +60,14 @@ func (r *upstream) convertRequestToOpenAIResponses(req *entity.ChatRequest) resp
 				openAITool.Description = openai.Opt(function.GetDescription())
 			}
 			openAIReq.Tools = append(openAIReq.Tools, responses.ToolUnionParam{OfFunction: openAITool})
+		case *v1.Tool_Custom_:
+			custom := &responses.CustomToolParam{Name: t.Custom.GetName(), Description: openai.Opt(t.Custom.GetDescription())}
+			if syntax, definition := t.Custom.GrammarDefinition(); syntax != "" {
+				custom.Format = openaishared.CustomToolInputFormatParamOfGrammar(definition, syntax)
+			}
+			openAIReq.Tools = append(openAIReq.Tools, responses.ToolUnionParam{OfCustom: custom})
+		case *v1.Tool_Builtin_:
+			continue
 		default:
 			r.log.Error("unsupported tool", "tool", t)
 		}
@@ -210,25 +219,50 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 			})
 
 		case *v1.Content_ToolUse:
+			if c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+				continue
+			}
 			openReasoningItemWithoutID = nil
 			flushMessage()
-			items = append(items, responses.ResponseInputItemParamOfFunctionCall(
-				c.ToolUse.GetTextualInput(),
-				c.ToolUse.GetId(),
-				c.ToolUse.GetName(),
-			))
+			switch c.ToolUse.GetType() {
+			case v1.ToolType_TOOL_TYPE_CUSTOM:
+				call := responses.ResponseInputItemParamOfCustomToolCall(c.ToolUse.GetId(), c.ToolUse.GetTextualInput(), c.ToolUse.GetName())
+				if content.GetId() != "" {
+					call.OfCustomToolCall.ID = openai.Opt(content.GetId())
+				}
+				items = append(items, call)
+			default:
+				items = append(items, responses.ResponseInputItemParamOfFunctionCall(
+					c.ToolUse.GetTextualInput(),
+					c.ToolUse.GetId(),
+					c.ToolUse.GetName(),
+				))
+			}
 
 		case *v1.Content_ToolResult:
+			if c.ToolResult.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+				continue
+			}
 			openReasoningItemWithoutID = nil
 			flushMessage()
-			items = append(items, responses.ResponseInputItemUnionParam{
-				OfFunctionCallOutput: &responses.ResponseInputItemFunctionCallOutputParam{
-					CallID: openai.Opt(c.ToolResult.GetId()),
-					Output: responses.ResponseInputItemFunctionCallOutputOutputUnionParam{
-						OfString: openai.Opt(c.ToolResult.GetTextualOutput()),
+			switch c.ToolResult.GetType() {
+			case v1.ToolType_TOOL_TYPE_CUSTOM:
+				items = append(items, responses.ResponseInputItemUnionParam{
+					OfCustomToolCallOutput: &responses.ResponseCustomToolCallOutputParam{
+						CallID: c.ToolResult.GetId(),
+						Output: convertCustomToolOutputToOpenAIResponses(c.ToolResult),
 					},
-				},
-			})
+				})
+			default:
+				items = append(items, responses.ResponseInputItemUnionParam{
+					OfFunctionCallOutput: &responses.ResponseInputItemFunctionCallOutputParam{
+						CallID: openai.Opt(c.ToolResult.GetId()),
+						Output: responses.ResponseInputItemFunctionCallOutputOutputUnionParam{
+							OfString: openai.Opt(c.ToolResult.GetTextualOutput()),
+						},
+					},
+				})
+			}
 
 		case *v1.Content_Opaque:
 			if content.Phase != v1.ContentPhase_CONTENT_PHASE_REASONING {
@@ -247,6 +281,28 @@ func (r *upstream) convertMessageToOpenAIResponses(message *v1.Message) []respon
 
 	flushMessage()
 	return items
+}
+
+func convertCustomToolOutputToOpenAIResponses(result *v1.ToolResult) responses.ResponseCustomToolCallOutputOutputUnionParam {
+	var parts []responses.ResponseCustomToolCallOutputOutputOutputContentListItemUnionParam
+	hasImage := false
+	for _, output := range result.GetOutputs() {
+		switch value := output.GetOutput().(type) {
+		case *v1.ToolResult_Output_Text:
+			parts = append(parts, responses.ResponseCustomToolCallOutputOutputOutputContentListItemUnionParam{
+				OfInputText: &responses.ResponseInputTextParam{Text: value.Text},
+			})
+		case *v1.ToolResult_Output_Image:
+			hasImage = true
+			parts = append(parts, responses.ResponseCustomToolCallOutputOutputOutputContentListItemUnionParam{
+				OfInputImage: &responses.ResponseInputImageParam{ImageURL: openai.Opt(convertImageToOpenAIURL(value.Image))},
+			})
+		}
+	}
+	if hasImage {
+		return responses.ResponseCustomToolCallOutputOutputUnionParam{OfOutputContentList: parts}
+	}
+	return responses.ResponseCustomToolCallOutputOutputUnionParam{OfString: openai.Opt(result.GetTextualOutput())}
 }
 
 func convertRoleToOpenAIResponses(role v1.Role) (responses.EasyInputMessageRole, bool) {
@@ -293,6 +349,17 @@ func convertOutputItemFromOpenAIResponses(item responses.ResponseOutputItemUnion
 		return convertReasoningItemFromOpenAIResponses(item.AsReasoning())
 	case "message":
 		return convertMessageItemFromOpenAIResponses(item.AsMessage())
+	case "custom_tool_call":
+		call := item.AsCustomToolCall()
+		return []*v1.Content{{
+			Id: call.ID,
+			Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+				Id:     call.CallID,
+				Name:   call.Name,
+				Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+				Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: call.Input}}},
+			}},
+		}}
 	case "function_call":
 		call := item.AsFunctionCall()
 		return []*v1.Content{{
@@ -300,6 +367,7 @@ func convertOutputItemFromOpenAIResponses(item responses.ResponseOutputItemUnion
 			Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
 				Id:   call.CallID,
 				Name: call.Name,
+				Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 				Inputs: []*v1.ToolUse_Input{{
 					Input: &v1.ToolUse_Input_Text{Text: call.Arguments},
 				}},
@@ -361,7 +429,7 @@ func convertStatusFromOpenAIResponses(resp *responses.Response) v1.ChatStatus {
 	switch resp.Status {
 	case responses.ResponseStatusCompleted:
 		for _, item := range resp.Output {
-			if item.Type == "function_call" {
+			if item.Type == "function_call" || item.Type == "custom_tool_call" {
 				return v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE
 			}
 		}
@@ -423,29 +491,29 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponses(
 
 	case "response.output_item.added":
 		c.outputPhase[event.OutputIndex] = convertOutputMessagePhaseFromOpenAIResponses(event.Item.Phase)
-		if event.Item.Type == "function_call" {
-			c.hasFunctionCall = true
-			call := event.Item.AsFunctionCall()
-			index := c.openBlock(&events, event.OutputIndex)
-			events = append(events, c.newChatEvent(v1.NewIdentifiedContentStartToolUseEvent(
-				call.ID,
-				index,
-				call.CallID,
-				call.Name,
-			)))
+		if event.Item.Type == "function_call" || event.Item.Type == "custom_tool_call" {
+			c.hasToolCall = true
+			index := c.openBlock(event.OutputIndex)
+			var start *v1.ChatEvent_ContentStart
+			if event.Item.Type == "custom_tool_call" {
+				start = v1.NewIdentifiedContentStartCustomToolUseEvent(event.Item.ID, index, event.Item.CallID, event.Item.Name)
+			} else {
+				start = v1.NewIdentifiedContentStartToolUseEvent(event.Item.ID, index, event.Item.CallID, event.Item.Name)
+			}
+			events = append(events, c.newChatEvent(start))
 		}
 
 	case "response.content_part.added":
 		switch event.Part.Type {
 		case "output_text":
-			index := c.openBlock(&events, event.OutputIndex)
+			index := c.openBlock(event.OutputIndex)
 			events = append(events, c.newChatEvent(v1.NewIdentifiedContentStartTextEvent(
 				event.ItemID,
 				index,
 				c.outputPhase[event.OutputIndex],
 			)))
 		case "reasoning_text":
-			index := c.openBlock(&events, event.OutputIndex)
+			index := c.openBlock(event.OutputIndex)
 			events = append(events, c.newChatEvent(v1.NewIdentifiedContentStartTextEvent(
 				event.ItemID,
 				index,
@@ -460,7 +528,7 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponses(
 
 	case "response.reasoning_summary_part.added":
 		if _, ok := c.openContentIndexByOutputIndex[event.OutputIndex]; !ok {
-			index := c.openBlock(&events, event.OutputIndex)
+			index := c.openBlock(event.OutputIndex)
 			events = append(events, c.newChatEvent(v1.NewIdentifiedContentStartTextEvent(
 				event.ItemID,
 				index,
@@ -485,17 +553,17 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponses(
 		}
 		events = append(events, c.newChatEvent(v1.NewContentDeltaTextEvent(index, event.Delta)))
 
-	case "response.function_call_arguments.delta":
+	case "response.function_call_arguments.delta", "response.custom_tool_call_input.delta":
 		index, ok := c.openContentIndexByOutputIndex[event.OutputIndex]
 		if !ok {
-			return nil, fmt.Errorf("responses stream sent function arguments before the function item")
+			return nil, fmt.Errorf("responses stream sent tool input before the tool item")
 		}
 		events = append(events, c.newChatEvent(v1.NewContentDeltaToolInputTextEvent(index, event.Delta)))
 
 	case "response.output_item.done":
 		item := event.Item
-		if item.Type == "function_call" {
-			c.hasFunctionCall = true
+		if item.Type == "function_call" || item.Type == "custom_tool_call" {
+			c.hasToolCall = true
 		}
 		c.closeOutputBlock(&events, event.OutputIndex)
 		if item.Type == "reasoning" {
@@ -513,9 +581,9 @@ func (c *openAIResponseStreamClient) convertStreamEventFromOpenAIResponses(
 		}
 
 	case "response.completed", "response.incomplete", "response.failed":
-		c.closeOpenBlock(&events)
+		c.closeOpenBlocks(&events)
 		status := convertStatusFromOpenAIResponses(&event.Response)
-		if status == v1.ChatStatus_CHAT_STATUS_COMPLETED && c.hasFunctionCall {
+		if status == v1.ChatStatus_CHAT_STATUS_COMPLETED && c.hasToolCall {
 			status = v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE
 		}
 		stop := c.newChatEvent(v1.NewMessageStopEvent(status))
@@ -537,7 +605,7 @@ func (c *openAIResponseStreamClient) finish() []*entity.ChatEvent {
 		return nil
 	}
 	var events []*entity.ChatEvent
-	c.closeOpenBlock(&events)
+	c.closeOpenBlocks(&events)
 	// A well-formed Responses stream always carries a terminal response event.
 	// Reaching EOF first means the response was truncated, regardless of the
 	// last in-progress status observed in the stream.
@@ -550,28 +618,26 @@ func (c *openAIResponseStreamClient) newChatEvent(event v1.ChatEventPayload) *en
 	return v1.NewChatEvent(c.req.GetId(), event)
 }
 
-func (c *openAIResponseStreamClient) openBlock(events *[]*entity.ChatEvent, outputIndex int64) uint32 {
+func (c *openAIResponseStreamClient) openBlock(outputIndex int64) uint32 {
 	if index, ok := c.openContentIndexByOutputIndex[outputIndex]; ok {
 		return index
 	}
-	c.closeOpenBlock(events)
-
 	index := c.nextIndex
 	c.nextIndex++
-	c.hasOpen = true
-	c.openOutputIndex = outputIndex
-	c.openContentIndex = index
 	c.openContentIndexByOutputIndex[outputIndex] = index
 	return index
 }
 
-func (c *openAIResponseStreamClient) closeOpenBlock(events *[]*entity.ChatEvent) {
-	if !c.hasOpen {
-		return
+func (c *openAIResponseStreamClient) closeOpenBlocks(events *[]*entity.ChatEvent) {
+	indexes := make([]uint32, 0, len(c.openContentIndexByOutputIndex))
+	for _, index := range c.openContentIndexByOutputIndex {
+		indexes = append(indexes, index)
 	}
-	*events = append(*events, c.newChatEvent(v1.NewContentStopEvent(c.openContentIndex)))
-	delete(c.openContentIndexByOutputIndex, c.openOutputIndex)
-	c.hasOpen = false
+	slices.Sort(indexes)
+	for _, index := range indexes {
+		*events = append(*events, c.newChatEvent(v1.NewContentStopEvent(index)))
+	}
+	clear(c.openContentIndexByOutputIndex)
 }
 
 func (c *openAIResponseStreamClient) closeOutputBlock(events *[]*entity.ChatEvent, outputIndex int64) {
@@ -581,7 +647,4 @@ func (c *openAIResponseStreamClient) closeOutputBlock(events *[]*entity.ChatEven
 	}
 	*events = append(*events, c.newChatEvent(v1.NewContentStopEvent(index)))
 	delete(c.openContentIndexByOutputIndex, outputIndex)
-	if c.hasOpen && c.openOutputIndex == outputIndex {
-		c.hasOpen = false
-	}
 }

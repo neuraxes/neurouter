@@ -143,6 +143,9 @@ func (s *responsesStreamServer) handleContentStart(start *v1.ContentStart) error
 		}
 		return s.startTextBlock(start)
 	case *v1.ContentStart_ToolUse:
+		if content.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+			return nil
+		}
 		if err := s.flushPendingItems(); err != nil {
 			return err
 		}
@@ -260,17 +263,24 @@ func (s *responsesStreamServer) writeReasoningSummaryPartAdded(block *responsesS
 
 func (s *responsesStreamServer) startToolBlock(start *v1.ContentStart, tool *v1.ToolUseStart) error {
 	outputIndex := s.allocateOutputIndex()
-	itemID := start.GetId()
-	if itemID == "" {
-		itemID = syntheticResponsesItemID("fc", s.response.ID, int(outputIndex))
-	}
 	item := &responsesOutputItem{
-		ID:        itemID,
-		Type:      "function_call",
-		Status:    "in_progress",
-		CallID:    tool.GetId(),
-		Name:      tool.GetName(),
-		Arguments: new(""),
+		ID:     start.GetId(),
+		Status: "in_progress",
+		CallID: tool.GetId(),
+		Name:   tool.GetName(),
+	}
+	if tool.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM {
+		if item.ID == "" {
+			item.ID = syntheticResponsesItemID("ctc", s.response.ID, int(outputIndex))
+		}
+		item.Type = "custom_tool_call"
+		item.Input = new("")
+	} else {
+		if item.ID == "" {
+			item.ID = syntheticResponsesItemID("fc", s.response.ID, int(outputIndex))
+		}
+		item.Type = "function_call"
+		item.Arguments = new("")
 	}
 	block := &responsesStreamBlock{
 		kind:        responsesStreamBlockTool,
@@ -314,7 +324,11 @@ func (s *responsesStreamServer) handleContentDelta(delta *v1.ContentDelta) error
 
 	case *v1.ContentDelta_ToolInputText:
 		block.text.WriteString(value.ToolInputText)
-		return s.writeEvent("response.function_call_arguments.delta", map[string]any{
+		eventType := "response.function_call_arguments.delta"
+		if block.item.Type == "custom_tool_call" {
+			eventType = "response.custom_tool_call_input.delta"
+		}
+		return s.writeEvent(eventType, map[string]any{
 			"output_index": block.outputIndex,
 			"item_id":      block.item.ID,
 			"delta":        value.ToolInputText,
@@ -403,11 +417,17 @@ func (s *responsesStreamServer) finishReasoningBlock(block *responsesStreamBlock
 
 func (s *responsesStreamServer) finishToolBlock(block *responsesStreamBlock) error {
 	arguments := block.text.String()
-	block.item.Arguments = &arguments
-	if err := s.writeEvent("response.function_call_arguments.done", map[string]any{
+	eventType, inputField := "response.function_call_arguments.done", "arguments"
+	if block.item.Type == "custom_tool_call" {
+		block.item.Input = &arguments
+		eventType, inputField = "response.custom_tool_call_input.done", "input"
+	} else {
+		block.item.Arguments = &arguments
+	}
+	if err := s.writeEvent(eventType, map[string]any{
 		"output_index": block.outputIndex,
 		"item_id":      block.item.ID,
-		"arguments":    arguments,
+		inputField:     arguments,
 	}); err != nil {
 		return err
 	}

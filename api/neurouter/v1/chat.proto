@@ -155,6 +155,7 @@ message TextStart {}
 message ToolUseStart {
   string id = 1;
   string name = 2;
+  ToolType type = 3;
 }
 
 message ContentStart {

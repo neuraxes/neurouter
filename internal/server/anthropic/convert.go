@@ -214,6 +214,7 @@ func convertMessageFromAnthropicParam(message *anthropic.MessageParam) *v1.Messa
 					ToolUse: &v1.ToolUse{
 						Id:   content.OfToolUse.ID,
 						Name: content.OfToolUse.Name,
+						Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 						Inputs: []*v1.ToolUse_Input{
 							{
 								Input: &v1.ToolUse_Input_Text{
@@ -226,7 +227,8 @@ func convertMessageFromAnthropicParam(message *anthropic.MessageParam) *v1.Messa
 			})
 		case content.OfToolResult != nil:
 			tr := &v1.ToolResult{
-				Id: content.OfToolResult.ToolUseID,
+				Id:   content.OfToolResult.ToolUseID,
+				Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 			}
 			for _, output := range content.OfToolResult.Content {
 				switch {

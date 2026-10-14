@@ -46,6 +46,7 @@ var mockChatRequest = &entity.ChatRequest{
 				{
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
+							Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 							Id:   "get_date",
 							Name: "get_date",
 							Inputs: []*v1.ToolUse_Input{
@@ -66,7 +67,8 @@ var mockChatRequest = &entity.ChatRequest{
 				{
 					Content: &v1.Content_ToolResult{
 						ToolResult: &v1.ToolResult{
-							Id: "get_date",
+							Type: v1.ToolType_TOOL_TYPE_FUNCTION,
+							Id:   "get_date",
 							Outputs: []*v1.ToolResult_Output{
 								{
 									Output: &v1.ToolResult_Output_Text{
@@ -273,6 +275,7 @@ var mockChatResponse = &entity.ChatResponse{
 			{
 				Content: &v1.Content_ToolUse{
 					ToolUse: &v1.ToolUse{
+						Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 						Id:   "get_weather",
 						Name: "get_weather",
 						Inputs: []*v1.ToolUse_Input{

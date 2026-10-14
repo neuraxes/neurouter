@@ -371,6 +371,103 @@ func TestResponsesStreamServer(t *testing.T) {
 		})
 	})
 
+	Convey("Given native custom tool input events", t, func() {
+		httpCtx := newResponsesTestHTTPContext()
+		server := &responsesStreamServer{
+			ctx:     context.Background(),
+			httpCtx: httpCtx,
+		}
+
+		for _, event := range []*v1.ChatEvent{
+			v1.NewChatEvent("request-1", v1.NewMessageStartEvent("resp-1", "gpt-5")),
+			v1.NewChatEvent("request-1", v1.NewIdentifiedContentStartCustomToolUseEvent("ctc-1", 0, "call-1", "calculate")),
+			v1.NewChatEvent("request-1", v1.NewContentDeltaToolInputTextEvent(0, "  1")),
+			v1.NewChatEvent("request-1", v1.NewContentDeltaToolInputTextEvent(0, "+2\n")),
+			v1.NewChatEvent("request-1", v1.NewContentStopEvent(0)),
+			v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE)),
+		} {
+			So(server.Send(event), ShouldBeNil)
+		}
+
+		parsed := parseResponsesSSEEvents(httpCtx.body.String())
+
+		Convey("Then the input streams through custom tool call events", func() {
+			expectedTypes := []string{
+				"response.created",
+				"response.in_progress",
+				"response.output_item.added",
+				"response.custom_tool_call_input.delta",
+				"response.custom_tool_call_input.delta",
+				"response.custom_tool_call_input.done",
+				"response.output_item.done",
+				"response.completed",
+			}
+			So(parsed, ShouldHaveLength, len(expectedTypes))
+			for index, expectedType := range expectedTypes {
+				So(parsed[index].typeName, ShouldEqual, expectedType)
+			}
+			So(parsed[3].data["item_id"], ShouldEqual, "ctc-1")
+			So(parsed[3].data["delta"], ShouldEqual, "  1")
+			So(parsed[4].data["delta"], ShouldEqual, "+2\n")
+			So(parsed[5].data["input"], ShouldEqual, "  1+2\n")
+			So(parsed[5].data, ShouldNotContainKey, "arguments")
+		})
+
+		Convey("Then the item carries the raw input instead of arguments", func() {
+			added := parsed[2].data["item"].(map[string]any)
+			So(added["type"], ShouldEqual, "custom_tool_call")
+			So(added["input"], ShouldEqual, "")
+
+			done := parsed[6].data["item"].(map[string]any)
+			So(done["id"], ShouldEqual, "ctc-1")
+			So(done["call_id"], ShouldEqual, "call-1")
+			So(done["name"], ShouldEqual, "calculate")
+			So(done["input"], ShouldEqual, "  1+2\n")
+			So(done, ShouldNotContainKey, "arguments")
+		})
+	})
+
+	Convey("Given a native builtin tool call between text blocks", t, func() {
+		httpCtx := newResponsesTestHTTPContext()
+		server := &responsesStreamServer{
+			ctx:     context.Background(),
+			httpCtx: httpCtx,
+		}
+
+		for _, event := range []*v1.ChatEvent{
+			v1.NewChatEvent("request-1", v1.NewMessageStartEvent("resp-1", "gpt-5")),
+			v1.NewChatEvent("request-1", &v1.ChatEvent_ContentStart{ContentStart: &v1.ContentStart{
+				Index: 0,
+				Content: &v1.ContentStart_ToolUse{ToolUse: &v1.ToolUseStart{
+					Id:   "call-1",
+					Name: "web_search",
+					Type: v1.ToolType_TOOL_TYPE_BUILTIN,
+				}},
+			}}),
+			v1.NewChatEvent("request-1", v1.NewContentDeltaToolInputTextEvent(0, `{"q":"test"}`)),
+			v1.NewChatEvent("request-1", v1.NewContentStopEvent(0)),
+			v1.NewChatEvent("request-1", v1.NewIdentifiedContentStartTextEvent("msg-1", 1, v1.ContentPhase_CONTENT_PHASE_NORMAL)),
+			v1.NewChatEvent("request-1", v1.NewContentDeltaTextEvent(1, "answer")),
+			v1.NewChatEvent("request-1", v1.NewContentStopEvent(1)),
+			v1.NewChatEvent("request-1", v1.NewMessageStopEvent(v1.ChatStatus_CHAT_STATUS_COMPLETED)),
+		} {
+			So(server.Send(event), ShouldBeNil)
+		}
+
+		parsed := parseResponsesSSEEvents(httpCtx.body.String())
+
+		Convey("Then only the text message reaches the client", func() {
+			for _, event := range parsed {
+				So(event.typeName, ShouldNotEqual, "response.function_call_arguments.delta")
+				So(event.typeName, ShouldNotEqual, "response.custom_tool_call_input.delta")
+			}
+			terminal := parsed[len(parsed)-1].data["response"].(map[string]any)
+			output := terminal["output"].([]any)
+			So(output, ShouldHaveLength, 1)
+			So(output[0].(map[string]any)["id"], ShouldEqual, "msg-1")
+		})
+	})
+
 	Convey("Given a reasoning snapshot without an item id", t, func() {
 		httpCtx := newResponsesTestHTTPContext()
 		server := &responsesStreamServer{

@@ -227,6 +227,7 @@ func convertAssistantMessageFromOpenAIChat(m *openai.ChatCompletionAssistantMess
 					ToolUse: &v1.ToolUse{
 						Id:   tc.OfFunction.ID,
 						Name: tc.OfFunction.Function.Name,
+						Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 						Inputs: []*v1.ToolUse_Input{
 							{Input: &v1.ToolUse_Input_Text{Text: tc.OfFunction.Function.Arguments}},
 						},
@@ -250,6 +251,7 @@ func convertToolMessageFromOpenAIChat(m *openai.ChatCompletionToolMessageParam) 
 	tr := &v1.Content_ToolResult{
 		ToolResult: &v1.ToolResult{
 			Id:      m.ToolCallID,
+			Type:    v1.ToolType_TOOL_TYPE_FUNCTION,
 			Outputs: []*v1.ToolResult_Output{},
 		},
 	}
@@ -324,6 +326,9 @@ func convertChatResponseToOpenAIChat(resp *v1.ChatResponse) *chatCompletionRespo
 					message.Content += c.Text.GetText()
 				}
 			case *v1.Content_ToolUse:
+				if c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM || c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+					continue
+				}
 				message.ToolCalls = append(message.ToolCalls, toolCall{
 					ID:   c.ToolUse.Id,
 					Type: "function",
@@ -338,7 +343,7 @@ func convertChatResponseToOpenAIChat(resp *v1.ChatResponse) *chatCompletionRespo
 		r.Choices = []chatCompletionChoice{
 			{
 				Message:      message,
-				FinishReason: convertStatusToOpenAIChat(resp.Status),
+				FinishReason: convertStatusToOpenAIChat(withoutUnansweredToolUse(resp.Status, len(message.ToolCalls))),
 			},
 		}
 	}
@@ -348,6 +353,17 @@ func convertChatResponseToOpenAIChat(resp *v1.ChatResponse) *chatCompletionRespo
 	}
 
 	return r
+}
+
+// withoutUnansweredToolUse downgrades a pending tool use to a completion when
+// no tool call reached the client, as happens when every call targets a custom
+// or builtin tool that Chat Completions cannot express. Reporting "tool_calls"
+// with none attached would leave the client waiting on a call it never got.
+func withoutUnansweredToolUse(status v1.ChatStatus, toolCallCount int) v1.ChatStatus {
+	if status == v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE && toolCallCount == 0 {
+		return v1.ChatStatus_CHAT_STATUS_COMPLETED
+	}
+	return status
 }
 
 func convertStatusToOpenAIChat(status v1.ChatStatus) string {

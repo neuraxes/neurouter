@@ -65,6 +65,7 @@ var ResponsesToolResult = &Fixture{
 					{
 						Content: &v1.Content_ToolUse{
 							ToolUse: &v1.ToolUse{
+								Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 								Id:   "call_HuTyMtN6jtA1RB2cVXNI1obq",
 								Name: "get_weather",
 								Inputs: []*v1.ToolUse_Input{
@@ -81,7 +82,8 @@ var ResponsesToolResult = &Fixture{
 					{
 						Content: &v1.Content_ToolResult{
 							ToolResult: &v1.ToolResult{
-								Id: "call_HuTyMtN6jtA1RB2cVXNI1obq",
+								Type: v1.ToolType_TOOL_TYPE_FUNCTION,
+								Id:   "call_HuTyMtN6jtA1RB2cVXNI1obq",
 								Outputs: []*v1.ToolResult_Output{
 									{Output: &v1.ToolResult_Output_Text{Text: `{"city":"Shanghai","date":"2025-11-10","condition":"Cloudy","high_c":18,"low_c":11,"precip_mm":2.3,"humidity":0.74,"units":"metric"}`}},
 								},

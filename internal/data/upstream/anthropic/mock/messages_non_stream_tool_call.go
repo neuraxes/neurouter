@@ -105,6 +105,7 @@ var NonStreamToolCall = &Fixture{
 				{
 					Content: &v1.Content_ToolUse{
 						ToolUse: &v1.ToolUse{
+							Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 							Id:   "toolu_01EQKr5bPHvy92UvtzNbXFDu",
 							Name: "get_weather",
 							Inputs: []*v1.ToolUse_Input{

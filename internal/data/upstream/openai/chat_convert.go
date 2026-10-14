@@ -53,6 +53,8 @@ func (r *upstream) convertRequestToOpenAIChat(req *entity.ChatRequest) openai.Ch
 					ot.Description = openai.Opt(t.Function.Description)
 				}
 				tools = append(tools, openai.ChatCompletionFunctionTool(ot))
+			case *v1.Tool_Custom_, *v1.Tool_Builtin_:
+				continue
 			default:
 				r.log.Error("unsupported tool", "tool", t)
 			}
@@ -117,6 +119,9 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 		for _, content := range message.Contents {
 			switch c := content.Content.(type) {
 			case *v1.Content_Text:
+				if content.IsReasoning() {
+					continue
+				}
 				sb.WriteString(c.Text.GetText())
 			case *v1.Content_Image:
 				isPlainText = false
@@ -162,6 +167,9 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
 			case *v1.Content_ToolResult:
+				if c.ToolResult.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM || c.ToolResult.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+					continue
+				}
 				toolMsg := &openai.ChatCompletionToolMessageParam{
 					ToolCallID: c.ToolResult.Id,
 				}
@@ -194,7 +202,8 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 			}
 		}
 
-		if len(result) == 0 || len(userContents) > 0 {
+		// A message whose contents were all filtered out is dropped rather than sent as an empty user message.
+		if len(userContents) > 0 || len(message.Contents) == 0 {
 			m := &openai.ChatCompletionUserMessageParam{}
 
 			if message.Name != "" {
@@ -282,6 +291,9 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 		for _, content := range message.Contents {
 			switch c := content.GetContent().(type) {
 			case *v1.Content_ToolUse:
+				if c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM || c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+					continue
+				}
 				m.ToolCalls = append(m.ToolCalls, openai.ChatCompletionMessageToolCallUnionParam{
 					OfFunction: &openai.ChatCompletionMessageFunctionToolCallParam{
 						ID: c.ToolUse.Id,
@@ -292,6 +304,12 @@ func (r *upstream) convertMessageToOpenAIChat(message *v1.Message) []openai.Chat
 					},
 				})
 			}
+		}
+
+		// OpenAI rejects an assistant message with neither content nor tool calls, which is what remains
+		// when every content is reasoning, opaque, or a custom/builtin tool call.
+		if len(message.Contents) > 0 && plainText == "" && len(m.ToolCalls) == 0 {
+			return nil
 		}
 
 		return []openai.ChatCompletionMessageParamUnion{{OfAssistant: m}}
@@ -352,6 +370,7 @@ func (r *upstream) convertMessageFromOpenAIChat(openAIMessage *openai.ChatComple
 				ToolUse: &v1.ToolUse{
 					Id:   toolCall.ID,
 					Name: toolCall.Function.Name,
+					Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 					Inputs: []*v1.ToolUse_Input{
 						{
 							Input: &v1.ToolUse_Input_Text{

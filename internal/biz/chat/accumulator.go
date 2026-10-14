@@ -97,6 +97,7 @@ func (r *ChatEventReducer) startContent(start *v1.ContentStart) {
 			ToolUse: &v1.ToolUse{
 				Id:   c.ToolUse.GetId(),
 				Name: c.ToolUse.GetName(),
+				Type: c.ToolUse.GetType(),
 			},
 		}
 	}

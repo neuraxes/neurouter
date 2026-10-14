@@ -112,6 +112,49 @@ func TestConvertRequestToGoogle(t *testing.T) {
 			So(response.Name, ShouldEqual, "get_weather")
 		})
 	})
+
+	Convey("Given a request replaying a custom tool call and its result", t, func() {
+		r := &upstream{
+			config: &conf.GoogleConfig{},
+			log:    slog.Default(),
+		}
+		req := &entity.ChatRequest{
+			Messages: []*v1.Message{
+				{
+					Role: v1.Role_ROLE_MODEL,
+					Contents: []*v1.Content{
+						{Content: &v1.Content_ToolUse{ToolUse: &v1.ToolUse{
+							Id:     "call-1",
+							Name:   "calculate",
+							Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+							Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "1+2"}}},
+						}}},
+					},
+				},
+				{
+					Role: v1.Role_ROLE_USER,
+					Contents: []*v1.Content{
+						{Content: &v1.Content_ToolResult{ToolResult: &v1.ToolResult{
+							Id:      "call-1",
+							Type:    v1.ToolType_TOOL_TYPE_CUSTOM,
+							Outputs: []*v1.ToolResult_Output{{Output: &v1.ToolResult_Output_Text{Text: "3"}}},
+						}}},
+					},
+				},
+				{
+					Role:     v1.Role_ROLE_USER,
+					Contents: []*v1.Content{{Content: v1.NewTextContent("Continue")}},
+				},
+			},
+		}
+
+		messages, _ := r.convertRequestToGoogle(req)
+
+		Convey("Then the messages left without any part are dropped", func() {
+			So(messages, ShouldHaveLength, 1)
+			So(messages[0].Parts[0].Text, ShouldEqual, "Continue")
+		})
+	})
 }
 
 func TestConvertToolsToGoogle(t *testing.T) {
@@ -145,6 +188,18 @@ func TestConvertToolsToGoogle(t *testing.T) {
 	Convey("convertToolsToGoogle should return nil for empty input", t, func() {
 		So(convertToolsToGoogle(nil), ShouldBeNil)
 		So(convertToolsToGoogle([]*v1.Tool{}), ShouldBeNil)
+	})
+
+	Convey("convertToolsToGoogle should skip custom tools", t, func() {
+		custom := &v1.Tool{Tool: &v1.Tool_Custom_{Custom: &v1.Tool_Custom{Name: "calculate"}}}
+		function := &v1.Tool{Tool: &v1.Tool_Function_{Function: &v1.Tool_Function{Name: "lookup"}}}
+
+		result := convertToolsToGoogle([]*v1.Tool{custom, function})
+		So(result, ShouldHaveLength, 1)
+		So(result[0].FunctionDeclarations, ShouldHaveLength, 1)
+		So(result[0].FunctionDeclarations[0].Name, ShouldEqual, "lookup")
+
+		So(convertToolsToGoogle([]*v1.Tool{custom}), ShouldBeNil)
 	})
 }
 

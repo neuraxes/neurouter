@@ -324,11 +324,18 @@ components:
             properties:
                 function:
                     $ref: '#/components/schemas/neurouter.v1.Tool_Function'
+                builtin:
+                    $ref: '#/components/schemas/neurouter.v1.Tool_Builtin'
+                custom:
+                    $ref: '#/components/schemas/neurouter.v1.Tool_Custom'
         neurouter.v1.ToolResult:
             type: object
             properties:
                 id:
                     type: string
+                type:
+                    type: integer
+                    format: enum
                 outputs:
                     type: array
                     items:
@@ -351,6 +358,9 @@ components:
                     type: string
                 name:
                     type: string
+                type:
+                    type: integer
+                    format: enum
                 inputs:
                     type: array
                     items:
@@ -363,6 +373,20 @@ components:
                     type: integer
                     format: uint32
                 text:
+                    type: string
+        neurouter.v1.Tool_Builtin:
+            type: object
+            properties: {}
+        neurouter.v1.Tool_Custom:
+            type: object
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                larkGrammar:
+                    type: string
+                regexGrammar:
                     type: string
         neurouter.v1.Tool_Function:
             type: object

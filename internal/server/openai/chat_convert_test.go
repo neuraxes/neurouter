@@ -1106,6 +1106,78 @@ func TestConvertChatResponseToOpenAIChat(t *testing.T) {
 			})
 		})
 
+		Convey("When converting a response with custom and builtin tool calls next to a function call", func() {
+			resp := &v1.ChatResponse{
+				Id:     "chatcmpl-8",
+				Model:  "gpt-5",
+				Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
+				Message: &v1.Message{
+					Role: v1.Role_ROLE_MODEL,
+					Contents: []*v1.Content{
+						{Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:     "call-1",
+								Name:   "calculate",
+								Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+								Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "1+2"}}},
+							},
+						}},
+						{Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:   "call-2",
+								Name: "web_search",
+								Type: v1.ToolType_TOOL_TYPE_BUILTIN,
+							},
+						}},
+						{Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:     "call-3",
+								Name:   "search",
+								Type:   v1.ToolType_TOOL_TYPE_FUNCTION,
+								Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: `{"q":"test"}`}}},
+							},
+						}},
+					},
+				},
+			}
+			result := convertChatResponseToOpenAIChat(resp)
+
+			Convey("Then only the function call is exposed", func() {
+				So(result.Choices[0].FinishReason, ShouldEqual, "tool_calls")
+				So(result.Choices[0].Message.ToolCalls, ShouldHaveLength, 1)
+				So(result.Choices[0].Message.ToolCalls[0].ID, ShouldEqual, "call-3")
+			})
+		})
+
+		Convey("When converting a response whose only tool call is custom", func() {
+			resp := &v1.ChatResponse{
+				Id:     "chatcmpl-9",
+				Model:  "gpt-5",
+				Status: v1.ChatStatus_CHAT_STATUS_PENDING_TOOL_USE,
+				Message: &v1.Message{
+					Role: v1.Role_ROLE_MODEL,
+					Contents: []*v1.Content{
+						{Content: v1.NewTextContent("Calculating.")},
+						{Content: &v1.Content_ToolUse{
+							ToolUse: &v1.ToolUse{
+								Id:     "call-1",
+								Name:   "calculate",
+								Type:   v1.ToolType_TOOL_TYPE_CUSTOM,
+								Inputs: []*v1.ToolUse_Input{{Input: &v1.ToolUse_Input_Text{Text: "1+2"}}},
+							},
+						}},
+					},
+				},
+			}
+			result := convertChatResponseToOpenAIChat(resp)
+
+			Convey("Then the response finishes as a plain stop without tool calls", func() {
+				So(result.Choices[0].FinishReason, ShouldEqual, "stop")
+				So(result.Choices[0].Message.Content, ShouldEqual, "Calculating.")
+				So(result.Choices[0].Message.ToolCalls, ShouldBeEmpty)
+			})
+		})
+
 		Convey("When message is nil", func() {
 			resp := &v1.ChatResponse{
 				Id:    "chatcmpl-5",

@@ -212,6 +212,59 @@ func (Capability) EnumDescriptor() ([]byte, []int) {
 	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{2}
 }
 
+type ToolType int32
+
+const (
+	// Unspecified calls and results retain function-tool semantics.
+	ToolType_TOOL_TYPE_UNSPECIFIED ToolType = 0
+	ToolType_TOOL_TYPE_FUNCTION    ToolType = 1
+	ToolType_TOOL_TYPE_BUILTIN     ToolType = 2
+	ToolType_TOOL_TYPE_CUSTOM      ToolType = 3
+)
+
+// Enum value maps for ToolType.
+var (
+	ToolType_name = map[int32]string{
+		0: "TOOL_TYPE_UNSPECIFIED",
+		1: "TOOL_TYPE_FUNCTION",
+		2: "TOOL_TYPE_BUILTIN",
+		3: "TOOL_TYPE_CUSTOM",
+	}
+	ToolType_value = map[string]int32{
+		"TOOL_TYPE_UNSPECIFIED": 0,
+		"TOOL_TYPE_FUNCTION":    1,
+		"TOOL_TYPE_BUILTIN":     2,
+		"TOOL_TYPE_CUSTOM":      3,
+	}
+)
+
+func (x ToolType) Enum() *ToolType {
+	p := new(ToolType)
+	*p = x
+	return p
+}
+
+func (x ToolType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ToolType) Descriptor() protoreflect.EnumDescriptor {
+	return file_neurouter_v1_common_proto_enumTypes[3].Descriptor()
+}
+
+func (ToolType) Type() protoreflect.EnumType {
+	return &file_neurouter_v1_common_proto_enumTypes[3]
+}
+
+func (x ToolType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ToolType.Descriptor instead.
+func (ToolType) EnumDescriptor() ([]byte, []int) {
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{3}
+}
+
 type ReasoningConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The effort level for reasoning.
@@ -592,6 +645,8 @@ type Tool struct {
 	// Types that are valid to be assigned to Tool:
 	//
 	//	*Tool_Function_
+	//	*Tool_Builtin_
+	//	*Tool_Custom_
 	Tool          isTool_Tool `protobuf_oneof:"tool"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -643,6 +698,24 @@ func (x *Tool) GetFunction() *Tool_Function {
 	return nil
 }
 
+func (x *Tool) GetBuiltin() *Tool_Builtin {
+	if x != nil {
+		if x, ok := x.Tool.(*Tool_Builtin_); ok {
+			return x.Builtin
+		}
+	}
+	return nil
+}
+
+func (x *Tool) GetCustom() *Tool_Custom {
+	if x != nil {
+		if x, ok := x.Tool.(*Tool_Custom_); ok {
+			return x.Custom
+		}
+	}
+	return nil
+}
+
 type isTool_Tool interface {
 	isTool_Tool()
 }
@@ -651,7 +724,19 @@ type Tool_Function_ struct {
 	Function *Tool_Function `protobuf:"bytes,1,opt,name=function,proto3,oneof"`
 }
 
+type Tool_Builtin_ struct {
+	Builtin *Tool_Builtin `protobuf:"bytes,2,opt,name=builtin,proto3,oneof"`
+}
+
+type Tool_Custom_ struct {
+	Custom *Tool_Custom `protobuf:"bytes,3,opt,name=custom,proto3,oneof"`
+}
+
 func (*Tool_Function_) isTool_Tool() {}
+
+func (*Tool_Builtin_) isTool_Tool() {}
+
+func (*Tool_Custom_) isTool_Tool() {}
 
 type Tool_Function struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -713,6 +798,142 @@ func (x *Tool_Function) GetInputSchema() *structpb.Struct {
 	return nil
 }
 
+type Tool_Builtin struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Tool_Builtin) Reset() {
+	*x = Tool_Builtin{}
+	mi := &file_neurouter_v1_common_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Tool_Builtin) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Tool_Builtin) ProtoMessage() {}
+
+func (x *Tool_Builtin) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_common_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Tool_Builtin.ProtoReflect.Descriptor instead.
+func (*Tool_Builtin) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{4, 1}
+}
+
+type Tool_Custom struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Name        string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	// Without a grammar, the tool accepts unconstrained text.
+	//
+	// Types that are valid to be assigned to Grammar:
+	//
+	//	*Tool_Custom_LarkGrammar
+	//	*Tool_Custom_RegexGrammar
+	Grammar       isTool_Custom_Grammar `protobuf_oneof:"grammar"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Tool_Custom) Reset() {
+	*x = Tool_Custom{}
+	mi := &file_neurouter_v1_common_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Tool_Custom) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Tool_Custom) ProtoMessage() {}
+
+func (x *Tool_Custom) ProtoReflect() protoreflect.Message {
+	mi := &file_neurouter_v1_common_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Tool_Custom.ProtoReflect.Descriptor instead.
+func (*Tool_Custom) Descriptor() ([]byte, []int) {
+	return file_neurouter_v1_common_proto_rawDescGZIP(), []int{4, 2}
+}
+
+func (x *Tool_Custom) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Tool_Custom) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *Tool_Custom) GetGrammar() isTool_Custom_Grammar {
+	if x != nil {
+		return x.Grammar
+	}
+	return nil
+}
+
+func (x *Tool_Custom) GetLarkGrammar() string {
+	if x != nil {
+		if x, ok := x.Grammar.(*Tool_Custom_LarkGrammar); ok {
+			return x.LarkGrammar
+		}
+	}
+	return ""
+}
+
+func (x *Tool_Custom) GetRegexGrammar() string {
+	if x != nil {
+		if x, ok := x.Grammar.(*Tool_Custom_RegexGrammar); ok {
+			return x.RegexGrammar
+		}
+	}
+	return ""
+}
+
+type isTool_Custom_Grammar interface {
+	isTool_Custom_Grammar()
+}
+
+type Tool_Custom_LarkGrammar struct {
+	LarkGrammar string `protobuf:"bytes,60,opt,name=lark_grammar,json=larkGrammar,proto3,oneof"`
+}
+
+type Tool_Custom_RegexGrammar struct {
+	RegexGrammar string `protobuf:"bytes,61,opt,name=regex_grammar,json=regexGrammar,proto3,oneof"`
+}
+
+func (*Tool_Custom_LarkGrammar) isTool_Custom_Grammar() {}
+
+func (*Tool_Custom_RegexGrammar) isTool_Custom_Grammar() {}
+
 var File_neurouter_v1_common_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_common_proto_rawDesc = "" +
@@ -752,13 +973,22 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x10reasoning_tokens\x18\x04 \x01(\rR\x0freasoningTokens\"7\n" +
 	"\n" +
 	"Statistics\x12)\n" +
-	"\x05usage\x18\x01 \x01(\v2\x13.neurouter.v1.UsageR\x05usage\"\xc7\x01\n" +
+	"\x05usage\x18\x01 \x01(\v2\x13.neurouter.v1.UsageR\x05usage\"\xd7\x03\n" +
 	"\x04Tool\x129\n" +
-	"\bfunction\x18\x01 \x01(\v2\x1b.neurouter.v1.Tool.FunctionH\x00R\bfunction\x1a|\n" +
+	"\bfunction\x18\x01 \x01(\v2\x1b.neurouter.v1.Tool.FunctionH\x00R\bfunction\x126\n" +
+	"\abuiltin\x18\x02 \x01(\v2\x1a.neurouter.v1.Tool.BuiltinH\x00R\abuiltin\x123\n" +
+	"\x06custom\x18\x03 \x01(\v2\x19.neurouter.v1.Tool.CustomH\x00R\x06custom\x1a|\n" +
 	"\bFunction\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12:\n" +
-	"\finput_schema\x18\x03 \x01(\v2\x17.google.protobuf.StructR\vinputSchemaB\x06\n" +
+	"\finput_schema\x18\x03 \x01(\v2\x17.google.protobuf.StructR\vinputSchema\x1a\t\n" +
+	"\aBuiltin\x1a\x95\x01\n" +
+	"\x06Custom\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12#\n" +
+	"\flark_grammar\x18< \x01(\tH\x00R\vlarkGrammar\x12%\n" +
+	"\rregex_grammar\x18= \x01(\tH\x00R\fregexGrammarB\t\n" +
+	"\agrammarB\x06\n" +
 	"\x04tool*\xf9\x01\n" +
 	"\x0fReasoningEffort\x12 \n" +
 	"\x1cREASONING_EFFORT_UNSPECIFIED\x10\x00\x12\x19\n" +
@@ -781,7 +1011,12 @@ const file_neurouter_v1_common_proto_rawDesc = "" +
 	"\x0fCAPABILITY_CHAT\x10\x01\x12\x19\n" +
 	"\x15CAPABILITY_COMPLETION\x10\x02\x12\x18\n" +
 	"\x14CAPABILITY_EMBEDDING\x10\x03\x12\x17\n" +
-	"\x13CAPABILITY_TOOL_USE\x10\x04B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
+	"\x13CAPABILITY_TOOL_USE\x10\x04*j\n" +
+	"\bToolType\x12\x19\n" +
+	"\x15TOOL_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12TOOL_TYPE_FUNCTION\x10\x01\x12\x15\n" +
+	"\x11TOOL_TYPE_BUILTIN\x10\x02\x12\x14\n" +
+	"\x10TOOL_TYPE_CUSTOM\x10\x03B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
 	file_neurouter_v1_common_proto_rawDescOnce sync.Once
@@ -795,32 +1030,37 @@ func file_neurouter_v1_common_proto_rawDescGZIP() []byte {
 	return file_neurouter_v1_common_proto_rawDescData
 }
 
-var file_neurouter_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_neurouter_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_neurouter_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_neurouter_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_neurouter_v1_common_proto_goTypes = []any{
 	(ReasoningEffort)(0),     // 0: neurouter.v1.ReasoningEffort
 	(Modality)(0),            // 1: neurouter.v1.Modality
 	(Capability)(0),          // 2: neurouter.v1.Capability
-	(*ReasoningConfig)(nil),  // 3: neurouter.v1.ReasoningConfig
-	(*GenerationConfig)(nil), // 4: neurouter.v1.GenerationConfig
-	(*Usage)(nil),            // 5: neurouter.v1.Usage
-	(*Statistics)(nil),       // 6: neurouter.v1.Statistics
-	(*Tool)(nil),             // 7: neurouter.v1.Tool
-	(*Tool_Function)(nil),    // 8: neurouter.v1.Tool.Function
-	(*structpb.Struct)(nil),  // 9: google.protobuf.Struct
+	(ToolType)(0),            // 3: neurouter.v1.ToolType
+	(*ReasoningConfig)(nil),  // 4: neurouter.v1.ReasoningConfig
+	(*GenerationConfig)(nil), // 5: neurouter.v1.GenerationConfig
+	(*Usage)(nil),            // 6: neurouter.v1.Usage
+	(*Statistics)(nil),       // 7: neurouter.v1.Statistics
+	(*Tool)(nil),             // 8: neurouter.v1.Tool
+	(*Tool_Function)(nil),    // 9: neurouter.v1.Tool.Function
+	(*Tool_Builtin)(nil),     // 10: neurouter.v1.Tool.Builtin
+	(*Tool_Custom)(nil),      // 11: neurouter.v1.Tool.Custom
+	(*structpb.Struct)(nil),  // 12: google.protobuf.Struct
 }
 var file_neurouter_v1_common_proto_depIdxs = []int32{
-	0, // 0: neurouter.v1.ReasoningConfig.effort:type_name -> neurouter.v1.ReasoningEffort
-	3, // 1: neurouter.v1.GenerationConfig.reasoning_config:type_name -> neurouter.v1.ReasoningConfig
-	9, // 2: neurouter.v1.GenerationConfig.schema:type_name -> google.protobuf.Struct
-	5, // 3: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Usage
-	8, // 4: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
-	9, // 5: neurouter.v1.Tool.Function.input_schema:type_name -> google.protobuf.Struct
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	0,  // 0: neurouter.v1.ReasoningConfig.effort:type_name -> neurouter.v1.ReasoningEffort
+	4,  // 1: neurouter.v1.GenerationConfig.reasoning_config:type_name -> neurouter.v1.ReasoningConfig
+	12, // 2: neurouter.v1.GenerationConfig.schema:type_name -> google.protobuf.Struct
+	6,  // 3: neurouter.v1.Statistics.usage:type_name -> neurouter.v1.Usage
+	9,  // 4: neurouter.v1.Tool.function:type_name -> neurouter.v1.Tool.Function
+	10, // 5: neurouter.v1.Tool.builtin:type_name -> neurouter.v1.Tool.Builtin
+	11, // 6: neurouter.v1.Tool.custom:type_name -> neurouter.v1.Tool.Custom
+	12, // 7: neurouter.v1.Tool.Function.input_schema:type_name -> google.protobuf.Struct
+	8,  // [8:8] is the sub-list for method output_type
+	8,  // [8:8] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_neurouter_v1_common_proto_init() }
@@ -836,14 +1076,20 @@ func file_neurouter_v1_common_proto_init() {
 	}
 	file_neurouter_v1_common_proto_msgTypes[4].OneofWrappers = []any{
 		(*Tool_Function_)(nil),
+		(*Tool_Builtin_)(nil),
+		(*Tool_Custom_)(nil),
+	}
+	file_neurouter_v1_common_proto_msgTypes[7].OneofWrappers = []any{
+		(*Tool_Custom_LarkGrammar)(nil),
+		(*Tool_Custom_RegexGrammar)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_neurouter_v1_common_proto_rawDesc), len(file_neurouter_v1_common_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   6,
+			NumEnums:      4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

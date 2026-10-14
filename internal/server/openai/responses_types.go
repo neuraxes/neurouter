@@ -44,6 +44,7 @@ type responsesOutputItem struct {
 	CallID           string                                   `json:"call_id,omitempty"`
 	Name             string                                   `json:"name,omitempty"`
 	Arguments        *string                                  `json:"arguments,omitempty"`
+	Input            *string                                  `json:"input,omitempty"`
 }
 
 // MarshalJSON keeps the (empty) arrays that Responses clients iterate over.
@@ -101,6 +102,15 @@ func (item *responsesOutputItem) MarshalJSON() ([]byte, error) {
 			Name:      item.Name,
 			Arguments: item.Arguments,
 		})
+	case "custom_tool_call":
+		return json.Marshal(struct {
+			ID     string  `json:"id"`
+			Type   string  `json:"type"`
+			Status string  `json:"status"`
+			CallID string  `json:"call_id"`
+			Name   string  `json:"name"`
+			Input  *string `json:"input"`
+		}{item.ID, item.Type, item.Status, item.CallID, item.Name, item.Input})
 	default:
 		return json.Marshal(struct {
 			ID     string `json:"id"`

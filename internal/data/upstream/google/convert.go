@@ -43,7 +43,10 @@ func (r *upstream) convertRequestToGoogle(req *entity.ChatRequest) (messages []*
 		if msg.Role == v1.Role_ROLE_SYSTEM && !r.config.SystemAsUser {
 			continue
 		}
-		messages = append(messages, convertMessageToGoogleContent(msg))
+		converted := convertMessageToGoogleContent(msg)
+		if len(converted.Parts) > 0 || len(msg.Contents) == 0 {
+			messages = append(messages, converted)
+		}
 	}
 	return
 }
@@ -101,7 +104,12 @@ func convertToolsToGoogle(tools []*v1.Tool) []*genai.Tool {
 				Description:          t.Function.GetDescription(),
 				ParametersJsonSchema: parametersJsonSchema,
 			})
+		case *v1.Tool_Custom_, *v1.Tool_Builtin_:
+			continue
 		}
+	}
+	if len(functionDecls) == 0 {
+		return nil
 	}
 	return []*genai.Tool{{FunctionDeclarations: functionDecls}}
 }
@@ -187,6 +195,9 @@ func convertContentToGooglePart(content *v1.Content) *genai.Part {
 	case *v1.Content_Image:
 		part = convertImageToGooglePart(c.Image)
 	case *v1.Content_ToolUse:
+		if c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM || c.ToolUse.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+			return nil
+		}
 		textualInput := c.ToolUse.GetTextualInput()
 
 		var args map[string]any
@@ -205,6 +216,9 @@ func convertContentToGooglePart(content *v1.Content) *genai.Part {
 			Args: args,
 		}}
 	case *v1.Content_ToolResult:
+		if c.ToolResult.GetType() == v1.ToolType_TOOL_TYPE_CUSTOM || c.ToolResult.GetType() == v1.ToolType_TOOL_TYPE_BUILTIN {
+			return nil
+		}
 		part = convertToolResultToGooglePart(c.ToolResult)
 	default:
 		return nil
@@ -304,6 +318,7 @@ func convertMessageFromGoogleContent(content *genai.Content) *v1.Message {
 					ToolUse: &v1.ToolUse{
 						Id:   toolUseIDFromGoogle(part.FunctionCall),
 						Name: part.FunctionCall.Name,
+						Type: v1.ToolType_TOOL_TYPE_FUNCTION,
 						Inputs: []*v1.ToolUse_Input{
 							{
 								Input: &v1.ToolUse_Input_Text{
