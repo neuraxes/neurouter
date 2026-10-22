@@ -246,4 +246,39 @@ func TestChatStream(t *testing.T) {
 			}
 		})
 	})
+
+	Convey("When a Responses stream emits an in-stream nested error event", t, func() {
+		sseBody := "event: response.created\n" +
+			`data: {"type":"response.created","response":{"id":"resp-1","model":"gpt-5","status":"in_progress","output":[]},"sequence_number":0}` + "\n\n" +
+			"event: error\n" +
+			`data: {"type":"error","error":{"type":"too_many_requests","code":"rate_limit_exceeded","message":"Exceeded token rate limit."},"sequence_number":1}` + "\n\n"
+		mockClient := &mockHTTPClient{
+			DoFunc: func(*http.Request) (*http.Response, error) {
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
+					Body:       io.NopCloser(bytes.NewReader([]byte(sseBody))),
+				}, nil
+			},
+		}
+		repo, err := newOpenAIUpstreamWithClient(mockResponsesTestConfig, mockClient, slog.Default())
+		So(err, ShouldBeNil)
+
+		var events []*entity.ChatEvent
+		var gotErr error
+		for event, streamErr := range repo.ChatStream(context.Background(), mock.ResponsesStreamReasoning.ChatRequest) {
+			if streamErr != nil {
+				gotErr = streamErr
+				break
+			}
+			events = append(events, event)
+		}
+
+		Convey("Then it surfaces the nested error code and message", func() {
+			So(events, ShouldHaveLength, 1)
+			So(gotErr, ShouldNotBeNil)
+			So(gotErr.Error(), ShouldContainSubstring, "rate_limit_exceeded")
+			So(gotErr.Error(), ShouldContainSubstring, "Exceeded token rate limit.")
+		})
+	})
 }

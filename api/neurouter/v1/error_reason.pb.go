@@ -38,9 +38,10 @@ const (
 type ErrorReason int32
 
 const (
-	ErrorReason_ERROR_REASON_UNSPECIFIED           ErrorReason = 0
-	ErrorReason_ERROR_REASON_NO_UPSTREAM           ErrorReason = 1
-	ErrorReason_ERROR_REASON_TOKEN_QUOTA_EXHAUSTED ErrorReason = 2
+	ErrorReason_ERROR_REASON_UNSPECIFIED             ErrorReason = 0
+	ErrorReason_ERROR_REASON_NO_UPSTREAM             ErrorReason = 1
+	ErrorReason_ERROR_REASON_TOKEN_QUOTA_EXHAUSTED   ErrorReason = 2
+	ErrorReason_ERROR_REASON_INVALID_REASONING_STATE ErrorReason = 3
 )
 
 // Enum value maps for ErrorReason.
@@ -49,11 +50,13 @@ var (
 		0: "ERROR_REASON_UNSPECIFIED",
 		1: "ERROR_REASON_NO_UPSTREAM",
 		2: "ERROR_REASON_TOKEN_QUOTA_EXHAUSTED",
+		3: "ERROR_REASON_INVALID_REASONING_STATE",
 	}
 	ErrorReason_value = map[string]int32{
-		"ERROR_REASON_UNSPECIFIED":           0,
-		"ERROR_REASON_NO_UPSTREAM":           1,
-		"ERROR_REASON_TOKEN_QUOTA_EXHAUSTED": 2,
+		"ERROR_REASON_UNSPECIFIED":             0,
+		"ERROR_REASON_NO_UPSTREAM":             1,
+		"ERROR_REASON_TOKEN_QUOTA_EXHAUSTED":   2,
+		"ERROR_REASON_INVALID_REASONING_STATE": 3,
 	}
 )
 
@@ -88,11 +91,12 @@ var File_neurouter_v1_error_reason_proto protoreflect.FileDescriptor
 
 const file_neurouter_v1_error_reason_proto_rawDesc = "" +
 	"\n" +
-	"\x1fneurouter/v1/error_reason.proto\x12\fneurouter.v1*q\n" +
+	"\x1fneurouter/v1/error_reason.proto\x12\fneurouter.v1*\x9b\x01\n" +
 	"\vErrorReason\x12\x1c\n" +
 	"\x18ERROR_REASON_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18ERROR_REASON_NO_UPSTREAM\x10\x01\x12&\n" +
-	"\"ERROR_REASON_TOKEN_QUOTA_EXHAUSTED\x10\x02B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
+	"\"ERROR_REASON_TOKEN_QUOTA_EXHAUSTED\x10\x02\x12(\n" +
+	"$ERROR_REASON_INVALID_REASONING_STATE\x10\x03B3Z1github.com/neuraxes/neurouter/api/neurouter/v1;v1b\x06proto3"
 
 var (
 	file_neurouter_v1_error_reason_proto_rawDescOnce sync.Once

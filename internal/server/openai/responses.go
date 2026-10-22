@@ -43,9 +43,10 @@ func (s *Server) handleResponses(httpCtx http.Context) (err error) {
 		httpCtx.Response().Header().Set("Cache-Control", "no-cache")
 		httpCtx.Response().Header().Set("Connection", "keep-alive")
 
+		var streamServer *responsesStreamServer
 		middleware := httpCtx.Middleware(func(ctx context.Context, req any) (any, error) {
 			util.EmitEvent(ctx, s.otelLogger, util.EventServerReqReceived, requestBody)
-			streamServer := &responsesStreamServer{
+			streamServer = &responsesStreamServer{
 				ctx:     ctx,
 				httpCtx: httpCtx,
 			}
@@ -53,12 +54,18 @@ func (s *Server) handleResponses(httpCtx http.Context) (err error) {
 				streamServer.buffer = &bytes.Buffer{}
 			}
 			err := s.chatSvc.ChatStream(req.(*v1.ChatRequest), streamServer)
+			if err != nil {
+				_ = streamServer.fail(err)
+			}
 			if s.otelLogger != nil {
 				util.EmitEvent(ctx, s.otelLogger, util.EventServerRespSent, streamServer.buffer.Bytes())
 			}
 			return nil, err
 		})
 		_, err = middleware(httpCtx, req)
+		if streamServer != nil && streamServer.sequenceNumber > 0 {
+			return nil
+		}
 		return err
 	}
 

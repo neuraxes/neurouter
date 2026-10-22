@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -101,6 +102,36 @@ func TestHandleResponses(t *testing.T) {
 			So(httpCtx.body.String(), ShouldContainSubstring, "event: response.created")
 			So(httpCtx.body.String(), ShouldContainSubstring, "event: response.completed")
 			So(httpCtx.body.String(), ShouldNotContainSubstring, "[DONE]")
+		})
+	})
+
+	Convey("Given a streaming Responses request that fails after starting", t, func() {
+		requestBody := []byte(`{"model":"gpt-5","input":"hello","stream":true}`)
+		server := &Server{chatSvc: &responsesTestChatServer{
+			chatStreamFunc: func(_ *v1.ChatRequest, stream v1.Chat_ChatStreamServer) error {
+				if err := stream.Send(v1.NewChatEvent("request-1", v1.NewMessageStartEvent("resp-1", "gpt-5"))); err != nil {
+					return err
+				}
+				return errors.New("responses stream error rate_limit_exceeded: Exceeded token rate limit.")
+			},
+		}}
+		req, err := http.NewRequest(http.MethodPost, "/v1/responses", bytes.NewReader(requestBody))
+		So(err, ShouldBeNil)
+
+		httpCtx := newResponsesTestHTTPContext(req)
+		So(server.handleResponses(httpCtx), ShouldBeNil)
+
+		Convey("Then the handler closes the SSE stream with a response.failed event", func() {
+			parsed := parseResponsesSSEEvents(httpCtx.body.String())
+			So(parsed, ShouldHaveLength, 3)
+			So(parsed[0].typeName, ShouldEqual, "response.created")
+			So(parsed[1].typeName, ShouldEqual, "response.in_progress")
+			So(parsed[2].typeName, ShouldEqual, "response.failed")
+			terminal := parsed[2].data["response"].(map[string]any)
+			So(terminal["status"], ShouldEqual, "failed")
+			errObj := terminal["error"].(map[string]any)
+			So(errObj["code"], ShouldEqual, "server_error")
+			So(errObj["message"], ShouldEqual, "responses stream error rate_limit_exceeded: Exceeded token rate limit.")
 		})
 	})
 }

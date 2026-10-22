@@ -16,9 +16,12 @@ package openai
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"testing"
 
+	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
 	openaishared "github.com/openai/openai-go/v3/shared"
 	. "github.com/smartystreets/goconvey/convey"
@@ -808,5 +811,33 @@ func TestConvertStreamEventFromOpenAIResponses(t *testing.T) {
 			So(events, ShouldHaveLength, 1)
 			So(events[0].GetMessageStop().GetStatus(), ShouldEqual, v1.ChatStatus_CHAT_STATUS_FAILED)
 		})
+	})
+}
+
+func TestConvertResponsesError(t *testing.T) {
+	Convey("Given a Responses API error", t, func() {
+		for _, tc := range []struct {
+			name                  string
+			err                   error
+			invalidReasoningState bool
+		}{
+			{"HTTP error code", &openai.Error{Code: "invalid_encrypted_content"}, true},
+			{"compatible HTTP error message", &openai.Error{Code: "-4003", Message: "code: invalid_encrypted_content; message: verification failed"}, true},
+			{"wrapped HTTP error", fmt.Errorf("upstream: %w", &openai.Error{Code: "invalid_encrypted_content"}), true},
+			{"unrelated HTTP error", &openai.Error{Code: "rate_limit_exceeded"}, false},
+			{"plain error containing the code", errors.New("invalid_encrypted_content"), false},
+			{"no error", nil, false},
+		} {
+			Convey("When converting a "+tc.name, func() {
+				converted := convertResponsesError(tc.err)
+				So(errors.Is(converted, entity.ErrInvalidReasoningState), ShouldEqual, tc.invalidReasoningState)
+				if tc.invalidReasoningState {
+					So(errors.Unwrap(converted), ShouldEqual, tc.err)
+					So(converted.Error(), ShouldContainSubstring, tc.err.Error())
+				} else {
+					So(converted, ShouldEqual, tc.err)
+				}
+			})
+		}
 	})
 }

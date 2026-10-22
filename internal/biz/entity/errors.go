@@ -21,6 +21,10 @@ import (
 )
 
 var (
+	ErrInvalidReasoningState = errors.BadRequest(
+		v1.ErrorReason_ERROR_REASON_INVALID_REASONING_STATE.String(),
+		"invalid reasoning state",
+	)
 	ErrNoUpstream = errors.InternalServer(
 		v1.ErrorReason_ERROR_REASON_NO_UPSTREAM.String(),
 		"no upstream found",

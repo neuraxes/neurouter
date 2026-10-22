@@ -67,7 +67,7 @@ func (uc *chatUseCase) Chat(ctx context.Context, req *entity.ChatRequest) (resp 
 	)
 	defer func() { invocation.End(genaiResult(resp), err) }()
 
-	resp, err = model.ChatRepo().Chat(ctx, req)
+	resp, err = uc.chatWithRecovery(ctx, model.ChatRepo(), req)
 	if err != nil {
 		return
 	}
@@ -113,7 +113,7 @@ func (uc *chatUseCase) ChatStream(
 	}()
 
 	firstChunkReceived := false
-	for event, streamErr := range model.ChatRepo().ChatStream(ctx, req) {
+	for event, streamErr := range uc.chatStreamWithRecovery(ctx, model.ChatRepo(), req) {
 		if streamErr != nil {
 			return streamErr
 		}

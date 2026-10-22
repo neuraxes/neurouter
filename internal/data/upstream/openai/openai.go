@@ -95,7 +95,7 @@ func (r *upstream) chatWithResponses(ctx context.Context, req *entity.ChatReques
 
 	openAIResp, err := r.client.Responses.New(ctx, openAIReq)
 	if err != nil {
-		return nil, err
+		return nil, convertResponsesError(err)
 	}
 
 	return r.convertResponseFromOpenAIResponses(req, openAIResp), nil
@@ -181,7 +181,7 @@ func (c *openAIResponseStreamClient) AsSeq() iter.Seq2[*entity.ChatEvent, error]
 		for {
 			if !c.upstream.Next() {
 				if err := c.upstream.Err(); err != nil {
-					yield(nil, err)
+					yield(nil, convertResponsesError(err))
 					return
 				}
 				break

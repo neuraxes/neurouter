@@ -15,8 +15,10 @@
 package openai
 
 import (
+	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
@@ -647,4 +649,18 @@ func (c *openAIResponseStreamClient) closeOutputBlock(events *[]*entity.ChatEven
 	}
 	*events = append(*events, c.newChatEvent(v1.NewContentStopEvent(index)))
 	delete(c.openContentIndexByOutputIndex, outputIndex)
+}
+
+func isInvalidEncryptedContentError(err error) bool {
+	var apiErr *openai.Error
+	return errors.As(err, &apiErr) &&
+		(apiErr.Code == "invalid_encrypted_content" ||
+			strings.Contains(apiErr.Message, "invalid_encrypted_content"))
+}
+
+func convertResponsesError(err error) error {
+	if isInvalidEncryptedContentError(err) {
+		return entity.ErrInvalidReasoningState.WithCause(err)
+	}
+	return err
 }

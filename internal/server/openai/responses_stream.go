@@ -53,6 +53,7 @@ type responsesStreamServer struct {
 
 	sequenceNumber  int64
 	nextOutputIndex int64
+	terminated      bool
 	response        responsesResponse
 	usage           *v1.Usage
 	blocks          map[uint32]*responsesStreamBlock
@@ -480,6 +481,7 @@ func (s *responsesStreamServer) handleContentSnapshot(content *v1.Content) error
 func (s *responsesStreamServer) handleMessageStop(stop *v1.MessageStop) error {
 	s.response.Status, s.response.IncompleteDetails, s.response.Error = convertStatusToOpenAIResponses(stop.GetStatus())
 	s.response.Usage = convertUsageToOpenAIResponses(s.usage)
+	s.terminated = true
 
 	eventType := "response.completed"
 	switch s.response.Status {
@@ -489,6 +491,23 @@ func (s *responsesStreamServer) handleMessageStop(stop *v1.MessageStop) error {
 		eventType = "response.failed"
 	}
 	return s.writeEvent(eventType, map[string]any{"response": &s.response})
+}
+
+func (s *responsesStreamServer) fail(err error) error {
+	if s.sequenceNumber == 0 || s.terminated {
+		return nil
+	}
+	if flushErr := s.flushPendingItems(); flushErr != nil {
+		return flushErr
+	}
+	s.response.Status = "failed"
+	s.response.Error = &responses.ResponseError{
+		Code:    "server_error",
+		Message: err.Error(),
+	}
+	s.response.Usage = convertUsageToOpenAIResponses(s.usage)
+	s.terminated = true
+	return s.writeEvent("response.failed", map[string]any{"response": &s.response})
 }
 
 // pendingReasoningFor returns the reasoning item whose completion is still held
