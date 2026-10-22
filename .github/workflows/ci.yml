@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
   Test:
@@ -15,6 +21,16 @@ jobs:
           go-version-file: "go.mod"
       - name: Install pinned tools
         run: make init
+      - name: Check Go formatting
+        shell: bash
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            printf 'Go files requiring formatting:\n%s\n' "$unformatted"
+            exit 1
+          fi
+      - name: Check Protobuf formatting
+        run: buf format --diff --exit-code
       - name: Run lint
         run: buf lint && go vet ./...
       - name: Run tests
@@ -38,6 +54,9 @@ jobs:
   BuildImage:
     runs-on: ubuntu-latest
     needs: BuildBinary
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
@@ -46,16 +65,19 @@ jobs:
           path: ./bin
       - uses: docker/setup-buildx-action@v3
       - name: Log in to the Container registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: chmod +x ./bin/neurouter
-      - name: Build and push Docker image
+      - name: Build Docker image and publish on main
         id: push
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: ghcr.io/neuraxes/neurouter:${{ github.run_number }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ghcr.io/neuraxes/neurouter:${{ github.run_number }}
+            ghcr.io/neuraxes/neurouter:latest

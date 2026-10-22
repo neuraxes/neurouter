@@ -23,9 +23,7 @@ option go_package = "github.com/neuraxes/neurouter/api/neurouter/v1;v1";
 
 service Model {
   rpc ListModel(ListModelRequest) returns (ListModelResponse) {
-    option (google.api.http) = {
-      get: "/v1/models"
-    };
+    option (google.api.http) = {get: "/v1/models"};
   }
 }
 
@@ -46,8 +44,7 @@ message ModelSpec {
   uint32 context_length = 7;
 }
 
-message ListModelRequest {
-}
+message ListModelRequest {}
 
 message ListModelResponse {
   repeated ModelSpec models = 1;
