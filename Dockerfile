@@ -2,7 +2,7 @@ FROM alpine
 
 RUN apk add --no-cache ca-certificates
 
-ADD bin/neurouter /bin/neurouter
+COPY --chmod=755 bin/neurouter /bin/neurouter
 ADD configs/config.yaml /configs/config.yaml
 
 EXPOSE 8000
